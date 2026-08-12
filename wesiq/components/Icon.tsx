@@ -1,20 +1,22 @@
 import React, { useState, useRef } from "react"
-import { Pressable, StyleSheet, Animated } from "react-native"
-import { BlurView } from "expo-blur"
+import { Pressable, StyleProp, ViewStyle, Animated } from "react-native"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
-import { BIG_BORDER_RADIUS } from "@/constants/borders"
 
-type IconButtonProps = {
+type IconProps = {
     icon_name:string,
     onPress?:() => void,
     size?:number,
-    is_regular?:boolean
+    is_regular?:boolean,
+    style?:StyleProp<ViewStyle>,
+    pressed_style?:StyleProp<ViewStyle>,
+    color?:string,
+    pressed_color?:string
 }
 
 const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates The Animated Icon
 
-export default function IconButton({ icon_name, onPress, size = 20, is_regular = false }:IconButtonProps) {
+export default function Icon({ icon_name, onPress, size = 20, is_regular = false, style, pressed_style, color = BLUE_COLOR, pressed_color = DARK_BLUE_COLOR }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
@@ -43,7 +45,7 @@ export default function IconButton({ icon_name, onPress, size = 20, is_regular =
     // Animates The Color
     const animated_color = animation_value.interpolate({
         inputRange: [0, 1],
-        outputRange: [BLUE_COLOR, DARK_BLUE_COLOR]
+        outputRange: [color, pressed_color]
     })
 
     return (
@@ -51,42 +53,14 @@ export default function IconButton({ icon_name, onPress, size = 20, is_regular =
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
-
-            style={({ pressed }) => [
-                styles.button,
-                pressed && styles.pressed_button,
-            ]}
+            style={[style, is_pressed && pressed_style]}
         >
-            <BlurView intensity={20} tint="light" style={styles.blur_container}>
-                <AnimatedIcon
-                    name={icon_name}
-                    size={size}
-                    solid={!is_regular}
-                    style={{ color: animated_color }}
-                />
-            </BlurView>
+            <AnimatedIcon
+                name={icon_name}
+                size={size}
+                solid={!is_regular}
+                color={animated_color}
+            />
         </Pressable>
     )
 }
-
-const styles = StyleSheet.create({
-    button: {
-        width: 40,
-        height: 40,
-        borderWidth: 1,
-        borderColor: DARK_BLUE_COLOR,
-        borderRadius: BIG_BORDER_RADIUS,
-        backgroundColor: "transparent",
-        overflow: "hidden",
-    },
-
-    pressed_button: {
-        transform: [{ translateY: -1 }],
-    },
-    
-    blur_container: {
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-    },
-})
