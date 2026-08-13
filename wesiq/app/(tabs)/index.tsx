@@ -1,12 +1,27 @@
 import React, { useState } from "react"
-import { View, StyleSheet, SafeAreaView } from "react-native"
+import { View, StyleSheet, SafeAreaView, Pressable, Text } from "react-native"
 import IconButton from "@/components/IconButton"
 import BackgroundContainer from "@/components/BackgroundContainer"
-import { DARK_BLUE_COLOR, transparentize } from "@/constants/colors"
+import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import UploadPostFormDialog from "@/components/UploadPostFormDialog"
+import SearchUsers from "@/components/SearchUsers"
+import Feed from "@/components/Feed"
+import ProfilePictureLink from "@/components/ProfilePictureLink"
+
+export interface LoggedInUser {
+  id:number,
+  username:string,
+  profile_picture_name:string,
+
+  subscription?:{
+    plan:string,
+    is_active:boolean
+  }
+}
 
 export default function HomeScreen() {
+  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Information If The Upload Post Form Dialog Is Open
   const [isUploadPostFormDialogOpen, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
 
   return (
@@ -38,6 +53,55 @@ export default function HomeScreen() {
                 />
               </View>
             </View>
+
+            <View className="right" style={styles.right}>
+              {logged_in_user && (
+                <View className="account" style={styles.account}>
+                  <ProfilePictureLink logged_in_user={logged_in_user} label="Môj účet" />
+
+                  <Pressable
+                    // onPress={handleGoToProfile}
+                    accessibilityRole="button"
+                    accessibilityLabel="Môj účet" 
+                  >
+                    {({ pressed }) => (
+                      <Text 
+                        className="username"
+
+                        style={[
+                          styles.username,
+                          pressed && { textDecorationLine: "underline" } 
+                        ]}
+                      >
+                        {logged_in_user.username}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+
+              {!logged_in_user && (
+                <View className="no_account" style={styles.no_account}>
+                  <Pressable 
+                    // onPress={handleGoToLogin}
+                    accessibilityLabel="Prihlásiť sa"
+                  >
+                    {({ pressed }) => (
+                      <Text 
+                        className="login"
+
+                        style={[
+                          styles.login,
+                          pressed && { textDecorationLine: "underline" } 
+                        ]}
+                      >
+                        Neprihlásený
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -46,6 +110,10 @@ export default function HomeScreen() {
             visible={isUploadPostFormDialogOpen}
             onClose={() => setIsUploadPostFormDialogOpen(false)}
           />
+
+          <SearchUsers />
+
+          <Feed />
         </View>
       </SafeAreaView>
     </BackgroundContainer>
@@ -73,6 +141,35 @@ const styles = StyleSheet.create({
   left: {
     flexDirection: "row",
     gap: 10,
+  },
+
+  right: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 20,
+    flex: 1,
+  },
+
+  account: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    height: 38,
+  },
+
+  username: {
+    color: LIGHT_BLUE_COLOR,
+  },
+
+  no_account: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  login: {
+    color: LIGHT_BLUE_COLOR,
   },
 
   content: {

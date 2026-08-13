@@ -1,0 +1,1 @@
+export const API_URL:string = "https://wesiq.com/native-api" // Defines The API URL

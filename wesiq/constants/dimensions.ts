@@ -1,0 +1,1 @@
+export const MAIN_WIDTH:number = 580 // Defines The Main Width (Same As Secondary On Web)

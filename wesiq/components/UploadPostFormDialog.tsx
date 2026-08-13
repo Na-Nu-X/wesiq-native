@@ -7,6 +7,7 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import Icon from "./Icon"
 import EmojiPicker from "rn-emoji-keyboard"
 import * as ImagePicker from "expo-image-picker"
+import { MAIN_WIDTH } from "@/constants/dimensions"
 
 type UploadPostFormDialogProps = {
     visible:boolean
@@ -82,14 +83,14 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
                     <View style={styles.circle_decoration_after} />
 
                     <View style={styles.top}>
-                        <Pressable className="back">
+                        <View className="back">
                             <Icon
                                 icon_name="chevron-left"
                                 onPress={onClose}
                                 size={30}
                                 pressed_style={{ transform: [{ scale: 1.1 }] }}
                             />
-                        </Pressable>
+                        </View>
 
                         <Text className="heading" style={styles.heading}>Zdieľať príspevok</Text>
                     </View>
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     
     upload_post_form: {
         position: "relative",
-        maxWidth: 580,
+        maxWidth: MAIN_WIDTH,
         width: "100%",
         padding: 20,
         textAlign: "center",
@@ -297,6 +298,9 @@ const styles = StyleSheet.create({
     },
 
     heading: {
+        flex: 1,
+        marginRight: 18.75 + 20,
+        textAlign: "center",
         color: SECONDARY_COLOR,
         fontSize: 30,
         // animation: fadeInScale 0.3s ease-out;
@@ -353,7 +357,6 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
         paddingHorizontal: 10,
         color: SECONDARY_COLOR,
-        outline: "none",
     },
 
     icons: {

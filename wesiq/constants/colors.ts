@@ -10,6 +10,8 @@ export const LIGHT_BLUE_COLOR:string = "#c2e0fa" // Defines The Light Blue Color
 export const GREEN_COLOR:string = "#3dd68c" // Defines The Green Color
 export const RED_COLOR:string = "#ff5c6a" // Defines The Red Color
 
+export const YELLOW_COLOR:string = "#f0c14a" // Defines The Yellow Color
+
 // Function For Adding The Transparency
 export function transparentize(hex_color:string, amount:number):string {
     const clamped_amount:number = Math.min(1, Math.max(0, amount))
