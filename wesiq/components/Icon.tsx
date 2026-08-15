@@ -53,6 +53,7 @@ export default function Icon({ icon_name, onPress, size = 20, is_regular = false
             onPress={onPress}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={[style, is_pressed && pressed_style]}
         >
             <AnimatedIcon

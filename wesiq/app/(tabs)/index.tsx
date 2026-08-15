@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, StyleSheet, SafeAreaView, Pressable, Text } from "react-native"
+import { View, StyleSheet, SafeAreaView, Pressable, Text, TouchableWithoutFeedback, Keyboard } from "react-native"
 import IconButton from "@/components/IconButton"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
@@ -8,115 +8,117 @@ import UploadPostFormDialog from "@/components/UploadPostFormDialog"
 import SearchUsers from "@/components/SearchUsers"
 import Feed from "@/components/Feed"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
+import LoginFormDialog from "@/components/LoginFormDialog"
 
-export interface LoggedInUser {
-  id:number,
-  username:string,
-  profile_picture_name:string,
-
-  subscription?:{
-    plan:string,
-    is_active:boolean
-  }
-}
+import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 export default function HomeScreen() {
-  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Information If The Upload Post Form Dialog Is Open
-  const [isUploadPostFormDialogOpen, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
+  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+  const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
+  const [is_login_form_dialog_open, setIsLoginFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Login Form Dialog Is Open
 
   return (
-    <BackgroundContainer>
-      <SafeAreaView style={styles.safe_area}>
-        <View style={styles.banner}>
-          <BlurView intensity={20} style={StyleSheet.absoluteFill} />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <BackgroundContainer>
+        <SafeAreaView style={styles.safe_area}>
+          <View style={styles.banner}>
+            <BlurView intensity={20} style={StyleSheet.absoluteFill} />
 
-          <View
-            style={[
-              StyleSheet.absoluteFill, 
-              { backgroundColor: transparentize(DARK_BLUE_COLOR, 0.5) }
-            ]} 
-          />
-        
-          <View className="banner" style={styles.banner_content}>
-            <View className="left" style={styles.left}>
-              <View className="upload_post">
-                <IconButton 
-                  icon_name="photo-film" 
-                  onPress={() => setIsUploadPostFormDialogOpen(true)}
-                />
-              </View>
-  
-              <View className="notifications">
-                <IconButton 
-                  icon_name="bell" 
-                  onPress={() => console.log("Notifications clicked")} 
-                />
-              </View>
-            </View>
-
-            <View className="right" style={styles.right}>
-              {logged_in_user && (
-                <View className="account" style={styles.account}>
-                  <ProfilePictureLink logged_in_user={logged_in_user} label="Môj účet" />
-
-                  <Pressable
-                    // onPress={handleGoToProfile}
-                    accessibilityRole="button"
-                    accessibilityLabel="Môj účet" 
-                  >
-                    {({ pressed }) => (
-                      <Text 
-                        className="username"
-
-                        style={[
-                          styles.username,
-                          pressed && { textDecorationLine: "underline" } 
-                        ]}
-                      >
-                        {logged_in_user.username}
-                      </Text>
-                    )}
-                  </Pressable>
+            <View
+              style={[
+                StyleSheet.absoluteFill, 
+                { backgroundColor: transparentize(DARK_BLUE_COLOR, 0.5) }
+              ]} 
+            />
+          
+            <View className="banner" style={styles.banner_content}>
+              <View className="left" style={styles.left}>
+                <View className="upload_post">
+                  <IconButton 
+                    icon_name="photo-film" 
+                    onPress={() => setIsUploadPostFormDialogOpen(true)}
+                  />
                 </View>
-              )}
-
-              {!logged_in_user && (
-                <View className="no_account" style={styles.no_account}>
-                  <Pressable 
-                    // onPress={handleGoToLogin}
-                    accessibilityLabel="Prihlásiť sa"
-                  >
-                    {({ pressed }) => (
-                      <Text 
-                        className="login"
-
-                        style={[
-                          styles.login,
-                          pressed && { textDecorationLine: "underline" } 
-                        ]}
-                      >
-                        Neprihlásený
-                      </Text>
-                    )}
-                  </Pressable>
+    
+                <View className="notifications">
+                  <IconButton 
+                    icon_name="bell" 
+                    onPress={() => console.log("Notifications clicked")} 
+                  />
                 </View>
-              )}
+              </View>
+
+              <View className="right" style={styles.right}>
+                {logged_in_user && (
+                  <View className="account" style={styles.account}>
+                    <ProfilePictureLink logged_in_user={logged_in_user} label="Môj účet" />
+
+                    <Pressable
+                      // onPress={handleGoToProfile}
+                      accessibilityRole="button"
+                      accessibilityLabel="Môj účet" 
+                    >
+                      {({ pressed }) => (
+                        <Text 
+                          className="username"
+
+                          style={[
+                            styles.username,
+                            pressed && { textDecorationLine: "underline" } 
+                          ]}
+                        >
+                          {logged_in_user.username}
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
+
+                {!logged_in_user && (
+                  <View className="no_account" style={styles.no_account}>
+                    <Pressable 
+                      onPress={() => 
+                        (true)}
+                      accessibilityLabel="Prihlásiť sa"
+                    >
+                      {({ pressed }) => (
+                        <Text 
+                          className="login"
+
+                          style={[
+                            styles.login,
+                            pressed && { textDecorationLine: "underline" } 
+                          ]}
+                        >
+                          Neprihlásený
+                        </Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
+              </View>
             </View>
           </View>
-        </View>
 
-        <View className="content" style={styles.content}>
-          <UploadPostFormDialog 
-            visible={isUploadPostFormDialogOpen}
-            onClose={() => setIsUploadPostFormDialogOpen(false)}
-          />
+          <View className="content" style={styles.content}>
+            <LoginFormDialog 
+              visible={is_login_form_dialog_open}
+              onClose={() => setIsLoginFormDialogOpen(false)}
+              onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+            />
 
-          <SearchUsers />
+            <UploadPostFormDialog 
+              visible={is_upload_post_form_dialog_open}
+              onClose={() => setIsUploadPostFormDialogOpen(false)}
+            />
 
-          <Feed />
-        </View>
-      </SafeAreaView>
-    </BackgroundContainer>
+            <SearchUsers />
+
+            <Feed />
+          </View>
+        </SafeAreaView>
+      </BackgroundContainer>
+    </TouchableWithoutFeedback>
   )
 }
 

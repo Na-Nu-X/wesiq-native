@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image } from "react-native"
+import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import SelectPosts from "@/components/SelectPosts"
@@ -68,177 +68,184 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.backdrop}>
-                <BlurView intensity={25} style={StyleSheet.absoluteFill} />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+                <View style={styles.backdrop}>
+                    <BlurView intensity={25} style={StyleSheet.absoluteFill} />
 
-                <View
-                    style={[
-                        StyleSheet.absoluteFill,
-                        { backgroundColor: transparentize(MAIN_COLOR, 0.5) },
-                    ]}
-                />
+                    <View
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { backgroundColor: transparentize(MAIN_COLOR, 0.5) },
+                        ]}
+                    />
 
-                <KeyboardAvoidingView className="upload_post_form" style={styles.upload_post_form}>
-                    <View style={styles.circle_decoration_before} />
-                    <View style={styles.circle_decoration_after} />
+                    <KeyboardAvoidingView 
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{ width: "100%", alignItems: "center" }}
+                    >
+                        <View className="upload_post_form" style={styles.upload_post_form}>
+                            <View style={styles.circle_decoration_before} />
+                            <View style={styles.circle_decoration_after} />
 
-                    <View style={styles.top}>
-                        <View className="back">
-                            <Icon
-                                icon_name="chevron-left"
-                                onPress={onClose}
-                                size={30}
-                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                            />
-                        </View>
-
-                        <Text className="heading" style={styles.heading}>Zdieľať príspevok</Text>
-                    </View>
-
-                    <View className="posts_preview" style={styles.posts_preview}>
-                        <SelectPosts onMediaSelection={handleMediaSelection} />
-
-                        {posts_preview.length > 0 && (
-                            renderPostPreview()
-                        )}
-                    </View>
-
-                    <View className="post_info_container" style={styles.post_info_container}>
-                        <TextInput
-                            className="description"
-                            multiline={true} 
-                            textAlignVertical="top" 
-                            placeholder="Popis príspevku" 
-                            placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel="Popis príspevku" 
-                            value={description}
-                            onChangeText={setDescription}
-                            maxLength={MAX_DESCRIPTION_LENGTH}
-
-                            style={[
-                                styles.description, 
-                                { outlineStyle: "none" } as any
-                            ]}
-                        />
-
-                        <View className="icons" style={styles.icons}>
-                            <View className="settings" style={styles.settings}>
-                                <View className="public_visibility" style={styles.icon}>
+                            <View style={styles.top}>
+                                <View className="back" accessibilityLabel="Zavrieť">
                                     <Icon
-                                        icon_name={public_visibility ? "eye" : "eye-low-vision"}
-                                        onPress={() => setPublicVisibility(previous => !previous)} // Toggles The Value
+                                        icon_name="chevron-left"
+                                        onPress={onClose}
+                                        size={30}
+                                        pressed_style={{ transform: [{ scale: 1.1 }] }}
                                     />
                                 </View>
 
-                                <View className="allow_comments" style={styles.icon}>
-                                    <Icon
-                                        icon_name={allow_comments ? "comment" : "comment-slash"}
-                                        onPress={() => setAllowComments(previous => !previous)} // Toggles The Value
-                                    />
+                                <Text className="heading" style={styles.heading}>Zdieľať príspevok</Text>
+                            </View>
+
+                            <View className="posts_preview" style={styles.posts_preview}>
+                                <SelectPosts onMediaSelection={handleMediaSelection} />
+
+                                {posts_preview.length > 0 && (
+                                    renderPostPreview()
+                                )}
+                            </View>
+
+                            <View className="post_info_container" style={styles.post_info_container}>
+                                <TextInput
+                                    className="description"
+                                    multiline={true} 
+                                    textAlignVertical="top" 
+                                    placeholder="Popis príspevku" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Popis príspevku" 
+                                    value={description}
+                                    onChangeText={setDescription}
+                                    maxLength={MAX_DESCRIPTION_LENGTH}
+
+                                    style={[
+                                        styles.description, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+
+                                <View className="icons" style={styles.icons}>
+                                    <View className="settings" style={styles.settings}>
+                                        <View className="public_visibility" style={styles.icon}>
+                                            <Icon
+                                                icon_name={public_visibility ? "eye" : "eye-low-vision"}
+                                                onPress={() => setPublicVisibility(previous => !previous)} // Toggles The Value
+                                            />
+                                        </View>
+
+                                        <View className="allow_comments" style={styles.icon}>
+                                            <Icon
+                                                icon_name={allow_comments ? "comment" : "comment-slash"}
+                                                onPress={() => setAllowComments(previous => !previous)} // Toggles The Value
+                                            />
+                                        </View>
+
+                                        <View className="hide_likes" style={styles.icon}>
+                                            <Icon
+                                                icon_name="heart"
+                                                onPress={() => setHideLikes(previous => !previous)} // Toggles The Value
+                                                is_regular={hide_likes ? true : false}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    <View className="tags" style={styles.tags}>
+                                        <View className="add_emoji" style={styles.icon}>
+                                            <Icon 
+                                                icon_name="face-surprise"
+                                                onPress={() => setIsEmojiPickerOpen(true)}
+                                            />
+                                        </View>
+
+                                        <View className="tag_user" style={styles.icon}>
+                                            <Icon 
+                                                icon_name="at"
+                                            />
+                                        </View>
+
+                                        <View className="add_hashtag" style={styles.icon}>
+                                            <Icon 
+                                                icon_name="hashtag"
+                                                onPress={addHashtag}
+                                            />
+                                        </View>
+                                    </View>
                                 </View>
 
-                                <View className="hide_likes" style={styles.icon}>
-                                    <Icon
-                                        icon_name="heart"
-                                        onPress={() => setHideLikes(previous => !previous)} // Toggles The Value
-                                        is_regular={hide_likes ? true : false}
-                                    />
+                                <EmojiPicker
+                                    onEmojiSelected={handleEmojiSelect}
+                                    open={is_emoji_picker_open}
+                                    onClose={() => setIsEmojiPickerOpen(false)}
+
+                                    translation={{
+                                        smileys_emotion: "Smajlíky",
+                                        people_body: "Ľudia", 
+                                        recently_used: "Naposledy použité",
+                                        animals_nature: "Zvieratá",
+                                        food_drink: "Jedlo a nápoje",
+                                        activities: "Aktivity",
+                                        travel_places: "Cestovanie",
+                                        objects: "Predmety",
+                                        symbols: "Symboly",
+                                        flags: "Vlajky",
+                                        search: "Hľadať...",
+                                    }}
+                                />
+
+                                <View className="users_for_tag_container_wrapper" style={styles.users_for_tag_container_wrapper}>
+                                    <View className="users_for_tag_container" style={styles.users_for_tag_container}></View>
                                 </View>
                             </View>
 
-                            <View className="tags" style={styles.tags}>
-                                <View className="add_emoji" style={styles.icon}>
-                                    <Icon 
-                                        icon_name="face-surprise"
-                                        onPress={() => setIsEmojiPickerOpen(true)}
+                            <View className="tagged_users_container" style={styles.tagged_users_container}></View>
+
+                            <View className="location_container" style={styles.location_container}>
+                                <View className="location_input_container" style={styles.location_input_container}>
+                                    <View className="location_icon" style={styles.location_icon}>
+                                        <Icon icon_name="location-arrow" />
+                                    </View>
+
+                                    <TextInput
+                                        className="location"
+                                        textAlignVertical="top" 
+                                        placeholder="Miesto" 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel="Miesto" 
+                                        maxLength={255}
+
+                                        style={[
+                                            styles.location, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
                                     />
                                 </View>
 
-                                <View className="tag_user" style={styles.icon}>
-                                    <Icon 
-                                        icon_name="at"
-                                    />
-                                </View>
-
-                                <View className="add_hashtag" style={styles.icon}>
-                                    <Icon 
-                                        icon_name="hashtag"
-                                        onPress={addHashtag}
-                                    />
+                                <View className="location_results_container">
+                                    <View className="loading hidden"></View>
+                                    <View className="location_results hidden"></View>
                                 </View>
                             </View>
-                        </View>
 
-                        <EmojiPicker
-                            onEmojiSelected={handleEmojiSelect}
-                            open={is_emoji_picker_open}
-                            onClose={() => setIsEmojiPickerOpen(false)}
+                            <Text className="form_report error" style={styles.form_report}></Text>
 
-                            translation={{
-                                smileys_emotion: "Smajlíky",
-                                people_body: "Ľudia", 
-                                recently_used: "Naposledy použité",
-                                animals_nature: "Zvieratá",
-                                food_drink: "Jedlo a nápoje",
-                                activities: "Aktivity",
-                                travel_places: "Cestovanie",
-                                objects: "Predmety",
-                                symbols: "Symboly",
-                                flags: "Vlajky",
-                                search: "Hľadať...",
-                            }}
-                        />
-
-                        <View className="users_for_tag_container_wrapper" style={styles.users_for_tag_container_wrapper}>
-                            <View className="users_for_tag_container" style={styles.users_for_tag_container}></View>
-                        </View>
-                    </View>
-
-                    <View className="tagged_users_container" style={styles.tagged_users_container}></View>
-
-                    <View className="location_container" style={styles.location_container}>
-                        <View className="location_input_container" style={styles.location_input_container}>
-                            <View className="location_icon" style={styles.location_icon}>
-                                <Icon icon_name="location-arrow" />
-                            </View>
-
-                            <TextInput
-                                className="location"
-                                textAlignVertical="top" 
-                                placeholder="Miesto" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Miesto" 
-                                maxLength={255}
+                            <Pressable 
+                                className="upload_post_form_submit"
+                                onPress={() => console.log("TEST")}
+                                accessibilityLabel="Uverejniť príspevok"
 
                                 style={[
-                                    styles.location, 
+                                    styles.upload_post_form_submit, 
                                     { outlineStyle: "none" } as any
                                 ]}
-                            />
+                            >
+                                <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uverejniť príspevok</Text>
+                            </Pressable>
                         </View>
-
-                        <View className="location_results_container">
-                            <View className="loading hidden"></View>
-                            <View className="location_results hidden"></View>
-                        </View>
-                    </View>
-
-                    <Text className="form_report error"></Text>
-
-                    <Pressable 
-                        className="upload_post_form_submit"
-                        onPress={() => console.log("TEST")}
-                        accessibilityLabel="Uverejniť príspevok"
-
-                        style={[
-                            styles.upload_post_form_submit, 
-                            { outlineStyle: "none" } as any
-                        ]}
-                    >
-                        <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uverejniť príspevok</Text>
-                    </Pressable>
-                </KeyboardAvoidingView>
-            </View>
+                    </KeyboardAvoidingView>
+                </View>
+            </TouchableWithoutFeedback>
         </Modal>
     )
 }
@@ -564,9 +571,7 @@ const styles = StyleSheet.create({
     },
 
     form_report: {
-        position: "absolute",
-        left: "50%",
-        transform: [{ translateX: "-50%" }],
+        alignSelf: "center",
         // font-size: 0.9em;
     },
 

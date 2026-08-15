@@ -55,12 +55,7 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
     const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
 
     if(!permission_result.granted) {
-      // Shows The Alert
-      Alert.alert(
-        "Prístup zamietnutý", 
-        "Pre výber fotiek a videí musíte povoliť prístup."
-      )
-
+      Alert.alert("Prístup zamietnutý", "Pre výber fotiek a videí musíte povoliť prístup.") // Shows The Alert
       return
     }
 
