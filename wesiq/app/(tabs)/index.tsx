@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, StyleSheet, SafeAreaView, Pressable, Text, TouchableWithoutFeedback, Keyboard } from "react-native"
+import { View, StyleSheet, SafeAreaView, Pressable, Text, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native"
 import IconButton from "@/components/IconButton"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
@@ -51,7 +51,7 @@ export default function HomeScreen() {
               <View className="right" style={styles.right}>
                 {logged_in_user && (
                   <View className="account" style={styles.account}>
-                    <ProfilePictureLink logged_in_user={logged_in_user} label="Môj účet" />
+                    <ProfilePictureLink user={logged_in_user} label="Môj účet" />
 
                     <Pressable
                       // onPress={handleGoToProfile}
@@ -100,7 +100,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <View className="content" style={styles.content}>
+          <ScrollView className="content" style={styles.content}>
             <LoginFormDialog 
               visible={is_login_form_dialog_open}
               onClose={() => setIsLoginFormDialogOpen(false)}
@@ -115,7 +115,7 @@ export default function HomeScreen() {
             <SearchUsers />
 
             <Feed />
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </BackgroundContainer>
     </TouchableWithoutFeedback>
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    flex: 1,
     padding: 20,
   },
 })

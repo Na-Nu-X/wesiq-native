@@ -98,7 +98,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
         Keyboard.dismiss() // Hides The Keyboard
     
         if(!identifier.trim() || !password.trim()) {
-            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre prihlásenie.")
+            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre prihlásenie.") // Shows The Alert
             return
         }
     
@@ -122,13 +122,13 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
     
             const login_data = await login_response.json() // Gets The Login Data
     
-            if(login_data.success === true) {
+            if(login_data.success) {
                 if(login_data.access) await AsyncStorage.setItem("user_token", login_data.access) // Stores The User Token
-                Alert.alert("Úspech", login_data.message)
+                Alert.alert("Úspech", login_data.message) // Shows The Alert
             } 
             
             else {
-                Alert.alert("Chyba", login_data.message)
+                Alert.alert("Chyba", login_data.message) // Shows The Alert
             }
     
         } 
@@ -168,7 +168,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
                 return null
             }
     
-            if(logged_in_user_data.success === true) {
+            if(logged_in_user_data.success) {
                 setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
                 return logged_in_user_data.logged_in_user
             } 

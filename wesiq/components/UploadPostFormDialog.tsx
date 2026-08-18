@@ -155,6 +155,7 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
                                         <View className="add_emoji" style={styles.icon}>
                                             <Icon 
                                                 icon_name="face-surprise"
+                                                is_regular={true}
                                                 onPress={() => setIsEmojiPickerOpen(true)}
                                             />
                                         </View>

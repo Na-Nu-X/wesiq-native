@@ -65,7 +65,7 @@ export default function SearchUsers() {
             
             catch(error) {
                 console.error("Pri načítavaní užívateľov došlo k chybe: ", error)
-                Alert.alert("Chyba", "Pri načítavaní užívateľov došlo k chybe.")
+                Alert.alert("Chyba", "Pri načítavaní užívateľov došlo k chybe.") // Shows The Alert
             }
         }
 
@@ -122,7 +122,7 @@ export default function SearchUsers() {
         
         catch(error) {
             console.error("Pri ukladaní histórie užívateľov došlo k chybe: ", error)
-            Alert.alert("Chyba", "Pri ukladaní histórie užívateľov došlo k chybe.")
+            Alert.alert("Chyba", "Pri ukladaní histórie užívateľov došlo k chybe.") // Shows The Alert
         }
     }
 
