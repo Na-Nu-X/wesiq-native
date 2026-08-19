@@ -6,7 +6,9 @@ import type { LoggedInUser } from "./LoginFormDialog"
 import type { User } from "./Feed"
 
 type IconProps = {
-    user:LoggedInUser|User|null,
+    user_id:number,
+    user_profile_picture_name:string|null,
+    user_subscription:boolean,
     label:string,
     width?:number,
     height?:number
@@ -14,11 +16,9 @@ type IconProps = {
 
 const AnimatedImage = Animated.createAnimatedComponent(Image) // Creates The Animated Image Element
 
-export default function ProfilePictureLink({ user = null, label = "Môj účet", width = 32, height = 32 }:IconProps) {
+export default function ProfilePictureLink({ user_id, user_profile_picture_name, user_subscription, label = "Môj účet", width = 32, height = 32 }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
-
-    if(!user) return null
 
     // Function For Handle Press In
     const handlePressIn = () => {
@@ -59,17 +59,17 @@ export default function ProfilePictureLink({ user = null, label = "Môj účet",
             <View className="profile_picture_container" style={styles.profile_picture_container}>
                 <AnimatedImage 
                     className={`profile_picture skeleton_loading ${
-                        user.subscription && user.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
+                        user_subscription ? "subscriber" : "" // Adds The Subscriber Class
                     }`}
 
                     source={
-                        user.profile_picture_name ? { uri: `https://wesiq.com/media/images/${user.id}/${user.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        user_profile_picture_name ? { uri: `https://wesiq.com/media/images/${user_id}/${user_profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                     }
 
                     style={[
                         styles.profile_picture,
                         { width: width, height: height },
-                        user.subscription && user.subscription.is_active && styles.subscriber_profile_picture,
+                        user_subscription && styles.subscriber_profile_picture,
                         { transform: [{ scale: animated_scale }] }
                     ]}
                 />

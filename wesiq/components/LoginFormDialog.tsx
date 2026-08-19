@@ -17,12 +17,15 @@ export interface LoggedInUser {
     username:string,
     profile_picture_name:string,
     friend_code:string,
+    saved_posts:number[],
     private_account:boolean,
     followers:number,
 
     subscription:{
         is_active:boolean
-    }
+    },
+
+    data_saving_mode:boolean
 }
 
 type LoginFormDialogProps = {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image } from "react-native"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share } from "react-native"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -115,7 +115,7 @@ export interface comment {
 }
 
 export default function Feed() {
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Information If The Upload Post Form Dialog Is Open
+    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     
     const [processing_posts, setProcessingPosts] = useState<Post[]>([]) // Stores The Processing Posts
     const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
@@ -135,6 +135,49 @@ export default function Feed() {
 
     const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
 
+    // Function For Get The Logged In User
+    const getLoggedInUser = async () => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+    
+            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+
+            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+                await AsyncStorage.removeItem("user_token") // Removes The User Token
+                setLoggedInUser(null) // Removes The Logged In User
+                return null
+            }
+    
+            if(logged_in_user_data.success) {
+                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user
+            } 
+            
+            else return null
+    
+        } 
+        
+        catch {
+            return null
+        }
+    }
+
+    // Initializes The Get Logged In User
+    useEffect(() => {
+        getLoggedInUser() // Gets The Logged In User
+    }, [])
+
     // Function For Load Posts
     const loadPosts = async (page:number = 1, is_refresh:boolean = false) => {
         if(are_posts_loading || (!has_next && !is_refresh)) return
@@ -146,7 +189,7 @@ export default function Feed() {
     
             // Sends The POST Request To The Server
             const loaded_posts_response:Response = await fetch(`${API_URL}/get-posts/?page=${page}&searched_text=${encodeURIComponent(search_text)}`, {
-                method: "GET", // API sme zmenili na GET
+                method: "GET",
 
                 headers: {
                     "Content-Type": "application/json",
@@ -230,7 +273,7 @@ export default function Feed() {
     
             // Sends The POST Request To The Server
             const loaded_post_comments_response:Response = await fetch(`${API_URL}/get-post-comments/?post_id=${post_id}&page=${page}&searched_text=${encodeURIComponent(search_text)}`, {
-                method: "GET", // API sme zmenili na GET
+                method: "GET",
 
                 headers: {
                     "Content-Type": "application/json",
@@ -326,12 +369,12 @@ export default function Feed() {
     }
 
     // Function For Load Comments
-    const loadComments = () => {
-        return (
+    const loadComments = (post_comments:comment[]) => {
+        return post_comments.map((one_post_comment:comment, index:number) => (
             <View className="one_comment" style={styles.one_comment}>
                 <View className="comment_container" style={styles.comment_container}>
                     <View className="user" style={styles.user}>
-                        {/* <ProfilePictureLink user={one_comment.user} label="Zobraziť užívateľa" /> */}
+                        <ProfilePictureLink user_id={one_post_comment.user.id} user_profile_picture_name={one_post_comment.user.profile_picture_name || null} user_subscription={one_post_comment.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
                         <Text className="username" style={{ fontWeight: "bold" }}></Text>
 
                         {/* <button 
@@ -385,30 +428,31 @@ export default function Feed() {
                         ></Text>
 
                         <View className="likes_container" style={styles.likes_container}>
-                            <View className="likes" accessibilityLabel="Páči sa mi...">
+                            <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.comment_likes}>
                                 <Icon
                                     icon_name="heart"
                                     // onPress={}
-                                    // is_regular={logged_in_user && one_comment.likes_from_users.includes(logged_in_user.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                                    is_regular={logged_in_user && one_post_comment.likes_from_users.includes(logged_in_user.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                                    pressed_color={RED_COLOR}
                                 />
 
-                                {/* <Text className="likes_counter">{one_comment.likes}</Text> */}
+                                <Text className="likes_counter" style={styles.comment_likes_counter}>{one_post_comment.likes}</Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
-                <View className="interactions">
-                    <View className="date" accessibilityLabel="Dátum zverejnenia">
-                        <Text></Text>
+                <View className="interactions" style={styles.interactions}>
+                    <View className="date" accessibilityLabel="Dátum zverejnenia" style={styles.date}>
+                        <Text style={styles.date_text}></Text>
                     </View>
                 </View>
                 
-                <View className="reply_container hidden">
+                <View className="reply_container hidden" style={styles.reply_container}>
 
                 </View>
             </View>
-        )
+        ))
 
         //     const post_id:number = Number(post_container.dataset["post_id"]) // Gets The Post ID
         //     const page:number = Number(all_comments.dataset["page"]) || 1 // Gets The Current Page Number
@@ -524,6 +568,210 @@ export default function Feed() {
         //     }
     }
 
+    // Function For Toggle Post Like
+    const togglePostLike = async (post_id:number) => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const toggle_post_like_response:Response = await fetch(`${API_URL}/toggle-post-like/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_id: post_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_post_like_response.ok) {
+                Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const toggle_post_like_data:loadedPostCommentsResponse = await toggle_post_like_response.json() // Gets The Loaded Post Comments Data
+
+            // If The Response Isn't Success
+            if(!toggle_post_like_data.success) {
+                Alert.alert("Chyba", toggle_post_like_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                // Sets The Posts
+                setPosts(previous_posts => previous_posts.map((one_post:Post) => {
+                    if(one_post.id === post_id) {
+                        const has_like:boolean = one_post.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
+
+                        // if(!has_like) generateHeartParticles(particles) // Generates The Heart Particles
+                        
+                        // Updates The Post Likes Amount And Stored Likes From Users
+                        return {
+                            ...one_post,
+                            likes: has_like ? one_post.likes - 1 : one_post.likes + 1,
+                            likes_from_users: has_like 
+                                ? one_post.likes_from_users.filter(id => id !== logged_in_user.id) 
+                                : [...one_post.likes_from_users, logged_in_user.id]
+                        }
+                    }
+
+                    return one_post // Returns The Unchanged Post
+                }))
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // // Function For Generates The Heart Particles
+    // function generateHeartParticles(particles:HTMLDivElement):void {
+    //     particles.innerHTML = "" // Deletes The Particles Container
+
+    //     const heart_amount:number = generateNumberRange(1, 5) // 1 - 5 Hearts
+
+    //     for(let i:number = 0; i < heart_amount; i++) {
+    //         // https://fontawesome.com/icons/heart
+    //         const heart:HTMLElement = document.createElement("i") // Creates The Heart Icon 
+    //         const heart_classes:string[] = ["fa-solid", "fa-regular"] // Stores The Heart Classes
+    //         const random_heart_classes_index:number = Math.floor(Math.random() * heart_classes.length) // Gets The Random Index Of Heart Classes
+        
+    //         heart.classList.add("fa-heart", heart_classes[random_heart_classes_index] as string) // Adds The Classes
+
+    //         heart.style.setProperty("--x", `${generateNumberRange(20, 110)}px`) // Generates And Sets The Random X Position
+    //         heart.style.setProperty("--y", `-${generateNumberRange(20, 110)}px`) // Generates And Sets The Random Y Position
+
+    //         particles.appendChild(heart) // Appends The Heart To The Particles Container
+    //     }
+    // }
+
+    // Function For Share The Post
+    const sharePost = async (post_id: number, username: string) => {
+        // const link:string = interpolate(gettext("/sk/prispevok/%s"), [post_id]) // Sets The Link To The Post
+        const link: string = `${API_URL}/sk/prispevok/${post_id}` // Sets The Link To The Post
+    
+        try {
+            const result = await Share.share({
+                message: `Wesiq - Príspevok užívateľa ${username}\n${link}`,
+                url: link, // Only IOS
+                title: `Wesiq - Príspevok užívateľa ${username}`
+            })
+    
+            if(result.action === Share.sharedAction) {
+                if(result.activityType) console.log("Zdieľané cez: ", result.activityType) // Only IOS
+                else console.log("Úspešne zdieľané")
+            } 
+            
+            else if(result.action === Share.dismissedAction) console.log("Zdieľanie zrušené") // Only IOS
+        } 
+
+        catch(error:any) {
+            Alert.alert("Chyba", "Nepodarilo sa otvoriť menu na zdieľanie.")
+        }
+    }
+
+    // Function For Save Or Unsave The Post
+    const togglePostSave = async (post_id:number) => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Príspevok nie je možné uložiť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const toggle_post_save_response:Response = await fetch(`${API_URL}/toggle-post-save/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_id: post_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_post_save_response.ok) {
+                Alert.alert("Chyba", "Pri zmene uloženia príspevku došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const toggle_post_save_data:loadedPostCommentsResponse = await toggle_post_save_response.json() // Gets The Loaded Post Comments Data
+
+            // If The Response Isn't Success
+            if(!toggle_post_save_data.success) {
+                Alert.alert("Chyba", toggle_post_save_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                // Sets The Logged In User
+                setLoggedInUser((previous_user:LoggedInUser|null) => {
+                    if(!previous_user) return null
+
+                    const has_save:boolean = previous_user.saved_posts.includes(post_id) // Checks If The User Had Already Saved The Post
+            
+                    // Updates The Saved Posts
+                    return {
+                        ...previous_user,
+                        saved_posts: has_save
+                            ? previous_user.saved_posts.filter(id => id !== post_id) // Removes The Post From The Saved Posts
+                            : [...previous_user.saved_posts, post_id] // Adds The Post To The Saved Posts
+                    }
+                })
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri zmene uloženia príspevku došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // // Function For Save Or Unsave The Post
+    // export async function togglePostSave(icon:HTMLElement, id:number):Promise<void> {
+    //     try {
+    //         const toggle_post_save_response:response = await sendPOST(window.location.pathname, id, "toggle-post-save") // Sends Saved Post ID As A POST Data
+
+    //         // If The Response Isn't Success
+    //         if(!toggle_post_save_response.success) {
+    //             displayMessage(toggle_post_save_response.message, "error") // Displays The Error Message
+    //             return
+    //         }
+
+    //         // Save (If The Save Icon Is Inactive)
+    //         if(!icon.classList.contains("active")) {
+    //             icon.classList.add("active") // Adds The Active Class
+    //             icon.classList.replace("fa-regular", "fa-solid") // Adds Filled Bookmark Image
+    //         }
+
+    //         // Unsave (If The Save Icon Is Active)
+    //         else if(icon.classList.contains("active")) {
+    //             icon.classList.remove("active") // Removes The Active Class
+    //             icon.classList.replace("fa-solid", "fa-regular") // Adds Empty Bookmark Image
+    //         }
+    //     }
+
+    //     catch {
+    //         displayMessage(gettext("Pri zmene uloženia príspevku došlo k chybe."), "error") // Displays The Error Message
+    //     }
+    // }
+
     return (
         <View className="feed" style={styles.feed}>
             <View className="search_posts_container" style={styles.search_posts_container}>
@@ -583,7 +831,7 @@ export default function Feed() {
 
                         <View className="header">
                             <View className="left">
-                                <ProfilePictureLink user={one_processing_post.user} label="Zobraziť užívateľa" />
+                                <ProfilePictureLink user_id={one_processing_post.user.id} user_profile_picture_name={one_processing_post.user.profile_picture_name || null} user_subscription={one_processing_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
                             </View>
 
                             <View className="right">
@@ -606,7 +854,7 @@ export default function Feed() {
                     <View className="post_container" key={one_post.id} style={styles.post_container}>
                         <View className="header" style={styles.header}>
                             <View className="left">
-                                <ProfilePictureLink user={one_post.user} label="Zobraziť užívateľa" width={45} height={45} />
+                                <ProfilePictureLink user_id={one_post.user.id} user_profile_picture_name={one_post.user.profile_picture_name || null} user_subscription={one_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" width={45} height={45} />
                             </View>
 
                             <View className="right" style={styles.right}>
@@ -1141,16 +1389,10 @@ export default function Feed() {
                                     <Icon
                                         icon_name="heart"
                                         size={25}
-                                        // onPress={}
+                                        onPress={() => togglePostLike(one_post.id)}
                                         is_regular={logged_in_user && one_post.likes_from_users.includes(logged_in_user.id) ? false : true} // Shows The Empty Or Filled Heart Icon
-
-                                        // transition: color 0.3s ease, transform 0.2s ease;
-                                
-                                        // &:hover {
-                                        //     color: $red-color !important;
-                                        //     transform: scale(1.1);
-                                        //     cursor: pointer;
-                                        // }
+                                        color={logged_in_user && one_post.likes_from_users.includes(logged_in_user.id) ? RED_COLOR : BLUE_COLOR} // Shows The Red Pr Blue Colored Heart Icon
+                                        pressed_color={RED_COLOR}
                                     />
                                 </View>
 
@@ -1179,7 +1421,7 @@ export default function Feed() {
                             <View className="share" accessibilityLabel="Zdielať...">
                                 <Icon
                                     icon_name="share-nodes"
-                                    // onPress={}
+                                    onPress={() => sharePost(one_post.id, one_post.user.username)}
                                     size={25}
                                 />
                             </View>
@@ -1237,14 +1479,17 @@ export default function Feed() {
                                 ))
                             )}
 
-                            {/* <View className={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? "save active" : ""} accessibilityLabel="Uložiť..."> */}
-                            <View className="save" accessibilityLabel="Uložiť...">
-                                <Icon
-                                    icon_name="bookmark"
-                                    // onPress={}
-                                    size={25}
-                                    // is_regular={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? false : true} // Shows The Empty Or Filled Heart Icon
-                                />
+                            <View className={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? "save active" : ""} accessibilityLabel="Uložiť...">
+                                <View className="save" accessibilityLabel="Uložiť...">
+                                    <Icon
+                                        icon_name="bookmark"
+                                        onPress={() => togglePostSave(one_post.id)}
+                                        size={25}
+                                        is_regular={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                                        color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : BLUE_COLOR}
+                                        pressed_color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
+                                    />
+                                </View>
                             </View>
                         </View>
 
@@ -1260,14 +1505,14 @@ export default function Feed() {
                             <View className="comment_forum" style={styles.comment_forum}>
                                 <View className="all_comments" style={styles.all_comments}>
                                     {/* Loads The Comments */}
-                                    {one_post.comments_amount > 0 && loadComments()}
+                                    {one_post.comments_amount > 0 && loadComments(post_comments)}
 
-                                    <Pressable className="show_more hidden" onPress={() => getPostComments(post_comments_page, false, one_post.id)}>
+                                    <Pressable className="show_more hidden" onPress={() => getPostComments(post_comments_page, false, one_post.id)} style={styles.show_more}>
                                         <Text>Zobraziť viac</Text>
                                     </Pressable>
                                 </View>
 
-                                <View className="write_comment_form">
+                                <View className="write_comment_form" style={styles.write_comment_form}>
                                     <TextInput
                                         className="comment"
                                         textAlignVertical="top" 
@@ -1279,16 +1524,19 @@ export default function Feed() {
                                         maxLength={100}
 
                                         style={[
-                                            // styles.comment, 
+                                            styles.write_comment_form_comment, 
                                             { outlineStyle: "none" } as any
                                         ]}
                                     />
 
-                                    <ProfilePictureLink user={logged_in_user} label="Môj účet" />
+                                    {logged_in_user && (
+                                        <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                    )}
 
                                     <View 
                                         className="add_emoji"
                                         accessibilityLabel="Pridať emoji"
+                                        style={styles.add_emoji}
                                     >
                                         <Icon 
                                             icon_name="face-surprise"
@@ -1322,6 +1570,7 @@ export default function Feed() {
                                         accessibilityLabel="Odoslať komentár"
                                         accessibilityRole="button"
                                         // onPress={sendComment}
+                                        style={styles.send}
                                     >
                                         <Svg 
                                             width={24} 
@@ -2267,7 +2516,7 @@ const styles = StyleSheet.create({
         // }
     },
 
-    leading_line_vertical: {
+    comment_leading_line_vertical: {
         position: "absolute",
         top: 38,
         left: 6 + 38 / 2,
@@ -2291,329 +2540,205 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
-    }
+    },
+    
+    profile_picture: {
+        width: 16,
+        height: 16,
+        borderRadius: "50%",
+        opacity: 0.8,
+    },
+
+    comment_likes: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        height: 20,
+    },
+
+    comment_likes_counter: {
+        color: BLUE_COLOR,
+    },
+
+    interactions: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginLeft: 6 + 10 + 38,
+        paddingRight: 10,
+    },
+
+    date: {
+        marginLeft: "auto",
+    },
+
+    date_text: {
+        fontSize: 15,
+        fontStyle: "italic",
+        color: LIGHT_BLUE_COLOR,
+    },
+
+    reply_container: {
+        position: "relative",
+        marginTop: 10,
+        marginLeft: 6 + 10 + 32,
+        marginRight: 10,
+
+        // &.hidden {
+        //     display: none;
+        // }
+    },
+
+    reply_leading_line_vertical: {
+        position: "absolute",
+        top: 0,
+        bottom: 82,
+        left: 6 + 32 / 2,
+        width: 1,
+        backgroundColor: "#333333",
+    },
+
+    one_reply: {
+        // &::before {
+        //     display: none;
+        // }
+
+        // &.first_level_reply {
+        //     > .comment_container {
+        //         &::before {
+        //             left: -15px;
+        //             width: 15px;
+        //         }
+
+        //         &::after {
+        //             left: -29px;
+        //         }
+        //     }
+        // }
+    },
+
+    reply_leading_line_vertical_hidden: {
+        position: "absolute",
+        top: 103,
+        left: 6 + 32 / 2,
+        width: 1,
+        height: 196,
+        backgroundColor: "transparent",
+    },
+
+    reply_comment_container: {
+        position: "relative",
+    },
+
+    reply_leading_line_horizontal: {
+        position: "absolute",
+        top: 32 / 2,
+        left: -18,
+        width: 18,
+        height: 1,
+        backgroundColor: "#333333",
+    },
+
+    reply_leading_line_rounded: {
+        position: "absolute",
+        top: 3,
+        left: -32,
+        width: 28 / 2,
+        height: 28 / 2,
+        borderBottomWidth: 1,
+        borderBottomColor: "#333333",
+        borderLeftWidth: 1,
+        borderLeftColor: "#333333",
+        borderBottomLeftRadius: MEDIUM_BORDER_RADIUS,
+    },
+
+    // .one_comment .comment_container .user a .profile_picture {
+    //     width: 32px;
+    //     height: 32px;
+    // }
+
+    show_more: {
+        marginHorizontal: "auto",
+        marginBottom: 10,
+        color: LIGHT_BLUE_COLOR,
+
+        // &.hidden {
+        //     display: none;
+        // }
+
+        // &:hover,
+        // &:active {
+        //     text-decoration: underline;
+        //     cursor: pointer;
+        // }
+    },
+
+    write_comment_form: {
+        position: "relative",
+        marginTop: 8,
+    },
+
+    write_comment_form_comment: {
+        width: "100%",
+        minHeight: 50,
+        // field-sizing: content;
+        paddingVertical: 12,
+        paddingRight: 30 + 10 + 10,
+        paddingLeft: 38 + 6 + 10 + 15 + 10,
+        textAlign: "left",
+        color: SECONDARY_COLOR,
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: BIG_BORDER_RADIUS,
+        // transition: padding 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+
+        // &:empty::before {
+        //     content: attr(data-placeholder);
+        //     color: $light-blue-color;
+        //     cursor: text;
+        // }
+
+        // &:hover,
+        // &:focus {
+        //     border-color: $blue-color;
+        // }
+    },
+
+    add_emoji: {
+        position: "absolute",
+        top: 24,
+        left: 6 + 38 + 10,
+        transform: [{ translateY: "-50%" }],
+    },
+
+    send: {
+        position: "absolute",
+        top: "50%",
+        right: 10,
+        transform: [{ translateY: "-50%" }],
+        width: 30,
+        height: 30,
+        color: BLUE_COLOR,
+        // transition: transform 0.2s ease, color 0.3s ease;
+
+        // &:hover {
+        //     transform: translateY(-50%) scale(1.1);
+        //     color: $dark-blue-color;
+        //     cursor: pointer;
+        // }
+    },
+
+    feed_report: {
+        display: "none",
+        maxWidth: MAIN_WIDTH,
+        width: "100%",
+        padding: 20,
+        textAlign: "center",
+        color: LIGHT_BLUE_COLOR,
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        // backdrop-filter: blur(5px);
+    },
 })
-
-// .comment_forum {
-//                     .likes_container {
-//                         display: flex;
-//                         align-items: center;
-//                         gap: 10px;
-
-//                         .profile_picture {
-//                             width: 16px;
-//                             height: 16px;
-//                             border-radius: 50%;
-//                             opacity: 0.8;
-//                             cursor: pointer;
-//                         }
-
-//                         .likes {
-//                             all: unset;
-//                             display: flex;
-//                             align-items: center;
-//                             gap: 5px;
-//                             height: 20px;
-        
-//                             .fa-heart {
-//                                 display: block;
-//                                 color: $blue-color;
-        
-//                                 &:hover {
-//                                     color: $red-color !important;
-//                                     cursor: pointer;
-//                                     transition: color 0.3s ease;
-//                                 }
-//                             }
-        
-//                             .fa-solid {
-//                                 color: $red-color;
-//                             }
-        
-//                             .likes_counter {
-//                                 display: inline-block;
-//                                 color: $blue-color;
-//                             }
-//                         }
-//                     }
-//                 }
-//             }
-
-//             .interactions {
-//                 display: flex;
-//                 align-items: center;
-//                 gap: 10px;
-//                 margin-left: 6px + 10px + 38px;
-//                 padding-right: 10px;
-
-//                 .reply {
-//                     all: unset;
-
-//                     .fa-comment,
-//                     .fa-comment-slash {
-//                         @include icon;
-//                         display: block;
-//                     }
-//                 }
-
-//                 .likes {
-//                     display: flex;
-//                     align-items: center;
-//                     gap: 5px;
-//                     height: 20px;
-
-//                     .fa-heart {
-//                         display: block;
-//                         color: $blue-color;
-
-//                         &:hover {
-//                             color: $red-color !important;
-//                             cursor: pointer;
-//                             transition: color 0.3s ease;
-//                         }
-//                     }
-
-//                     .fa-solid {
-//                         color: $red-color;
-//                     }
-
-//                     .likes_counter {
-//                         display: inline-block;
-//                         color: $blue-color;
-//                     }
-//                 }
-
-//                 .date {
-//                     margin-left: auto;
-
-//                     p {
-//                         font-size: 0.8em;
-//                         font-style: italic;
-//                         color: $light-blue-color;
-//                     }
-//                 }
-
-//                 .show_replies {
-//                     all: unset;
-
-//                     .fa-angle-down,
-//                     .fa-angle-up {
-//                         @include icon;
-//                         display: block;
-//                     }
-//                 }
-//             }
-
-//             .reply_container {
-//                 position: relative;
-//                 margin-top: 10px;
-//                 margin-left: 6px + 10px + 32px;
-//                 margin-right: 10px;
-
-//                 &::before {
-//                     content: "";
-//                     position: absolute;
-//                     top: 0px;
-//                     bottom: 82px;
-//                     left: calc(6px + 32px / 2);
-//                     width: 1px;
-//                     background-color: lighten($main-color, 20%);
-//                 }
-
-//                 &.hidden {
-//                     display: none;
-//                 }
-
-//                 .one_comment {
-//                     &::before {
-//                         display: none;
-//                     }
-
-//                     &::after {
-//                         content: "";
-//                         position: absolute;
-//                         top: 103px;
-//                         left: calc(6px + 32px / 2);
-//                         width: 1px;
-//                         height: 196px;
-//                         background-color: transparent;
-//                     }
-
-//                     &.first_level_reply {
-//                         > .comment_container {
-//                             &::before {
-//                                 left: -15px;
-//                                 width: 15px;
-//                             }
-
-//                             &::after {
-//                                 left: -29px;
-//                             }
-//                         }
-//                     }
-
-//                     .comment_container {
-//                         position: relative;
-
-//                         &::before {
-//                             content: "";
-//                             position: absolute;
-//                             top: calc(32px / 2);
-//                             left: -18px;
-//                             width: 18px;
-//                             height: 1px;
-//                             background-color: lighten($main-color, 20%);
-//                         }
-
-//                         &::after {
-//                             content: "";
-//                             position: absolute;
-//                             top: 3px;
-//                             left: -32px;
-//                             width: calc(28px / 2);
-//                             height: calc(28px / 2);
-//                             border-bottom: 1px solid lighten($main-color, 20%);
-//                             border-left: 1px solid lighten($main-color, 20%);
-//                             border-bottom-left-radius: $medium-border-radius;
-//                         }
-//                     }
-//                 }
-
-//                 .one_comment .comment_container .user a .profile_picture {
-//                     width: 32px;
-//                     height: 32px;
-//                 }
-//             }
-//         }
-
-//         .show_more {
-//             all: unset;
-//             display: block;
-//             margin: 0px auto 10px;
-//             color: $light-blue-color;
-
-//             &.hidden {
-//                 display: none;
-//             }
-
-//             &:hover,
-//             &:active {
-//                 text-decoration: underline;
-//                 cursor: pointer;
-//             }
-//         }
-//     }
-
-//     .write_comment_form {
-//         position: relative;
-//         margin-top: 8px;
-
-//         .comment {
-//             width: 100%;
-//             min-height: 50px;
-//             field-sizing: content;
-//             padding-top: 12px;
-//             padding-right: 30px + 10px + 10px;
-//             padding-bottom: 12px;
-//             padding-left: 38px + 6px + 10px + 15px + 10px;
-//             text-align: left;
-//             background: transparent;
-//             color: $secondary-color;
-//             border: 1px solid transparentize($blue-color, 0.5);
-//             border-radius: $big-border-radius;
-//             outline: none;
-//             transition: padding 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-
-//             &:empty::before {
-//                 content: attr(data-placeholder);
-//                 color: $light-blue-color;
-//                 cursor: text;
-//             }
-
-//             &:hover,
-//             &:focus {
-//                 border-color: $blue-color;
-//             }
-            
-//             .tag,
-//             .hashtag {
-//                 display: inline-block;
-//                 height: 25px;
-//                 line-height: 25px;
-//                 padding: 0px 5px;
-//                 border-radius: $small-border-radius;
-//                 font-size: 0.8em;
-//             }
-
-//             .tag {
-//                 background-color: transparentize($blue-color, 0.8);
-//                 color: $blue-color;
-//             }
-
-//             .hashtag {
-//                 background-color: transparentize($green-color, 0.9);
-//                 color: $green-color;
-//             }
-//         }
-
-//         .profile_picture {
-//             position: absolute;
-//             top: 6px;
-//             left: 6px;
-//             width: 38px;
-//             height: 38px;
-//             padding: 2px;
-//             border: 1px solid $secondary-color;
-//             border-radius: 50%;
-//         }
-
-//         .add_emoji {
-//             all: unset;
-//             position: absolute;
-//             top: 24px;
-//             left: calc(6px + 38px + 10px);
-//             transform: translateY(-50%);
-
-//             &:hover {
-//                 cursor: pointer;
-                
-//                 .fa-face-surprise {
-//                     color: $dark-blue-color;
-//                     transition: color 0.3s ease;
-//                 }
-//             }
-
-//             .fa-face-surprise {
-//                 display: block;
-//                 color: $blue-color;
-//                 pointer-events: none;
-//             }
-//         }
-
-//         .emoji_picker_container {
-//             @include emoji_picker_container;
-//         }
-
-//         .send {
-//             all: unset;
-//             position: absolute;
-//             top: 50%;
-//             right: 10px;
-//             transform: translateY(-50%) scale(1);
-//             width: 30px;
-//             height: 30px;
-//             color: $blue-color;
-//             transition: transform 0.2s ease, color 0.3s ease;
-
-//             &:hover {
-//                 transform: translateY(-50%) scale(1.1);
-//                 color: $dark-blue-color;
-//                 cursor: pointer;
-//             }
-
-//             svg {
-//                 pointer-events: none;
-//             }
-//         }
-//     }
-// }

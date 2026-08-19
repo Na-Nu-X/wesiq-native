@@ -51,7 +51,7 @@ export default function HomeScreen() {
               <View className="right" style={styles.right}>
                 {logged_in_user && (
                   <View className="account" style={styles.account}>
-                    <ProfilePictureLink user={logged_in_user} label="Môj účet" />
+                    <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
 
                     <Pressable
                       // onPress={handleGoToProfile}
@@ -77,8 +77,7 @@ export default function HomeScreen() {
                 {!logged_in_user && (
                   <View className="no_account" style={styles.no_account}>
                     <Pressable 
-                      onPress={() => 
-                        (true)}
+                      onPress={() => setIsLoginFormDialogOpen(true)}
                       accessibilityLabel="Prihlásiť sa"
                     >
                       {({ pressed }) => (
