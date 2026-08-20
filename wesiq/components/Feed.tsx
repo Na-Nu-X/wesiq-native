@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share } from "react-native"
+import React, { useState, useEffect, useRef } from "react"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -13,8 +13,10 @@ import { Video, ResizeMode } from "expo-av"
 import Slider from "@react-native-community/slider"
 import Svg, { Path } from "react-native-svg"
 import EmojiPicker from "rn-emoji-keyboard"
+import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet"
 
 import type { LoggedInUser } from "./LoginFormDialog"
+import { HeartParticle } from "./HeartParticle"
 
 export interface Post {
     user:User,
@@ -106,12 +108,19 @@ export interface comment {
     },
 
     comment:string,
-    likes?:number,
+    likes:number,
     likes_from_users:number[],
     creation_time:string,
     parent_id?:number|null,
     reports_from_users?:number[],
     level:number
+}
+
+interface Particle {
+    id:number,
+    x:number,
+    y:number,
+    is_regular:boolean
 }
 
 export default function Feed() {
@@ -131,9 +140,14 @@ export default function Feed() {
     const [has_next_post_comments, setHasNextPostComments] = useState(true) // Stores The Information If There Are More Post Comments Available
     const [are_post_comments_loading, setArePostCommentsLoading] = useState(false) // Stores The Information If Post Comments Are Loading
 
+    const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
+    const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
+
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
 
     const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
+
+    const [particles, setParticles] = useState<Particle[]>([]) // Stores The Like Particles
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -568,8 +582,14 @@ export default function Feed() {
         //     }
     }
 
+    // Function For Show The Post Properties
+    const showPostProperties = (post:Post) => {
+        setSelectedPost(post) // Sets The Selected Post
+        post_properties.current?.expand() // Shows The Post Properties
+    }
+
     // Function For Toggle Post Like
-    const togglePostLike = async (post_id:number) => {
+    const togglePostLike = async (post_id:number):Promise<void> => {
         if(!logged_in_user) {
             Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
             return
@@ -599,7 +619,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_post_like_data:loadedPostCommentsResponse = await toggle_post_like_response.json() // Gets The Loaded Post Comments Data
+            const toggle_post_like_data = await toggle_post_like_response.json() // Gets The Toggle Post Like Data
 
             // If The Response Isn't Success
             if(!toggle_post_like_data.success) {
@@ -613,7 +633,7 @@ export default function Feed() {
                     if(one_post.id === post_id) {
                         const has_like:boolean = one_post.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
 
-                        // if(!has_like) generateHeartParticles(particles) // Generates The Heart Particles
+                        if(!has_like) generateHeartParticles() // Generates The Heart Particles
                         
                         // Updates The Post Likes Amount And Stored Likes From Users
                         return {
@@ -634,30 +654,32 @@ export default function Feed() {
             Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
         }
     }
+    
+    // Function For Generate The Heart Particles
+    const generateHeartParticles = ():void => {
+        const amount:number = Math.floor(Math.random() * 5) + 1 // Generates The Random Amount Of The Particles Between 1 And 5
+        const new_particles:Particle[] = [] // Stores The New Particles
+      
+        // Generates The New Particles
+        for(let i:number = 0; i < amount; i++) {
+            new_particles.push({
+                id: Date.now() + Math.random(),
+                x: (Math.random() * 90 + 20) * (Math.random() < 0.5 ? 1 : -1), // Generates The Random X Position Between -110 And -20 To The Left And Between 20 And 110 To The Right
+                y: -(Math.random() * 90 + 20), // Generates The Random Y Position Between -20 And -110 To Up
+                is_regular: Math.random() > 0.5
+            })
+        }
+      
+        setParticles(new_particles) // Sets The Particles
+    }
 
-    // // Function For Generates The Heart Particles
-    // function generateHeartParticles(particles:HTMLDivElement):void {
-    //     particles.innerHTML = "" // Deletes The Particles Container
-
-    //     const heart_amount:number = generateNumberRange(1, 5) // 1 - 5 Hearts
-
-    //     for(let i:number = 0; i < heart_amount; i++) {
-    //         // https://fontawesome.com/icons/heart
-    //         const heart:HTMLElement = document.createElement("i") // Creates The Heart Icon 
-    //         const heart_classes:string[] = ["fa-solid", "fa-regular"] // Stores The Heart Classes
-    //         const random_heart_classes_index:number = Math.floor(Math.random() * heart_classes.length) // Gets The Random Index Of Heart Classes
-        
-    //         heart.classList.add("fa-heart", heart_classes[random_heart_classes_index] as string) // Adds The Classes
-
-    //         heart.style.setProperty("--x", `${generateNumberRange(20, 110)}px`) // Generates And Sets The Random X Position
-    //         heart.style.setProperty("--y", `-${generateNumberRange(20, 110)}px`) // Generates And Sets The Random Y Position
-
-    //         particles.appendChild(heart) // Appends The Heart To The Particles Container
-    //     }
-    // }
+    // Function For Remove The Particle
+    const removeParticle = (id:number):void => {
+        setParticles((previous_particles) => previous_particles.filter((one_particle) => one_particle.id !== id)) // Sets The Particles
+    }
 
     // Function For Share The Post
-    const sharePost = async (post_id: number, username: string) => {
+    const sharePost = async (post_id:number, username:string):Promise<void> => {
         // const link:string = interpolate(gettext("/sk/prispevok/%s"), [post_id]) // Sets The Link To The Post
         const link: string = `${API_URL}/sk/prispevok/${post_id}` // Sets The Link To The Post
     
@@ -682,7 +704,7 @@ export default function Feed() {
     }
 
     // Function For Save Or Unsave The Post
-    const togglePostSave = async (post_id:number) => {
+    const togglePostSave = async (post_id:number):Promise<void> => {
         if(!logged_in_user) {
             Alert.alert("Chyba", "Príspevok nie je možné uložiť bez prihlásenia.") // Shows The Alert
             return
@@ -712,7 +734,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_post_save_data:loadedPostCommentsResponse = await toggle_post_save_response.json() // Gets The Loaded Post Comments Data
+            const toggle_post_save_data = await toggle_post_save_response.json() // Gets The Toggle Post Save Data
 
             // If The Response Isn't Success
             if(!toggle_post_save_data.success) {
@@ -743,34 +765,341 @@ export default function Feed() {
         }
     }
 
-    // // Function For Save Or Unsave The Post
-    // export async function togglePostSave(icon:HTMLElement, id:number):Promise<void> {
-    //     try {
-    //         const toggle_post_save_response:response = await sendPOST(window.location.pathname, id, "toggle-post-save") // Sends Saved Post ID As A POST Data
+    // Function For Report The Post
+    const reportPost = async (post_id:number, reason:string) => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+            return
+        }
 
-    //         // If The Response Isn't Success
-    //         if(!toggle_post_save_response.success) {
-    //             displayMessage(toggle_post_save_response.message, "error") // Displays The Error Message
-    //             return
-    //         }
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const reported_post_response:Response = await fetch(`${API_URL}/report-post/`, {
+                method: "POST",
 
-    //         // Save (If The Save Icon Is Inactive)
-    //         if(!icon.classList.contains("active")) {
-    //             icon.classList.add("active") // Adds The Active Class
-    //             icon.classList.replace("fa-regular", "fa-solid") // Adds Filled Bookmark Image
-    //         }
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
 
-    //         // Unsave (If The Save Icon Is Active)
-    //         else if(icon.classList.contains("active")) {
-    //             icon.classList.remove("active") // Removes The Active Class
-    //             icon.classList.replace("fa-solid", "fa-regular") // Adds Empty Bookmark Image
-    //         }
-    //     }
+                body: JSON.stringify({
+                    post_id: post_id,
+                    reason: reason
+                })
+            })
 
-    //     catch {
-    //         displayMessage(gettext("Pri zmene uloženia príspevku došlo k chybe."), "error") // Displays The Error Message
-    //     }
-    // }
+            // If The Response Isn't Success
+            if(!reported_post_response.ok) {
+                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const reported_post_data = await reported_post_response.json() // Gets The Reported Post Data
+
+            // If The Response Isn't Success
+            if(!reported_post_data.success) {
+                Alert.alert("Chyba", reported_post_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", reported_post_data.message) // Shows The Alert
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Edit The Post Settings
+    const editPostSettings = async (post_id:number, setting:string, action:boolean):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Príspevok nie je možné upraviť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const edited_post_settings_response:Response = await fetch(`${API_URL}/edit-post-settings/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_id: post_id,
+                    setting: setting,
+                    action: action
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!edited_post_settings_response.ok) {
+                Alert.alert("Chyba", "Pri úprave príspevku došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const edited_post_settings_data = await edited_post_settings_response.json() // Gets The Edited Post Settings Data
+
+            // If The Response Isn't Success
+            if(!edited_post_settings_data.success) {
+                Alert.alert("Chyba", edited_post_settings_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", edited_post_settings_data.message) // Shows The Alert
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri úprave príspevku došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Delete The Post
+    const deletePost = async (post_id:number):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Príspevok nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const deleted_post_response:Response = await fetch(`${API_URL}/delete-post/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_id: post_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!deleted_post_response.ok) {
+                Alert.alert("Chyba", "Pri odstraňovaní príspevku došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const deleted_post_data = await deleted_post_response.json() // Gets The Deleted Post Data
+
+            // If The Response Isn't Success
+            if(!deleted_post_data.success) {
+                Alert.alert("Chyba", deleted_post_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", deleted_post_data.message) // Shows The Alert
+
+                // // Gets All Processing Posts From The Local Storage
+                // const processing_posts:compressTask[] = JSON.parse(localStorage.getItem("processing_posts") || "[]") // Gets The Processing Posts From The Local Storage
+
+                // // Removes All Tasks For The Current Processing Post From The Local Storage
+                // const remaining_processing_posts:compressTask[]|[] = processing_posts.filter(function(one_task:compressTask):boolean {
+                //     return one_task.post_id !== id
+                // })
+
+                // localStorage.setItem("processing_posts", JSON.stringify(remaining_processing_posts)) // Saves Updated Processing Posts To The Local Storage
+
+                setPosts(previous_posts => previous_posts.filter((one_post:Post) => one_post.id !== post_id)) // Sets The Posts
+
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri odstraňovaní príspevku došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Toggle Post Comment Like
+    const togglePostCommentLike = async (comment_id:number):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const toggle_post_comment_like_response:Response = await fetch(`${API_URL}/toggle-post-comment-like/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    comment_id: comment_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_post_comment_like_response.ok) {
+                Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const toggle_post_comment_like_data = await toggle_post_comment_like_response.json() // Gets The Toggle Post Comment Like Data
+
+            // If The Response Isn't Success
+            if(!toggle_post_comment_like_data.success) {
+                Alert.alert("Chyba", toggle_post_comment_like_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                // Sets The Post Comments
+                setPostComments(previous_post_comments => previous_post_comments.map((one_post_comment:comment) => {
+                    if(one_post_comment.id === comment_id) {
+                        const has_like:boolean = one_post_comment.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
+
+                        if(!has_like) generateHeartParticles() // Generates The Heart Particles
+                        
+                        // Updates The Post Likes Amount And Stored Likes From Users
+                        return {
+                            ...one_post_comment,
+                            likes: has_like ? one_post_comment.likes - 1 : one_post_comment.likes + 1,
+                            likes_from_users: has_like 
+                                ? one_post_comment.likes_from_users.filter(id => id !== logged_in_user.id) 
+                                : [...one_post_comment.likes_from_users, logged_in_user.id]
+                        }
+                    }
+                
+                    return one_post_comment // Returns The Unchanged Post Comment
+                }))
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Report The Comment
+    const reportComment = async (comment_id:number, reason:string) => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const reported_post_comment_response:Response = await fetch(`${API_URL}/report-post-comment/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    comment_id: comment_id,
+                    reason: reason
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!reported_post_comment_response.ok) {
+                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const reported_post_comment_data = await reported_post_comment_response.json() // Gets The Reported Post Comment Data
+
+            // If The Response Isn't Success
+            if(!reported_post_comment_data.success) {
+                Alert.alert("Chyba", reported_post_comment_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", reported_post_comment_data.message) // Shows The Alert
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Delete The Comment
+    const deleteComment = async (comment_id:number):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Komentár nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const deleted_post_comment_response:Response = await fetch(`${API_URL}/delete-post/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    comment_id: comment_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!deleted_post_comment_response.ok) {
+                Alert.alert("Chyba", "Pri odstraňovaní komentáru došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const deleted_post_comment_data = await deleted_post_comment_response.json() // Gets The Deleted Post Comment Data
+
+            // If The Response Isn't Success
+            if(!deleted_post_comment_data.success) {
+                Alert.alert("Chyba", deleted_post_comment_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", deleted_post_comment_data.message) // Shows The Alert
+                setPostComments(previous_post_comments => previous_post_comments.filter((one_post_comment:comment) => one_post_comment.id !== comment_id)) // Sets The Post Comments
+                // if(reply_container && reply_container.children.length === 0) deleteShowRepliesIcon(reply_container) // Deletes The Show Replies Icon From The Comment If There Aren't Any Replies Left
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri odstraňovaní komentáru došlo k chybe.") // Shows The Alert
+        }
+    }
 
     return (
         <View className="feed" style={styles.feed}>
@@ -879,31 +1208,12 @@ export default function Feed() {
                                         </Pressable>
                                     )}
 
-                                    {/* <button 
-                                        class="show_post_properties_button" 
-                                        popovertarget=""
-                                        style=""
-                                        title="{% translate 'Viac...' %}"
-                                        aria-label="{% translate 'Viac...' %}"
-                                    >
-                                        <i class="fa-solid fa-ellipsis-vertical"></i> <!-- https://fontawesome.com/icons/ellipsis-vertical -->
-                                    </button>
-
-                                    <div 
-                                        class="post_properties" 
-                                        id=""
-                                        popover
-                                        style=""
-                                    >
-                                        <button 
-                                            class="hide_post_properties_button" 
-                                            popovertarget=""
-                                            popovertargetaction="hide"
-                                        >
-                                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                                            <span>{% translate "Zavrieť" %}</span>
-                                        </button>
-                                    </div> */}
+                                    <View accessibilityLabel="Viac...">
+                                        <Icon
+                                            icon_name="ellipsis-vertical"
+                                            onPress={() => showPostProperties(one_post)}
+                                        />
+                                    </View>
                                 </View>
 
                                 <View className="bottom" style={styles.bottom}>
@@ -1385,15 +1695,31 @@ export default function Feed() {
 
                         <View className="society" style={styles.society}>
                             <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
-                                <View>
+                                <View 
+                                    style={{ 
+                                        position: "relative", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                    }}
+                                >
                                     <Icon
                                         icon_name="heart"
                                         size={25}
                                         onPress={() => togglePostLike(one_post.id)}
-                                        is_regular={logged_in_user && one_post.likes_from_users.includes(logged_in_user.id) ? false : true} // Shows The Empty Or Filled Heart Icon
-                                        color={logged_in_user && one_post.likes_from_users.includes(logged_in_user.id) ? RED_COLOR : BLUE_COLOR} // Shows The Red Pr Blue Colored Heart Icon
+                                        is_regular={!Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
+                                        color={Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Pr Blue Colored Heart Icon
                                         pressed_color={RED_COLOR}
                                     />
+
+                                    {particles.map((one_particle:Particle) => (
+                                        <HeartParticle
+                                            key={one_particle.id}
+                                            x={one_particle.x}
+                                            y={one_particle.y}
+                                            is_regular={one_particle.is_regular}
+                                            onComplete={() => removeParticle(one_particle.id)}
+                                        />
+                                    ))}
                                 </View>
 
                                 {logged_in_user && one_post.hide_likes && one_post.user.id !== logged_in_user.id 
@@ -1593,6 +1919,306 @@ export default function Feed() {
                     </View>
                 ))
             )}
+
+            <BottomSheet
+                ref={post_properties}
+                index={-1}
+                snapPoints={["30%", "50%"]}
+                enablePanDownToClose={true}
+            >
+                <BottomSheetView style={{ padding: 20 }}>
+                    {selected_post ? (
+                        // <Text>ID: {selected_post.id}</Text>
+
+                        <View className="post_properties">
+                            {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                            {logged_in_user && selected_post.user.id !== logged_in_user.id && (
+                                <>
+                                    <Pressable
+                                        className="show_report_post_button"
+                                        // onPress={}
+                                        accessibilityRole="button"
+                                    >
+                                        <FontAwesome6
+                                            name="flag"
+                                            size={20}
+                                            solid={false}
+                                            color={BLUE_COLOR}
+                                        />
+
+                                        <Text>Nahlásiť</Text>
+                                    </Pressable>
+
+                                    <View className="report">
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Spam</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Obťažovanie</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Nenávistné prejavy</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Dezinformácie</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Explicitný obsah</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <Text>Iné</Text>
+                                        </Pressable>
+
+                                        <Pressable
+                                            className="back_report_button"
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+
+                                            <Text>Späť</Text>
+                                        </Pressable>
+                                    </View>
+                                </>
+
+                            )}
+
+                            {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
+                            {logged_in_user && selected_post.user.id === logged_in_user.id && (
+                                <>
+                                    <Pressable
+                                        className="show_post_settings_button"
+                                        // onPress={}
+                                        accessibilityRole="button"
+                                    >
+                                        <FontAwesome6
+                                            name="pen"
+                                            size={20}
+                                            color={BLUE_COLOR}
+                                        />
+
+                                        <Text>Upraviť</Text>
+                                    </Pressable>
+
+                                    <View className="post_settings">
+                                        <View className="public_visibility_container">
+                                            {/* <FontAwesome6
+                                                name="pen"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            /> */}
+
+                                            <Switch className="public_visibility">
+
+                                            </Switch>
+                                        </View>
+
+                                        <View className="allow_comments_container">
+                                            {/* <FontAwesome6
+                                                name="pen"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            /> */}
+
+                                            <Switch className="allow_comments">
+
+                                            </Switch>
+                                        </View>
+
+                                        <View className="hide_likes_container">
+                                            {/* <FontAwesome6
+                                                name="pen"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            /> */}
+
+                                            <Switch className="hide_likes">
+
+                                            </Switch>
+                                        </View>
+
+                                        <Pressable
+                                            className="back_post_settings_button"
+                                            // onPress={}
+                                            accessibilityRole="button"
+                                        >
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+
+                                            <Text>Zavrieť</Text>
+                                        </Pressable>
+                                    </View>
+                                </>
+                            )}
+
+                            <Pressable
+                                className="hide_post_properties_button"
+                                // onPress={}
+                                accessibilityRole="button"
+                            >
+                                <FontAwesome6
+                                    name="xmark"
+                                    size={20}
+                                    color={BLUE_COLOR}
+                                />
+
+                                <Text>Zavrieť</Text>
+                            </Pressable>
+                        </View>
+
+                        // Function For Create The Post Properties HTML
+                        // function createPostPropertiesHTML(container:HTMLDivElement, report_container:HTMLDivElement, post_settings:HTMLDivElement, post_data:searchedPost, logged_in_user:loggedInUser|undefined):void {
+                        //     // If The Post Belongs To The Logged In User The Settings Option Will Be Shown
+                        //     else if(logged_in_user && post_data.user.id === logged_in_user.id) {
+                        //         // Post Settings Menu
+                        //         post_settings.id = `post_settings_${post_data.id}` // Sets The ID
+                        //         post_settings.style = `position-anchor: --show_post_settings_button_${post_data.id}` // Links The Anchor
+                                
+                        //         // Visibility Container
+                        //         const public_visibility_container:HTMLDivElement = post_settings.querySelector(".public_visibility_container") as HTMLDivElement // Gets The Public Visibility Container
+                        //         const public_visibility_icon:HTMLElement = public_visibility_container.querySelector("i") as HTMLElement // Gets The Public Visibility Icon
+                        //         const public_visibility_checkbox:HTMLInputElement = public_visibility_container.querySelector(".public_visibility") as HTMLInputElement // Gets The Public Visibility Checkbox
+                        //         const public_visibility_label:HTMLLabelElement = public_visibility_container.querySelector("label") as HTMLLabelElement // Gets The Public Visibility Label
+                                
+                        //         if(post_data.user.private_account) {
+                        //             public_visibility_icon.classList.add("fa-solid", "fa-eye-low-vision") // https://fontawesome.com/icons/eye-low-vision
+
+                        //             public_visibility_checkbox.classList.replace("public_visibility", "disabled_public_visibility") // Adds The Disabled Public Visibility Class
+                        //             public_visibility_checkbox.disabled = true // Disables The Checkbox
+                        //         }
+                                
+                        //         else {
+                        //             if(post_data.public_visibility) {
+                        //                 public_visibility_icon.classList.add("fa-solid", "fa-eye") // https://fontawesome.com/icons/eye
+                        //                 public_visibility_checkbox.checked = true // Checks The Public Visibility Checkbox
+                        //             }
+                                    
+                        //             else public_visibility_icon.classList.add("fa-solid", "fa-eye-low-vision") // https://fontawesome.com/icons/eye-low-vision
+                            
+                        //             public_visibility_checkbox.id = `public_visibility_${post_data.id}`
+                        //             public_visibility_label.htmlFor = `public_visibility_${post_data.id}`
+                        //         }
+                                
+                        //         // Allow Comments Container
+                        //         const allow_comments_container:HTMLDivElement = post_settings.querySelector(".allow_comments_container") as HTMLDivElement // Gets The Allow Comments Container
+                        //         const allow_comments_icon:HTMLElement = allow_comments_container.querySelector("i") as HTMLElement // Gets The Allow Comments Icon
+                        //         const allow_comments_checkbox:HTMLInputElement = allow_comments_container.querySelector(".allow_comments") as HTMLInputElement // Gets The Allow Comments Checkbox
+                        //         const allow_comments_label:HTMLLabelElement = allow_comments_container.querySelector("label") as HTMLLabelElement // Gets The Allow Comments Label
+                                
+                        //         if(post_data.allow_comments) {
+                        //             allow_comments_icon.classList.add("fa-solid", "fa-comment") // https://fontawesome.com/icons/eye
+                        //             allow_comments_checkbox.checked = true // Checks The Allow Comments Checkbox
+                        //         }
+                                
+                        //         else allow_comments_icon.classList.add("fa-solid", "fa-comment-slash") // https://fontawesome.com/icons/eye-low-vision
+
+                        //         allow_comments_checkbox.id = `allow_comments_${post_data.id}`
+                        //         allow_comments_label.htmlFor = `allow_comments_${post_data.id}`
+
+                        //         // Hide Likes Container
+                        //         const hide_likes_container:HTMLDivElement = post_settings.querySelector(".hide_likes_container") as HTMLDivElement // Gets The Hide Likes Container
+                        //         const hide_likes_icon:HTMLElement = hide_likes_container.querySelector("i") as HTMLElement // Gets The Hide Likes Icon
+                        //         const hide_likes_checkbox:HTMLInputElement = hide_likes_container.querySelector(".hide_likes") as HTMLInputElement // Gets The Hide Likes Checkbox
+                        //         const hide_likes_label:HTMLLabelElement = hide_likes_container.querySelector("label") as HTMLLabelElement // Gets The Hide Likes Label
+                                
+                        //         if(!post_data.hide_likes) {
+                        //             hide_likes_icon.classList.add("fa-solid", "fa-heart") // https://fontawesome.com/icons/eye
+                        //             hide_likes_checkbox.checked = true // Checks The Hide Likes Checkbox
+                        //         }
+                                
+                        //         else hide_likes_icon.classList.add("fa-regular", "fa-heart") // https://fontawesome.com/icons/eye-low-vision
+
+                        //         hide_likes_checkbox.id = `hide_likes_${post_data.id}`
+                        //         hide_likes_label.htmlFor = `hide_likes_${post_data.id}`
+
+                        //         container.appendChild(post_settings) // Appends The Post Settings Menu To The Post Container
+
+                        //         // Back Post Settings Button
+                        //         const back_post_settings_button:HTMLButtonElement = post_settings.querySelector(".back_post_settings_button") as HTMLButtonElement // Gets The Back Post Settings Button
+                        //         back_post_settings_button.setAttribute("popovertarget", `post_settings_${post_data.id}`) // Links The Popover
+                        //     }
+
+                        //     // If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown
+                        //     if(
+                        //         logged_in_user && (
+                        //         post_data.user.id === logged_in_user.id || 
+                        //         logged_in_user.role === "developer" || 
+                        //         logged_in_user.role === "admin")
+                        //     ) {
+                        //         // Delete Post Button
+                        //         const delete_post_button:HTMLButtonElement = document.createElement("button") // Creates The Delete Post Button
+                        //         delete_post_button.classList.add("delete_post_button") // Adds The Delete Post Button
+                        //         if(post_data.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin")) delete_post_button.classList.add("red") // Adds The Red Class If The Logged In User Is Developer Or Admin
+                        //         delete_post_button.setAttribute("popovertarget", `delete_post_${post_data.id}`) // Links The Popover
+                        //         delete_post_button.style = `anchor-name: --delete_post_button_${post_data.id}` // Creates The Anchor
+                        //         delete_post_button.innerHTML = "<i class='fa-solid fa-eraser'></i>" // https://fontawesome.com/icons/eraser
+                        //         delete_post_button.innerHTML += `<span>${gettext("Vymazať")}</span>`
+                        //         post_properties.insertBefore(delete_post_button, hide_post_properties_button) // Appends The Delete Post Button To The Post Properties Menu
+
+                        //         // Delete Post Menu
+                        //         const delete_post:HTMLDivElement = document.createElement("div") // Creates The Delete Post Menu
+                        //         delete_post.classList.add("delete_post") // Adds The Delete Post Class
+                        //         delete_post.id = `delete_post_${post_data.id}` // Sets The ID
+                        //         delete_post.popover = "auto" // Sets The Popover Attribute
+                        //         delete_post.style = `position-anchor: --delete_post_button_${post_data.id}` // Links The Anchor
+                        //         container.appendChild(delete_post) // Appends The Delete Post To The Post Container
+
+                        //         // Question
+                        //         const question:HTMLParagraphElement = document.createElement("p") // Creates The Question Paragraph
+                        //         question.textContent = gettext("Naozaj chcete vymazať Váš komentár?")
+                        //         delete_post.appendChild(question) // Appends The Question To The Delete Post Menu
+
+                        //         // Yes
+                        //         const yes:HTMLButtonElement = document.createElement("button") // Creates The Yes Button
+                        //         yes.dataset["action"] = "delete" // Stores The Delete Action
+                        //         yes.innerHTML = "<i class='fa-solid fa-eraser'></i>" // https://fontawesome.com/icons/eraser
+                        //         yes.innerHTML += `<span>${gettext("Vymazať")}</span>`
+                        //         delete_post.appendChild(yes) // Appends The Yes Button To The Delete Post Menu
+                                
+                        //         // No
+                        //         const no:HTMLButtonElement = document.createElement("button") // Creates The No Button
+                        //         no.setAttribute("popovertarget", `delete_post_${post_data.id}`) // Links The Popover
+                        //         no.popoverTargetAction = "hide" // Sets The Hide Action
+                        //         no.innerHTML = "<i class='fa-solid fa-xmark'></i>" // https://fontawesome.com/icons/xmark
+                        //         no.innerHTML += `<span>${gettext("Zrušiť")}</span>`
+                        //         delete_post.appendChild(no) // Appends The No Button To The Delete Post Menu
+                        //     }
+                        // }
+                    ) : (
+                        <Text>Žiadny príspevok</Text>
+                    )}
+                </BottomSheetView>
+            </BottomSheet>
         </View>
     )
 }
