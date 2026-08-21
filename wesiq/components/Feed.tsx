@@ -141,6 +141,7 @@ export default function Feed() {
     const [are_post_comments_loading, setArePostCommentsLoading] = useState(false) // Stores The Information If Post Comments Are Loading
 
     const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
+    const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"post_settings"|"delete_post">("main") // Stores The Active Post Properties Sheet
     const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
 
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
@@ -583,9 +584,20 @@ export default function Feed() {
     }
 
     // Function For Show The Post Properties
-    const showPostProperties = (post:Post) => {
+    const showPostProperties = (post:Post):void => {
         setSelectedPost(post) // Sets The Selected Post
         post_properties.current?.expand() // Shows The Post Properties
+    }
+
+    // Function For Close The Post Properties
+    const hidePostProperties = ():void => {
+        setSelectedPost(null) // Sets The Selected Post
+        post_properties.current?.close() // Hides The Post Properties
+    }
+
+    // Function For Handle Post Properties Sheet Switching
+    const handlePostPropertiesChanges = (index:number) => {
+        if(index === -1) setPostPropertiesSheet("main") // Sets The Post Properties Sheet To Default
     }
 
     // Function For Toggle Post Like
@@ -859,6 +871,15 @@ export default function Feed() {
             
             else {
                 Alert.alert("Úspech", edited_post_settings_data.message) // Shows The Alert
+
+                // Sets The Posts
+                setPosts(previous_posts => previous_posts.map(one_post => one_post.id === post_id
+                    ? { ...one_post, [setting]: action } 
+                    : one_post)
+                )
+
+                setSelectedPost(previous_selected_post => previous_selected_post ? { ...previous_selected_post, [setting]: action } : null) // Sets The Selected Post
+
                 return
             }
         }
@@ -1925,298 +1946,390 @@ export default function Feed() {
                 index={-1}
                 snapPoints={["30%", "50%"]}
                 enablePanDownToClose={true}
+                onChange={handlePostPropertiesChanges}
             >
                 <BottomSheetView style={{ padding: 20 }}>
                     {selected_post ? (
-                        // <Text>ID: {selected_post.id}</Text>
-
                         <View className="post_properties">
-                            {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
-                            {logged_in_user && selected_post.user.id !== logged_in_user.id && (
-                                <>
+                            {post_properties_sheet === "main" && (
+                                <View style={styles.sheet_container}>
+                                    {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                    {logged_in_user && selected_post.user.id !== logged_in_user.id && (
+                                        <Pressable
+                                            className="show_report_post_button"
+                                            onPress={() => setPostPropertiesSheet("report")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="flag"
+                                                    size={20}
+                                                    solid={false}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                        </Pressable>
+                                    )}
+
+                                    {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
+                                    {logged_in_user && selected_post.user.id === logged_in_user.id && (
+                                        <Pressable
+                                            className="show_post_settings_button"
+                                            onPress={() => setPostPropertiesSheet("post_settings")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="pen"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Upraviť</Text>
+                                        </Pressable>
+                                    )}
+
+                                    {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                    {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                        <Pressable
+                                            className="delete_post_button"
+                                            onPress={() => setPostPropertiesSheet("delete_post")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="eraser"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text 
+                                                style={[
+                                                    styles.sheet_text,
+                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                    { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                ]}
+                                            >
+                                                Vymazať
+                                            </Text>
+                                        </Pressable>
+                                    )}
+
                                     <Pressable
-                                        className="show_report_post_button"
-                                        // onPress={}
+                                        className="hide_post_properties_button"
+                                        onPress={hidePostProperties}
                                         accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
                                     >
-                                        <FontAwesome6
-                                            name="flag"
-                                            size={20}
-                                            solid={false}
-                                            color={BLUE_COLOR}
-                                        />
-
-                                        <Text>Nahlásiť</Text>
-                                    </Pressable>
-
-                                    <View className="report">
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Spam</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Obťažovanie</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Nenávistné prejavy</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Dezinformácie</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Explicitný obsah</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
-                                            <Text>Iné</Text>
-                                        </Pressable>
-
-                                        <Pressable
-                                            className="back_report_button"
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
+                                        <View style={styles.sheet_icon}>
                                             <FontAwesome6
                                                 name="xmark"
                                                 size={20}
                                                 color={BLUE_COLOR}
                                             />
+                                        </View>
 
-                                            <Text>Späť</Text>
-                                        </Pressable>
-                                    </View>
-                                </>
-
+                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    </Pressable>
+                                </View>
                             )}
 
-                            {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
-                            {logged_in_user && selected_post.user.id === logged_in_user.id && (
-                                <>
+                            {post_properties_sheet === "report" && (
+                                <View className="report" style={styles.sheet_container}>
                                     <Pressable
-                                        className="show_post_settings_button"
                                         // onPress={}
                                         accessibilityRole="button"
-                                    >
-                                        <FontAwesome6
-                                            name="pen"
-                                            size={20}
-                                            color={BLUE_COLOR}
-                                        />
 
-                                        <Text>Upraviť</Text>
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Spam</Text>
                                     </Pressable>
 
-                                    <View className="post_settings">
-                                        <View className="public_visibility_container">
-                                            {/* <FontAwesome6
-                                                name="pen"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            /> */}
+                                    <Pressable
+                                        // onPress={}
+                                        accessibilityRole="button"
 
-                                            <Switch className="public_visibility">
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                    </Pressable>
 
-                                            </Switch>
-                                        </View>
+                                    <Pressable
+                                        // onPress={}
+                                        accessibilityRole="button"
 
-                                        <View className="allow_comments_container">
-                                            {/* <FontAwesome6
-                                                name="pen"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            /> */}
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                    </Pressable>
 
-                                            <Switch className="allow_comments">
+                                    <Pressable
+                                        // onPress={}
+                                        accessibilityRole="button"
 
-                                            </Switch>
-                                        </View>
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                    </Pressable>
 
-                                        <View className="hide_likes_container">
-                                            {/* <FontAwesome6
-                                                name="pen"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            /> */}
+                                    <Pressable
+                                        // onPress={}
+                                        accessibilityRole="button"
 
-                                            <Switch className="hide_likes">
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                    </Pressable>
 
-                                            </Switch>
-                                        </View>
+                                    <Pressable
+                                        // onPress={}
+                                        accessibilityRole="button"
 
-                                        <Pressable
-                                            className="back_post_settings_button"
-                                            // onPress={}
-                                            accessibilityRole="button"
-                                        >
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <Text style={styles.sheet_text}>Iné</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        className="back_report_button"
+                                        onPress={() => setPostPropertiesSheet("main")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
                                             <FontAwesome6
                                                 name="xmark"
                                                 size={20}
                                                 color={BLUE_COLOR}
                                             />
+                                        </View>
 
-                                            <Text>Zavrieť</Text>
-                                        </Pressable>
-                                    </View>
-                                </>
+                                        <Text style={styles.sheet_text}>Späť</Text>
+                                    </Pressable>
+                                </View>
                             )}
 
-                            <Pressable
-                                className="hide_post_properties_button"
-                                // onPress={}
-                                accessibilityRole="button"
-                            >
-                                <FontAwesome6
-                                    name="xmark"
-                                    size={20}
-                                    color={BLUE_COLOR}
-                                />
 
-                                <Text>Zavrieť</Text>
-                            </Pressable>
+                            {post_properties_sheet === "post_settings" && (
+                                <View className="post_settings" style={styles.sheet_container}>
+                                    <View 
+                                        className="public_visibility_container"
+
+                                        style={[
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border,
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name={!selected_post.user.private_account && selected_post.public_visibility ? "eye" : "eye-low-vision"}
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Switch 
+                                            className={selected_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
+                                            disabled={selected_post.user.private_account} // Disables The Checkbox
+                                            value={selected_post.user.private_account ? false : selected_post.public_visibility} // Checks The Public Visibility Checkbox
+                                            onValueChange={(new_value:boolean) => editPostSettings(selected_post.id, "public_visibility", new_value)}
+                                            
+                                            trackColor={{ 
+                                                false: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
+                                                true: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
+                                            }}
+                                            
+                                            thumbColor={
+                                                selected_post.user.private_account 
+                                                    ? "#333333" 
+                                                    : (selected_post.public_visibility ? GREEN_COLOR : RED_COLOR)
+                                            }
+                                        />
+                                    </View>
+
+                                    <View 
+                                        className="allow_comments_container"
+
+                                        style={[
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border,
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name={selected_post.allow_comments ? "comment" : "comment-slash"}
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Switch 
+                                            className="allow_comments"
+                                            value={selected_post.allow_comments} // Checks The Allow Comments Checkbox
+                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "allow_comments", new_value)}
+                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                            thumbColor={selected_post.allow_comments ? GREEN_COLOR : RED_COLOR}
+                                        />
+                                    </View>
+
+                                    <View 
+                                        className="hide_likes_container"
+
+                                        style={[
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border,
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="heart"
+                                                size={20}
+                                                solid={!selected_post.hide_likes}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Switch 
+                                            className="hide_likes" 
+                                            value={!selected_post.hide_likes} // Checks The Hide Likes Checkbox
+                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "hide_likes", !new_value)}
+                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                            thumbColor={!selected_post.hide_likes ? GREEN_COLOR : RED_COLOR}
+                                        />
+                                    </View>
+
+                                    <Pressable
+                                        className="back_post_settings_button"
+                                        onPress={() => setPostPropertiesSheet("main")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+
+                            {post_properties_sheet === "delete_post" && (
+                                <View className="delete_post" style={styles.sheet_container}>
+                                    <Text 
+                                        style={[
+                                            styles.sheet_text, 
+                                            { textAlign: "center" }
+                                        ]}
+                                    >
+                                        Naozaj chcete vymazať Váš príspevok?
+                                    </Text>
+
+                                    <Pressable
+                                        onPress={() => deletePost(selected_post.id)}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="eraser"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Vymazať</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        onPress={() => setPostPropertiesSheet("main")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Zrušiť</Text>
+                                    </Pressable>
+                                </View>
+                            )}
                         </View>
-
-                        // Function For Create The Post Properties HTML
-                        // function createPostPropertiesHTML(container:HTMLDivElement, report_container:HTMLDivElement, post_settings:HTMLDivElement, post_data:searchedPost, logged_in_user:loggedInUser|undefined):void {
-                        //     // If The Post Belongs To The Logged In User The Settings Option Will Be Shown
-                        //     else if(logged_in_user && post_data.user.id === logged_in_user.id) {
-                        //         // Post Settings Menu
-                        //         post_settings.id = `post_settings_${post_data.id}` // Sets The ID
-                        //         post_settings.style = `position-anchor: --show_post_settings_button_${post_data.id}` // Links The Anchor
-                                
-                        //         // Visibility Container
-                        //         const public_visibility_container:HTMLDivElement = post_settings.querySelector(".public_visibility_container") as HTMLDivElement // Gets The Public Visibility Container
-                        //         const public_visibility_icon:HTMLElement = public_visibility_container.querySelector("i") as HTMLElement // Gets The Public Visibility Icon
-                        //         const public_visibility_checkbox:HTMLInputElement = public_visibility_container.querySelector(".public_visibility") as HTMLInputElement // Gets The Public Visibility Checkbox
-                        //         const public_visibility_label:HTMLLabelElement = public_visibility_container.querySelector("label") as HTMLLabelElement // Gets The Public Visibility Label
-                                
-                        //         if(post_data.user.private_account) {
-                        //             public_visibility_icon.classList.add("fa-solid", "fa-eye-low-vision") // https://fontawesome.com/icons/eye-low-vision
-
-                        //             public_visibility_checkbox.classList.replace("public_visibility", "disabled_public_visibility") // Adds The Disabled Public Visibility Class
-                        //             public_visibility_checkbox.disabled = true // Disables The Checkbox
-                        //         }
-                                
-                        //         else {
-                        //             if(post_data.public_visibility) {
-                        //                 public_visibility_icon.classList.add("fa-solid", "fa-eye") // https://fontawesome.com/icons/eye
-                        //                 public_visibility_checkbox.checked = true // Checks The Public Visibility Checkbox
-                        //             }
-                                    
-                        //             else public_visibility_icon.classList.add("fa-solid", "fa-eye-low-vision") // https://fontawesome.com/icons/eye-low-vision
-                            
-                        //             public_visibility_checkbox.id = `public_visibility_${post_data.id}`
-                        //             public_visibility_label.htmlFor = `public_visibility_${post_data.id}`
-                        //         }
-                                
-                        //         // Allow Comments Container
-                        //         const allow_comments_container:HTMLDivElement = post_settings.querySelector(".allow_comments_container") as HTMLDivElement // Gets The Allow Comments Container
-                        //         const allow_comments_icon:HTMLElement = allow_comments_container.querySelector("i") as HTMLElement // Gets The Allow Comments Icon
-                        //         const allow_comments_checkbox:HTMLInputElement = allow_comments_container.querySelector(".allow_comments") as HTMLInputElement // Gets The Allow Comments Checkbox
-                        //         const allow_comments_label:HTMLLabelElement = allow_comments_container.querySelector("label") as HTMLLabelElement // Gets The Allow Comments Label
-                                
-                        //         if(post_data.allow_comments) {
-                        //             allow_comments_icon.classList.add("fa-solid", "fa-comment") // https://fontawesome.com/icons/eye
-                        //             allow_comments_checkbox.checked = true // Checks The Allow Comments Checkbox
-                        //         }
-                                
-                        //         else allow_comments_icon.classList.add("fa-solid", "fa-comment-slash") // https://fontawesome.com/icons/eye-low-vision
-
-                        //         allow_comments_checkbox.id = `allow_comments_${post_data.id}`
-                        //         allow_comments_label.htmlFor = `allow_comments_${post_data.id}`
-
-                        //         // Hide Likes Container
-                        //         const hide_likes_container:HTMLDivElement = post_settings.querySelector(".hide_likes_container") as HTMLDivElement // Gets The Hide Likes Container
-                        //         const hide_likes_icon:HTMLElement = hide_likes_container.querySelector("i") as HTMLElement // Gets The Hide Likes Icon
-                        //         const hide_likes_checkbox:HTMLInputElement = hide_likes_container.querySelector(".hide_likes") as HTMLInputElement // Gets The Hide Likes Checkbox
-                        //         const hide_likes_label:HTMLLabelElement = hide_likes_container.querySelector("label") as HTMLLabelElement // Gets The Hide Likes Label
-                                
-                        //         if(!post_data.hide_likes) {
-                        //             hide_likes_icon.classList.add("fa-solid", "fa-heart") // https://fontawesome.com/icons/eye
-                        //             hide_likes_checkbox.checked = true // Checks The Hide Likes Checkbox
-                        //         }
-                                
-                        //         else hide_likes_icon.classList.add("fa-regular", "fa-heart") // https://fontawesome.com/icons/eye-low-vision
-
-                        //         hide_likes_checkbox.id = `hide_likes_${post_data.id}`
-                        //         hide_likes_label.htmlFor = `hide_likes_${post_data.id}`
-
-                        //         container.appendChild(post_settings) // Appends The Post Settings Menu To The Post Container
-
-                        //         // Back Post Settings Button
-                        //         const back_post_settings_button:HTMLButtonElement = post_settings.querySelector(".back_post_settings_button") as HTMLButtonElement // Gets The Back Post Settings Button
-                        //         back_post_settings_button.setAttribute("popovertarget", `post_settings_${post_data.id}`) // Links The Popover
-                        //     }
-
-                        //     // If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown
-                        //     if(
-                        //         logged_in_user && (
-                        //         post_data.user.id === logged_in_user.id || 
-                        //         logged_in_user.role === "developer" || 
-                        //         logged_in_user.role === "admin")
-                        //     ) {
-                        //         // Delete Post Button
-                        //         const delete_post_button:HTMLButtonElement = document.createElement("button") // Creates The Delete Post Button
-                        //         delete_post_button.classList.add("delete_post_button") // Adds The Delete Post Button
-                        //         if(post_data.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin")) delete_post_button.classList.add("red") // Adds The Red Class If The Logged In User Is Developer Or Admin
-                        //         delete_post_button.setAttribute("popovertarget", `delete_post_${post_data.id}`) // Links The Popover
-                        //         delete_post_button.style = `anchor-name: --delete_post_button_${post_data.id}` // Creates The Anchor
-                        //         delete_post_button.innerHTML = "<i class='fa-solid fa-eraser'></i>" // https://fontawesome.com/icons/eraser
-                        //         delete_post_button.innerHTML += `<span>${gettext("Vymazať")}</span>`
-                        //         post_properties.insertBefore(delete_post_button, hide_post_properties_button) // Appends The Delete Post Button To The Post Properties Menu
-
-                        //         // Delete Post Menu
-                        //         const delete_post:HTMLDivElement = document.createElement("div") // Creates The Delete Post Menu
-                        //         delete_post.classList.add("delete_post") // Adds The Delete Post Class
-                        //         delete_post.id = `delete_post_${post_data.id}` // Sets The ID
-                        //         delete_post.popover = "auto" // Sets The Popover Attribute
-                        //         delete_post.style = `position-anchor: --delete_post_button_${post_data.id}` // Links The Anchor
-                        //         container.appendChild(delete_post) // Appends The Delete Post To The Post Container
-
-                        //         // Question
-                        //         const question:HTMLParagraphElement = document.createElement("p") // Creates The Question Paragraph
-                        //         question.textContent = gettext("Naozaj chcete vymazať Váš komentár?")
-                        //         delete_post.appendChild(question) // Appends The Question To The Delete Post Menu
-
-                        //         // Yes
-                        //         const yes:HTMLButtonElement = document.createElement("button") // Creates The Yes Button
-                        //         yes.dataset["action"] = "delete" // Stores The Delete Action
-                        //         yes.innerHTML = "<i class='fa-solid fa-eraser'></i>" // https://fontawesome.com/icons/eraser
-                        //         yes.innerHTML += `<span>${gettext("Vymazať")}</span>`
-                        //         delete_post.appendChild(yes) // Appends The Yes Button To The Delete Post Menu
-                                
-                        //         // No
-                        //         const no:HTMLButtonElement = document.createElement("button") // Creates The No Button
-                        //         no.setAttribute("popovertarget", `delete_post_${post_data.id}`) // Links The Popover
-                        //         no.popoverTargetAction = "hide" // Sets The Hide Action
-                        //         no.innerHTML = "<i class='fa-solid fa-xmark'></i>" // https://fontawesome.com/icons/xmark
-                        //         no.innerHTML += `<span>${gettext("Zrušiť")}</span>`
-                        //         delete_post.appendChild(no) // Appends The No Button To The Delete Post Menu
-                        //     }
-                        // }
-                    ) : (
-                        <Text>Žiadny príspevok</Text>
-                    )}
+                    ) : null}
                 </BottomSheetView>
             </BottomSheet>
         </View>
@@ -3366,5 +3479,36 @@ const styles = StyleSheet.create({
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
         // backdrop-filter: blur(5px);
+    },
+
+    sheet_container: {
+        paddingBottom: 20,
+    },
+
+    sheet_item: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 20,
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+    },
+
+    sheet_item_border: {
+        borderBottomWidth: 1,
+        borderBottomColor: transparentize(BLUE_COLOR, 0.8),
+    },
+
+    sheet_item_pressed: {
+        opacity: 0.5,
+    },
+
+    sheet_icon: {
+        width: 20,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    sheet_text: {
+        color: BLUE_COLOR,
     },
 })

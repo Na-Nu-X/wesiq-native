@@ -15,6 +15,7 @@ export interface LoggedInUser {
     first_name:string,
     last_name:string,
     username:string,
+    role:"user"|"admin"|"developer"
     profile_picture_name:string,
     friend_code:string,
     saved_posts:number[],
