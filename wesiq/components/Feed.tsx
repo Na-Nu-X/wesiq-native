@@ -134,15 +134,19 @@ export default function Feed() {
     const [has_next, setHasNext] = useState(true) // Stores The Information If There Are More Posts Available
     const [are_posts_loading, setArePostsLoading] = useState(false) // Stores The Information If Posts Are Loading
     const [search_text, setSearchText] = useState("") // Stores The Search Text
+    const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
+    const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"settings"|"delete">("main") // Stores The Active Post Properties Sheet
+    const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
 
     const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
     const [post_comments_page, setPostCommentsPage] = useState(1) // Stores The Current Post Comments Page Number
     const [has_next_post_comments, setHasNextPostComments] = useState(true) // Stores The Information If There Are More Post Comments Available
     const [are_post_comments_loading, setArePostCommentsLoading] = useState(false) // Stores The Information If Post Comments Are Loading
-
-    const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
-    const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"post_settings"|"delete_post">("main") // Stores The Active Post Properties Sheet
-    const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
+    const [comment, setComment] = useState<string>("") // Stores The Written Comment
+    const MAX_COMMENT_LENGTH:number = 100 // Sets The Maximum Comment Length
+    const post_comment_properties = useRef<BottomSheet>(null) // Stores The Post Comment Properties
+    const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
+    const [selected_post_comment, setSelectedPostComment] = useState<comment|null>(null) // Stores The Selected Post Comment
 
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
 
@@ -314,6 +318,7 @@ export default function Feed() {
             if(is_refresh) setPostComments(loaded_post_comments_data.visible_comments) // Sets The Post Comments
             
             else {
+                // Sets The Post Comments
                 setPostComments(previous_post_comments => {
                     const existing_posts_ids:Set<number> = new Set(previous_post_comments.map(post => post.id)) // Gets The Existing Post Comments IDs
                     const new_post_comments:comment[] = (loaded_post_comments_data.visible_comments as comment[]).filter(post => !existing_posts_ids.has(post.id)) // Gets The New Unique Post Comments
@@ -353,7 +358,7 @@ export default function Feed() {
                     // onPress={handleGoToProfile}
                     style={styles.tag}
                 >
-                    {one_tag}
+                    <Text>{one_tag}</Text>
                 </Pressable>
             ))
         }
@@ -379,8 +384,8 @@ export default function Feed() {
 
     // Function For Handle The Emoji Select
     const handleEmojiSelect = (emoji:{ emoji:string }) => {
-        // if(comment.length >= MAX_COMMENT_LENGTH) return
-        // setComment((previous_comment) => previous_comment + emoji.emoji) // Sets The Comment
+        if(comment.length >= MAX_COMMENT_LENGTH) return
+        setComment((previous_comment) => previous_comment + emoji.emoji) // Sets The Comment
     }
 
     // Function For Load Comments
@@ -390,33 +395,32 @@ export default function Feed() {
                 <View className="comment_container" style={styles.comment_container}>
                     <View className="user" style={styles.user}>
                         <ProfilePictureLink user_id={one_post_comment.user.id} user_profile_picture_name={one_post_comment.user.profile_picture_name || null} user_subscription={one_post_comment.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
-                        <Text className="username" style={{ fontWeight: "bold" }}></Text>
 
-                        {/* <button 
-                            class="show_comment_properties_button" 
-                            popovertarget=""
-                            style=""
-                            title="{% translate 'Viac...' %}"
-                            aria-label="{% translate 'Viac...' %}"
-                        >
-                            <i class="fa-solid fa-ellipsis-vertical"></i> <!-- https://fontawesome.com/icons/ellipsis-vertical -->
-                        </button>
+                        <Text 
+                            className="username" 
 
-                        <div 
-                            class="comment_properties" 
-                            id=""
-                            popover
-                            style=""
+                            style={{ 
+                                color: SECONDARY_COLOR, 
+                                fontWeight: "bold",
+                            }}
                         >
-                            <button 
-                                class="hide_comment_properties_button" 
-                                popovertarget=""
-                                popovertargetaction="hide"
-                            >
-                                <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                                <span>{% translate "Zavrieť" %}</span>
-                            </button>
-                        </div> */}
+                            {one_post_comment.user.username}
+                        </Text>
+
+                        <View 
+                            className="show_comment_properties_button"
+                            accessibilityLabel="Viac..." 
+                            
+                            style={{ 
+                                marginLeft: "auto", 
+                                marginRight: 10,
+                            }}
+                        >
+                            <Icon
+                                icon_name="ellipsis-vertical"
+                                onPress={() => showPostCommentProperties(one_post_comment)}
+                            />
+                        </View>
                     </View>
 
                     <View 
@@ -433,39 +437,82 @@ export default function Feed() {
                         }}
                     >
                         <Text 
-                        className="comment"
+                            className="comment"
 
-                        style={{
-                            textAlign: "justify",
-                            paddingRight: 10,
-                            // line-break: anywhere;
-                        }}
-                        ></Text>
+                            style={{
+                                color: SECONDARY_COLOR,
+                                textAlign: "justify",
+                                paddingRight: 10,
+                                // line-break: anywhere;
+                            }}
+                        >
+                            {one_post_comment.comment}
+                        </Text>
 
                         <View className="likes_container" style={styles.likes_container}>
                             <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.comment_likes}>
                                 <Icon
                                     icon_name="heart"
-                                    // onPress={}
-                                    is_regular={logged_in_user && one_post_comment.likes_from_users.includes(logged_in_user.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                                    onPress={() => togglePostCommentLike(one_post_comment.id)}
+                                    is_regular={!Boolean(logged_in_user && one_post_comment.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
+                                    color={Boolean(logged_in_user && one_post_comment.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
                                     pressed_color={RED_COLOR}
                                 />
 
-                                <Text className="likes_counter" style={styles.comment_likes_counter}>{one_post_comment.likes}</Text>
+                                <Text 
+                                    className="likes_counter" 
+                                    style={styles.comment_likes_counter}
+                                >
+                                    {one_post_comment.likes}
+                                </Text>
                             </View>
                         </View>
                     </View>
                 </View>
 
                 <View className="interactions" style={styles.interactions}>
+                    {one_post_comment.level < 5 && (
+                        <View className="reply" accessibilityLabel="Odpovedať...">
+                            <Icon
+                                icon_name="comment"
+                                // onPress={}
+                                is_regular={true}
+                            />
+                        </View>
+                    )}
+
+                    {one_post_comment.parent_id && (
+                        <View className="show_replies" accessibilityLabel="Zobraziť odpovede...">
+                            <Icon
+                                icon_name="angle-down"
+                                // onPress={}
+                            />
+                        </View>
+                    )}
+
                     <View className="date" accessibilityLabel="Dátum zverejnenia" style={styles.date}>
-                        <Text style={styles.date_text}></Text>
+                        <Text style={styles.date_text}>{getTimeAgo(one_post_comment.creation_time)}</Text>
                     </View>
                 </View>
                 
                 <View className="reply_container hidden" style={styles.reply_container}>
 
                 </View>
+
+                {/* // Appends The Reply
+                if(one_visible_comment.parent_id) {
+                    const parent_comment:HTMLDivElement|null = all_comments.querySelector(`[data-comment_id="${one_visible_comment.parent_id}"]`) as HTMLDivElement || null // Gets The Parent Comment
+
+                    if(parent_comment) {
+                        const reply_container:HTMLDivElement = parent_comment.querySelector(".reply_container") as HTMLDivElement // Gets The Reply Container
+
+                        reply_container.prepend(one_comment_container)
+
+                        if(one_visible_comment.level === 2) {
+                            one_comment_container.classList.add("first_level_reply")
+                        }
+                    }
+                } */}
             </View>
         ))
 
@@ -598,6 +645,23 @@ export default function Feed() {
     // Function For Handle Post Properties Sheet Switching
     const handlePostPropertiesChanges = (index:number) => {
         if(index === -1) setPostPropertiesSheet("main") // Sets The Post Properties Sheet To Default
+    }
+
+    // Function For Show The Post Comment Properties
+    const showPostCommentProperties = (comment:comment):void => {
+        setSelectedPostComment(comment) // Sets The Selected Post Comment
+        post_comment_properties.current?.expand() // Shows The Post Comment Properties
+    }
+
+    // Function For Close The Post Comment Properties
+    const hidePostCommentProperties = ():void => {
+        setSelectedPostComment(null) // Sets The Selected Post Comment
+        post_comment_properties.current?.close() // Hides The Post Properties
+    }
+
+    // Function For Handle Post Comment Properties Sheet Switching
+    const handlePostCommentPropertiesChanges = (index:number) => {
+        if(index === -1) setPostCommentPropertiesSheet("main") // Sets The Post Comment Properties Sheet To Default
     }
 
     // Function For Toggle Post Like
@@ -819,6 +883,7 @@ export default function Feed() {
             
             else {
                 Alert.alert("Úspech", reported_post_data.message) // Shows The Alert
+                hidePostProperties() // Closes The Post Properties
                 return
             }
         }
@@ -942,6 +1007,8 @@ export default function Feed() {
                 // localStorage.setItem("processing_posts", JSON.stringify(remaining_processing_posts)) // Saves Updated Processing Posts To The Local Storage
 
                 setPosts(previous_posts => previous_posts.filter((one_post:Post) => one_post.id !== post_id)) // Sets The Posts
+                setSelectedPost(null) // Sets The Selected Post
+                hidePostProperties() // Closes The Post Properties
 
                 return
             }
@@ -996,8 +1063,6 @@ export default function Feed() {
                 setPostComments(previous_post_comments => previous_post_comments.map((one_post_comment:comment) => {
                     if(one_post_comment.id === comment_id) {
                         const has_like:boolean = one_post_comment.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
-
-                        if(!has_like) generateHeartParticles() // Generates The Heart Particles
                         
                         // Updates The Post Likes Amount And Stored Likes From Users
                         return {
@@ -1061,6 +1126,7 @@ export default function Feed() {
             
             else {
                 Alert.alert("Úspech", reported_post_comment_data.message) // Shows The Alert
+                hidePostCommentProperties() // Closes The Post Comment Properties
                 return
             }
         }
@@ -1081,7 +1147,7 @@ export default function Feed() {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
-            const deleted_post_comment_response:Response = await fetch(`${API_URL}/delete-post/`, {
+            const deleted_post_comment_response:Response = await fetch(`${API_URL}/delete-post-comment/`, {
                 method: "POST",
 
                 headers: {
@@ -1111,14 +1177,98 @@ export default function Feed() {
             
             else {
                 Alert.alert("Úspech", deleted_post_comment_data.message) // Shows The Alert
+
                 setPostComments(previous_post_comments => previous_post_comments.filter((one_post_comment:comment) => one_post_comment.id !== comment_id)) // Sets The Post Comments
+                setSelectedPostComment(null) // Sets The Selected Post Comment
+                hidePostCommentProperties() // Closes The Post Comment Properties
                 // if(reply_container && reply_container.children.length === 0) deleteShowRepliesIcon(reply_container) // Deletes The Show Replies Icon From The Comment If There Aren't Any Replies Left
+
                 return
             }
         }
         
         catch {
             Alert.alert("Chyba", "Pri odstraňovaní komentáru došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Add Comment
+    const addComment = async (post_id:number, comment:string, parent_id:number|null):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Komentár nie je možné pridať bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const added_post_comment_response:Response = await fetch(`${API_URL}/add-comment/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_id: post_id,
+                    comment: comment,
+                    parent_id: parent_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!added_post_comment_response.ok) {
+                Alert.alert("Chyba", "Pri pridávaní komentáru došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const added_post_comment_data = await added_post_comment_response.json() // Gets The Added Post Comment Data
+
+            // If The Response Isn't Success
+            if(!added_post_comment_data.success) {
+                Alert.alert("Chyba", added_post_comment_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", added_post_comment_data.message) // Shows The Alert
+
+                // Stores The New Comment Data
+                const new_comment:comment = {
+                    id: added_post_comment_data.comment.id,
+
+                    user:{
+                        id: added_post_comment_data.comment.user.id,
+                        first_name: logged_in_user.first_name,
+                        last_name: logged_in_user.last_name,
+                        username: added_post_comment_data.comment.user.username,
+                        profile_picture_name: added_post_comment_data.comment.user.profile_picture_name,
+                        subscription:added_post_comment_data.comment.user.subscription
+                    },
+
+                    comment: comment,
+                    likes: 0,
+                    likes_from_users: [],
+                    creation_time: added_post_comment_data.creation_time,
+                    parent_id: parent_id,
+                    reports_from_users: [],
+                    level: added_post_comment_data.level
+                }
+
+                // Sets The Post Comments
+                setPostComments(previous_post_comments => {
+                    return [...previous_post_comments, new_comment] // Returns The Combined Post Comments
+                })
+
+                setComment("") // Sets The Comment
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri pridávaní komentáru došlo k chybe.") // Shows The Alert
         }
     }
 
@@ -1229,7 +1379,7 @@ export default function Feed() {
                                         </Pressable>
                                     )}
 
-                                    <View accessibilityLabel="Viac...">
+                                    <View className="show_post_properties_button" accessibilityLabel="Viac...">
                                         <Icon
                                             icon_name="ellipsis-vertical"
                                             onPress={() => showPostProperties(one_post)}
@@ -1728,7 +1878,7 @@ export default function Feed() {
                                         size={25}
                                         onPress={() => togglePostLike(one_post.id)}
                                         is_regular={!Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
-                                        color={Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Pr Blue Colored Heart Icon
+                                        color={Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
                                         pressed_color={RED_COLOR}
                                     />
 
@@ -1755,7 +1905,7 @@ export default function Feed() {
                             >
                                 <Icon
                                     icon_name="comment"
-                                    // onPress={}
+                                    onPress={() => getPostComments(post_comments_page, false, one_post.id)}
                                     size={25}
                                     is_regular={true}
                                 />
@@ -1854,7 +2004,11 @@ export default function Feed() {
                                     {/* Loads The Comments */}
                                     {one_post.comments_amount > 0 && loadComments(post_comments)}
 
-                                    <Pressable className="show_more hidden" onPress={() => getPostComments(post_comments_page, false, one_post.id)} style={styles.show_more}>
+                                    <Pressable 
+                                        className="show_more hidden" 
+                                        onPress={() => getPostComments(post_comments_page, false, one_post.id)} 
+                                        style={styles.show_more}
+                                    >
                                         <Text>Zobraziť viac</Text>
                                     </Pressable>
                                 </View>
@@ -1866,9 +2020,9 @@ export default function Feed() {
                                         placeholder="Napísať komentár" 
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
                                         accessibilityLabel="Napísať komentár" 
-                                        // value={comment}
-                                        // onChangeText={setcomment}
-                                        maxLength={100}
+                                        value={comment}
+                                        onChangeText={setComment}
+                                        maxLength={MAX_COMMENT_LENGTH}
 
                                         style={[
                                             styles.write_comment_form_comment, 
@@ -1916,7 +2070,7 @@ export default function Feed() {
                                         className="send" 
                                         accessibilityLabel="Odoslať komentár"
                                         accessibilityRole="button"
-                                        // onPress={sendComment}
+                                        onPress={() => addComment(one_post.id, comment, null)}
                                         style={styles.send}
                                     >
                                         <Svg 
@@ -1983,7 +2137,7 @@ export default function Feed() {
                                     {logged_in_user && selected_post.user.id === logged_in_user.id && (
                                         <Pressable
                                             className="show_post_settings_button"
-                                            onPress={() => setPostPropertiesSheet("post_settings")}
+                                            onPress={() => setPostPropertiesSheet("settings")}
                                             accessibilityRole="button"
 
                                             style={({ pressed }) => [
@@ -2008,7 +2162,7 @@ export default function Feed() {
                                     {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
                                         <Pressable
                                             className="delete_post_button"
-                                            onPress={() => setPostPropertiesSheet("delete_post")}
+                                            onPress={() => setPostPropertiesSheet("delete")}
                                             accessibilityRole="button"
 
                                             style={({ pressed }) => [
@@ -2063,7 +2217,7 @@ export default function Feed() {
                             {post_properties_sheet === "report" && (
                                 <View className="report" style={styles.sheet_container}>
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "spam")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2072,11 +2226,19 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Spam</Text>
                                     </Pressable>
 
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "harassment")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2085,11 +2247,19 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Obťažovanie</Text>
                                     </Pressable>
 
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "hate_speech")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2098,11 +2268,19 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
                                     </Pressable>
 
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "misinformation")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2111,11 +2289,19 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Dezinformácie</Text>
                                     </Pressable>
 
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "explicit_content")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2124,11 +2310,19 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Explicitný obsah</Text>
                                     </Pressable>
 
                                     <Pressable
-                                        // onPress={}
+                                        onPress={() => reportPost(selected_post.id, "other")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
@@ -2137,6 +2331,14 @@ export default function Feed() {
                                             pressed && styles.sheet_item_pressed
                                         ]}
                                     >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
                                         <Text style={styles.sheet_text}>Iné</Text>
                                     </Pressable>
 
@@ -2163,8 +2365,7 @@ export default function Feed() {
                                 </View>
                             )}
 
-
-                            {post_properties_sheet === "post_settings" && (
+                            {post_properties_sheet === "settings" && (
                                 <View className="post_settings" style={styles.sheet_container}>
                                     <View 
                                         className="public_visibility_container"
@@ -2275,7 +2476,7 @@ export default function Feed() {
                                 </View>
                             )}
 
-                            {post_properties_sheet === "delete_post" && (
+                            {post_properties_sheet === "delete" && (
                                 <View className="delete_post" style={styles.sheet_container}>
                                     <Text 
                                         style={[
@@ -2309,6 +2510,309 @@ export default function Feed() {
 
                                     <Pressable 
                                         onPress={() => setPostPropertiesSheet("main")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Zrušiť</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+                        </View>
+                    ) : null}
+                </BottomSheetView>
+            </BottomSheet>
+
+            <BottomSheet
+                ref={post_comment_properties}
+                index={-1}
+                snapPoints={["30%", "50%"]}
+                enablePanDownToClose={true}
+                onChange={handlePostCommentPropertiesChanges}
+            >
+                <BottomSheetView style={{ padding: 20 }}>
+                    {selected_post_comment ? (
+                        <View className="comment_properties">
+                            {post_comment_properties_sheet === "main" && (
+                                <View style={styles.sheet_container}>
+                                    {/* If The Comment Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                    {logged_in_user && selected_post_comment.user.id !== logged_in_user.id && (
+                                        <Pressable
+                                            className="show_report_comment_button"
+                                            onPress={() => setPostCommentPropertiesSheet("report")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="flag"
+                                                    size={20}
+                                                    solid={false}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                        </Pressable>
+                                    )}
+
+                                    {/* If The Comment Belongs To The Logged In User The Delete Option Will Be Shown */}
+                                    {logged_in_user && (selected_post_comment.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                        <Pressable
+                                            className="delete_comment_button"
+                                            onPress={() => setPostCommentPropertiesSheet("delete")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="eraser"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text 
+                                                style={[
+                                                    styles.sheet_text,
+                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                    { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                ]}
+                                            >
+                                                Vymazať
+                                            </Text>
+                                        </Pressable>
+                                    )}
+
+                                    <Pressable
+                                        className="hide_comment_properties_button"
+                                        onPress={hidePostCommentProperties}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+
+                            {post_comment_properties_sheet === "report" && (
+                                <View className="report" style={styles.sheet_container}>
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "spam")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Spam</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "harassment")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "hate_speech")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "misinformation")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "explicit_content")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        onPress={() => reportComment(selected_post_comment.id, "other")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="list"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Iné</Text>
+                                    </Pressable>
+
+                                    <Pressable
+                                        className="back_report_button"
+                                        onPress={() => setPostCommentPropertiesSheet("main")}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="xmark"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Späť</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+
+                            {post_comment_properties_sheet === "delete" && (
+                                <View className="delete_comment" style={styles.sheet_container}>
+                                    <Text 
+                                        style={[
+                                            styles.sheet_text, 
+                                            { textAlign: "center" }
+                                        ]}
+                                    >
+                                        Naozaj chcete vymazať Váš komentár?
+                                    </Text>
+
+                                    <Pressable
+                                        onPress={() => deleteComment(selected_post_comment.id)}
+                                        accessibilityRole="button"
+
+                                        style={({ pressed }) => [
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border, 
+                                            pressed && styles.sheet_item_pressed
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name="eraser"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Text style={styles.sheet_text}>Vymazať</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        onPress={() => setPostCommentPropertiesSheet("main")}
                                         accessibilityRole="button"
 
                                         style={({ pressed }) => [
