@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, use } from "react"
 import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, ActivityIndicator } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
@@ -7,6 +7,8 @@ import { API_URL } from "@/constants/general"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
+
+import type { LoggedInUser } from "./LoginFormDialog"
 
 interface loadedUser {
     id:number,
@@ -27,7 +29,6 @@ interface loadedUser {
 
 interface firstLoadedUsersResponse {
     success: boolean,
-    // logged_in_user_id?:number,
     users:loadedUser[],
     message: string
 }
@@ -38,13 +39,12 @@ interface searchedUser extends loadedUser {
 
 interface searchedUsersResponse {
     success:boolean,
-    // logged_in_user_id?:number,
     users?:searchedUser[],
     message:string
 }
 
 export default function SearchUsers() {
-    const [logged_in_user_id, setLoggedInUserID] = useState<number|null>(null) // Stores The Logged In User ID
+    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [first_loaded_users, setFirstLoadedUsers] = useState<loadedUser[]>([]) // Stores The First Loaded Users
     const [displayed_users, setDisplayedUsers] = useState<loadedUser[]>(first_loaded_users) // Stores The Displayed Users
     const [loaded_users, setLoadedUsers] = useState<loadedUser[]>([]) // Stores The Loaded Users
@@ -53,6 +53,49 @@ export default function SearchUsers() {
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Users Are Loading
 
     const search_users_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Stores The Search Users Timeout
+
+    // Function For Get The Logged In User
+    const getLoggedInUser = async () => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+    
+            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+
+            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+                await AsyncStorage.removeItem("user_token") // Removes The User Token
+                setLoggedInUser(null) // Removes The Logged In User
+                return null
+            }
+    
+            if(logged_in_user_data.success) {
+                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user
+            } 
+            
+            else return null
+    
+        } 
+        
+        catch {
+            return null
+        }
+    }
+
+    // Initializes The Get Logged In User
+    useEffect(() => {
+        getLoggedInUser() // Gets The Logged In User
+    }, [])
 
     // Loads The Searched Users From The History
     useEffect(() => {
@@ -77,6 +120,8 @@ export default function SearchUsers() {
         // Function For Load First Users
         const loadFirstUsers = async () => {
             try {
+                const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
                 // Sends The POST Request To The Server
                 const first_loaded_users_response:Response = await fetch(`${API_URL}/load-first-users/`, {
                     method: "POST",
@@ -84,12 +129,15 @@ export default function SearchUsers() {
                     headers: {
                         "Content-Type": "application/json",
                         "Accept": "application/json",
+                        "Authorization": `Bearer ${user_token}`
                     },
 
                     body: JSON.stringify(searched_users_history),
                 })
         
                 const first_loaded_users_data:firstLoadedUsersResponse = await first_loaded_users_response.json() // Gets The Load First Users Data
+
+                console.log(first_loaded_users_data)
 
                 // If The Response Isn't Success
                 if(!first_loaded_users_data.success) {
@@ -132,42 +180,8 @@ export default function SearchUsers() {
         saveSearchedUsersHistory(new_history) // Saves The Searched Users History
     }
 
-    // Function For Get The Follow Button Properties
-    const getFollowButtonProperties = (user:loadedUser) => {
-        let action:string = "follow" // Stores The Action
-        let text:string = "Začať sledovať" // Stores The Text
-
-        if(!user.has_follow && !user.has_pending_follow_request && !user.private_account) {
-            action = "follow"
-            text = "Začať sledovať"
-        } 
-        
-        else if(user.has_follow) {
-            action = "unfollow"
-            text = "Prestať sledovať"
-        } 
-        
-        else if(!user.has_pending_follow_request && user.private_account) {
-            action = "send_follow_request"
-            text = "Začať sledovať"
-        } 
-        
-        else if(user.has_pending_follow_request) {
-            action = "cancel_follow_request"
-            text = "Zrušiť žiadosť"
-        }
-
-        return { action, text }
-    }
-
     // Function For Create Loaded User HTML
-    const createLoadedUserHTML = (one_loaded_user:loadedUser, logged_in_user_id:number|null) => {
-        // Gets The Follow Button Properties
-        const follow_button_properties:{
-            action:string,
-            text:string
-        } = getFollowButtonProperties(one_loaded_user)
-
+    const createLoadedUserHTML = (one_loaded_user:loadedUser) => {
         return (
             <Pressable 
                 key={one_loaded_user.id}
@@ -209,16 +223,17 @@ export default function SearchUsers() {
                     />
                 </View>
 
-                {logged_in_user_id && one_loaded_user && logged_in_user_id !== one_loaded_user.id && (
+                {logged_in_user && logged_in_user.id !== one_loaded_user.id && (
                     <Pressable
                         className="follow_button" 
+                        onPress={() => toggleFollow(one_loaded_user.id, getFollowButtonProperties(one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).action)}
 
                         style={[
                             styles.follow_button, 
                             { outlineStyle: "none" } as any
                         ]}
                     >
-                        <Text>{follow_button_properties.text}</Text>
+                        <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).text}</Text>
                     </Pressable>
                 )}
             </Pressable>
@@ -256,7 +271,7 @@ export default function SearchUsers() {
                         body: JSON.stringify({searched_text: text}),
                     })
             
-                    const searched_users_data:firstLoadedUsersResponse = await searched_users_response.json() // Gets The Searched Users Data
+                    const searched_users_data:searchedUsersResponse = await searched_users_response.json() // Gets The Searched Users Data
 
                     if(!searched_users_data.success) {
                         console.log(searched_users_data.message)
@@ -299,6 +314,69 @@ export default function SearchUsers() {
             setDisplayedUsers(filtered_users) // Sets The Displayed Users
         }
     }
+
+    // Function For Toggle Follow
+    const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const toggle_follow_response:Response = await fetch(`${API_URL}/toggle-follow/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    user_to_follow_id: user_to_follow_id,
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_follow_response.ok) {
+                Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const toggle_follow_data = await toggle_follow_response.json() // Gets The Toggle Follow Data
+
+            // If The Response Isn't Success
+            if(!toggle_follow_data.success) {
+                Alert.alert("Chyba", toggle_follow_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                // Sets The Displayed Users
+                setDisplayedUsers(previous_users => previous_users.map((one_user:loadedUser) => {
+                    if(one_user.id === user_to_follow_id) {
+                        // Updates The Has Follow And Has Pending Follow Request
+                        return {
+                            ...one_user,
+                            has_follow: action === "follow", 
+                            has_pending_follow_request: action === "send_follow_request"
+                        }
+                    }
+
+                    return one_user // Returns The Unchanged Post
+                }))
+
+                Alert.alert("Úspech", toggle_follow_data.message) // Shows The Alert
+            }
+        }
+
+        catch {
+            Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+        }
+    }
     
     return (
         <View className="search_users" style={styles.search_users}>
@@ -339,7 +417,7 @@ export default function SearchUsers() {
                     <View className="all_users" style={styles.all_users}>
                         {displayed_users && (
                             displayed_users.map(one_loaded_user => (
-                                createLoadedUserHTML(one_loaded_user, null)
+                                createLoadedUserHTML(one_loaded_user)
                             ))
                         )}
                     </View>
@@ -347,6 +425,34 @@ export default function SearchUsers() {
             </View>
         </View>
     )
+}
+
+// Function For Get The Follow Button Properties
+export const getFollowButtonProperties = (private_account:boolean, has_follow:boolean, has_pending_follow_request:boolean) => {
+    let action:string = "follow" // Stores The Action
+    let text:string = "Začať sledovať" // Stores The Text
+
+    if(!has_follow && !has_pending_follow_request && !private_account) {
+        action = "follow"
+        text = "Začať sledovať"
+    } 
+    
+    else if(has_follow) {
+        action = "unfollow"
+        text = "Prestať sledovať"
+    } 
+    
+    else if(!has_pending_follow_request && private_account) {
+        action = "send_follow_request"
+        text = "Začať sledovať"
+    } 
+    
+    else if(has_pending_follow_request) {
+        action = "cancel_follow_request"
+        text = "Zrušiť žiadosť"
+    }
+
+    return { action, text }
 }
 
 const styles = StyleSheet.create({

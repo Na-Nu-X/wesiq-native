@@ -17,6 +17,7 @@ import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet"
 
 import type { LoggedInUser } from "./LoginFormDialog"
 import { HeartParticle } from "./HeartParticle"
+import { getFollowButtonProperties } from "./SearchUsers"
 
 export interface Post {
     user:User,
@@ -62,7 +63,10 @@ export interface User {
 
     subscription?:{
         is_active:boolean
-    }
+    },
+
+    has_follow:boolean,
+    has_pending_follow_request:boolean
 }
 
 interface Media {
@@ -1272,6 +1276,72 @@ export default function Feed() {
         }
     }
 
+    // Function For Toggle Follow
+    const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+            return
+        }
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const toggle_follow_response:Response = await fetch(`${API_URL}/toggle-follow/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    user_to_follow_id: user_to_follow_id,
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_follow_response.ok) {
+                Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const toggle_follow_data = await toggle_follow_response.json() // Gets The Toggle Follow Data
+
+            // If The Response Isn't Success
+            if(!toggle_follow_data.success) {
+                Alert.alert("Chyba", toggle_follow_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                // Sets The Posts
+                setPosts(previous_posts => previous_posts.map((one_post:Post) => {
+                    if(one_post.user.id === user_to_follow_id) {
+                        // Updates The Has Follow And Has Pending Follow Request
+                        return {
+                            ...one_post,
+                            user: {
+                                ...one_post.user,
+                                has_follow: action === "follow", 
+                                has_pending_follow_request: action === "send_follow_request"
+                            }
+                        }
+                    }
+
+                    return one_post // Returns The Unchanged Post
+                }))
+
+                Alert.alert("Úspech", toggle_follow_data.message) // Shows The Alert
+            }
+        }
+
+        catch {
+            Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+        }
+    }
+
     return (
         <View className="feed" style={styles.feed}>
             <View className="search_posts_container" style={styles.search_posts_container}>
@@ -1369,13 +1439,14 @@ export default function Feed() {
                                     {logged_in_user && logged_in_user.id !== one_post.user.id && (
                                         <Pressable
                                             className="follow_button" 
+                                            onPress={() => toggleFollow(one_post.user.id, getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).action)}
 
                                             style={[
                                                 styles.follow_button, 
                                                 { outlineStyle: "none" } as any
                                             ]}
                                         >
-                                            <Text>{one_post.user.followers.includes(logged_in_user.id) ? "Začať sledovať" : "Prestať sledovať"}</Text>
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).text}</Text>
                                         </Pressable>
                                     )}
 
