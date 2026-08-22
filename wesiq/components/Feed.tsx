@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch } from "react-native"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch, ScrollView } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -14,10 +14,11 @@ import Slider from "@react-native-community/slider"
 import Svg, { Path } from "react-native-svg"
 import EmojiPicker from "rn-emoji-keyboard"
 import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet"
-
-import type { LoggedInUser } from "./LoginFormDialog"
 import { HeartParticle } from "./HeartParticle"
 import { getFollowButtonProperties } from "./SearchUsers"
+import { DynamicImage } from "./DynamicImage"
+
+import type { LoggedInUser } from "./LoginFormDialog"
 
 export interface Post {
     user:User,
@@ -141,6 +142,7 @@ export default function Feed() {
     const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
     const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"settings"|"delete">("main") // Stores The Active Post Properties Sheet
     const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
+    const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
 
     const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
     const [post_comments_page, setPostCommentsPage] = useState(1) // Stores The Current Post Comments Page Number
@@ -395,7 +397,11 @@ export default function Feed() {
     // Function For Load Comments
     const loadComments = (post_comments:comment[]) => {
         return post_comments.map((one_post_comment:comment, index:number) => (
-            <View className="one_comment" style={styles.one_comment}>
+            <View 
+                key={one_post_comment.id || index}
+                className="one_comment" 
+                style={styles.one_comment}
+            >
                 <View className="comment_container" style={styles.comment_container}>
                     <View className="user" style={styles.user}>
                         <ProfilePictureLink user_id={one_post_comment.user.id} user_profile_picture_name={one_post_comment.user.profile_picture_name || null} user_subscription={one_post_comment.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
@@ -1342,6 +1348,17 @@ export default function Feed() {
         }
     }
 
+    // Function For Change The Active Post Media
+    const changePostMedia = (post_id:number, new_index:number, max_index:number):void => {
+        if(new_index >= 0 && new_index <= max_index) {
+            // Sets The Active Post Media
+            setActivePostMedia(previous_active_post_media => ({
+                ...previous_active_post_media,
+                [post_id]: new_index // Sets The New Active Index For The Post
+            }))
+        }
+    }
+
     return (
         <View className="feed" style={styles.feed}>
             <View className="search_posts_container" style={styles.search_posts_container}>
@@ -1470,13 +1487,13 @@ export default function Feed() {
                                             >
                                                 <Text numberOfLines={1}>
                                                     {one_post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
-                                                        <>
+                                                        <Text key={index}>
                                                             <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
 
                                                             {one_post.location && index < one_post.location.split("<span></span>").filter(Boolean).length - 1 && (
                                                                 <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
                                                             )}
-                                                        </>
+                                                        </Text>
                                                     ))}
                                                 </Text>
                                             </Pressable>
@@ -1498,33 +1515,20 @@ export default function Feed() {
 
                                     style={[
                                         styles.one_post, 
-                                        { display: index === 0 ? "flex" : "none" }
+                                        { display: index === (active_post_media[one_post.id] || 0) ? "flex" : "none" }
                                     ]}
                                 >
                                     <View className="loading hidden" style={styles.loading}>
                                         <Text>Načítavam...</Text>
                                     </View>
 
-                                    <View className="previous hidden" style={styles.previous}>
-                                        <Icon
-                                            icon_name="angle-left"
-                                            // onPress={}
-                                        />
-                                    </View>
-
-                                    <View className="next hidden" style={styles.next}>
-                                        <Icon
-                                            icon_name="angle-right"
-                                            // onPress={}
-                                        />
-                                    </View>
-
                                     {!one_post_media.is_video && (
-                                        <Image 
-                                            className="image"
-                                            source={{ uri: `https://wesiq.com/media/${one_post_media.file}` }}
-                                            style={{ width: "100%", aspectRatio: 16 / 9, resizeMode: "cover" }}
-                                        />
+                                        <View className="image">
+                                            <DynamicImage 
+                                                key={one_post_media.id || index}
+                                                uri={`https://wesiq.com/media/${one_post_media.file}`} 
+                                            />
+                                        </View>
                                     )}
 
                                     {one_post_media.is_video && (
@@ -1917,13 +1921,14 @@ export default function Feed() {
                             >
                                 {one_post.media.length > 1 && (
                                     one_post.media.map((one_post_media:Media, index:number) => (
-                                        <View 
+                                        <Pressable 
                                             key={index} 
                                             className="bar" 
+                                            onPress={() => changePostMedia(one_post.id, index, one_post.media.length - 1)}
 
                                             style={[
                                                 styles.bar, 
-                                                { backgroundColor: index === 0 ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                                { backgroundColor: index === (active_post_media[one_post.id] || 0) ? DARK_BLUE_COLOR : BLUE_COLOR }
                                             ]}
                                         />
                                     ))
@@ -2071,7 +2076,12 @@ export default function Feed() {
 
                         {one_post.allow_comments && (
                             <View className="comment_forum" style={styles.comment_forum}>
-                                <View className="all_comments" style={styles.all_comments}>
+                                <ScrollView 
+                                    className="all_comments" 
+                                    showsVerticalScrollIndicator={false}
+                                    indicatorStyle="white"
+                                    style={styles.all_comments}
+                                >
                                     {/* Loads The Comments */}
                                     {one_post.comments_amount > 0 && loadComments(post_comments)}
 
@@ -2080,9 +2090,9 @@ export default function Feed() {
                                         onPress={() => getPostComments(post_comments_page, false, one_post.id)} 
                                         style={styles.show_more}
                                     >
-                                        <Text>Zobraziť viac</Text>
+                                        <Text style={{ color: LIGHT_BLUE_COLOR }}>Zobraziť viac</Text>
                                     </Pressable>
-                                </View>
+                                </ScrollView>
 
                                 <View className="write_comment_form" style={styles.write_comment_form}>
                                     <TextInput
@@ -2102,7 +2112,15 @@ export default function Feed() {
                                     />
 
                                     {logged_in_user && (
-                                        <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                        <View 
+                                            style={{ 
+                                                position: "absolute",
+                                                top: 6,
+                                                left: 6,
+                                            }}
+                                        >
+                                            <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                        </View>
                                     )}
 
                                     <View 
@@ -2145,8 +2163,8 @@ export default function Feed() {
                                         style={styles.send}
                                     >
                                         <Svg 
-                                            width={24} 
-                                            height={24} 
+                                            width={30} 
+                                            height={30} 
                                             fill="none" 
                                             viewBox="0 0 24 24" 
                                             strokeWidth={1.5} 
@@ -3182,64 +3200,6 @@ const styles = StyleSheet.create({
         // &.hidden {
         //     opacity: 0;
         //     display: none;
-        // }
-    },
-
-    previous: {
-        opacity: 0,
-        position: "absolute",
-        top: "50%",
-        left: 10,
-        transform: [{ translateY: "-50%" }],
-        width: 50,
-        height: 50,
-        paddingHorizontal: 10,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: BIG_BORDER_RADIUS,
-        // transition: border-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
-        zIndex: 50,
-
-        // &.hidden {
-        //     display: none;
-        // }
-
-        // &:hover,
-        // &:focus-visible {
-                // border-color: $blue-color;
-        //     transform: translateY(-50%) scale(1.05);
-        //     opacity: 1;
-        // }
-    },
-
-    next: {
-        opacity: 0,
-        position: "absolute",
-        top: "50%",
-        right: 10,
-        transform: [{ translateY: "-50%" }],
-        width: 50,
-        height: 50,
-        paddingHorizontal: 10,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: BIG_BORDER_RADIUS,
-        // transition: border-color 0.3s ease, transform 0.2s ease, opacity 0.3s ease;
-        zIndex: 50,
-
-        // &.hidden {
-        //     display: none;
-        // }
-
-        // &:hover,
-        // &:focus-visible {
-                // border-color: $blue-color;
-        //     transform: translateY(-50%) scale(1.05);
-        //     opacity: 1;
         // }
     },
 

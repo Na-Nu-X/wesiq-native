@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, StyleSheet, SafeAreaView, Pressable, Text, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native"
+import { View, StyleSheet, Pressable, Text, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native"
 import IconButton from "@/components/IconButton"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
@@ -9,6 +9,8 @@ import SearchUsers from "@/components/SearchUsers"
 import Feed from "@/components/Feed"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import LoginFormDialog from "@/components/LoginFormDialog"
+import { SafeAreaView } from "react-native-safe-area-context"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -18,12 +20,12 @@ export default function HomeScreen() {
   const [is_login_form_dialog_open, setIsLoginFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Login Form Dialog Is Open
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <BackgroundContainer>
-        <SafeAreaView style={styles.safe_area}>
+        <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
           <View style={styles.banner}>
             <BlurView intensity={20} style={StyleSheet.absoluteFill} />
-
+  
             <View
               style={[
                 StyleSheet.absoluteFill, 
@@ -47,12 +49,12 @@ export default function HomeScreen() {
                   />
                 </View>
               </View>
-
+  
               <View className="right" style={styles.right}>
                 {logged_in_user && (
                   <View className="account" style={styles.account}>
                     <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
-
+  
                     <Pressable
                       // onPress={handleGoToProfile}
                       accessibilityRole="button"
@@ -61,7 +63,7 @@ export default function HomeScreen() {
                       {({ pressed }) => (
                         <Text 
                           className="username"
-
+  
                           style={[
                             styles.username,
                             pressed && { textDecorationLine: "underline" } 
@@ -73,7 +75,7 @@ export default function HomeScreen() {
                     </Pressable>
                   </View>
                 )}
-
+  
                 {!logged_in_user && (
                   <View className="no_account" style={styles.no_account}>
                     <Pressable 
@@ -83,7 +85,7 @@ export default function HomeScreen() {
                       {({ pressed }) => (
                         <Text 
                           className="login"
-
+  
                           style={[
                             styles.login,
                             pressed && { textDecorationLine: "underline" } 
@@ -98,26 +100,32 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-
-          <ScrollView className="content" style={styles.content}>
+  
+          <ScrollView 
+            className="content" 
+            style={styles.content} 
+            contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled" 
+            keyboardDismissMode="on-drag"
+          >
             <LoginFormDialog 
               visible={is_login_form_dialog_open}
               onClose={() => setIsLoginFormDialogOpen(false)}
               onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
             />
-
+  
             <UploadPostFormDialog 
               visible={is_upload_post_form_dialog_open}
               onClose={() => setIsUploadPostFormDialogOpen(false)}
             />
-
+  
             <SearchUsers />
-
+  
             <Feed />
           </ScrollView>
         </SafeAreaView>
       </BackgroundContainer>
-    </TouchableWithoutFeedback>
+    </GestureHandlerRootView>
   )
 }
 
@@ -175,6 +183,5 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
-    padding: 20,
   },
 })

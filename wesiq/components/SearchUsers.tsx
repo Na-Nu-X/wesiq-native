@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
         position: "relative",
         alignItems: "center",
         justifyContent: "center",
-        minHeight: "100%",
+        // minHeight: "100%",
         paddingVertical: 20,
         zIndex: 100,
     },
