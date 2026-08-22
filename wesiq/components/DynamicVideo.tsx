@@ -1,0 +1,722 @@
+import React, { useState, useEffect } from "react"
+import { View, Image, StyleSheet, Text } from "react-native"
+import { Video, ResizeMode } from "expo-av"
+import { DOMAIN } from "@/constants/general"
+import { Media, Post } from "./Feed"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { FontAwesome6 } from "@expo/vector-icons"
+import { BIG_BORDER_RADIUS } from "@/constants/borders"
+import Icon from "./Icon"
+import Slider from "@react-native-community/slider"
+import { getFormattedTime } from "@/utils/time"
+
+interface DynamicVideoProps {
+    one_post:Post,
+    one_post_media:Media,
+    playing_video:number|null,
+    setPlayingVideo:(id:number|null) => void,
+    data_saving_mode:boolean
+}
+
+export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode = false }:DynamicVideoProps) => {
+    const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
+    const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
+    const video_url = data_saving_mode ? `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/v0_index.m3u8` : `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/index.m3u8` // Sets The Video URL (If The Data Saving Mode Is Enabled Sets The Video Quality To 480p By Default)
+
+    const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
+
+    const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Video Time
+    const [duration, setDuration] = useState<number>(0) // Stores The Video Duration
+    const [buffered_time, setBufferedTime] = useState<number>(0) // Stores The Video Buffered Time
+
+    useEffect(() => {
+        if(thumbnail_url) {
+            Image.getSize(
+                thumbnail_url, 
+
+                (width, height) => {
+                    if(height > 0) setAspectRatio(width / height) // Sets The Aspect Ratio
+                }, 
+
+                (error) => {
+                    console.log("Nepodarilo sa zistiť veľkosť náhľadu videa:", error)
+                }
+            )
+        }
+    }, [thumbnail_url])
+
+    return (
+        <View 
+            className="video_container" 
+            style={styles.video_container}
+        >
+            <View className="play_pause_indicator hidden" style={styles.play_pause_indicator}>
+                <Icon
+                    icon_name={playing_video !== one_post_media.id ? "pause" : "play"}
+                    onPress={playing_video !== one_post_media.id ? () => setPlayingVideo(one_post_media.id) : () => setPlayingVideo(null)}
+                    size={40}
+                    style={playing_video === one_post_media.id ? { marginLeft: 8 } : { marginLeft: 0 }}
+                    pressed_color={LIGHT_BLUE_COLOR}
+                    color={LIGHT_BLUE_COLOR}
+                />
+            </View>
+
+            <View className="step_back_indicator hidden" style={styles.step_back_indicator}>
+                <FontAwesome6
+                    name="angle-left"
+                    size={40}
+                    color={LIGHT_BLUE_COLOR}
+                    // style={{ transition: opacity 0.5s ease, transform 0.2s ease-out; }}
+                />
+
+                <Text 
+                    style={{ 
+                        color: SECONDARY_COLOR, 
+                        fontSize: 25,
+                    }}
+
+                    // transition: opacity 0.3s ease, transform 0.3s ease-out
+                >
+                    -5
+                </Text>
+            </View>
+
+            <View className="step_further_indicator hidden" style={styles.step_further_indicator}>
+                <Text 
+                    style={{ 
+                        color: SECONDARY_COLOR, 
+                        fontSize: 25,
+                    }}
+
+                    // transition: opacity 0.3s ease, transform 0.3s ease-out
+                >
+                    +5
+                </Text>
+
+                <FontAwesome6
+                    name="angle-right"
+                    size={40}
+                    color={LIGHT_BLUE_COLOR}
+                    // style={{ transition: opacity 0.5s ease, transform 0.2s ease-out; }}
+                />
+            </View>
+
+            <View 
+                style={{ 
+                    width: "100%", 
+                    aspectRatio: aspect_ratio, 
+                    backgroundColor: MAIN_COLOR, 
+                }}
+            >
+                {playing_video === one_post_media.id ? (
+                    <Video
+                        className="video"
+                        source={{ uri: video_url }}
+                        shouldPlay={true}
+                        isLooping={true}
+                        isMuted={true}
+                        resizeMode={ResizeMode.CONTAIN} 
+                        style={{ width: "100%", height: "100%" }}
+                        videoStyle={{ width: "100%", height: "100%" }}
+                        
+                        onPlaybackStatusUpdate={(status) => {
+                            if(status.isLoaded) {
+                                setElapsedTime(status.positionMillis) // Sets The Elapsed Time
+                                if(status.durationMillis) setDuration(status.durationMillis) // Sets The Duration
+                                if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
+                            }
+                        }}
+                    />
+                ) : (
+                    <Image 
+                        source={{ uri: thumbnail_url }} 
+                        style={StyleSheet.absoluteFillObject} 
+                        resizeMode="cover"
+                    />
+                )}
+            </View>
+
+            <View className="controls" style={styles.controls}>
+                <View className="buttons" style={styles.buttons}>
+                    <View 
+                        className="play_pause" 
+                        accessibilityLabel={playing_video === one_post_media.id ? "Pozastaviť..." : "Prehrať..."}
+                        // &:hover {
+                        //     i {
+                        //         transform: scale(1.1);
+                        //         cursor: pointer;
+                        //     }
+                        // }
+                        style={styles.play_pause}
+                    >
+                        <Icon
+                            icon_name={playing_video === one_post_media.id ? "pause" : "play"}
+                            onPress={playing_video !== one_post_media.id ? () => setPlayingVideo(one_post_media.id) : () => setPlayingVideo(null)}
+                            size={25}
+                            // style={{ transition: transform 0.3s ease; }}
+                        />
+                    </View>
+
+                    <View 
+                        className="step_back" 
+                        accessibilityLabel="O 5 sekúnd späť..."
+                        // &:hover {
+                        //     i {
+                        //         transform: scale(1.1);
+                        //         cursor: pointer;
+                        //     }
+                        // }
+                    >
+                        <Icon
+                            icon_name="arrow-rotate-left"
+                            // onPress={}
+                            size={25}
+                            // style={{ transition: transform 0.3s ease; }}
+                        />
+                    </View>
+
+                    <View 
+                        className="step_further" 
+                        accessibilityLabel="O 5 sekúnd ďalej..."
+                        // &:hover {
+                        //     i {
+                        //         transform: scale(1.1);
+                        //         cursor: pointer;
+                        //     }
+                        // }
+                    >
+                        <Icon
+                            icon_name="arrow-rotate-right"
+                            // onPress={}
+                            size={25}
+                            // style={{ transition: transform 0.3s ease; }}
+                        />
+                    </View>
+
+                    <View className="timer" style={styles.timer}>
+                        <Text 
+                            className="elapsed"
+
+                            style={{
+                                width: 40,
+                                // width: "4ch"
+                                textAlign: "center",
+                                fontSize: 15,
+                                color: SECONDARY_COLOR,
+                            }}
+                        >
+                            {`${getFormattedTime("minutes", elapsed_time / 1000)}:${getFormattedTime("seconds", elapsed_time / 1000, true)}`}
+                        </Text>
+
+                        <Text
+                            style={{
+                                width: 40,
+                                // width: "4ch"
+                                textAlign: "center",
+                                fontSize: 15,
+                                color: SECONDARY_COLOR,
+                            }}
+                        >
+                            /
+                        </Text>
+
+                        <Text 
+                            className="total"
+                            
+                            style={{
+                                width: 40,
+                                // width: "4ch"
+                                textAlign: "center",
+                                fontSize: 15,
+                                color: SECONDARY_COLOR,
+                            }}
+                        >
+                            {`${getFormattedTime("minutes", duration / 1000)}:${getFormattedTime("seconds", duration / 1000, true)}`}
+                        </Text>
+                    </View>
+
+                    <View className="volume_container" style={styles.volume_container}>
+                        {!one_post_media.is_muted && (
+                            <>
+                                <Slider
+                                    className="volume"
+                                    minimumValue={0}
+                                    maximumValue={1}
+                                    step={0.01}
+                                    value={volume}
+                                    onValueChange={(value) => setVolume(value)}
+                                    minimumTrackTintColor="#FFFFFF"
+                                    maximumTrackTintColor="#000000"
+                                    style={styles.volume}
+                                >
+                                    <Text className="volume_label" style={styles.volume_label}>0%</Text>
+                                </Slider>
+
+                                <View className="mute_unmute" accessibilityLabel="Hlasitosť..." style={styles.mute_unmute}>
+                                    <Icon
+                                        icon_name="volume-xmark"
+                                        // onPress={}
+                                        size={25}
+                                        // style={{ transition: transform 0.3s ease; }}
+                                    />
+                                </View>
+                            </>
+                        )}
+
+                        {one_post_media.is_muted && (
+                            <View className="volume_container">
+                                <View className="muted" accessibilityLabel="Video nemá zvuk" style={styles.muted}>
+                                    <FontAwesome6
+                                        name="volume-xmark"
+                                        size={25}
+                                        color={"#999999"}
+                                        // style={{ transition: transform 0.3s ease; }}
+                                    />
+                                </View>
+                            </View>
+                        )}
+                    </View>
+
+                    <View 
+                        className="show_video_settings_button" 
+                        accessibilityLabel="Nastavenia..."
+                        // &:hover {
+                        //     i {
+                        //         transform: scale(1.1);
+                        //         cursor: pointer;
+                        //     }
+                        // }
+                        style={styles.show_video_settings_button}
+                    >
+                        <Icon
+                            icon_name="gear"
+                            // onPress={}
+                            size={25}
+                            // style={{ transition: transform 0.3s ease; }}
+                        />
+                    </View>
+
+                    {/* <div 
+                        class="video_settings" 
+                        id=""
+                        popover
+                        style=""
+                    >
+                        <button 
+                            class="show_video_quality_button"
+                            popovertarget=""
+                            style=""
+                        >
+                            <i class="fa-solid fa-gear"></i> <!-- https://fontawesome.com/icons/gear -->
+                            <span>{% translate "Kvalita" %}</span>
+                        </button>
+
+                        <button 
+                            class="show_video_speed_button"
+                            popovertarget=""
+                            style=""
+                        >
+                            <i class="fa-solid fa-stopwatch"></i> <!-- https://fontawesome.com/icons/stopwatch -->
+                            <span>{% translate "Rýchlosť" %}</span>
+                        </button>
+
+                        <button 
+                            class="back_video_settings_button"
+                            popovertarget=""
+                            popovertargetaction="hide"
+                        >
+                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
+                            <span>{% translate "Zavrieť" %}</span>
+                        </button>
+                    </div>
+
+                    <div 
+                        class="video_quality" 
+                        id=""
+                        popover
+                        style=""
+                    >
+                        <button class="quality_button quality_auto" data-quality="-1">auto</button>
+                        <button class="quality_button quality_1080p" data-quality="1080">1080p</button>
+                        <button class="quality_button quality_720p" data-quality="720">720p</button>
+                        <button class="quality_button quality_480p" data-quality="480">480p</button>
+
+                        <button 
+                            class="back_video_quality_button" 
+                            popovertarget=""
+                            popovertargetaction="hide"
+                        >
+                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
+                            <span>{% translate "Zavrieť" %}</span>
+                        </button>
+                    </div>
+
+                    <div 
+                        class="video_speed" 
+                        id=""
+                        popover
+                        style=""
+                    >
+                        <button class="speed_button" data-speed="2">2×</button>
+                        <button class="speed_button" data-speed="1.5">1,5×</button>
+                        <button class="speed_button" data-speed="1">{% translate "Normálna" %}</button>
+                        <button class="speed_button" data-speed="0.5">0,5×</button>
+
+                        <button 
+                            class="back_video_speed_button" 
+                            popovertarget=""
+                            popovertargetaction="hide"
+                        >
+                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
+                            <span>{% translate "Zavrieť" %}</span>
+                        </button>
+                    </div> */}
+
+                    <View 
+                        className="fullscreen" 
+                        accessibilityLabel="Rozstiahnuť..."
+                        // &:hover {
+                        //     i {
+                        //         transform: scale(1.1);
+                        //         cursor: pointer;
+                        //     }
+                        // }
+                        style={styles.fullscreen}
+                    >
+                        <Icon
+                            icon_name="expand"
+                            // onPress={}
+                            size={25}
+                            // style={{ transition: transform 0.3s ease; }}
+                        />
+                    </View>
+                </View>
+
+                <View className="scrubber_hitbox" style={styles.scrubber_hitbox}>
+                    <View className="scrubber" style={styles.scrubber}>
+                        <View 
+                            className="scrubber_track" 
+
+                            style={[
+                                styles.scrubber_track,
+                                { width: duration > 0 ? `${(elapsed_time / duration) * 100}%` : "0%" }
+                            ]}
+                        />
+
+                        <View 
+                            className="scrubber_thumb" 
+
+                            style={[
+                                styles.scrubber_thumb,
+                                { marginLeft: duration > 0 ? `${(elapsed_time / duration) * 100}%` : "0%" }
+                            ]}
+                        />
+
+                        <View 
+                            className="buffering_bar" 
+
+                            style={[
+                                styles.buffering_bar,
+                                { width: duration > 0 ? `${(buffered_time / duration) * 100}%` : "0%" }
+                            ]}
+                        />
+                    </View>
+                </View>
+            </View>
+        </View>
+    )
+}
+
+const styles = StyleSheet.create({
+    video_container: {
+        position: "relative",
+
+        // &:hover {
+        //     .controls {
+        //         display: flex;
+        //         opacity: 1;
+        //     }
+        // }
+
+        // &:fullscreen {
+        //     top: 0px !important;
+        //     left: 0px !important;
+        //     width: 100vw !important;
+        //     height: 100vh !important;
+        //     margin: 0px !important;
+        //     padding: 0px !important;
+
+        //     .controls {
+        //         .buttons {
+        //             padding: 0px calc(50px);
+        //         }
+        //     }
+        // }
+    },
+
+    play_pause_indicator: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+
+        transform: [
+            { translateX: "-50%" },
+            { translateY: "-50%" }
+        ],
+
+        alignItems: "center",
+        justifyContent: "center",
+
+        // pointerEvents: "none",
+        opacity: 1,
+        width: 50,
+        height: 50,
+        backgroundColor: transparentize(MAIN_COLOR, 0.8),
+        borderRadius: BIG_BORDER_RADIUS,
+        // transition: opacity 0.3s ease;
+        zIndex: 50,
+
+        // &.hidden {
+        //     opacity: 0;
+        // }
+    },
+
+    step_back_indicator: {
+        position: "absolute",
+        top: "50%",
+        left: 50,
+        transform: [{ translateY: "-50%" }],
+        // pointerEvents: "none",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        height: 50,
+        zIndex: 50,
+
+        // &.hidden {
+        //     span {
+        //         opacity: 0;
+        //         transform: scale(1.1);
+        //     }
+        // }
+
+        // &.hidden {
+        //     .fa-angle-left {
+        //         opacity: 0;
+        //         transform: translateX(-10px);
+        //     }
+        // }
+    },
+
+    step_further_indicator: {
+        position: "absolute",
+        top: "50%",
+        right: 50,
+        transform: [{ translateY: "-50%" }],
+        // pointerEvents: "none",
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        height: 50,
+        zIndex: 50,
+
+        // &.hidden {
+        //     span {
+        //         opacity: 0;
+        //         transform: scale(1.1);
+        //     }
+        // }
+
+        // &.hidden {
+        //     .fa-angle-right {
+        //         opacity: 0;
+        //         transform: translateX(10px);
+        //     }
+        // }
+    },
+
+    controls: {
+        // display: "none",
+        // opacity: 0,
+        position: "absolute",
+        bottom: BIG_BORDER_RADIUS / 2,
+        gap: 10,
+        width: "100%",
+        // transition: display 0.3s ease allow-discrete 1s, opacity 0.3s ease 1s;
+        zIndex: 100,
+    },
+
+    buttons: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingHorizontal: BIG_BORDER_RADIUS / 2,
+    },
+
+    play_pause: {
+        width: 13.5,
+    },
+
+    timer: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginRight: "auto",
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        // font-family: $article-heading-font;
+        // font-variant-numeric: tabular-nums;
+        fontSize: 15,
+        backgroundColor: transparentize(MAIN_COLOR, 0.8),
+        borderRadius: 28 / 2,
+    },
+
+    volume_container: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        backgroundColor: transparentize(MAIN_COLOR, 0.8),
+        borderRadius: 28 / 2,
+    },
+
+    volume: {
+        // appearance: none !important;
+        // -webkit-appearance: none !important;
+        direction: "rtl",
+        position: "relative",
+        height: 5,
+        backgroundColor: BLUE_COLOR,
+        borderRadius: 5 / 2,
+
+        // &:hover {
+        //     &::-webkit-slider-thumb {
+        //         background-color: $dark-blue-color;
+        //         scale: 1.2;
+        //     }
+        // }
+
+        // &::-webkit-slider-thumb {
+        //     -webkit-appearance: none !important;
+        //     height: 10px;
+        //     width: 10px;
+        //     background-color: $blue-color;
+        //     border-radius: 50%;
+        //     transition: background-color 0.3s ease, scale 0.3s ease;
+        // }
+    },
+
+    volume_label: {
+        position: "absolute",
+        bottom: "50%",
+        left: -45,
+        transform: [{ translateY: "50%" }],
+        // width: 4ch;
+        width: 40,
+        textAlign: "right",
+        color: SECONDARY_COLOR,
+        // font-variant-numeric: tabular-nums;
+        fontSize: 15,
+    },
+
+    mute_unmute: {
+        width: 22.5,
+        textAlign: "right",
+        // transition: transform 0.3s ease;
+
+        // &:hover {
+        //     transform: scale(1.1);
+        //     cursor: pointer;
+        // }
+    },
+
+    muted: {
+        width: 22.5,
+        textAlign: "right",
+        // transition: transform 0.3s ease;
+
+        // &:hover {
+        //     transform: scale(1.1);
+        //     cursor: pointer;
+        // }
+    },
+
+    show_video_settings_button: {
+        marginLeft: 10,
+    },
+
+    fullscreen: {
+        marginLeft: 10,
+    },
+
+    scrubber_hitbox: {
+        // width: calc(100% - $big-border-radius);
+        width: "100%",
+        marginHorizontal: "auto",
+        paddingVertical: 5,
+
+        // &:hover {
+        //     .scrubber {
+        //         &::before {
+        //             transition: width 0s;
+        //         }
+
+        //         &::after {
+        //             transition: transform 0s, margin-left 0s;
+        //         }
+        //     }
+        // }
+    },
+
+    scrubber: {
+        position: "relative",
+        width: "100%",
+        height: 5,
+        backgroundColor: LIGHT_BLUE_COLOR,
+        borderRadius: 8 / 2,
+
+        // &:hover {
+        //     // height: 8px;
+
+        //     &::after {
+        //         background-color: $dark-blue-color;
+        //         transform: translateY(-50%) scale(1.2);
+        //     }
+        // }
+    },
+
+    scrubber_track: {
+        position: "absolute",
+        width: 0,
+        maxWidth: "100%",
+        height: 5,
+        backgroundColor: DARK_BLUE_COLOR,
+        borderRadius: 8 / 2,
+        // transition: width 0.1s linear;
+        zIndex: 100,
+    },
+
+    scrubber_thumb: {
+        position: "absolute",
+        top: "50%",
+        transform: [{ translateY: "50%" }],
+        width: 10,
+        height: 10,
+        marginLeft: 0,
+        backgroundColor: DARK_BLUE_COLOR,
+        borderRadius: "50%",
+        // transition: transform 0.3s ease, margin-left 0.1s linear, background-color 0.3s ease;
+        zIndex: 100,
+    },
+
+    buffering_bar: {
+        position: "relative",
+        width: 0,
+        maxWidth: "100%",
+        height: 5,
+        backgroundColor: DARK_BLUE_COLOR,
+        borderRadius: 8 / 2,
+        // transition: width 0.1s linear;
+        zIndex: 50,
+    },
+})

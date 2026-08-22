@@ -6,7 +6,7 @@ interface DynamicImageProps {
 }
 
 export const DynamicImage = ({ uri }:DynamicImageProps) => {
-    const [aspect_ratio, setAspectRatio] = useState<number>(1) // Stores The Aspect Ratio (1 / 1 By Default)
+    const [aspect_ratio, setAspectRatio] = useState<number>(1 / 1) // Stores The Aspect Ratio (1 / 1 By Default)
 
     useEffect(() => {
         if(uri) {

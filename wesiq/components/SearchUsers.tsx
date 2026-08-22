@@ -137,8 +137,6 @@ export default function SearchUsers() {
         
                 const first_loaded_users_data:firstLoadedUsersResponse = await first_loaded_users_response.json() // Gets The Load First Users Data
 
-                console.log(first_loaded_users_data)
-
                 // If The Response Isn't Success
                 if(!first_loaded_users_data.success) {
                     console.error(first_loaded_users_data.message)
