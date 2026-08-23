@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, RefObject } from "react"
-import { View, Image, StyleSheet, Text } from "react-native"
-import { Video, ResizeMode } from "expo-av"
+import React, { useState, useEffect, useRef, RefObject, useMemo } from "react"
+import { View, Image, StyleSheet, Text, Pressable } from "react-native"
+import { Video, ResizeMode, AVPlaybackStatus } from "expo-av"
 import { DOMAIN } from "@/constants/general"
 import { Media, Post } from "./Feed"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -9,6 +9,7 @@ import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "./Icon"
 import Slider from "@react-native-community/slider"
 import { getFormattedTime } from "@/utils/time"
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 
 interface DynamicVideoProps {
     one_post:Post,
@@ -19,10 +20,12 @@ interface DynamicVideoProps {
     is_volume_slider_sliding:RefObject<boolean>
 }
 
-export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode = false, is_volume_slider_sliding }:DynamicVideoProps) => {
+export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode, is_volume_slider_sliding }:DynamicVideoProps) => {
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
-    const video_url = data_saving_mode ? `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/v0_index.m3u8` : `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/index.m3u8` // Sets The Video URL (If The Data Saving Mode Is Enabled Sets The Video Quality To 480p By Default)
+
+    const [active_quality, setActiveQuality] = useState<number>(data_saving_mode ? 480 : -1) // Stores The Active Video Quality (480p When The Data Saving Mode Is Enabled, Otherwise Auto By Default)
+    const saved_position = useRef<number>(0) // Stores The Saved Video Position
 
     const video = useRef<Video>(null) // Stores The Video Reference
 
@@ -32,6 +35,10 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Video Time
     const [duration, setDuration] = useState<number>(0) // Stores The Video Duration
     const [buffered_time, setBufferedTime] = useState<number>(0) // Stores The Video Buffered Time
+
+    const video_settings = useRef<BottomSheetModal>(null) // Stores The Video Settings
+    const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
+    const [video_settings_sheet, setVideoSettingsSheet] = useState<"main"|"quality"|"speed">("main") // Stores The Active Video Settings Sheet
 
     useEffect(() => {
         if(thumbnail_url) {
@@ -48,6 +55,12 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
             )
         }
     }, [thumbnail_url])
+
+    // Updates The Data Saving Mode Value If The Data Loads
+    useEffect(() => {
+        if(data_saving_mode) setActiveQuality(480)
+        else setActiveQuality(-1)
+    }, [data_saving_mode])
 
     // Function For Rewind The Video 5 Seconds
     const stepBack = async (step:number = 5):Promise<void> => {
@@ -120,11 +133,57 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
         }
     }
 
+    // Function For Show The Video Settings
+    const showVideoSettings = ():void => {
+        // setSelectedPost(post) // Sets The Selected Post
+        video_settings.current?.present() // Shows The Video Settings
+    }
+
+    // Function For Close The Video Settings
+    const hideVideoSettings = ():void => {
+        // setSelectedPost(null) // Sets The Selected Post
+        video_settings.current?.dismiss() // Hides The Video Settings
+    }
+
+    // Function For Handle Video Settings Sheet Switching
+    const handleVideoSettingsChanges = (index:number) => {
+        if(index === -1) setVideoSettingsSheet("main") // Sets The Video Settings Sheet To Default
+    }
+
+    // Function For Get The Video URL
+    const getVideoURL = (quality:number):string => {
+        const base_url:string = `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}` // Gets The Base Video URL
+        
+        switch(quality) {
+            case 1080: return `${base_url}/v2_index.m3u8` // Gets The URL For 1080p Quality
+            case 720: return `${base_url}/v1_index.m3u8` // Gets The URL For 720p Quality
+            case 480: return `${base_url}/v0_index.m3u8` // Gets The URL For 480p Quality
+            default: return `${base_url}/index.m3u8` // Gets The URL For Auto Quality (Master Playlist)
+        }
+    }
+
+    // Function For Change The Video Quality
+    const changeVideoQuality = async (quality:number) => {
+        if(video.current) {
+            const status:AVPlaybackStatus = await video.current.getStatusAsync() // Gets The Video Status
+            if(status.isLoaded) saved_position.current = status.positionMillis // Saves The Video Position
+        }
+    
+        setActiveQuality(quality) // Sets The Active Video Quality
+    }
+
+    // // Function For Change The Video Speed
+    // export function changeVideoSpeed(speed:number, video:HTMLVideoElement, button:HTMLButtonElement, all_buttons:NodeListOf<HTMLButtonElement>):void {
+    //     // Checks The Validity Of The Video Speed Range
+    //     if(speed >= 0.25 && speed <= 16) {
+    //         video.playbackRate = speed
+    //         all_buttons.forEach(one_button => one_button.classList.remove("active")) // Removes The Active Class From Every Speed Button
+    //         button.classList.add("active") // Adds The Active Class To The Clicked Speed Button
+    //     }
+    // }
+
     return (
-        <View 
-            className="video_container" 
-            style={styles.video_container}
-        >
+        <View className="video_container" style={styles.video_container}>
             <View className="play_pause_indicator hidden" style={styles.play_pause_indicator}>
                 <Icon
                     icon_name={playing_video !== one_post_media.id ? "pause" : "play"}
@@ -187,13 +246,28 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     <Video
                         ref={video}
                         className="video"
-                        source={{ uri: video_url }}
+                        source={{ uri: getVideoURL(active_quality) }}
+                        
+                        // @ts-ignore
+                        selectedVideoTrack={{
+                            type: active_quality === -1 ? "auto" : "resolution",
+                            value: active_quality === -1 ? undefined : active_quality
+                        }}
+
                         shouldPlay={true}
                         isLooping={true}
                         isMuted={is_muted}
                         resizeMode={ResizeMode.CONTAIN} 
                         style={{ width: "100%", height: "100%" }}
                         videoStyle={{ width: "100%", height: "100%" }}
+
+                        onLoad={async () => {
+                            if(video.current && saved_position.current > 0) {
+                                await video.current.setPositionAsync(saved_position.current) // Jumps Back To The Watched Part
+                                await video.current.playAsync() // Plays The Video Again
+                                saved_position.current = 0 // Removes The Saved Video Position
+                            }
+                        }}
                         
                         onPlaybackStatusUpdate={(status) => {
                             if(status.isLoaded) {
@@ -389,87 +463,11 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     >
                         <Icon
                             icon_name="gear"
-                            // onPress={}
+                            onPress={showVideoSettings}
                             size={25}
                             // style={{ transition: transform 0.3s ease; }}
                         />
                     </View>
-
-                    {/* <div 
-                        class="video_settings" 
-                        id=""
-                        popover
-                        style=""
-                    >
-                        <button 
-                            class="show_video_quality_button"
-                            popovertarget=""
-                            style=""
-                        >
-                            <i class="fa-solid fa-gear"></i> <!-- https://fontawesome.com/icons/gear -->
-                            <span>{% translate "Kvalita" %}</span>
-                        </button>
-
-                        <button 
-                            class="show_video_speed_button"
-                            popovertarget=""
-                            style=""
-                        >
-                            <i class="fa-solid fa-stopwatch"></i> <!-- https://fontawesome.com/icons/stopwatch -->
-                            <span>{% translate "Rýchlosť" %}</span>
-                        </button>
-
-                        <button 
-                            class="back_video_settings_button"
-                            popovertarget=""
-                            popovertargetaction="hide"
-                        >
-                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                            <span>{% translate "Zavrieť" %}</span>
-                        </button>
-                    </div>
-
-                    <div 
-                        class="video_quality" 
-                        id=""
-                        popover
-                        style=""
-                    >
-                        <button class="quality_button quality_auto" data-quality="-1">auto</button>
-                        <button class="quality_button quality_1080p" data-quality="1080">1080p</button>
-                        <button class="quality_button quality_720p" data-quality="720">720p</button>
-                        <button class="quality_button quality_480p" data-quality="480">480p</button>
-
-                        <button 
-                            class="back_video_quality_button" 
-                            popovertarget=""
-                            popovertargetaction="hide"
-                        >
-                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                            <span>{% translate "Zavrieť" %}</span>
-                        </button>
-                    </div>
-
-                    <div 
-                        class="video_speed" 
-                        id=""
-                        popover
-                        style=""
-                    >
-                        <button class="speed_button" data-speed="2">2×</button>
-                        <button class="speed_button" data-speed="1.5">1,5×</button>
-                        <button class="speed_button" data-speed="1">{% translate "Normálna" %}</button>
-                        <button class="speed_button" data-speed="0.5">0,5×</button>
-
-                        <button 
-                            class="back_video_speed_button" 
-                            popovertarget=""
-                            popovertargetaction="hide"
-                        >
-                            <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                            <span>{% translate "Zavrieť" %}</span>
-                        </button>
-                    </div> */}
 
                     <View 
                         className="fullscreen" 
@@ -522,6 +520,255 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     </View>
                 </View>
             </View>
+
+            <BottomSheetModal
+                ref={video_settings}
+                snapPoints={snap_points}
+                enablePanDownToClose={true}
+                onChange={handleVideoSettingsChanges}
+                containerStyle={{ zIndex: 9999 }}
+            >
+                <BottomSheetView style={{ padding: 20 }}>
+                    <View className="video_settings">
+                        {video_settings_sheet === "main" && (
+                            <View style={styles.sheet_container}>
+                                <Pressable
+                                    className="show_video_quality_button"
+                                    onPress={() => setVideoSettingsSheet("quality")}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="gear"
+                                            size={20}
+                                            solid={false}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>Kvalita</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="show_video_speed_button"
+                                    onPress={() => setVideoSettingsSheet("speed")}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="stopwatch"
+                                            size={20}
+                                            solid={false}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>Rýchlosť</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="back_video_settings_button"
+                                    onPress={hideVideoSettings}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="xmark"
+                                            size={20}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                </Pressable>
+                            </View>
+                        )}
+
+                        {video_settings_sheet === "quality" && (
+                            <View className="video_quality" style={styles.sheet_container}>
+                                <Pressable
+                                    className="quality_button quality_auto"
+                                    onPress={() => changeVideoQuality(-1)}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        active_quality === -1 && styles.sheet_item_active,
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>auto</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="quality_button quality_1080p"
+                                    onPress={() => changeVideoQuality(1080)}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        active_quality === 1080 && styles.sheet_item_active,
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>1080p</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="quality_button quality_720p"
+                                    onPress={() => changeVideoQuality(720)}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        active_quality === 720 && styles.sheet_item_active,
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>720p</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="quality_button quality_480p"
+                                    onPress={() => changeVideoQuality(480)}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        active_quality === 480 && styles.sheet_item_active,
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>480p (šetrenie dát)</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="back_video_quality_button"
+                                    onPress={() => setVideoSettingsSheet("main")}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="xmark"
+                                            size={20}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                </Pressable>
+                            </View>
+                        )}
+
+                        {video_settings_sheet === "speed" && (
+                            <View className="video_speed" style={styles.sheet_container}>
+                                <Pressable
+                                    className="speed_button"
+                                    // onPress={}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>2×</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="speed_button"
+                                    // onPress={}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>1,5×</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="speed_button"
+                                    // onPress={}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>Normálna</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="speed_button"
+                                    // onPress={}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <Text style={styles.sheet_text}>0,5×</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="back_video_speed_button"
+                                    onPress={() => setVideoSettingsSheet("main")}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="xmark"
+                                            size={20}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                </Pressable>
+                            </View>
+                        )}
+                    </View>
+                </BottomSheetView>
+            </BottomSheetModal>
         </View>
     )
 }
@@ -798,5 +1045,40 @@ const styles = StyleSheet.create({
         borderRadius: 8 / 2,
         // transition: width 0.1s linear;
         zIndex: 50,
+    },
+
+    sheet_container: {
+        paddingBottom: 20,
+    },
+
+    sheet_item: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 20,
+        paddingVertical: 20,
+        paddingHorizontal: 10,
+    },
+
+    sheet_item_active: {
+        backgroundColor: LIGHT_BLUE_COLOR,
+    },
+
+    sheet_item_border: {
+        borderBottomWidth: 1,
+        borderBottomColor: transparentize(BLUE_COLOR, 0.8),
+    },
+
+    sheet_item_pressed: {
+        opacity: 0.5,
+    },
+
+    sheet_icon: {
+        width: 20,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    sheet_text: {
+        color: BLUE_COLOR,
     },
 })
