@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, RefObject } from "react"
 import { View, Image, StyleSheet, Text } from "react-native"
 import { Video, ResizeMode } from "expo-av"
 import { DOMAIN } from "@/constants/general"
@@ -15,14 +15,18 @@ interface DynamicVideoProps {
     one_post_media:Media,
     playing_video:number|null,
     setPlayingVideo:(id:number|null) => void,
-    data_saving_mode:boolean
+    data_saving_mode:boolean,
+    is_volume_slider_sliding:RefObject<boolean>
 }
 
-export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode = false }:DynamicVideoProps) => {
+export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode = false, is_volume_slider_sliding }:DynamicVideoProps) => {
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
     const video_url = data_saving_mode ? `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/v0_index.m3u8` : `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}/index.m3u8` // Sets The Video URL (If The Data Saving Mode Is Enabled Sets The Video Quality To 480p By Default)
 
+    const video = useRef<Video>(null) // Stores The Video Reference
+
+    const [is_muted, setIsMuted] = useState<boolean>(false) // Stores The Information If The Video Is Muted
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
 
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Video Time
@@ -44,6 +48,77 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
             )
         }
     }, [thumbnail_url])
+
+    // Function For Rewind The Video 5 Seconds
+    const stepBack = async (step:number = 5):Promise<void> => {
+        if(video.current) {
+            const new_time:number = Math.max(0, elapsed_time - step * 1000) // Gets The New Video Time
+            await video.current.setPositionAsync(new_time) // Sets The New Current Video Time Position
+
+            // // Step Back Indicator
+            // step_back_indicator.classList.add("hidden")
+            // void step_back_indicator.offsetWidth
+            // step_back_indicator.classList.remove("hidden")
+
+            // setTimeout(() => {
+            //     step_back_indicator.classList.add("hidden")
+            // }, 300)
+        }
+    }
+
+    // Function For Fast Forward The Video 5 Seconds
+    const stepFurther = async (step:number = 5):Promise<void> => {
+        if(video.current) {
+            const new_time:number = Math.max(0, elapsed_time + step * 1000) // Gets The New Video Time
+            await video.current.setPositionAsync(new_time) // Sets The New Current Video Time Position
+
+            // // Step Back Indicator
+            // step_back_indicator.classList.add("hidden")
+            // void step_back_indicator.offsetWidth
+            // step_back_indicator.classList.remove("hidden")
+
+            // setTimeout(() => {
+            //     step_back_indicator.classList.add("hidden")
+            // }, 300)
+        }
+    }
+
+    // Function For Get The Volume Icon
+    const getVolumeIcon = ():string => {
+        const current_volume:number = is_muted ? 0 : volume // Gets The Current Volume (0 If The Video Is Muted)
+
+        if(current_volume === 0) return "volume-xmark"
+        if(current_volume <= 0.5) return "volume-low"
+        return "volume-high"
+    }
+
+    // Function For Mute Or Unmute The Video
+    const muteUnmuteVideo = async ():Promise<void> => {
+        if(video.current) {
+            const next_mute_state:boolean = !is_muted // Gets The Next Mute State
+            await video.current.setIsMutedAsync(next_mute_state) // Mutes / Unmutes The Video
+            setIsMuted(!is_muted) // Sets The Information If The Video Is Muted
+        }
+    }
+
+    // Function For Change The Video Volume
+    const changeVideoVolume = async (value:number) => {
+        setVolume(value) // Sets The Volume
+        
+        if(video.current) {
+            await video.current.setVolumeAsync(value) // Sets The New Video Volume
+
+            if(value === 0 && !is_muted) {
+                await video.current.setIsMutedAsync(true) // Mutes The Video
+                setIsMuted(true) // Sets The Information If The Video Is Muted
+            } 
+            
+            else if(value > 0 && is_muted) {
+                await video.current.setIsMutedAsync(false) // Unmutes The Video
+                setIsMuted(false) // Sets The Information If The Video Is Muted
+            }
+        }
+    }
 
     return (
         <View 
@@ -110,11 +185,12 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
             >
                 {playing_video === one_post_media.id ? (
                     <Video
+                        ref={video}
                         className="video"
                         source={{ uri: video_url }}
                         shouldPlay={true}
                         isLooping={true}
-                        isMuted={true}
+                        isMuted={is_muted}
                         resizeMode={ResizeMode.CONTAIN} 
                         style={{ width: "100%", height: "100%" }}
                         videoStyle={{ width: "100%", height: "100%" }}
@@ -122,6 +198,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                         onPlaybackStatusUpdate={(status) => {
                             if(status.isLoaded) {
                                 setElapsedTime(status.positionMillis) // Sets The Elapsed Time
+                                setVolume(status.volume) // Sets The Volume
                                 if(status.durationMillis) setDuration(status.durationMillis) // Sets The Duration
                                 if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
                             }
@@ -169,7 +246,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     >
                         <Icon
                             icon_name="arrow-rotate-left"
-                            // onPress={}
+                            onPress={() => stepBack(5)}
                             size={25}
                             // style={{ transition: transform 0.3s ease; }}
                         />
@@ -187,7 +264,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     >
                         <Icon
                             icon_name="arrow-rotate-right"
-                            // onPress={}
+                            onPress={() => stepFurther(5)}
                             size={25}
                             // style={{ transition: transform 0.3s ease; }}
                         />
@@ -238,24 +315,46 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                     <View className="volume_container" style={styles.volume_container}>
                         {!one_post_media.is_muted && (
                             <>
-                                <Slider
-                                    className="volume"
-                                    minimumValue={0}
-                                    maximumValue={1}
-                                    step={0.01}
-                                    value={volume}
-                                    onValueChange={(value) => setVolume(value)}
-                                    minimumTrackTintColor="#FFFFFF"
-                                    maximumTrackTintColor="#000000"
-                                    style={styles.volume}
-                                >
-                                    <Text className="volume_label" style={styles.volume_label}>0%</Text>
-                                </Slider>
+                                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                                    <Slider
+                                        className="volume"
+                                        minimumValue={0}
+                                        maximumValue={1}
+                                        step={0.01}
+                                        value={is_muted ? 0 : volume}
+                                        onValueChange={changeVideoVolume}
+                                        onSlidingStart={() => { is_volume_slider_sliding.current = true }}
+                                        onSlidingComplete={() => { is_volume_slider_sliding.current = false }}
+                                        minimumTrackTintColor={DARK_BLUE_COLOR}
+                                        maximumTrackTintColor={BLUE_COLOR}
+                                        thumbTintColor={DARK_BLUE_COLOR}
 
-                                <View className="mute_unmute" accessibilityLabel="Hlasitosť..." style={styles.mute_unmute}>
+                                        // @ts-ignore
+                                        thumbStyle={{ 
+                                            width: 15,
+                                            height: 15,
+                                            borderRadius: 15 / 2,
+                                        }}
+
+                                        style={[
+                                            styles.volume, 
+                                            { width: 100, height: 40 }
+                                        ]}
+                                    />
+
+                                    <Text className="volume_label" style={styles.volume_label}>
+                                        {is_muted ? "0%" : `${Math.round(volume * 100)}%`}
+                                    </Text>
+                                </View>
+
+                                <View 
+                                    className="mute_unmute" 
+                                    accessibilityLabel="Hlasitosť..." 
+                                    style={styles.mute_unmute}
+                                >
                                     <Icon
-                                        icon_name="volume-xmark"
-                                        // onPress={}
+                                        icon_name={getVolumeIcon()}
+                                        onPress={muteUnmuteVideo}
                                         size={25}
                                         // style={{ transition: transform 0.3s ease; }}
                                     />
@@ -581,29 +680,10 @@ const styles = StyleSheet.create({
     },
 
     volume: {
-        // appearance: none !important;
-        // -webkit-appearance: none !important;
         direction: "rtl",
         position: "relative",
         height: 5,
-        backgroundColor: BLUE_COLOR,
         borderRadius: 5 / 2,
-
-        // &:hover {
-        //     &::-webkit-slider-thumb {
-        //         background-color: $dark-blue-color;
-        //         scale: 1.2;
-        //     }
-        // }
-
-        // &::-webkit-slider-thumb {
-        //     -webkit-appearance: none !important;
-        //     height: 10px;
-        //     width: 10px;
-        //     background-color: $blue-color;
-        //     border-radius: 50%;
-        //     transition: background-color 0.3s ease, scale 0.3s ease;
-        // }
     },
 
     volume_label: {

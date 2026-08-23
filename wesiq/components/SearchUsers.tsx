@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         // minHeight: "100%",
-        paddingVertical: 20,
+        paddingBottom: 20,
         zIndex: 100,
     },
 

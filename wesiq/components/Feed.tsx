@@ -13,14 +13,16 @@ import { Video, ResizeMode } from "expo-av"
 import Slider from "@react-native-community/slider"
 import Svg, { Path } from "react-native-svg"
 import EmojiPicker from "rn-emoji-keyboard"
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet"
 import { HeartParticle } from "./HeartParticle"
 import { getFollowButtonProperties } from "./SearchUsers"
 import { DynamicImage } from "./DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { useMemo } from "react"
+import { DynamicVideo } from "./DynamicVideo"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 
 import type { LoggedInUser } from "./LoginFormDialog"
-import { DynamicVideo } from "./DynamicVideo"
 
 export interface Post {
     user:User,
@@ -141,11 +143,13 @@ export default function Feed() {
     const [has_next, setHasNext] = useState(true) // Stores The Information If There Are More Posts Available
     const [are_posts_loading, setArePostsLoading] = useState(false) // Stores The Information If Posts Are Loading
     const [search_text, setSearchText] = useState("") // Stores The Search Text
-    const post_properties = useRef<BottomSheet>(null) // Stores The Post Properties
+    const post_properties = useRef<BottomSheetModal>(null) // Stores The Post Properties
+    const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"settings"|"delete">("main") // Stores The Active Post Properties Sheet
     const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
     const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
     const [playing_video, setPlayingVideo] = useState<number|null>(null) // Stores The Current Playing Video ID
+    const is_volume_slider_sliding = useRef<boolean>(false) // Stores The Information If The Volume Slider Is Sliding
 
     const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
     const [post_comments_page, setPostCommentsPage] = useState(1) // Stores The Current Post Comments Page Number
@@ -153,7 +157,7 @@ export default function Feed() {
     const [are_post_comments_loading, setArePostCommentsLoading] = useState(false) // Stores The Information If Post Comments Are Loading
     const [comment, setComment] = useState<string>("") // Stores The Written Comment
     const MAX_COMMENT_LENGTH:number = 100 // Sets The Maximum Comment Length
-    const post_comment_properties = useRef<BottomSheet>(null) // Stores The Post Comment Properties
+    const post_comment_properties = useRef<BottomSheetModal>(null) // Stores The Post Comment Properties
     const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
     const [selected_post_comment, setSelectedPostComment] = useState<comment|null>(null) // Stores The Selected Post Comment
 
@@ -646,7 +650,9 @@ export default function Feed() {
     // Function For Show The Post Properties
     const showPostProperties = (post:Post):void => {
         setSelectedPost(post) // Sets The Selected Post
-        post_properties.current?.expand() // Shows The Post Properties
+        // post_properties.current?.expand() // Shows The Post Properties
+        // post_properties.current?.snapToIndex(0) // Shows The Post Properties
+        post_properties.current?.present() // Shows The Post Properties
     }
 
     // Function For Close The Post Properties
@@ -663,7 +669,9 @@ export default function Feed() {
     // Function For Show The Post Comment Properties
     const showPostCommentProperties = (comment:comment):void => {
         setSelectedPostComment(comment) // Sets The Selected Post Comment
-        post_comment_properties.current?.expand() // Shows The Post Comment Properties
+        // post_comment_properties.current?.expand() // Shows The Post Comment Properties
+        // post_comment_properties.current?.snapToIndex(0) // Shows The Post Comment Properties
+        post_comment_properties.current?.present() // Shows The Post Comment Properties
     }
 
     // Function For Close The Post Comment Properties
@@ -1365,1245 +1373,1251 @@ export default function Feed() {
     }
 
     return (
-        <View className="feed" style={styles.feed}>
-            <View className="search_posts_container" style={styles.search_posts_container}>
-                <View className="search_bar_container">
-                    <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <BottomSheetModalProvider>
+                <View className="feed" style={styles.feed}>
+                    <View className="search_posts_container" style={styles.search_posts_container}>
+                        <View className="search_bar_container">
+                            <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
 
-                    <View className="delete_search_bar" style={styles.delete_search_bar}>
-                        <Icon icon_name="xmark" />
-                    </View>
-
-                    <TextInput
-                        className="search_bar"
-                        textAlignVertical="top" 
-                        placeholder="Nájsť príspevky" 
-                        placeholderTextColor={LIGHT_BLUE_COLOR}
-                        accessibilityLabel="Nájsť príspevky" 
-                        // value={}
-                        // onChangeText={}
-
-                        style={[
-                            styles.search_bar, 
-                            { outlineStyle: "none" } as any
-                        ]}
-                    />
-                </View>
-
-                <View className="history_container" style={styles.history_container}></View>
-            </View>
-
-            {processing_posts.length > 0 && logged_in_user && (
-                processing_posts.map(one_processing_post => (
-                    <View className="processing_post_container" key={one_processing_post.id}>
-                        <Text className="processing_post_report">{processing_post_report}</Text>
-
-                        <View className="processing_media_info_container">
-                            <Text className="processing_media_info">
-                                Súbory:{" "}
-                                
-                                {one_processing_post.media.map((one_post_media:Media, index) => {
-                                    if(one_post_media.post && one_processing_post.id === one_post_media.post.id) {
-                                        return (
-                                            <Text key={index}>
-                                                <Text className="original_filename">{one_post_media.original_filename}</Text>
-                                                
-                                                <Text className="original_size">
-                                                    {" "}({one_post_media.original_size})
-                                                    {index < one_processing_post.media.length - 1 && ", "}
-                                                </Text>
-                                            </Text>
-                                        )
-                                    }
-
-                                    return null
-                                })}
-                            </Text>
-                        </View>
-
-                        <View className="header">
-                            <View className="left">
-                                <ProfilePictureLink user_id={one_processing_post.user.id} user_profile_picture_name={one_processing_post.user.profile_picture_name || null} user_subscription={one_processing_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
+                            <View className="delete_search_bar" style={styles.delete_search_bar}>
+                                <Icon icon_name="xmark" />
                             </View>
 
-                            <View className="right">
-                                <View className="top">
-                                    <Text className="username">{one_processing_post.user.username}</Text>
+                            <TextInput
+                                className="search_bar"
+                                textAlignVertical="top" 
+                                placeholder="Nájsť príspevky" 
+                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                accessibilityLabel="Nájsť príspevky" 
+                                // value={}
+                                // onChangeText={}
 
-                                    <View className="followers_container">
-                                        <Text className="followers">{one_processing_post.user.followers.length}</Text>
-                                        <Icon icon_name="user" />
-                                    </View>
-                                </View>
-                            </View>
+                                style={[
+                                    styles.search_bar, 
+                                    { outlineStyle: "none" } as any
+                                ]}
+                            />
                         </View>
+
+                        <View className="history_container" style={styles.history_container}></View>
                     </View>
-                ))
-            )}
 
-            {posts.length > 0 && (
-                posts.map((one_post:Post) => {
-                    const active_post_media_index:number = active_post_media[one_post.id] || 0 // Sets The Active Post Media Index
-                    const max_active_post_media_index:number = one_post.media.length - 1 // Sets The Maximum Active Post Media Index
+                    {processing_posts.length > 0 && logged_in_user && (
+                        processing_posts.map(one_processing_post => (
+                            <View className="processing_post_container" key={one_processing_post.id}>
+                                <Text className="processing_post_report">{processing_post_report}</Text>
 
-                    // Creates The Swipe Gesture
-                    const swipe_gesture = Gesture.Pan()
-                        .runOnJS(true)
-
-                        .onEnd((event) => {
-                            if(event.translationX < -50) changePostMedia(one_post.id, active_post_media_index + 1, max_active_post_media_index) // Shows The Next Post Media
-                            else if (event.translationX > 50) changePostMedia(one_post.id, active_post_media_index - 1, max_active_post_media_index) // Shows The Previous Post Media
-                        })
-
-                    return (
-                        <View className="post_container" key={one_post.id} style={styles.post_container}>
-                            <View className="header" style={styles.header}>
-                                <View className="left">
-                                    <ProfilePictureLink user_id={one_post.user.id} user_profile_picture_name={one_post.user.profile_picture_name || null} user_subscription={one_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" width={45} height={45} />
-                                </View>
-
-                                <View className="right" style={styles.right}>
-                                    <View className="top" style={styles.top}>
-                                        <Text className="username" style={styles.username}>{one_post.user.username}</Text>
-
-                                        <View className="followers_container" style={styles.followers_container}>
-                                            <Text className="followers" style={styles.followers}>{one_post.user.followers.length}</Text>
-                                            <Icon icon_name="user" />
-                                        </View>
-
-                                        {logged_in_user && logged_in_user.id !== one_post.user.id && (
-                                            <Pressable
-                                                className="follow_button" 
-                                                onPress={() => toggleFollow(one_post.user.id, getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).action)}
-
-                                                style={[
-                                                    styles.follow_button, 
-                                                    { outlineStyle: "none" } as any
-                                                ]}
-                                            >
-                                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).text}</Text>
-                                            </Pressable>
-                                        )}
-
-                                        <View className="show_post_properties_button" accessibilityLabel="Viac...">
-                                            <Icon
-                                                icon_name="ellipsis-vertical"
-                                                onPress={() => showPostProperties(one_post)}
-                                            />
-                                        </View>
-                                    </View>
-
-                                    <View className="bottom" style={styles.bottom}>
-                                        {one_post.location && (
-                                            one_post.coordinates ? (
-                                                <Pressable
-                                                    className="location"
-                                                    // onPress={handleOpenMaps}
-                                                    accessibilityRole="button"
-                                                    accessibilityLabel="Otvoriť mapy" 
-                                                    style={styles.location}
-                                                >
-                                                    <Text numberOfLines={1}>
-                                                        {one_post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
-                                                            <Text key={index}>
-                                                                <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
-
-                                                                {one_post.location && index < one_post.location.split("<span></span>").filter(Boolean).length - 1 && (
-                                                                    <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
-                                                                )}
-                                                            </Text>
-                                                        ))}
+                                <View className="processing_media_info_container">
+                                    <Text className="processing_media_info">
+                                        Súbory:{" "}
+                                        
+                                        {one_processing_post.media.map((one_post_media:Media, index) => {
+                                            if(one_post_media.post && one_processing_post.id === one_post_media.post.id) {
+                                                return (
+                                                    <Text key={index}>
+                                                        <Text className="original_filename">{one_post_media.original_filename}</Text>
+                                                        
+                                                        <Text className="original_size">
+                                                            {" "}({one_post_media.original_size})
+                                                            {index < one_processing_post.media.length - 1 && ", "}
+                                                        </Text>
                                                     </Text>
-                                                </Pressable>
-                                            ) : (
-                                                <Text className="location" numberOfLines={1} style={{ flex: 1 }}>{one_post.location}</Text>
-                                            )
-                                        )}
+                                                )
+                                            }
 
-                                        <Text className="created_at" style={styles.created_at}>{getTimeAgo(one_post.created_at)}</Text>
+                                            return null
+                                        })}
+                                    </Text>
+                                </View>
+
+                                <View className="header">
+                                    <View className="left">
+                                        <ProfilePictureLink user_id={one_processing_post.user.id} user_profile_picture_name={one_processing_post.user.profile_picture_name || null} user_subscription={one_processing_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
+                                    </View>
+
+                                    <View className="right">
+                                        <View className="top">
+                                            <Text className="username">{one_processing_post.user.username}</Text>
+
+                                            <View className="followers_container">
+                                                <Text className="followers">{one_processing_post.user.followers.length}</Text>
+                                                <Icon icon_name="user" />
+                                            </View>
+                                        </View>
                                     </View>
                                 </View>
                             </View>
+                        ))
+                    )}
 
-                            <GestureDetector gesture={swipe_gesture}>
-                                <View className="media" style={styles.media}>
-                                    {one_post.media.map((one_post_media:Media, index:number) => (
-                                        <View 
-                                            className="one_post" 
-                                            key={one_post_media.id || index} 
+                    {posts.length > 0 && (
+                        posts.map((one_post:Post) => {
+                            const active_post_media_index:number = active_post_media[one_post.id] || 0 // Sets The Active Post Media Index
+                            const max_active_post_media_index:number = one_post.media.length - 1 // Sets The Maximum Active Post Media Index
 
-                                            style={[
-                                                styles.one_post, 
-                                                { display: index === active_post_media_index ? "flex" : "none" }
-                                            ]}
-                                        >
-                                            <View className="loading hidden">
-                                            {/* <View className="loading hidden" style={styles.loading}> */}
-                                                <Text>Načítavam...</Text>
-                                            </View>
+                            // Creates The Swipe Gesture
+                            const swipe_gesture = Gesture.Pan()
+                                .runOnJS(true)
 
-                                            {!one_post_media.is_video && (
-                                                <View className="image">
-                                                    <DynamicImage 
-                                                        key={one_post_media.id || index}
-                                                        uri={`${DOMAIN}/media/${one_post_media.file}`} 
+                                .onEnd((event) => {
+                                    if(is_volume_slider_sliding.current) return // Do Nothing If The Volume Slider Is Sliding
+                                    if(event.translationX < -50) changePostMedia(one_post.id, active_post_media_index + 1, max_active_post_media_index) // Shows The Next Post Media
+                                    else if (event.translationX > 50) changePostMedia(one_post.id, active_post_media_index - 1, max_active_post_media_index) // Shows The Previous Post Media
+                                })
+
+                            return (
+                                <View className="post_container" key={one_post.id} style={styles.post_container}>
+                                    <View className="header" style={styles.header}>
+                                        <View className="left">
+                                            <ProfilePictureLink user_id={one_post.user.id} user_profile_picture_name={one_post.user.profile_picture_name || null} user_subscription={one_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" width={45} height={45} />
+                                        </View>
+
+                                        <View className="right" style={styles.right}>
+                                            <View className="top" style={styles.top}>
+                                                <Text className="username" style={styles.username}>{one_post.user.username}</Text>
+
+                                                <View className="followers_container" style={styles.followers_container}>
+                                                    <Text className="followers" style={styles.followers}>{one_post.user.followers.length}</Text>
+                                                    <Icon icon_name="user" />
+                                                </View>
+
+                                                {logged_in_user && logged_in_user.id !== one_post.user.id && (
+                                                    <Pressable
+                                                        className="follow_button" 
+                                                        onPress={() => toggleFollow(one_post.user.id, getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).action)}
+
+                                                        style={[
+                                                            styles.follow_button, 
+                                                            { outlineStyle: "none" } as any
+                                                        ]}
+                                                    >
+                                                        <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_post.user.private_account, one_post.user.has_follow, one_post.user.has_pending_follow_request).text}</Text>
+                                                    </Pressable>
+                                                )}
+
+                                                <View className="show_post_properties_button" accessibilityLabel="Viac...">
+                                                    <Icon
+                                                        icon_name="ellipsis-vertical"
+                                                        onPress={() => showPostProperties(one_post)}
                                                     />
                                                 </View>
-                                            )}
+                                            </View>
 
-                                            {one_post_media.is_video && (
-                                                <DynamicVideo 
-                                                    one_post={one_post}
-                                                    one_post_media={one_post_media}
-                                                    playing_video={playing_video}
-                                                    setPlayingVideo={setPlayingVideo}
-                                                    data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
-                                                />
-                                            )}
+                                            <View className="bottom" style={styles.bottom}>
+                                                {one_post.location && (
+                                                    one_post.coordinates ? (
+                                                        <Pressable
+                                                            className="location"
+                                                            // onPress={handleOpenMaps}
+                                                            accessibilityRole="button"
+                                                            accessibilityLabel="Otvoriť mapy" 
+                                                            style={styles.location}
+                                                        >
+                                                            <Text numberOfLines={1}>
+                                                                {one_post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
+                                                                    <Text key={index}>
+                                                                        <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
 
-                                            {/* else if(one_post_media.is_video) {
-                                                const video_container_template:HTMLTemplateElement = feed.querySelector(".video_container_template") as HTMLTemplateElement // Gets The Video Container Template
-                                                const video_container_template_clone:DocumentFragment = video_container_template.content.cloneNode(true) as DocumentFragment // Clones The Video Container Template Content
-                                                const video_container:HTMLDivElement = video_container_template_clone.querySelector(".video_container") as HTMLDivElement // Gets The Video Container
-                                                const controls:HTMLDivElement = video_container.querySelector(".controls") as HTMLDivElement // Gets The Video Controls Container
-                                                const buttons:HTMLDivElement = controls.querySelector(".buttons") as HTMLDivElement // Gets The Buttons Container
+                                                                        {one_post.location && index < one_post.location.split("<span></span>").filter(Boolean).length - 1 && (
+                                                                            <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
+                                                                        )}
+                                                                    </Text>
+                                                                ))}
+                                                            </Text>
+                                                        </Pressable>
+                                                    ) : (
+                                                        <Text className="location" numberOfLines={1} style={{ flex: 1 }}>{one_post.location}</Text>
+                                                    )
+                                                )}
 
-                                                // Video Metrics
-                                                if(logged_in_user && logged_in_user.id === post_data.user.id) {
-                                                    video_container.dataset["average_watch_time"] = String(one_post_media.average_watch_time) // Stores The Average Watch Time To The Video Container
-                                                    video_container.dataset["video_views"] = String(one_post_media.video_views) // Stores The Video Views To The Video Container
-                                                    if(one_post_media.sprite_sheet) video_container.dataset["sprite_sheet"] = one_post_media.sprite_sheet // Stores The Sprite Sheet Path To The Video Container
-                                                    if(one_post_media.vtt_file) video_container.dataset["vtt_file"] = one_post_media.vtt_file // Stores The VTT File Path To The Video Container
-                                                }
-
-                                                initializeChangeVideoQuality(video, video_src, video_container) // Initializes The Change Video Quality Buttons
-
-                                                media.appendChild(one_post_container) // Appends The One Post Container To The Media Container
-                                            } */}
+                                                <Text className="created_at" style={styles.created_at}>{getTimeAgo(one_post.created_at)}</Text>
+                                            </View>
                                         </View>
-                                    ))}
-
-                                    <View className="particles" style={styles.particles}>
-
                                     </View>
 
-                                    <View 
-                                        className="post_bars"
-
-                                        style={[
-                                            styles.post_bars,
-                                            one_post.media.length === 0 && { display: "none" }
-                                        ]}
-                                    >
-                                        {one_post.media.length > 1 && (
-                                            one_post.media.map((one_post_media:Media, index:number) => (
-                                                <Pressable 
-                                                    key={index} 
-                                                    className="bar" 
-                                                    onPress={() => changePostMedia(one_post.id, index, max_active_post_media_index)}
+                                    <GestureDetector gesture={swipe_gesture}>
+                                        <View className="media" style={styles.media}>
+                                            {one_post.media.map((one_post_media:Media, index:number) => (
+                                                <View 
+                                                    className="one_post" 
+                                                    key={one_post_media.id || index} 
 
                                                     style={[
-                                                        styles.bar, 
-                                                        { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                                        styles.one_post, 
+                                                        { display: index === active_post_media_index ? "flex" : "none" }
                                                     ]}
+                                                >
+                                                    <View className="loading hidden">
+                                                    {/* <View className="loading hidden" style={styles.loading}> */}
+                                                        <Text>Načítavam...</Text>
+                                                    </View>
+
+                                                    {!one_post_media.is_video && (
+                                                        <View className="image">
+                                                            <DynamicImage 
+                                                                key={one_post_media.id || index}
+                                                                uri={`${DOMAIN}/media/${one_post_media.file}`} 
+                                                            />
+                                                        </View>
+                                                    )}
+
+                                                    {one_post_media.is_video && (
+                                                        <DynamicVideo 
+                                                            one_post={one_post}
+                                                            one_post_media={one_post_media}
+                                                            playing_video={playing_video}
+                                                            setPlayingVideo={setPlayingVideo}
+                                                            data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
+                                                            is_volume_slider_sliding={is_volume_slider_sliding}
+                                                        />
+                                                    )}
+
+                                                    {/* else if(one_post_media.is_video) {
+                                                        const video_container_template:HTMLTemplateElement = feed.querySelector(".video_container_template") as HTMLTemplateElement // Gets The Video Container Template
+                                                        const video_container_template_clone:DocumentFragment = video_container_template.content.cloneNode(true) as DocumentFragment // Clones The Video Container Template Content
+                                                        const video_container:HTMLDivElement = video_container_template_clone.querySelector(".video_container") as HTMLDivElement // Gets The Video Container
+                                                        const controls:HTMLDivElement = video_container.querySelector(".controls") as HTMLDivElement // Gets The Video Controls Container
+                                                        const buttons:HTMLDivElement = controls.querySelector(".buttons") as HTMLDivElement // Gets The Buttons Container
+
+                                                        // Video Metrics
+                                                        if(logged_in_user && logged_in_user.id === post_data.user.id) {
+                                                            video_container.dataset["average_watch_time"] = String(one_post_media.average_watch_time) // Stores The Average Watch Time To The Video Container
+                                                            video_container.dataset["video_views"] = String(one_post_media.video_views) // Stores The Video Views To The Video Container
+                                                            if(one_post_media.sprite_sheet) video_container.dataset["sprite_sheet"] = one_post_media.sprite_sheet // Stores The Sprite Sheet Path To The Video Container
+                                                            if(one_post_media.vtt_file) video_container.dataset["vtt_file"] = one_post_media.vtt_file // Stores The VTT File Path To The Video Container
+                                                        }
+
+                                                        initializeChangeVideoQuality(video, video_src, video_container) // Initializes The Change Video Quality Buttons
+
+                                                        media.appendChild(one_post_container) // Appends The One Post Container To The Media Container
+                                                    } */}
+                                                </View>
+                                            ))}
+
+                                            <View className="particles" style={styles.particles}>
+
+                                            </View>
+
+                                            <View 
+                                                className="post_bars"
+
+                                                style={[
+                                                    styles.post_bars,
+                                                    one_post.media.length === 0 && { display: "none" }
+                                                ]}
+                                            >
+                                                {one_post.media.length > 1 && (
+                                                    one_post.media.map((one_post_media:Media, index:number) => (
+                                                        <Pressable 
+                                                            key={index} 
+                                                            className="bar" 
+                                                            onPress={() => changePostMedia(one_post.id, index, max_active_post_media_index)}
+
+                                                            style={[
+                                                                styles.bar, 
+                                                                { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                                            ]}
+                                                        />
+                                                    ))
+                                                )}
+                                            </View>
+                                        </View>
+                                    </GestureDetector>
+
+                                    <View className="video_scrubber_preview" style={styles.video_scrubber_preview}>
+                                        <View className="triangle" style={styles.triangle}></View>
+                                    </View>
+
+                                    <View className="society" style={styles.society}>
+                                        <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
+                                            <View 
+                                                style={{ 
+                                                    position: "relative", 
+                                                    alignItems: "center", 
+                                                    justifyContent: "center", 
+                                                }}
+                                            >
+                                                <Icon
+                                                    icon_name="heart"
+                                                    size={25}
+                                                    onPress={() => togglePostLike(one_post.id)}
+                                                    is_regular={!Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
+                                                    color={Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
+                                                    pressed_color={RED_COLOR}
                                                 />
+
+                                                {particles.map((one_particle:Particle) => (
+                                                    <HeartParticle
+                                                        key={one_particle.id}
+                                                        x={one_particle.x}
+                                                        y={one_particle.y}
+                                                        is_regular={one_particle.is_regular}
+                                                        onComplete={() => removeParticle(one_particle.id)}
+                                                    />
+                                                ))}
+                                            </View>
+
+                                            {logged_in_user && one_post.hide_likes && one_post.user.id !== logged_in_user.id 
+                                            ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>Skryté</Text>)
+                                            : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(one_post.likes)}</Text>)}
+                                        </View>
+
+                                        <View 
+                                            className="comments" 
+                                            accessibilityLabel="Komentáre..."
+                                            style={styles.comments}
+                                        >
+                                            <Icon
+                                                icon_name="comment"
+                                                onPress={() => getPostComments(post_comments_page, false, one_post.id)}
+                                                size={25}
+                                                is_regular={true}
+                                            />
+
+                                            {one_post.allow_comments 
+                                            ? (<Text className="comments_counter" style={styles.comments_counter}>{String(one_post.comments_amount)}</Text>)
+                                            : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>Vypnuté</Text>)}
+                                        </View>
+
+                                        <View className="share" accessibilityLabel="Zdielať...">
+                                            <Icon
+                                                icon_name="share-nodes"
+                                                onPress={() => sharePost(one_post.id, one_post.user.username)}
+                                                size={25}
+                                            />
+                                        </View>
+
+                                        <View 
+                                            className="views" 
+                                            accessibilityLabel="Počet videní..."
+                                            style={styles.views}
+                                        >
+                                            <Icon
+                                                icon_name="eye"
+                                                // onPress={}
+                                                size={25}
+                                            />
+
+                                            <Text className="views_counter" style={styles.views_counter}>{String(one_post.views)}</Text>
+                                        </View>
+
+                                        {logged_in_user && one_post.user.id === logged_in_user.id && (
+                                            one_post.media.map((one_post_media:Media, index:number) => (
+                                                one_post_media.is_video && index === 0 && (
+                                                    one_post_media.average_watch_time !== null && one_post_media.video_views !== null && (
+                                                        <>
+                                                            <View className="show_video_metrics" accessibilityLabel="Štatistiky...">
+                                                                <Icon
+                                                                    icon_name="chart-simple"
+                                                                    // onPress={}
+                                                                    size={25}
+                                                                />
+                                                            </View>
+
+                                                            <View className="video_metrics" style={styles.video_metrics}>
+                                                                <View className="views" style={styles.video_metrics_views}>
+                                                                    <Icon
+                                                                        icon_name="eye"
+                                                                        // onPress={}
+                                                                    />
+                                                                    
+                                                                    <Text className="views_counter" style={styles.video_metrics_views_counter}>{String(one_post_media.video_views)}</Text>
+                                                                </View>
+
+                                                                <View className="duration_container" style={styles.duration_container}>
+                                                                    <View className="duration_bar" style={styles.duration_bar} />
+                                                                    {/* <Text className="duration_label" style={styles.duration_label}>{`${getFormattedTime("minutes", video_duration)}:${getFormattedTime("seconds", video_duration, true)}`}</Text> */}
+                                                                </View>
+
+                                                                <View className="watch_time_container" style={styles.watch_time_container}>
+                                                                    <View className="watch_time_bar" style={styles.watch_time_bar} />
+                                                                    {/* <Text className="watch_time_label" style={styles.watch_time_label}>{`${getFormattedTime("minutes", one_post_media.average_watch_time)}:${getFormattedTime("seconds", one_post_media.average_watch_time, true)} - ${((one_post_media.average_watch_time / video_duration) * 100).toFixed(2)}%`}</Text> */}
+                                                                </View>
+                                                            </View>
+                                                        </>
+                                                    )
+                                                )
                                             ))
                                         )}
-                                    </View>
-                                </View>
-                            </GestureDetector>
 
-                            <View className="video_scrubber_preview" style={styles.video_scrubber_preview}>
-                                <View className="triangle" style={styles.triangle}></View>
-                            </View>
-
-                            <View className="society" style={styles.society}>
-                                <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
-                                    <View 
-                                        style={{ 
-                                            position: "relative", 
-                                            alignItems: "center", 
-                                            justifyContent: "center", 
-                                        }}
-                                    >
-                                        <Icon
-                                            icon_name="heart"
-                                            size={25}
-                                            onPress={() => togglePostLike(one_post.id)}
-                                            is_regular={!Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
-                                            color={Boolean(logged_in_user && one_post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
-                                            pressed_color={RED_COLOR}
-                                        />
-
-                                        {particles.map((one_particle:Particle) => (
-                                            <HeartParticle
-                                                key={one_particle.id}
-                                                x={one_particle.x}
-                                                y={one_particle.y}
-                                                is_regular={one_particle.is_regular}
-                                                onComplete={() => removeParticle(one_particle.id)}
-                                            />
-                                        ))}
+                                        <View className={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? "save active" : ""} accessibilityLabel="Uložiť...">
+                                            <View className="save" accessibilityLabel="Uložiť...">
+                                                <Icon
+                                                    icon_name="bookmark"
+                                                    onPress={() => togglePostSave(one_post.id)}
+                                                    size={25}
+                                                    is_regular={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                                                    color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : BLUE_COLOR}
+                                                    pressed_color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
+                                                />
+                                            </View>
+                                        </View>
                                     </View>
 
-                                    {logged_in_user && one_post.hide_likes && one_post.user.id !== logged_in_user.id 
-                                    ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>Skryté</Text>)
-                                    : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(one_post.likes)}</Text>)}
+                                    {one_post.description && (
+                                        <Text className="description" style={styles.description}>
+                                        {one_post.tagged_users.map(one_tagged_user => one_tagged_user.username).length > 0 || one_post.added_hashtags.length > 0 
+                                        ? (generateStyledDescription(one_post.description, JSON.stringify(one_post.tagged_users.map(one_tagged_user => one_tagged_user.username)), JSON.stringify(one_post.added_hashtags))) // Generates The Styled Description
+                                        : (one_post.description)}
+                                        </Text>
+                                    )}
+
+                                    {one_post.allow_comments && (
+                                        <View className="comment_forum" style={styles.comment_forum}>
+                                            <ScrollView 
+                                                className="all_comments" 
+                                                showsVerticalScrollIndicator={false}
+                                                indicatorStyle="white"
+                                                style={styles.all_comments}
+                                            >
+                                                {/* Loads The Comments */}
+                                                {one_post.comments_amount > 0 && loadComments(post_comments)}
+
+                                                <Pressable 
+                                                    className="show_more hidden" 
+                                                    onPress={() => getPostComments(post_comments_page, false, one_post.id)} 
+                                                    style={styles.show_more}
+                                                >
+                                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>Zobraziť viac</Text>
+                                                </Pressable>
+                                            </ScrollView>
+
+                                            <View className="write_comment_form" style={styles.write_comment_form}>
+                                                <TextInput
+                                                    className="comment"
+                                                    textAlignVertical="top" 
+                                                    placeholder="Napísať komentár" 
+                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                    accessibilityLabel="Napísať komentár" 
+                                                    value={comment}
+                                                    onChangeText={setComment}
+                                                    maxLength={MAX_COMMENT_LENGTH}
+
+                                                    style={[
+                                                        styles.write_comment_form_comment, 
+                                                        { outlineStyle: "none" } as any
+                                                    ]}
+                                                />
+
+                                                {logged_in_user && (
+                                                    <View 
+                                                        style={{ 
+                                                            position: "absolute",
+                                                            top: 6,
+                                                            left: 6,
+                                                        }}
+                                                    >
+                                                        <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                                    </View>
+                                                )}
+
+                                                <View 
+                                                    className="add_emoji"
+                                                    accessibilityLabel="Pridať emoji"
+                                                    style={styles.add_emoji}
+                                                >
+                                                    <Icon 
+                                                        icon_name="face-surprise"
+                                                        is_regular={true}
+                                                        onPress={() => setIsEmojiPickerOpen(true)}
+                                                    />
+                                                </View>
+
+                                                <EmojiPicker
+                                                    onEmojiSelected={handleEmojiSelect}
+                                                    open={is_emoji_picker_open}
+                                                    onClose={() => setIsEmojiPickerOpen(false)}
+
+                                                    translation={{
+                                                        smileys_emotion: "Smajlíky",
+                                                        people_body: "Ľudia", 
+                                                        recently_used: "Naposledy použité",
+                                                        animals_nature: "Zvieratá",
+                                                        food_drink: "Jedlo a nápoje",
+                                                        activities: "Aktivity",
+                                                        travel_places: "Cestovanie",
+                                                        objects: "Predmety",
+                                                        symbols: "Symboly",
+                                                        flags: "Vlajky",
+                                                        search: "Hľadať...",
+                                                    }}
+                                                />
+
+                                                <Pressable 
+                                                    className="send" 
+                                                    accessibilityLabel="Odoslať komentár"
+                                                    accessibilityRole="button"
+                                                    onPress={() => addComment(one_post.id, comment, null)}
+                                                    style={styles.send}
+                                                >
+                                                    <Svg 
+                                                        width={30} 
+                                                        height={30} 
+                                                        fill="none" 
+                                                        viewBox="0 0 24 24" 
+                                                        strokeWidth={1.5} 
+                                                        stroke={BLUE_COLOR}
+                                                    >
+                                                        <Path 
+                                                            strokeLinecap="round" 
+                                                            strokeLinejoin="round" 
+                                                            d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
+                                                        />
+                                                    </Svg>
+                                                </Pressable>
+                                            </View>
+                                        </View>
+                                    )}
                                 </View>
+                            )
+                        })
+                    )}
 
-                                <View 
-                                    className="comments" 
-                                    accessibilityLabel="Komentáre..."
-                                    style={styles.comments}
-                                >
-                                    <Icon
-                                        icon_name="comment"
-                                        onPress={() => getPostComments(post_comments_page, false, one_post.id)}
-                                        size={25}
-                                        is_regular={true}
-                                    />
+                    <BottomSheetModal
+                        ref={post_properties}
+                        snapPoints={snap_points}
+                        enablePanDownToClose={true}
+                        onChange={handlePostPropertiesChanges}
+                        containerStyle={{ zIndex: 9999 }}
+                    >
+                        <BottomSheetView style={{ padding: 20 }}>
+                            {selected_post ? (
+                                <View className="post_properties">
+                                    {post_properties_sheet === "main" && (
+                                        <View style={styles.sheet_container}>
+                                            {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                            {logged_in_user && selected_post.user.id !== logged_in_user.id && (
+                                                <Pressable
+                                                    className="show_report_post_button"
+                                                    onPress={() => setPostPropertiesSheet("report")}
+                                                    accessibilityRole="button"
 
-                                    {one_post.allow_comments 
-                                    ? (<Text className="comments_counter" style={styles.comments_counter}>{String(one_post.comments_amount)}</Text>)
-                                    : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>Vypnuté</Text>)}
-                                </View>
-
-                                <View className="share" accessibilityLabel="Zdielať...">
-                                    <Icon
-                                        icon_name="share-nodes"
-                                        onPress={() => sharePost(one_post.id, one_post.user.username)}
-                                        size={25}
-                                    />
-                                </View>
-
-                                <View 
-                                    className="views" 
-                                    accessibilityLabel="Počet videní..."
-                                    style={styles.views}
-                                >
-                                    <Icon
-                                        icon_name="eye"
-                                        // onPress={}
-                                        size={25}
-                                    />
-
-                                    <Text className="views_counter" style={styles.views_counter}>{String(one_post.views)}</Text>
-                                </View>
-
-                                {logged_in_user && one_post.user.id === logged_in_user.id && (
-                                    one_post.media.map((one_post_media:Media, index:number) => (
-                                        one_post_media.is_video && index === 0 && (
-                                            one_post_media.average_watch_time !== null && one_post_media.video_views !== null && (
-                                                <>
-                                                    <View className="show_video_metrics" accessibilityLabel="Štatistiky...">
-                                                        <Icon
-                                                            icon_name="chart-simple"
-                                                            // onPress={}
-                                                            size={25}
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name="flag"
+                                                            size={20}
+                                                            solid={false}
+                                                            color={BLUE_COLOR}
                                                         />
                                                     </View>
 
-                                                    <View className="video_metrics" style={styles.video_metrics}>
-                                                        <View className="views" style={styles.video_metrics_views}>
-                                                            <Icon
-                                                                icon_name="eye"
-                                                                // onPress={}
-                                                            />
-                                                            
-                                                            <Text className="views_counter" style={styles.video_metrics_views_counter}>{String(one_post_media.video_views)}</Text>
-                                                        </View>
+                                                    <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                </Pressable>
+                                            )}
 
-                                                        <View className="duration_container" style={styles.duration_container}>
-                                                            <View className="duration_bar" style={styles.duration_bar} />
-                                                            {/* <Text className="duration_label" style={styles.duration_label}>{`${getFormattedTime("minutes", video_duration)}:${getFormattedTime("seconds", video_duration, true)}`}</Text> */}
-                                                        </View>
+                                            {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
+                                            {logged_in_user && selected_post.user.id === logged_in_user.id && (
+                                                <Pressable
+                                                    className="show_post_settings_button"
+                                                    onPress={() => setPostPropertiesSheet("settings")}
+                                                    accessibilityRole="button"
 
-                                                        <View className="watch_time_container" style={styles.watch_time_container}>
-                                                            <View className="watch_time_bar" style={styles.watch_time_bar} />
-                                                            {/* <Text className="watch_time_label" style={styles.watch_time_label}>{`${getFormattedTime("minutes", one_post_media.average_watch_time)}:${getFormattedTime("seconds", one_post_media.average_watch_time, true)} - ${((one_post_media.average_watch_time / video_duration) * 100).toFixed(2)}%`}</Text> */}
-                                                        </View>
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name="pen"
+                                                            size={20}
+                                                            color={BLUE_COLOR}
+                                                        />
                                                     </View>
-                                                </>
-                                            )
-                                        )
-                                    ))
-                                )}
 
-                                <View className={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? "save active" : ""} accessibilityLabel="Uložiť...">
-                                    <View className="save" accessibilityLabel="Uložiť...">
-                                        <Icon
-                                            icon_name="bookmark"
-                                            onPress={() => togglePostSave(one_post.id)}
-                                            size={25}
-                                            is_regular={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? false : true} // Shows The Empty Or Filled Heart Icon
-                                            color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : BLUE_COLOR}
-                                            pressed_color={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
-                                        />
-                                    </View>
-                                </View>
-                            </View>
+                                                    <Text style={styles.sheet_text}>Upraviť</Text>
+                                                </Pressable>
+                                            )}
 
-                            {one_post.description && (
-                                <Text className="description" style={styles.description}>
-                                {one_post.tagged_users.map(one_tagged_user => one_tagged_user.username).length > 0 || one_post.added_hashtags.length > 0 
-                                ? (generateStyledDescription(one_post.description, JSON.stringify(one_post.tagged_users.map(one_tagged_user => one_tagged_user.username)), JSON.stringify(one_post.added_hashtags))) // Generates The Styled Description
-                                : (one_post.description)}
-                                </Text>
-                            )}
+                                            {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                            {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                <Pressable
+                                                    className="delete_post_button"
+                                                    onPress={() => setPostPropertiesSheet("delete")}
+                                                    accessibilityRole="button"
 
-                            {one_post.allow_comments && (
-                                <View className="comment_forum" style={styles.comment_forum}>
-                                    <ScrollView 
-                                        className="all_comments" 
-                                        showsVerticalScrollIndicator={false}
-                                        indicatorStyle="white"
-                                        style={styles.all_comments}
-                                    >
-                                        {/* Loads The Comments */}
-                                        {one_post.comments_amount > 0 && loadComments(post_comments)}
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name="eraser"
+                                                            size={20}
+                                                            color={BLUE_COLOR}
+                                                        />
+                                                    </View>
 
-                                        <Pressable 
-                                            className="show_more hidden" 
-                                            onPress={() => getPostComments(post_comments_page, false, one_post.id)} 
-                                            style={styles.show_more}
-                                        >
-                                            <Text style={{ color: LIGHT_BLUE_COLOR }}>Zobraziť viac</Text>
-                                        </Pressable>
-                                    </ScrollView>
+                                                    <Text 
+                                                        style={[
+                                                            styles.sheet_text,
+                                                            // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                            { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                        ]}
+                                                    >
+                                                        Vymazať
+                                                    </Text>
+                                                </Pressable>
+                                            )}
 
-                                    <View className="write_comment_form" style={styles.write_comment_form}>
-                                        <TextInput
-                                            className="comment"
-                                            textAlignVertical="top" 
-                                            placeholder="Napísať komentár" 
-                                            placeholderTextColor={LIGHT_BLUE_COLOR}
-                                            accessibilityLabel="Napísať komentár" 
-                                            value={comment}
-                                            onChangeText={setComment}
-                                            maxLength={MAX_COMMENT_LENGTH}
+                                            <Pressable
+                                                className="hide_post_properties_button"
+                                                onPress={hidePostProperties}
+                                                accessibilityRole="button"
 
-                                            style={[
-                                                styles.write_comment_form_comment, 
-                                                { outlineStyle: "none" } as any
-                                            ]}
-                                        />
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
 
-                                        {logged_in_user && (
+                                                <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            </Pressable>
+                                        </View>
+                                    )}
+
+                                    {post_properties_sheet === "report" && (
+                                        <View className="report" style={styles.sheet_container}>
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "spam")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Spam</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "harassment")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "hate_speech")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "misinformation")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "explicit_content")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportPost(selected_post.id, "other")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Iné</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                className="back_report_button"
+                                                onPress={() => setPostPropertiesSheet("main")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Späť</Text>
+                                            </Pressable>
+                                        </View>
+                                    )}
+
+                                    {post_properties_sheet === "settings" && (
+                                        <View className="post_settings" style={styles.sheet_container}>
                                             <View 
-                                                style={{ 
-                                                    position: "absolute",
-                                                    top: 6,
-                                                    left: 6,
-                                                }}
-                                            >
-                                                <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
-                                            </View>
-                                        )}
+                                                className="public_visibility_container"
 
-                                        <View 
-                                            className="add_emoji"
-                                            accessibilityLabel="Pridať emoji"
-                                            style={styles.add_emoji}
-                                        >
-                                            <Icon 
-                                                icon_name="face-surprise"
-                                                is_regular={true}
-                                                onPress={() => setIsEmojiPickerOpen(true)}
-                                            />
-                                        </View>
-
-                                        <EmojiPicker
-                                            onEmojiSelected={handleEmojiSelect}
-                                            open={is_emoji_picker_open}
-                                            onClose={() => setIsEmojiPickerOpen(false)}
-
-                                            translation={{
-                                                smileys_emotion: "Smajlíky",
-                                                people_body: "Ľudia", 
-                                                recently_used: "Naposledy použité",
-                                                animals_nature: "Zvieratá",
-                                                food_drink: "Jedlo a nápoje",
-                                                activities: "Aktivity",
-                                                travel_places: "Cestovanie",
-                                                objects: "Predmety",
-                                                symbols: "Symboly",
-                                                flags: "Vlajky",
-                                                search: "Hľadať...",
-                                            }}
-                                        />
-
-                                        <Pressable 
-                                            className="send" 
-                                            accessibilityLabel="Odoslať komentár"
-                                            accessibilityRole="button"
-                                            onPress={() => addComment(one_post.id, comment, null)}
-                                            style={styles.send}
-                                        >
-                                            <Svg 
-                                                width={30} 
-                                                height={30} 
-                                                fill="none" 
-                                                viewBox="0 0 24 24" 
-                                                strokeWidth={1.5} 
-                                                stroke={BLUE_COLOR}
-                                            >
-                                                <Path 
-                                                    strokeLinecap="round" 
-                                                    strokeLinejoin="round" 
-                                                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
-                                                />
-                                            </Svg>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            )}
-                        </View>
-                    )
-                })
-            )}
-
-            <BottomSheet
-                ref={post_properties}
-                index={-1}
-                snapPoints={["30%", "50%"]}
-                enablePanDownToClose={true}
-                onChange={handlePostPropertiesChanges}
-            >
-                <BottomSheetView style={{ padding: 20 }}>
-                    {selected_post ? (
-                        <View className="post_properties">
-                            {post_properties_sheet === "main" && (
-                                <View style={styles.sheet_container}>
-                                    {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
-                                    {logged_in_user && selected_post.user.id !== logged_in_user.id && (
-                                        <Pressable
-                                            className="show_report_post_button"
-                                            onPress={() => setPostPropertiesSheet("report")}
-                                            accessibilityRole="button"
-
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name="flag"
-                                                    size={20}
-                                                    solid={false}
-                                                    color={BLUE_COLOR}
-                                                />
-                                            </View>
-
-                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
-                                        </Pressable>
-                                    )}
-
-                                    {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
-                                    {logged_in_user && selected_post.user.id === logged_in_user.id && (
-                                        <Pressable
-                                            className="show_post_settings_button"
-                                            onPress={() => setPostPropertiesSheet("settings")}
-                                            accessibilityRole="button"
-
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name="pen"
-                                                    size={20}
-                                                    color={BLUE_COLOR}
-                                                />
-                                            </View>
-
-                                            <Text style={styles.sheet_text}>Upraviť</Text>
-                                        </Pressable>
-                                    )}
-
-                                    {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
-                                    {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
-                                        <Pressable
-                                            className="delete_post_button"
-                                            onPress={() => setPostPropertiesSheet("delete")}
-                                            accessibilityRole="button"
-
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name="eraser"
-                                                    size={20}
-                                                    color={BLUE_COLOR}
-                                                />
-                                            </View>
-
-                                            <Text 
                                                 style={[
-                                                    styles.sheet_text,
-                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                    { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border,
                                                 ]}
                                             >
-                                                Vymazať
-                                            </Text>
-                                        </Pressable>
-                                    )}
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name={!selected_post.user.private_account && selected_post.public_visibility ? "eye" : "eye-low-vision"}
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
 
-                                    <Pressable
-                                        className="hide_post_properties_button"
-                                        onPress={hidePostProperties}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                    </Pressable>
-                                </View>
-                            )}
-
-                            {post_properties_sheet === "report" && (
-                                <View className="report" style={styles.sheet_container}>
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "spam")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Spam</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "harassment")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "hate_speech")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "misinformation")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "explicit_content")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportPost(selected_post.id, "other")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Iné</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        className="back_report_button"
-                                        onPress={() => setPostPropertiesSheet("main")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Späť</Text>
-                                    </Pressable>
-                                </View>
-                            )}
-
-                            {post_properties_sheet === "settings" && (
-                                <View className="post_settings" style={styles.sheet_container}>
-                                    <View 
-                                        className="public_visibility_container"
-
-                                        style={[
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border,
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name={!selected_post.user.private_account && selected_post.public_visibility ? "eye" : "eye-low-vision"}
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Switch 
-                                            className={selected_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
-                                            disabled={selected_post.user.private_account} // Disables The Checkbox
-                                            value={selected_post.user.private_account ? false : selected_post.public_visibility} // Checks The Public Visibility Checkbox
-                                            onValueChange={(new_value:boolean) => editPostSettings(selected_post.id, "public_visibility", new_value)}
-                                            
-                                            trackColor={{ 
-                                                false: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
-                                                true: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
-                                            }}
-                                            
-                                            thumbColor={
-                                                selected_post.user.private_account 
-                                                    ? "#333333" 
-                                                    : (selected_post.public_visibility ? GREEN_COLOR : RED_COLOR)
-                                            }
-                                        />
-                                    </View>
-
-                                    <View 
-                                        className="allow_comments_container"
-
-                                        style={[
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border,
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name={selected_post.allow_comments ? "comment" : "comment-slash"}
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Switch 
-                                            className="allow_comments"
-                                            value={selected_post.allow_comments} // Checks The Allow Comments Checkbox
-                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "allow_comments", new_value)}
-                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
-                                            thumbColor={selected_post.allow_comments ? GREEN_COLOR : RED_COLOR}
-                                        />
-                                    </View>
-
-                                    <View 
-                                        className="hide_likes_container"
-
-                                        style={[
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border,
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="heart"
-                                                size={20}
-                                                solid={!selected_post.hide_likes}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Switch 
-                                            className="hide_likes" 
-                                            value={!selected_post.hide_likes} // Checks The Hide Likes Checkbox
-                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "hide_likes", !new_value)}
-                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
-                                            thumbColor={!selected_post.hide_likes ? GREEN_COLOR : RED_COLOR}
-                                        />
-                                    </View>
-
-                                    <Pressable
-                                        className="back_post_settings_button"
-                                        onPress={() => setPostPropertiesSheet("main")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                    </Pressable>
-                                </View>
-                            )}
-
-                            {post_properties_sheet === "delete" && (
-                                <View className="delete_post" style={styles.sheet_container}>
-                                    <Text 
-                                        style={[
-                                            styles.sheet_text, 
-                                            { textAlign: "center" }
-                                        ]}
-                                    >
-                                        Naozaj chcete vymazať Váš príspevok?
-                                    </Text>
-
-                                    <Pressable
-                                        onPress={() => deletePost(selected_post.id)}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="eraser"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Vymazať</Text>
-                                    </Pressable>
-
-                                    <Pressable 
-                                        onPress={() => setPostPropertiesSheet("main")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Zrušiť</Text>
-                                    </Pressable>
-                                </View>
-                            )}
-                        </View>
-                    ) : null}
-                </BottomSheetView>
-            </BottomSheet>
-
-            <BottomSheet
-                ref={post_comment_properties}
-                index={-1}
-                snapPoints={["30%", "50%"]}
-                enablePanDownToClose={true}
-                onChange={handlePostCommentPropertiesChanges}
-            >
-                <BottomSheetView style={{ padding: 20 }}>
-                    {selected_post_comment ? (
-                        <View className="comment_properties">
-                            {post_comment_properties_sheet === "main" && (
-                                <View style={styles.sheet_container}>
-                                    {/* If The Comment Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
-                                    {logged_in_user && selected_post_comment.user.id !== logged_in_user.id && (
-                                        <Pressable
-                                            className="show_report_comment_button"
-                                            onPress={() => setPostCommentPropertiesSheet("report")}
-                                            accessibilityRole="button"
-
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name="flag"
-                                                    size={20}
-                                                    solid={false}
-                                                    color={BLUE_COLOR}
+                                                <Switch 
+                                                    className={selected_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
+                                                    disabled={selected_post.user.private_account} // Disables The Checkbox
+                                                    value={selected_post.user.private_account ? false : selected_post.public_visibility} // Checks The Public Visibility Checkbox
+                                                    onValueChange={(new_value:boolean) => editPostSettings(selected_post.id, "public_visibility", new_value)}
+                                                    
+                                                    trackColor={{ 
+                                                        false: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
+                                                        true: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
+                                                    }}
+                                                    
+                                                    thumbColor={
+                                                        selected_post.user.private_account 
+                                                            ? "#333333" 
+                                                            : (selected_post.public_visibility ? GREEN_COLOR : RED_COLOR)
+                                                    }
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
-                                        </Pressable>
-                                    )}
+                                            <View 
+                                                className="allow_comments_container"
 
-                                    {/* If The Comment Belongs To The Logged In User The Delete Option Will Be Shown */}
-                                    {logged_in_user && (selected_post_comment.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
-                                        <Pressable
-                                            className="delete_comment_button"
-                                            onPress={() => setPostCommentPropertiesSheet("delete")}
-                                            accessibilityRole="button"
-
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name="eraser"
-                                                    size={20}
-                                                    color={BLUE_COLOR}
-                                                />
-                                            </View>
-
-                                            <Text 
                                                 style={[
-                                                    styles.sheet_text,
-                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                    { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border,
                                                 ]}
                                             >
-                                                Vymazať
-                                            </Text>
-                                        </Pressable>
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name={selected_post.allow_comments ? "comment" : "comment-slash"}
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Switch 
+                                                    className="allow_comments"
+                                                    value={selected_post.allow_comments} // Checks The Allow Comments Checkbox
+                                                    onValueChange={(new_value) => editPostSettings(selected_post.id, "allow_comments", new_value)}
+                                                    trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                    thumbColor={selected_post.allow_comments ? GREEN_COLOR : RED_COLOR}
+                                                />
+                                            </View>
+
+                                            <View 
+                                                className="hide_likes_container"
+
+                                                style={[
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border,
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="heart"
+                                                        size={20}
+                                                        solid={!selected_post.hide_likes}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Switch 
+                                                    className="hide_likes" 
+                                                    value={!selected_post.hide_likes} // Checks The Hide Likes Checkbox
+                                                    onValueChange={(new_value) => editPostSettings(selected_post.id, "hide_likes", !new_value)}
+                                                    trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                    thumbColor={!selected_post.hide_likes ? GREEN_COLOR : RED_COLOR}
+                                                />
+                                            </View>
+
+                                            <Pressable
+                                                className="back_post_settings_button"
+                                                onPress={() => setPostPropertiesSheet("main")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            </Pressable>
+                                        </View>
                                     )}
 
-                                    <Pressable
-                                        className="hide_comment_properties_button"
-                                        onPress={hidePostCommentProperties}
-                                        accessibilityRole="button"
+                                    {post_properties_sheet === "delete" && (
+                                        <View className="delete_post" style={styles.sheet_container}>
+                                            <Text 
+                                                style={[
+                                                    styles.sheet_text, 
+                                                    { textAlign: "center" }
+                                                ]}
+                                            >
+                                                Naozaj chcete vymazať Váš príspevok?
+                                            </Text>
 
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
+                                            <Pressable
+                                                onPress={() => deletePost(selected_post.id)}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="eraser"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Vymazať</Text>
+                                            </Pressable>
+
+                                            <Pressable 
+                                                onPress={() => setPostPropertiesSheet("main")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Zrušiť</Text>
+                                            </Pressable>
                                         </View>
-
-                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                    </Pressable>
+                                    )}
                                 </View>
-                            )}
+                            ) : null}
+                        </BottomSheetView>
+                    </BottomSheetModal>
 
-                            {post_comment_properties_sheet === "report" && (
-                                <View className="report" style={styles.sheet_container}>
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "spam")}
-                                        accessibilityRole="button"
+                    <BottomSheetModal
+                        ref={post_comment_properties}
+                        snapPoints={snap_points}
+                        enablePanDownToClose={true}
+                        onChange={handlePostCommentPropertiesChanges}
+                        containerStyle={{ zIndex: 9999 }}
+                    >
+                        <BottomSheetView style={{ padding: 20 }}>
+                            {selected_post_comment ? (
+                                <View className="comment_properties">
+                                    {post_comment_properties_sheet === "main" && (
+                                        <View style={styles.sheet_container}>
+                                            {/* If The Comment Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                            {logged_in_user && selected_post_comment.user.id !== logged_in_user.id && (
+                                                <Pressable
+                                                    className="show_report_comment_button"
+                                                    onPress={() => setPostCommentPropertiesSheet("report")}
+                                                    accessibilityRole="button"
 
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name="flag"
+                                                            size={20}
+                                                            solid={false}
+                                                            color={BLUE_COLOR}
+                                                        />
+                                                    </View>
+
+                                                    <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                </Pressable>
+                                            )}
+
+                                            {/* If The Comment Belongs To The Logged In User The Delete Option Will Be Shown */}
+                                            {logged_in_user && (selected_post_comment.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                <Pressable
+                                                    className="delete_comment_button"
+                                                    onPress={() => setPostCommentPropertiesSheet("delete")}
+                                                    accessibilityRole="button"
+
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name="eraser"
+                                                            size={20}
+                                                            color={BLUE_COLOR}
+                                                        />
+                                                    </View>
+
+                                                    <Text 
+                                                        style={[
+                                                            styles.sheet_text,
+                                                            // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                            { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                        ]}
+                                                    >
+                                                        Vymazať
+                                                    </Text>
+                                                </Pressable>
+                                            )}
+
+                                            <Pressable
+                                                className="hide_comment_properties_button"
+                                                onPress={hidePostCommentProperties}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            </Pressable>
                                         </View>
+                                    )}
 
-                                        <Text style={styles.sheet_text}>Spam</Text>
-                                    </Pressable>
+                                    {post_comment_properties_sheet === "report" && (
+                                        <View className="report" style={styles.sheet_container}>
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "spam")}
+                                                accessibilityRole="button"
 
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "harassment")}
-                                        accessibilityRole="button"
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
 
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
+                                                <Text style={styles.sheet_text}>Spam</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "harassment")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "hate_speech")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "misinformation")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "explicit_content")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                onPress={() => reportComment(selected_post_comment.id, "other")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="list"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Iné</Text>
+                                            </Pressable>
+
+                                            <Pressable
+                                                className="back_report_button"
+                                                onPress={() => setPostCommentPropertiesSheet("main")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Späť</Text>
+                                            </Pressable>
                                         </View>
+                                    )}
 
-                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
-                                    </Pressable>
+                                    {post_comment_properties_sheet === "delete" && (
+                                        <View className="delete_comment" style={styles.sheet_container}>
+                                            <Text 
+                                                style={[
+                                                    styles.sheet_text, 
+                                                    { textAlign: "center" }
+                                                ]}
+                                            >
+                                                Naozaj chcete vymazať Váš komentár?
+                                            </Text>
 
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "hate_speech")}
-                                        accessibilityRole="button"
+                                            <Pressable
+                                                onPress={() => deleteComment(selected_post_comment.id)}
+                                                accessibilityRole="button"
 
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="eraser"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Vymazať</Text>
+                                            </Pressable>
+
+                                            <Pressable 
+                                                onPress={() => setPostCommentPropertiesSheet("main")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="xmark"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Zrušiť</Text>
+                                            </Pressable>
                                         </View>
-
-                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "misinformation")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "explicit_content")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        onPress={() => reportComment(selected_post_comment.id, "other")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Iné</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        className="back_report_button"
-                                        onPress={() => setPostCommentPropertiesSheet("main")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Späť</Text>
-                                    </Pressable>
+                                    )}
                                 </View>
-                            )}
-
-                            {post_comment_properties_sheet === "delete" && (
-                                <View className="delete_comment" style={styles.sheet_container}>
-                                    <Text 
-                                        style={[
-                                            styles.sheet_text, 
-                                            { textAlign: "center" }
-                                        ]}
-                                    >
-                                        Naozaj chcete vymazať Váš komentár?
-                                    </Text>
-
-                                    <Pressable
-                                        onPress={() => deleteComment(selected_post_comment.id)}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            styles.sheet_item_border, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="eraser"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Vymazať</Text>
-                                    </Pressable>
-
-                                    <Pressable 
-                                        onPress={() => setPostCommentPropertiesSheet("main")}
-                                        accessibilityRole="button"
-
-                                        style={({ pressed }) => [
-                                            styles.sheet_item, 
-                                            pressed && styles.sheet_item_pressed
-                                        ]}
-                                    >
-                                        <View style={styles.sheet_icon}>
-                                            <FontAwesome6
-                                                name="xmark"
-                                                size={20}
-                                                color={BLUE_COLOR}
-                                            />
-                                        </View>
-
-                                        <Text style={styles.sheet_text}>Zrušiť</Text>
-                                    </Pressable>
-                                </View>
-                            )}
-                        </View>
-                    ) : null}
-                </BottomSheetView>
-            </BottomSheet>
-        </View>
+                            ) : null}
+                        </BottomSheetView>
+                    </BottomSheetModal>
+                </View>
+            </BottomSheetModalProvider>
+        </GestureHandlerRootView>
     )
 }
 
