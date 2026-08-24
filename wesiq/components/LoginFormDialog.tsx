@@ -258,7 +258,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
                             <TextInput
                                 className="password"
                                 autoCapitalize="none"
-                                secureTextEntry={true}
+                                secureTextEntry={is_password_hidden ? true : false}
                                 textAlignVertical="top" 
                                 placeholder="Zadajte vaše heslo" 
                                 placeholderTextColor={LIGHT_BLUE_COLOR}
@@ -273,7 +273,11 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
                                 ]}
                             />
 
-                            <View className="show_hide_password" accessibilityLabel="Zobraziť heslo" style={styles.show_hide_password}>
+                            <View 
+                                className="show_hide_password" 
+                                accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
+                                style={styles.show_hide_password}
+                            >
                                 <Icon
                                     icon_name={is_password_hidden ? "eye-slash" : "eye"}
                                     onPress={() => setIsPasswordHidden(previous => !previous)} // Toggles The Value

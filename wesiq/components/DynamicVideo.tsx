@@ -26,6 +26,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
 
     const [active_quality, setActiveQuality] = useState<number>(data_saving_mode ? 480 : -1) // Stores The Active Video Quality (480p When The Data Saving Mode Is Enabled, Otherwise Auto By Default)
     const saved_position = useRef<number>(0) // Stores The Saved Video Position
+    const [video_speed, setVideoSpeed] = useState<number>(1) // Stores The Video Speed
 
     const video = useRef<Video>(null) // Stores The Video Reference
 
@@ -170,17 +171,25 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
         }
     
         setActiveQuality(quality) // Sets The Active Video Quality
+        hideVideoSettings() // Closes The Video Settings
     }
 
-    // // Function For Change The Video Speed
-    // export function changeVideoSpeed(speed:number, video:HTMLVideoElement, button:HTMLButtonElement, all_buttons:NodeListOf<HTMLButtonElement>):void {
-    //     // Checks The Validity Of The Video Speed Range
-    //     if(speed >= 0.25 && speed <= 16) {
-    //         video.playbackRate = speed
-    //         all_buttons.forEach(one_button => one_button.classList.remove("active")) // Removes The Active Class From Every Speed Button
-    //         button.classList.add("active") // Adds The Active Class To The Clicked Speed Button
-    //     }
-    // }
+    // Function For Change The Video Speed
+    const changeVideoSpeed = async (speed:number):Promise<void> => {
+        setVideoSpeed(speed) // Sets The Video Speed
+
+        if(video.current) {
+            try {
+                await video.current.setRateAsync(speed, true) // Changes The Video Speed
+            }
+            
+            catch {
+                console.log("Chyba pri zmene rýchlosti videa.")
+            }
+        }
+
+        hideVideoSettings() // Closes The Video Settings
+    }
 
     return (
         <View className="video_container" style={styles.video_container}>
@@ -254,6 +263,8 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                             value: active_quality === -1 ? undefined : active_quality
                         }}
 
+                        rate={video_speed} 
+                        shouldCorrectPitch={true}
                         shouldPlay={true}
                         isLooping={true}
                         isMuted={is_muted}
@@ -690,7 +701,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                             <View className="video_speed" style={styles.sheet_container}>
                                 <Pressable
                                     className="speed_button"
-                                    // onPress={}
+                                    onPress={() => changeVideoSpeed(2)}
                                     accessibilityRole="button"
 
                                     style={({ pressed }) => [
@@ -704,7 +715,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
 
                                 <Pressable
                                     className="speed_button"
-                                    // onPress={}
+                                    onPress={() => changeVideoSpeed(1.5)}
                                     accessibilityRole="button"
 
                                     style={({ pressed }) => [
@@ -718,7 +729,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
 
                                 <Pressable
                                     className="speed_button"
-                                    // onPress={}
+                                    onPress={() => changeVideoSpeed(1)}
                                     accessibilityRole="button"
 
                                     style={({ pressed }) => [
@@ -732,7 +743,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
 
                                 <Pressable
                                     className="speed_button"
-                                    // onPress={}
+                                    onPress={() => changeVideoSpeed(0.5)}
                                     accessibilityRole="button"
 
                                     style={({ pressed }) => [
