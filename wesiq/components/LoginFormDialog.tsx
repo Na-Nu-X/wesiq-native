@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "./Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { LinearGradient } from 'expo-linear-gradient';
+import { LinearGradient } from "expo-linear-gradient"
 import { FontAwesome6 } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
@@ -31,13 +31,14 @@ export interface LoggedInUser {
 
 type LoginFormDialogProps = {
     visible:boolean,
+    onChangeActiveForm:() => void,
     onClose:() => void,
     onUserLogin?:(user:LoggedInUser) => void
 }
 
-export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginFormDialogProps) {
-    const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier Value
-    const [password, setPassword] = useState<string>("") // Stores The Password Value
+export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:LoginFormDialogProps) {
+    const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier
+    const [password, setPassword] = useState<string>("") // Stores The Password
     const [is_password_hidden, setIsPasswordHidden] = useState<boolean>(true) // Stores The Information If The Password Is Hidden
     const [is_authentication_loading, setIsAuthenticationLoading] = useState<boolean>(true) // Stores The Information If The Authentication Is Loading
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
@@ -98,7 +99,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
     })
 
     // Function For Handle The Login
-    const handleLogin = async () => {
+    const handleLogin = async ():Promise<void> => {
         Keyboard.dismiss() // Hides The Keyboard
     
         if(!identifier.trim() || !password.trim()) {
@@ -138,8 +139,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
         } 
         
         catch {
-            console.error("Pri prihlasovaní došlo k chybe.")
-            // displayMessage(gettext("Pri prihlasovaní došlo k chybe."), "error") // Displays The Error Message
+            Alert.alert("Chyba", "Pri prihlasovaní došlo k chybe.") // Shows The Alert
         } 
         
         finally {
@@ -298,7 +298,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
                                 { outlineStyle: "none" } as any
                             ]}
                         >
-                            <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uverejniť príspevok</Text>
+                            <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Prihlásiť sa</Text>
                         </Pressable>
 
                         <View className="login_methods">
@@ -417,7 +417,7 @@ export default function LoginFormDialog({ visible, onClose, onUserLogin }:LoginF
                             >
                                 <Text style={{ color: SECONDARY_COLOR }}>Ešte nemáte účet? </Text>
                                 <Pressable
-                                    // onPress={handleGoToRegistration}
+                                    onPress={onChangeActiveForm}
                                     accessibilityRole="button"
                                     accessibilityLabel="Vytvoriť účet" 
                                 >

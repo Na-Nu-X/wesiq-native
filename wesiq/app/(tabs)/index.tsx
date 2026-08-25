@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { View, StyleSheet, Pressable, Text, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native"
 import IconButton from "@/components/IconButton"
 import BackgroundContainer from "@/components/BackgroundContainer"
@@ -13,11 +13,16 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
+import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 
 export default function HomeScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
   const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
-  const [is_login_form_dialog_open, setIsLoginFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Login Form Dialog Is Open
+  const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
+
+  useEffect(() => {
+    setActiveForm("login_form")
+  }, [])
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -79,7 +84,7 @@ export default function HomeScreen() {
                 {!logged_in_user && (
                   <View className="no_account" style={styles.no_account}>
                     <Pressable 
-                      onPress={() => setIsLoginFormDialogOpen(true)}
+                      onPress={() => setActiveForm("login_form")}
                       accessibilityLabel="Prihlásiť sa"
                     >
                       {({ pressed }) => (
@@ -109,8 +114,16 @@ export default function HomeScreen() {
             keyboardDismissMode="on-drag"
           >
             <LoginFormDialog 
-              visible={is_login_form_dialog_open}
-              onClose={() => setIsLoginFormDialogOpen(false)}
+              visible={active_form==="login_form"}
+              onChangeActiveForm={() => setActiveForm("registration_form")}
+              onClose={() => setActiveForm(null)}
+              onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+            />
+
+            <RegistrationFormDialog
+              visible={active_form==="registration_form"}
+              onChangeActiveForm={() => setActiveForm("login_form")}
+              onClose={() => setActiveForm(null)}
               onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
             />
   

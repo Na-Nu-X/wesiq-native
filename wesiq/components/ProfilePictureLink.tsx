@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react"
 import { StyleSheet, Pressable, Image, Animated, View } from "react-native"
 import { LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { DOMAIN } from "@/constants/general"
 
 import type { LoggedInUser } from "./LoginFormDialog"
 import type { User } from "./Feed"
@@ -63,7 +64,7 @@ export default function ProfilePictureLink({ user_id, user_profile_picture_name,
                     }`}
 
                     source={
-                        user_profile_picture_name ? { uri: `https://wesiq.com/media/images/${user_id}/${user_profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        user_profile_picture_name ? { uri: `${DOMAIN}/media/images/${user_id}/${user_profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                     }
 
                     style={[

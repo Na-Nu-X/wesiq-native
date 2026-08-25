@@ -3,7 +3,7 @@ import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, ActivityInd
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
+import { API_URL, DOMAIN } from "@/constants/general"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
@@ -196,7 +196,7 @@ export default function SearchUsers() {
                         }`}
 
                         source={
-                            one_loaded_user.profile_picture_name ? { uri: `https://wesiq.com/media/images/${one_loaded_user.id}/${one_loaded_user.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                            one_loaded_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_loaded_user.id}/${one_loaded_user.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                         }
 
                         style={[
