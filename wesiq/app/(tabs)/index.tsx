@@ -20,10 +20,6 @@ export default function HomeScreen() {
   const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
-  useEffect(() => {
-    setActiveForm("login_form")
-  }, [])
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BackgroundContainer>
