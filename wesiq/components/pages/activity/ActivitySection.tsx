@@ -9,16 +9,63 @@ import { API_URL } from "@/constants/general"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import { getDayName, getFormattedTime } from "@/utils/time"
 
-interface TrainingPlan {
+interface TrainingPlanExercise {
+    training_plan_key:string,
+    day:number,
+    type:string,
+    exercise:string,
+    periods:number[],
+    unit:string,
+    order:number
+}
 
+interface ActivityData {
+    success:boolean,
+    
+    latest_activity:{
+        end_time:string,
+        elapsed_time:number,
+        gained_xp:number,
+        type:string,
+        training_plan_day:number,
+
+        training_plan_summary:{
+            color:string,
+            exercise:string,
+            gained_xp:number,
+            elapsed_time:number
+        }[]
+    }|null,
+
+    longest_activity:{
+        end_time:string,
+        elapsed_time:number,
+        gained_xp:number,
+        type:string,
+        training_plan_day:number,
+
+        training_plan_summary:{
+            color:string,
+            exercise:string,
+            gained_xp:number,
+            elapsed_time:number
+        }[]
+    }|null,
+
+    average_activity_time:number,
+    average_activity_time_formatted:string,
+    activities_amount:number,
+    message:string
 }
 
 export default function ActivitySection() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [is_activity_started, setIsActivityStarted] = useState<boolean>(false) // Stores The Information If The Activity Is Started
-    const [training_plans, setTrainingPlans] = useState<TrainingPlan[]>([]) // Stores The Training Plans
+    const [training_plans_exercises, setTrainingPlansExercises] = useState<TrainingPlanExercise[]>([]) // Stores The Training Plans Exercises
     const [are_training_plans_loading, setAreTrainingPlansLoading] = useState(false) // Stores The Information If Training Plans Are Loading
+    const [activity_data, setActivityData] = useState<ActivityData|null>(null) // Stores The Activity Data
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -63,8 +110,8 @@ export default function ActivitySection() {
         getLoggedInUser() // Gets The Logged In User
     }, [])
 
-    // Function For Get The Training Plans
-    const getTrainingPlans = async () => {
+    // Function For Get The All Exercises From All Training Plans
+    const getTrainingPlansExercises = async ():Promise<void> => {
         setAreTrainingPlansLoading(true) // Stores The Information That Training Plans Are Loading
 
         try {
@@ -89,8 +136,6 @@ export default function ActivitySection() {
 
             const loaded_training_plans_data = await loaded_training_plans_response.json() // Gets The Loaded Training Plans Data
 
-            console.log(loaded_training_plans_data)
-
             // If The Response Isn't Success
             if(!loaded_training_plans_data.success) {
                 Alert.alert("Chyba", loaded_training_plans_data.message) // Shows The Alert
@@ -98,7 +143,7 @@ export default function ActivitySection() {
             }
             
             else {
-                setTrainingPlans(loaded_training_plans_data.training_plans)
+                setTrainingPlansExercises(loaded_training_plans_data.training_plans) // Sets The Training Plans Exercises
             }
         } 
         
@@ -113,8 +158,253 @@ export default function ActivitySection() {
 
     // Initializes The Load Of The Training Plans
     useEffect(() => {
-        getTrainingPlans() // Gets The Training Plans
+        getTrainingPlansExercises() // Gets The Training Plans Exercises
     }, [])
+
+    // Function For Get Activity Data
+    const getActivity = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const loaded_activity_response:Response = await fetch(`${API_URL}/get-activity/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!loaded_activity_response.ok) {
+                Alert.alert("Chyba", "Pri získavaní dát o aktivite užívateľa došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const loaded_activity_data = await loaded_activity_response.json() // Gets The Loaded Training Plans Data
+
+            // If The Response Isn't Success
+            if(!loaded_activity_data.success) {
+                Alert.alert("Chyba", loaded_activity_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setActivityData(loaded_activity_data) // Sets The Activity Data
+                console.log(loaded_activity_data)
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri získavaní dát o aktivite užívateľa došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The Activity Data
+    useEffect(() => {
+        getActivity() // Gets The Activity Data
+    }, [])
+
+    // Function For Render Exercises Of The Selected Training Plan
+    const generateTrainingPlan = (active_training_plan_index:number = 0, active_exercise_index:number = 0) => {
+        const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
+        const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
+        const ordered_exercises = training_plans_exercises.sort((a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)) // Orders Exercises From All Training Plans By Their Order Value
+
+        const training_plan_title_data:string = ordered_exercises[active_exercise_index].type as string // Gets Training Title Of The Exercise
+
+        return (
+            <>
+                <View className="training_plan" style={styles.training_plan}>
+                    <View className="start_training active" style={styles.start_training}>
+                        <View className="left" style={styles.left}>
+                            <Text style={styles.text}>Tréningový plán</Text>
+                            <Text style={styles.text}>Začať tréning</Text>
+
+                            <Text className="title" style={styles.title}>{selected_day ? `${training_plan_title_data} - ${getDayName(selected_day)}` : training_plan_title_data}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
+                        </View>
+
+                        <View className="start_training_button">
+                            <IconButton 
+                                icon_name="play" 
+                                // onPress={} 
+                            />
+                        </View>
+                    </View>
+
+                    <View className="finish_training" style={styles.finish_training}>
+                        <View className="left" style={styles.left}>
+                            <Text style={styles.text}>Tréningový plán</Text>
+                            <Text style={styles.text}>Dokončiť tréning</Text>
+
+                            <Text className="title" style={styles.title}>{training_plan_title_data}</Text> {/* Sets Training Plan Title On The Finish Training Slide */}
+                        </View>
+
+                        <View className="finish_training_button">
+                            <IconButton 
+                                icon_name="stop" 
+                                // onPress={} 
+                            />
+                        </View>
+                    </View>
+
+                    <View className="break" style={styles.break}>
+                        <View className="add_time">
+                            <IconButton 
+                                icon_name="plus" 
+                                // onPress={} 
+                            />
+
+                            <Text className="add_time_message" style={styles.add_time_message}>+30s</Text>
+                        </View>
+
+                        <View className="break_timer" style={styles.break_timer}>
+                            {/* <svg width="100" height="100" viewBox="0 0 100 100">
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    class="progress"
+                                />
+                            </svg>
+
+                            <svg width="100" height="100" viewBox="0 0 100 100">
+                                <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    class="progress_background"
+                                />
+                            </svg> */}
+
+                            <Text style={styles.break_timer_text}><Text className="minutes"></Text>:<Text className="seconds"></Text></Text>
+                        </View>
+
+                        <View className="skip_break_button">
+                            <IconButton 
+                                icon_name="angle-right" 
+                                // onPress={} 
+                            />
+                        </View>
+                    </View>
+
+                    {/* Extracts Data For Every Exercise */}
+                    {ordered_exercises.map((one_exercise:TrainingPlanExercise, index:number) => {
+                        const day_data:number|null = one_exercise.day || null // Gets Training Day Of The Exercise If Has Any
+                        // const training_plan_title_data:string = one_exercise.type as string // Gets Training Title Of The Exercise
+                        const exercise_title_data:string = one_exercise.exercise as string // Gets Exercise Name
+                        const periods_data:number[] = one_exercise.periods || [0] // Gets Exercise Sets & Reps Periods
+                        const unit_data:string = one_exercise.unit || "reps" // Gets Exercise Unit Type (Reps, Seconds Or Steps)
+            
+                        // Shows Exercises Which Have Assigned Day
+                        if(day_data !== null) {
+                            // Shows Training Plan Exercises Of Selected Day
+                            if(selected_day === day_data) {
+                                return (
+                                    <>
+                                        {/* Creates Warm Up */}
+                                        {exercise_title_data === "Warm Up" && (
+                                            <View className="exercise warm_up" style={styles.warm_up}>
+                                                <Text className="title">Warm Up</Text>
+            
+                                                <View className="warm_up_timer" style={styles.warm_up_timer}>
+                                                    {/* <svg width="100" height="100" viewBox="0 0 100 100">
+                                                        <circle
+                                                            cx="50"
+                                                            cy="50"
+                                                            r="40"
+                                                            class="progress"
+                                                        />
+                                                    </svg>
+                                                    
+                                                    <svg width="100" height="100" viewBox="0 0 100 100">
+                                                        <circle
+                                                            cx="50"
+                                                            cy="50"
+                                                            r="40"
+                                                            class="progress_background"
+                                                        />
+                                                    </svg> */}
+            
+                                                    <Text className="countdown" style={styles.warm_up_timer_text}>{`${getFormattedTime("minutes", periods_data[0])}:${getFormattedTime("seconds", periods_data[0], true)}`}</Text> {/* Stores Timer Of Warm Up */}
+                                                </View>
+            
+                                                <View className="skip_warm_up_button">
+                                                    <IconButton 
+                                                        icon_name="angle-right" 
+                                                        // onPress={} 
+                                                    />
+                                                </View>
+                                            </View>
+                                        )}
+            
+                                        {/* Creates Exercise */}
+                                        {exercise_title_data !== "Warm Up" && (
+                                            <View className="exercise" style={styles.exercise}>
+                                                <View className="left" style={styles.left}>
+                                                    <Text className="title" style={{ maxWidth: 350 }}>{exercise_title_data}</Text> {/* Sets Exercise Title */}
+            
+                                                    <Text className="reps" style={styles.reps}>1x</Text>
+                                                    <Text className="sets" style={styles.sets}><Text className="current" style={styles.current}>1</Text>/<Text className="total" style={styles.total}>{String(periods_data.length)}</Text></Text> {/* Sets Exercise Total Sets */}
+                                                </View>
+            
+                                                <View className="next_exercise_button">
+                                                    <IconButton 
+                                                        icon_name="angle-right" 
+                                                        // onPress={} 
+                                                    />
+                                                </View>
+                                            </View>
+                                        )}
+            
+                                        <View className="bar_container" style={styles.bar_container}>
+                                            {/* Creates Bar */}
+                                            <View 
+                                                key={index} 
+                                                className={index === active_exercise_index ? "bar active show" : "bar show"} // Adds Active Class For Bar Of Active Exercise
+                                                // draggable = true
+                                                style={styles.bar}
+                                            >
+                                                <Text style={styles.bar_label}>{exercise_title_data}</Text>
+                                            </View>
+                                        </View>
+                                    </>
+                                )
+                            }
+                        }
+                    })}
+
+                    <View className="current_activity_info" style={styles.current_activity_info}>
+                        {/* <Text style={styles.current_activity_info_text}>{is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP"}</Text> */}
+                    </View>
+                </View>
+
+                {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
+                {days.length > 1 && (
+                    createTrainingPlanBars(days.length, active_training_plan_index)
+                )}
+            </>
+        )
+    }
+
+    // Function For Creating Bar Container With Amount Of Bars By Training Plans Amount
+    const createTrainingPlanBars = (amount:number, active_training_plan_index:number) => {
+        return (
+            <View className="training_plan_bar_container" style={styles.training_plan_bar_container}>
+                {/* Creates Bars By Amount Of Training Plans */}
+                {Array.from({ length: amount }).map((_, index:number) => (
+                    // Creates Bar
+                    <View 
+                        key={index} 
+                        className={index === active_training_plan_index ? "bar active" : "bar"} // Adds Active Class For Bar Of Active Training Plan
+                        style={styles.training_plan_bar}
+                    />
+                ))}
+            </View>
+        )
+    }
 
     return (
         <View 
@@ -144,12 +434,13 @@ export default function ActivitySection() {
                                 name="stop"
                                 size={40}
                                 color={SECONDARY_COLOR}
+                                style={styles.stop_icon}
                             />
                         </Pressable>
                     </View>
                 </View>
 
-                {training_plans.length === 0 && (
+                {training_plans_exercises.length === 0 && (
                     <>
                         {!logged_in_user && (
                             <View className="no_logged_in">
@@ -175,7 +466,7 @@ export default function ActivitySection() {
                         )}
 
                         {logged_in_user && (
-                            <View className="no_training_plan">
+                            <View className="no_training_plan" style={styles.no_training_plan}>
                                 <Text>Zatiaľ nemáte žiaden tréningový plán.</Text>
 
                                 <Pressable 
@@ -185,7 +476,7 @@ export default function ActivitySection() {
                                     {({ pressed }) => (
                                         <Text
                                             style={[
-                                                // styles.login,
+                                                styles.link,
                                                 pressed && { textDecorationLine: "underline" } 
                                             ]}
                                         >
@@ -200,99 +491,23 @@ export default function ActivitySection() {
                     </>
                 )}
 
-                {training_plans.length > 0 && (
+                {training_plans_exercises.length > 0 && (
                     <View className="training_plan_container" style={styles.training_plan_container}>
                         {/* {% for one_exercise in training_plan %}
                             <div class="one_exercise_data" data-training_plan_key="{{ one_exercise.training_plan_key }}" data-day="{{ one_exercise.day }}" data-type="{{ one_exercise.type }}" data-exercise="{{ one_exercise.exercise }}" data-periods="{{ one_exercise.periods }}" data-unit="{{ one_exercise.unit }}" data-order="{{ one_exercise.order }}"></div>
                         
                         {% endfor %} */}
 
-                        <View className="training_plan">
-                            <View className="start_training active" style={styles.start_training}>
-                                <View className="left" style={styles.left}>
-                                    <Text style={styles.text}>Tréningový plán</Text>
-                                    <Text style={styles.text}>Začať tréning</Text>
-
-                                    <Text className="title" style={styles.title}></Text>
-                                </View>
-
-                                <View className="start_training_button">
-                                    <IconButton 
-                                        icon_name="play" 
-                                        // onPress={} 
-                                    />
-                                </View>
-                            </View>
-
-                            <View className="finish_training" style={styles.finish_training}>
-                                <View className="left" style={styles.left}>
-                                    <Text style={styles.text}>Tréningový plán</Text>
-                                    <Text style={styles.text}>Dokončiť tréning</Text>
-
-                                    <Text className="title" style={styles.title}></Text>
-                                </View>
-
-                                <View className="finish_training_button">
-                                    <IconButton 
-                                        icon_name="stop" 
-                                        // onPress={} 
-                                    />
-                                </View>
-                            </View>
-
-                            <View className="break" style={styles.break}>
-                                <View className="add_time">
-                                    <IconButton 
-                                        icon_name="plus" 
-                                        // onPress={} 
-                                    />
-
-                                    <Text className="add_time_message" style={styles.add_time_message}>+30s</Text>
-                                </View>
-
-                                <View className="break_timer" style={styles.break_timer}>
-                                    {/* <svg width="100" height="100" viewBox="0 0 100 100">
-                                        <circle
-                                            cx="50"
-                                            cy="50"
-                                            r="40"
-                                            class="progress"
-                                        />
-                                    </svg>
-
-                                    <svg width="100" height="100" viewBox="0 0 100 100">
-                                        <circle
-                                            cx="50"
-                                            cy="50"
-                                            r="40"
-                                            class="progress_background"
-                                        />
-                                    </svg> */}
-
-                                    <Text><Text className="minutes"></Text>:<Text className="seconds"></Text></Text>
-                                </View>
-
-                                <View className="skip_break_button">
-                                    <IconButton 
-                                        icon_name="angle-right" 
-                                        // onPress={} 
-                                    />
-                                </View>
-                            </View>
-
-                            <View className="current_activity_info">
-                                {/* <Text>{is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP"}</Text> */}
-                            </View>
-                        </View>
+                        {generateTrainingPlan(0, 0)} {/* Generates The Training Plan */}
                     </View>
 
                     // <script src="{% static 'app/ts/dist/pages/training_session/components/training_session.js' %}" type="module"></script>
                     // <script src="{% static 'app/ts/dist/pages/training_session/components/todo.js' %}" type="module"></script>
                 )}
 
-                <View className="previous_activity">
-                    <View className="top">
-                        <View className="average_activity_time_container">
+                <View className="previous_activity" style={styles.previous_activity}>
+                    <View className="top" style={styles.top}>
+                        <View className="average_activity_time_container" style={styles.average_activity_time_container}>
                             <Text>
                                 <FontAwesome6
                                     name="clock"
@@ -300,12 +515,12 @@ export default function ActivitySection() {
                                     color={BLUE_COLOR}
                                 />
 
-                                <Text className="title">priemer&nbsp;/ 7&nbsp;dní</Text>
-                                {/* <Text>{average_activity_time ? average_activity_time_formatted : "0"}</Text> */}
+                                <Text className="title" style={styles.average_activity_time_title}>priemer&nbsp;/ 7&nbsp;dní</Text>
+                                {/* <Text style={styles.average_activity_time}>{average_activity_time ? average_activity_time_formatted : "0"}</Text> */}
                             </Text>
                         </View>
 
-                        <View className="activities_amount_container">
+                        <View className="activities_amount_container" style={styles.activities_amount_container}>
                             <Text>
                                 <FontAwesome6
                                     name="calendar"
@@ -314,12 +529,13 @@ export default function ActivitySection() {
                                     color={BLUE_COLOR}
                                 />
 
-                                {/* <Text className="activities_amount">{activities_amount ? activities_amount : "0"}</Text> */}
+                                <Text className="title" style={styles.activities_amount_title}>počet&nbsp;/ 7&nbsp;dní</Text>
+                                {/* <Text className="activities_amount" style={styles.activities_amount}>{activities_amount ? activities_amount : "0"}</Text> */}
                             </Text>
                         </View>
                     </View>
 
-                    <View className="bottom">
+                    <View className="bottom" style={styles.bottom}>
                         <View className="latest_activity_container">
                             <View 
                                 style={{
@@ -335,16 +551,20 @@ export default function ActivitySection() {
                                     color={BLUE_COLOR}
                                 />
 
-                                {/* {latest_activity && (
-                                    <Text>{latest_activity.elapsed_time|format_time}</Text>
-                                    <Text className="xp">{latest_activity.gained_xp}XP</Text>
-                                    <Text>{latest_activity.end_time|date:"d.m. Y"}</Text>
+                                {activity_data && activity_data.latest_activity && (
+                                    <>
+                                        {/* <Text style={styles.latest_activity_text}>{activity_data.latest_activity.elapsed_time|format_time}</Text>
+                                        <Text className="xp" style={styles.latest_activity_text}>{activity_data.latest_activity.gained_xp}XP</Text>
+                                        <Text style={styles.latest_activity_text}>{latest_activity.end_time|date:"d.m. Y"}</Text> */}
+                                    </>
                                 )}
 
-                                {!latest_activity && (
-                                    <Text className="no_latest_activity">posledná aktivita: </Text>
-                                    <Text className="none">žiadna</Text>
-                                )} */}
+                                {!activity_data || !activity_data.latest_activity && (
+                                    <>
+                                        <Text className="no_latest_activity" style={styles.no_latest_activity}>posledná aktivita: </Text>
+                                        <Text className="none" style={styles.latest_activity_text}>žiadna</Text>
+                                    </>
+                                )}
                             </View>
                         </View>
 
@@ -364,14 +584,14 @@ export default function ActivitySection() {
                                 />
 
                                 {/* {longest_activity && (
-                                    <Text>{longest_activity.elapsed_time|format_time}</Text>
-                                    <Text className="xp">{longest_activity.gained_xp}XP</Text>
-                                    <Text>{longest_activity.end_time|date:"d.m. Y"}</Text>
+                                    <Text style={styles.longest_activity_text}>{longest_activity.elapsed_time|format_time}</Text>
+                                    <Text className="xp" style={styles.xp}>{longest_activity.gained_xp}XP</Text>
+                                    <Text> style={styles.longest_activity_text}{longest_activity.end_time|date:"d.m. Y"}</Text>
                                 )}
 
                                 {!longest_activity && (
-                                    <Text className="no_longest_activity">najdlhšia aktivita: </Text>
-                                    <Text className="none">žiadna</Text>
+                                    <Text className="no_longest_activity" style={styles.no_latest_activity}>najdlhšia aktivita: </Text>
+                                    <Text className="none" style={styles.none}>žiadna</Text>
                                 )} */}
                             </View>
                         </View>
@@ -641,6 +861,48 @@ const styles = StyleSheet.create({
         //         opacity: 0;
         //     }
         // }
+    },
+
+    exercise: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+        height: 200,
+        paddingTop: 10,
+        paddingHorizontal: 50,
+        // transition: transform 0.5s ease;
+        zIndex: 100,
+
+        // &:not(.active) {
+        //     position: absolute;
+        //     top: 0px;
+        //     transform: translateX(100%);
+
+        //     .left {
+        //         opacity: 0;
+        //     }
+        // }
+    },
+
+    reps: {
+        // font-family: $article-heading-font;
+        fontSize: 22,
+    },
+
+    sets: {
+        // font-family: $article-heading-font;
+        fontSize: 22,
+    },
+
+    current: {
+        // font-family: $article-heading-font;
+        fontSize: 22,
+    },
+
+    total: {
+        // font-family: $article-heading-font;
+        fontSize: 22,
     },
 
     left: {
