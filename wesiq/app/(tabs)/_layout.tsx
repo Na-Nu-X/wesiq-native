@@ -43,7 +43,7 @@ export default function RootLayout() {
         name="index"
 
         options={{
-          title: "Domov",
+          title: "",
 
           tabBarIcon: ({ color, focused, size }) => (
             <FontAwesome6
@@ -60,7 +60,7 @@ export default function RootLayout() {
         name="chat"
 
         options={{
-          title: "Chat",
+          title: "",
 
           tabBarIcon: ({ color, focused, size }) => (
             <FontAwesome6
@@ -77,7 +77,7 @@ export default function RootLayout() {
         name="activity"
 
         options={{
-          title: "Aktivita",
+          title: "",
 
           tabBarIcon: ({ color, focused, size }) => (
             <FontAwesome6

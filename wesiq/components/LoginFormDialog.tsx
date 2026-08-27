@@ -20,7 +20,7 @@ export interface LoggedInUser {
     friend_code:string,
     saved_posts:number[],
     private_account:boolean,
-    followers:number,
+    followers_amount:number,
 
     subscription:{
         is_active:boolean
@@ -29,7 +29,7 @@ export interface LoggedInUser {
     data_saving_mode:boolean
 }
 
-type LoginFormDialogProps = {
+interface LoginFormDialogProps {
     visible:boolean,
     onChangeActiveForm:() => void,
     onClose:() => void,
