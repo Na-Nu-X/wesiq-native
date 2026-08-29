@@ -13,6 +13,7 @@ import * as Clipboard from "expo-clipboard"
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 
 import type { LoggedInUser } from "./LoginFormDialog"
+import type { BasicResponse } from "./Feed"
 
 type RegistrationFormDialogProps = {
     visible:boolean,
@@ -246,7 +247,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                 })
             })
     
-            const register_data = await register_response.json() // Gets The Register Data
+            const register_data:BasicResponse = await register_response.json() // Gets The Register Data
     
             if(register_data.success) {
                 Alert.alert("Úspech", register_data.message) // Shows The Alert

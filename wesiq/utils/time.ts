@@ -47,6 +47,16 @@ export function getFormattedTime(unit:string = "seconds", elapsed_seconds:number
     else return leading_zero === true ? "00" : "0" // Default Values
 }
 
+// Function For Formatting Time To Minimalist Format
+export function getMinimalistFormattedTime(elapsed_time:number):string {
+    // For Example Converts 3600 To 1h
+    return (
+        `${getFormattedTime("hours", elapsed_time) !== "0" ? getFormattedTime("hours", elapsed_time) + "h" : ""}
+        ${getFormattedTime("minutes", elapsed_time) !== "0" ? getFormattedTime("minutes", elapsed_time) + "m" : ""}
+        ${getFormattedTime("seconds", elapsed_time) !== "0" ? getFormattedTime("seconds", elapsed_time) + "s" : ""}`
+    )
+}
+
 // Function For Get Day Name From Weekday Index In User's Country's Language (Sunday - 0, Monday - 1, Tuesday - 2, Wednesday - 3, Thursday - 4, Friday - 5, Saturday - 6)
 export function getDayName(day_index:number, format:"long"|"short"|"narrow"="short"):string {
     const locale:string = navigator.languages?.[0] || navigator.language || "en-US"

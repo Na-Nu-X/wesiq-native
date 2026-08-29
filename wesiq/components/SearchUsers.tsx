@@ -8,7 +8,8 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 
-import type { LoggedInUser } from "./LoginFormDialog"
+import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
+import { BasicResponse } from "./Feed"
 
 interface loadedUser {
     id:number,
@@ -27,7 +28,7 @@ interface loadedUser {
     }
 }
 
-interface firstLoadedUsersResponse {
+interface FirstLoadedUsersResponse {
     success: boolean,
     users:loadedUser[],
     message: string
@@ -37,7 +38,7 @@ interface searchedUser extends loadedUser {
     
 }
 
-interface searchedUsersResponse {
+interface SearchedUsersResponse {
     success:boolean,
     users?:searchedUser[],
     message:string
@@ -70,17 +71,17 @@ export default function SearchUsers() {
                 }
             })
     
-            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
 
-            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+            if(logged_in_user_response.status === 401) {
                 await AsyncStorage.removeItem("user_token") // Removes The User Token
                 setLoggedInUser(null) // Removes The Logged In User
                 return null
             }
     
             if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
             } 
             
             else return null
@@ -135,7 +136,7 @@ export default function SearchUsers() {
                     body: JSON.stringify(searched_users_history),
                 })
         
-                const first_loaded_users_data:firstLoadedUsersResponse = await first_loaded_users_response.json() // Gets The Load First Users Data
+                const first_loaded_users_data:FirstLoadedUsersResponse = await first_loaded_users_response.json() // Gets The Load First Users Data
 
                 // If The Response Isn't Success
                 if(!first_loaded_users_data.success) {
@@ -269,7 +270,7 @@ export default function SearchUsers() {
                         body: JSON.stringify({searched_text: text}),
                     })
             
-                    const searched_users_data:searchedUsersResponse = await searched_users_response.json() // Gets The Searched Users Data
+                    const searched_users_data:SearchedUsersResponse = await searched_users_response.json() // Gets The Searched Users Data
 
                     if(!searched_users_data.success) {
                         console.log(searched_users_data.message)
@@ -344,7 +345,7 @@ export default function SearchUsers() {
                 return
             }
 
-            const toggle_follow_data = await toggle_follow_response.json() // Gets The Toggle Follow Data
+            const toggle_follow_data:BasicResponse = await toggle_follow_response.json() // Gets The Toggle Follow Data
 
             // If The Response Isn't Success
             if(!toggle_follow_data.success) {

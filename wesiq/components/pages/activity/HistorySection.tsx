@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native"
-import { useState } from "react"
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native"
+import { useEffect, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import IconButton from "@/components/IconButton"
@@ -10,14 +10,79 @@ import Icon from "@/components/Icon"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import { API_URL } from "@/constants/general"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { getFormattedDate, getMinimalistFormattedTime } from "@/utils/time"
 
-interface Activity {
-    type:string|null
+interface LoadedActivityHistoryResponse {
+    success:boolean,
+    activity_history?:Activity[],
+    message:string
+}
+
+export interface Activity {
+    end_time:string,
+    elapsed_time:number,
+    gained_xp:number,
+    type:string,
+    training_plan_day:number,
+
+    training_plan_summary:{
+        color:string,
+        exercise:string,
+        gained_xp:number,
+        elapsed_time:number
+    }[]
 }
 
 export default function HistorySection() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [activity_history, setActivityHistory] = useState<Activity[]>([]) // Stores The Activity History
+
+    // Function For Get The Activity History
+    const getActivityHistory = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const loaded_activity_history_response:Response = await fetch(`${API_URL}/get-activity-history/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!loaded_activity_history_response.ok) {
+                Alert.alert("Chyba", "Pri získavaní histórie zaznamenaných aktivít došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const loaded_activity_history_data:LoadedActivityHistoryResponse = await loaded_activity_history_response.json() // Gets The Loaded Activity History Plans Data
+
+            // If The Response Isn't Success
+            if(!loaded_activity_history_data.success || !loaded_activity_history_data.activity_history) {
+                Alert.alert("Chyba", loaded_activity_history_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setActivityHistory(loaded_activity_history_data.activity_history) // Sets The Activity Data
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri získavaní histórie zaznamenaných aktivít došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The Activity History
+    useEffect(() => {
+        getActivityHistory() // Gets The Activity History
+    }, [])
 
     return (
         <View 
@@ -40,7 +105,7 @@ export default function HistorySection() {
 
                             <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : "Aktivita"}</Text>
 
-                            {/* <Text className="elapsed_time" style={{ width: 60 }}>{one_activity.elapsed_time|format_time}</Text>
+                            <Text className="elapsed_time" style={{ width: 60 }}>{getMinimalistFormattedTime(one_activity.elapsed_time)}</Text>
 
                             <Text 
                                 className="gained_xp" 
@@ -53,7 +118,7 @@ export default function HistorySection() {
                                 {one_activity.gained_xp}XP
                             </Text>
 
-                            <Text className="date" style={{ width: 40 }}>{one_activity.end_time|date:"d.m."}</Text> */}
+                            <Text className="date" style={{ width: 40 }}>{getFormattedDate(one_activity.end_time)}</Text>
                         </View>
                     ))}
                 </ScrollView>

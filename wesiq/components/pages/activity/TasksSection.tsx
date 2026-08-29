@@ -1,29 +1,183 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView } from "react-native"
-import { useState } from "react"
+import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native"
+import { useEffect, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import IconButton from "@/components/IconButton"
 import Checkbox from "expo-checkbox"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import Icon from "@/components/Icon"
-
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { API_URL } from "@/constants/general"
+import { getFormattedDate } from "@/utils/time"
+
+import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+
+interface OfficialTasksResponse {
+    success:boolean,
+    official_tasks?:OfficialTask[],
+    official_tasks_remaining_hours?:number,
+    message:string
+}
 
 interface OfficialTask {
+    title:string,
     data:string,
-    xp:number
+    xp:number,
+    progress_percentage:number,
+    is_completed:boolean
+}
+
+interface CustomTasksResponse {
+    success:boolean,
+    custom_tasks?:CustomTask[],
+    message:string
 }
 
 interface CustomTask {
-    title:string
+    title:string,
+    is_completed:boolean,
+    order:number,
+    created_at:string
 }
 
 export default function TasksSection() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
+    const [official_tasks_remaining_hours, setOfficialTasksRemainingHours] = useState<number>(0) // Stores The Official Tasks Remaining Hours
     const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
+
+    // Function For Get The Logged In User
+    const getLoggedInUser = async () => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+    
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
+
+            if(logged_in_user_response.status === 401) {
+                await AsyncStorage.removeItem("user_token") // Removes The User Token
+                setLoggedInUser(null) // Removes The Logged In User
+                return null
+            }
+    
+            if(logged_in_user_data.success) {
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
+            } 
+            
+            else return null
+        } 
+        
+        catch {
+            return null
+        }
+    }
+
+    // Initializes The Get Logged In User
+    useEffect(() => {
+        getLoggedInUser() // Gets The Logged In User
+    }, [])
+
+    // Function For Get The Official Tasks
+    const getOfficialTasks = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const official_tasks_response:Response = await fetch(`${API_URL}/get-official-tasks/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!official_tasks_response.ok) {
+                Alert.alert("Chyba", "Pri získavaní oficiálnych úloh došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const official_tasks_data:OfficialTasksResponse = await official_tasks_response.json() // Gets The Official Tasks Plans Data
+
+            // If The Response Isn't Success
+            if(!official_tasks_data.success) {
+                Alert.alert("Chyba", official_tasks_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setOfficialTasks(official_tasks_data.official_tasks || []) // Sets The Official Tasks
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri získavaní oficiálnych úloh došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The Official Tasks
+    useEffect(() => {
+        getOfficialTasks() // Gets The Official Tasks
+    }, [])
+
+    // Function For Get The Custom Tasks
+    const getCustomTasks = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const custom_tasks_response:Response = await fetch(`${API_URL}/get-custom-tasks/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!custom_tasks_response.ok) {
+                Alert.alert("Chyba", "Pri získavaní vlastných úloh došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const custom_tasks_data:CustomTasksResponse = await custom_tasks_response.json() // Gets The Custom Tasks Plans Data
+
+            // If The Response Isn't Success
+            if(!custom_tasks_data.success) {
+                Alert.alert("Chyba", custom_tasks_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setCustomTasks(custom_tasks_data.custom_tasks || []) // Sets The Custom Tasks
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri získavaní vlastných úloh došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The Custom Tasks
+    useEffect(() => {
+        getCustomTasks() // Gets The Custom Tasks
+    }, [])
 
     return (
         <BottomSheetModalProvider>
@@ -61,7 +215,7 @@ export default function TasksSection() {
                                     />
 
                                     <Text style={{ color: LIGHT_BLUE_COLOR }}>Ostáva</Text>
-                                    {/* <Text style={{ color: LIGHT_BLUE_COLOR }}>{official_tasks_remaining_hours}</Text> */}
+                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{official_tasks_remaining_hours}</Text>
                                     <Text style={{ color: LIGHT_BLUE_COLOR }}>hodín.</Text>
                                 </View>
 
@@ -203,9 +357,9 @@ export default function TasksSection() {
                                 <View className="task" style={styles.custom_task}>
                                     <View className="checkbox" style={styles.custom_task_checkbox}></View>
 
-                                    <Pressable className="title" style={{ cursor: "pointer" }}>{one_task.title}</Pressable>
+                                    <Pressable className="title" style={{ cursor: "pointer" }}><Text style={{ color: SECONDARY_COLOR }}>{one_task.title}</Text></Pressable>
 
-                                    {/* <Text className="date" style={styles.date}>{one_task.created_at|date:"d.m."}</Text> */}
+                                    <Text className="date" style={styles.date}>{getFormattedDate(one_task.created_at)}</Text>
 
                                     <Checkbox
                                         className="checkbox"
@@ -399,6 +553,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         height: 50,
         lineHeight: 50,
+        color: SECONDARY_COLOR,
     },
 
     remaining_hours: {

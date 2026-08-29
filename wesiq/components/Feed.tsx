@@ -22,7 +22,19 @@ import { DynamicVideo } from "./DynamicVideo"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 
-import type { LoggedInUser } from "./LoginFormDialog"
+import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
+
+export interface BasicResponse {
+    success:boolean,
+    message:string
+}
+
+interface LoadedPostsResponse {
+    success:boolean,
+    has_next?:boolean,
+    posts?:Post[],
+    message:string
+}
 
 export interface Post {
     user:User,
@@ -96,9 +108,32 @@ export interface Media {
 
 interface loadedPostCommentsResponse {
     success:boolean,
-    has_next?:boolean,
-    visible_comments:comment[],
+    has_next:boolean,
+    visible_comments?:comment[],
     message:string
+}
+
+interface AddedPostCommentResponse {
+    success:boolean,
+    comment?:AddedComment,
+    message:string
+}
+
+interface AddedComment {
+    id:number,
+
+    user:{
+        id:number,
+        username:string,
+        profile_picture_name:string|null,
+
+        subscription?:{
+            is_active:boolean
+        }
+    },
+
+    creation_time:string,
+    level:number
 }
 
 export interface comment {
@@ -181,17 +216,17 @@ export default function Feed() {
                 }
             })
     
-            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
 
-            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+            if(logged_in_user_response.status === 401) {
                 await AsyncStorage.removeItem("user_token") // Removes The User Token
                 setLoggedInUser(null) // Removes The Logged In User
                 return null
             }
     
             if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
             } 
             
             else return null
@@ -234,7 +269,7 @@ export default function Feed() {
                 return
             }
 
-            const loaded_posts_data = await loaded_posts_response.json() // Gets The Loaded Posts Data
+            const loaded_posts_data:LoadedPostsResponse = await loaded_posts_response.json() // Gets The Loaded Posts Data
 
             // If The Response Isn't Success
             if(!loaded_posts_data.success) {
@@ -242,7 +277,7 @@ export default function Feed() {
                 return
             }
 
-            if(is_refresh) setPosts(loaded_posts_data.posts) // Sets The Posts
+            if(is_refresh) setPosts(loaded_posts_data.posts || []) // Sets The Posts
             
             else {
                 setPosts(previous_posts => {
@@ -253,7 +288,7 @@ export default function Feed() {
                 })
             }
     
-            setHasNext(loaded_posts_data.has_next) // Sets The Has Next
+            setHasNext(loaded_posts_data.has_next || false) // Sets The Has Next
             setPage(page) // Sets The Page
         } 
         
@@ -326,7 +361,7 @@ export default function Feed() {
                 return
             }
 
-            if(is_refresh) setPostComments(loaded_post_comments_data.visible_comments) // Sets The Post Comments
+            if(is_refresh) setPostComments(loaded_post_comments_data.visible_comments || []) // Sets The Post Comments
             
             else {
                 // Sets The Post Comments
@@ -714,7 +749,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_post_like_data = await toggle_post_like_response.json() // Gets The Toggle Post Like Data
+            const toggle_post_like_data:BasicResponse = await toggle_post_like_response.json() // Gets The Toggle Post Like Data
 
             // If The Response Isn't Success
             if(!toggle_post_like_data.success) {
@@ -829,7 +864,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_post_save_data = await toggle_post_save_response.json() // Gets The Toggle Post Save Data
+            const toggle_post_save_data:BasicResponse = await toggle_post_save_response.json() // Gets The Toggle Post Save Data
 
             // If The Response Isn't Success
             if(!toggle_post_save_data.success) {
@@ -892,7 +927,7 @@ export default function Feed() {
                 return
             }
 
-            const reported_post_data = await reported_post_response.json() // Gets The Reported Post Data
+            const reported_post_data:BasicResponse = await reported_post_response.json() // Gets The Reported Post Data
 
             // If The Response Isn't Success
             if(!reported_post_data.success) {
@@ -945,7 +980,7 @@ export default function Feed() {
                 return
             }
 
-            const edited_post_settings_data = await edited_post_settings_response.json() // Gets The Edited Post Settings Data
+            const edited_post_settings_data:BasicResponse = await edited_post_settings_response.json() // Gets The Edited Post Settings Data
 
             // If The Response Isn't Success
             if(!edited_post_settings_data.success) {
@@ -1004,7 +1039,7 @@ export default function Feed() {
                 return
             }
 
-            const deleted_post_data = await deleted_post_response.json() // Gets The Deleted Post Data
+            const deleted_post_data:BasicResponse = await deleted_post_response.json() // Gets The Deleted Post Data
 
             // If The Response Isn't Success
             if(!deleted_post_data.success) {
@@ -1069,7 +1104,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_post_comment_like_data = await toggle_post_comment_like_response.json() // Gets The Toggle Post Comment Like Data
+            const toggle_post_comment_like_data:BasicResponse = await toggle_post_comment_like_response.json() // Gets The Toggle Post Comment Like Data
 
             // If The Response Isn't Success
             if(!toggle_post_comment_like_data.success) {
@@ -1135,7 +1170,7 @@ export default function Feed() {
                 return
             }
 
-            const reported_post_comment_data = await reported_post_comment_response.json() // Gets The Reported Post Comment Data
+            const reported_post_comment_data:BasicResponse = await reported_post_comment_response.json() // Gets The Reported Post Comment Data
 
             // If The Response Isn't Success
             if(!reported_post_comment_data.success) {
@@ -1186,7 +1221,7 @@ export default function Feed() {
                 return
             }
 
-            const deleted_post_comment_data = await deleted_post_comment_response.json() // Gets The Deleted Post Comment Data
+            const deleted_post_comment_data:BasicResponse = await deleted_post_comment_response.json() // Gets The Deleted Post Comment Data
 
             // If The Response Isn't Success
             if(!deleted_post_comment_data.success) {
@@ -1244,10 +1279,10 @@ export default function Feed() {
                 return
             }
 
-            const added_post_comment_data = await added_post_comment_response.json() // Gets The Added Post Comment Data
+            const added_post_comment_data:AddedPostCommentResponse = await added_post_comment_response.json() // Gets The Added Post Comment Data
 
             // If The Response Isn't Success
-            if(!added_post_comment_data.success) {
+            if(!added_post_comment_data.success || !added_post_comment_data.comment) {
                 Alert.alert("Chyba", added_post_comment_data.message) // Shows The Alert
                 return
             }
@@ -1271,10 +1306,10 @@ export default function Feed() {
                     comment: comment,
                     likes: 0,
                     likes_from_users: [],
-                    creation_time: added_post_comment_data.creation_time,
+                    creation_time: added_post_comment_data.comment.creation_time,
                     parent_id: parent_id,
                     reports_from_users: [],
-                    level: added_post_comment_data.level
+                    level: added_post_comment_data.comment.level
                 }
 
                 // Sets The Post Comments
@@ -1322,7 +1357,7 @@ export default function Feed() {
                 return
             }
 
-            const toggle_follow_data = await toggle_follow_response.json() // Gets The Toggle Follow Data
+            const toggle_follow_data:BasicResponse = await toggle_follow_response.json() // Gets The Toggle Follow Data
 
             // If The Response Isn't Success
             if(!toggle_follow_data.success) {

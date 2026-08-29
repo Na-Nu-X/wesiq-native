@@ -16,10 +16,10 @@ type UploadPostFormDialogProps = {
     onClose:() => void
 }
 
-export interface uploadPostResponse {
+export interface UploadPostResponse {
     success:boolean,
     compress_tasks?:compressTask[],
-    message?:string
+    message:string
 }
 
 export interface compressTask {
@@ -53,7 +53,7 @@ interface PostDetails {
     }[]
 }
 
-export interface uploadProgressResponse {
+export interface UploadProgressResponse {
     success:boolean,
 
     upload_progress:{
@@ -301,7 +301,7 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
                 body: form_data,
             })
     
-            const upload_post_data:uploadPostResponse = await upload_post_response.json() // Gets The Upload Post Data
+            const upload_post_data:UploadPostResponse = await upload_post_response.json() // Gets The Upload Post Data
     
             if(upload_post_response.ok && upload_post_data.success) {
                 if(upload_post_data.compress_tasks && upload_post_data.compress_tasks.length > 0) {
@@ -319,16 +319,16 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
                     // Checks The Progress Of Uploaded Posts
                     const check_upload_progress_interval = setInterval(async () => {
                         try {
-                            const upload_progress_response_promises:Promise<uploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<uploadProgressResponse> => {
+                            const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {
                                 
                                 const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
                                     headers: { "Authorization": `Bearer ${user_token}` }
                                 })
                                 
                                 if(!upload_progress_response.ok) throw new Error("Chyba servera")
-                                return upload_progress_response.json() as Promise<uploadProgressResponse>
+                                return upload_progress_response.json() as Promise<UploadProgressResponse>
                             })
-                            const tasks_results:uploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
+                            const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
 
                             const all_tasks_finished:boolean = tasks_results.every(one_task => one_task.upload_progress.state.toUpperCase() === "SUCCESS") // If Every Tasks Has Been Succeeded
                             const any_task_failed:boolean = tasks_results.some(one_task => one_task.upload_progress.state.toUpperCase() === "FAILURE") // If Any Task Has Failed

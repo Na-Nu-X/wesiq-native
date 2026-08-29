@@ -5,11 +5,12 @@ import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transpa
 import IconButton from "@/components/IconButton"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
-
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedTime } from "@/utils/time"
+import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
+
+import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { Activity } from "./HistorySection"
 
 interface TrainingPlanExercise {
     training_plan_key:string,
@@ -21,42 +22,23 @@ interface TrainingPlanExercise {
     order:number
 }
 
-interface ActivityData {
+interface LoadedActivityResponse {
     success:boolean,
-    
-    latest_activity:{
-        end_time:string,
-        elapsed_time:number,
-        gained_xp:number,
-        type:string,
-        training_plan_day:number,
+    activity?:ActivityData,
+    message:string
+}
 
-        training_plan_summary:{
-            color:string,
-            exercise:string,
-            gained_xp:number,
-            elapsed_time:number
-        }[]
-    }|null,
-
-    longest_activity:{
-        end_time:string,
-        elapsed_time:number,
-        gained_xp:number,
-        type:string,
-        training_plan_day:number,
-
-        training_plan_summary:{
-            color:string,
-            exercise:string,
-            gained_xp:number,
-            elapsed_time:number
-        }[]
-    }|null,
-
+interface ActivityData {
+    latest_activity:Activity|null,
+    longest_activity:Activity|null,
     average_activity_time:number,
     average_activity_time_formatted:string,
-    activities_amount:number,
+    activities_amount:number
+}
+
+interface LoadedTrainingPlansResponse {
+    success:boolean,
+    training_plans:TrainingPlanExercise[],
     message:string
 }
 
@@ -83,17 +65,17 @@ export default function ActivitySection() {
                 }
             })
     
-            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
 
-            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+            if(logged_in_user_response.status === 401) {
                 await AsyncStorage.removeItem("user_token") // Removes The User Token
                 setLoggedInUser(null) // Removes The Logged In User
                 return null
             }
     
             if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
             } 
             
             else return null
@@ -134,7 +116,7 @@ export default function ActivitySection() {
                 return
             }
 
-            const loaded_training_plans_data = await loaded_training_plans_response.json() // Gets The Loaded Training Plans Data
+            const loaded_training_plans_data:LoadedTrainingPlansResponse = await loaded_training_plans_response.json() // Gets The Loaded Training Plans Data
 
             // If The Response Isn't Success
             if(!loaded_training_plans_data.success) {
@@ -161,7 +143,7 @@ export default function ActivitySection() {
         getTrainingPlansExercises() // Gets The Training Plans Exercises
     }, [])
 
-    // Function For Get Activity Data
+    // Function For Get The Activity Data
     const getActivity = async ():Promise<void> => {
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
@@ -183,17 +165,16 @@ export default function ActivitySection() {
                 return
             }
 
-            const loaded_activity_data = await loaded_activity_response.json() // Gets The Loaded Training Plans Data
+            const loaded_activity_data:LoadedActivityResponse = await loaded_activity_response.json() // Gets The Loaded Activity Data
 
             // If The Response Isn't Success
-            if(!loaded_activity_data.success) {
+            if(!loaded_activity_data.success || !loaded_activity_data.activity) {
                 Alert.alert("Chyba", loaded_activity_data.message) // Shows The Alert
                 return
             }
             
             else {
-                setActivityData(loaded_activity_data) // Sets The Activity Data
-                console.log(loaded_activity_data)
+                setActivityData(loaded_activity_data.activity) // Sets The Activity Data
             }
         } 
         
@@ -530,7 +511,7 @@ export default function ActivitySection() {
                                 />
 
                                 <Text className="title" style={styles.activities_amount_title}>počet&nbsp;/ 7&nbsp;dní</Text>
-                                {/* <Text className="activities_amount" style={styles.activities_amount}>{activities_amount ? activities_amount : "0"}</Text> */}
+                                <Text className="activities_amount" style={styles.activities_amount}>{activity_data && activity_data.activities_amount ? activity_data.activities_amount : "0"}</Text>
                             </Text>
                         </View>
                     </View>
@@ -553,9 +534,9 @@ export default function ActivitySection() {
 
                                 {activity_data && activity_data.latest_activity && (
                                     <>
-                                        {/* <Text style={styles.latest_activity_text}>{activity_data.latest_activity.elapsed_time|format_time}</Text>
+                                        <Text style={styles.latest_activity_text}>{getMinimalistFormattedTime(activity_data.latest_activity.elapsed_time)}</Text>
                                         <Text className="xp" style={styles.latest_activity_text}>{activity_data.latest_activity.gained_xp}XP</Text>
-                                        <Text style={styles.latest_activity_text}>{latest_activity.end_time|date:"d.m. Y"}</Text> */}
+                                        <Text style={styles.latest_activity_text}>{getFormattedDate(activity_data.latest_activity.end_time)}</Text>
                                     </>
                                 )}
 
@@ -583,16 +564,20 @@ export default function ActivitySection() {
                                     color={BLUE_COLOR}
                                 />
 
-                                {/* {longest_activity && (
-                                    <Text style={styles.longest_activity_text}>{longest_activity.elapsed_time|format_time}</Text>
-                                    <Text className="xp" style={styles.xp}>{longest_activity.gained_xp}XP</Text>
-                                    <Text> style={styles.longest_activity_text}{longest_activity.end_time|date:"d.m. Y"}</Text>
+                                {activity_data && activity_data.longest_activity && (
+                                    <>
+                                        <Text style={styles.longest_activity_text}>{getMinimalistFormattedTime(activity_data.longest_activity.elapsed_time)}</Text>
+                                        <Text className="xp" style={styles.xp}>{activity_data.longest_activity.gained_xp}XP</Text>
+                                        <Text style={styles.longest_activity_text}>{getFormattedDate(activity_data.longest_activity.end_time)}</Text>
+                                    </>
                                 )}
 
-                                {!longest_activity && (
-                                    <Text className="no_longest_activity" style={styles.no_latest_activity}>najdlhšia aktivita: </Text>
-                                    <Text className="none" style={styles.none}>žiadna</Text>
-                                )} */}
+                                {!activity_data || !activity_data.longest_activity && (
+                                    <>
+                                        <Text className="no_longest_activity" style={styles.no_latest_activity}>najdlhšia aktivita: </Text>
+                                        <Text className="none" style={styles.none}>žiadna</Text>
+                                    </>
+                                )}
                             </View>
                         </View>
                     </View>

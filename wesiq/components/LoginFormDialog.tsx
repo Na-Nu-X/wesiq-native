@@ -36,6 +36,19 @@ interface LoginFormDialogProps {
     onUserLogin?:(user:LoggedInUser) => void
 }
 
+export interface LoggedInUserResponse {
+    success:boolean,
+    logged_in_user?:LoggedInUser,
+    message:string
+}
+
+interface LoginResponse {
+    success:boolean, 
+    access:string,
+    refresh:string,
+    message:string
+}
+
 export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:LoginFormDialogProps) {
     const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier
     const [password, setPassword] = useState<string>("") // Stores The Password
@@ -125,7 +138,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                 })
             })
     
-            const login_data = await login_response.json() // Gets The Login Data
+            const login_data:LoginResponse = await login_response.json() // Gets The Login Data
     
             if(login_data.success) {
                 if(login_data.access) await AsyncStorage.setItem("user_token", login_data.access) // Stores The User Token
@@ -164,17 +177,17 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                 }
             })
     
-            const logged_in_user_data = await logged_in_user_response.json() // Gets The Logged In User Data
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
 
-            if(logged_in_user_response.status === 401 || logged_in_user_data.code === "token_not_valid") {
+            if(logged_in_user_response.status === 401) {
                 await AsyncStorage.removeItem("user_token") // Removes The User Token
                 setLoggedInUser(null) // Removes The Logged In User
                 return null
             }
     
             if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
             } 
             
             else return null
