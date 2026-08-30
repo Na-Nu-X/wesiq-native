@@ -8,6 +8,8 @@ import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
+import { AnimatedProgressBar } from "./AnimatedProgressBar"
+import { Break } from "./Break"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
@@ -54,6 +56,7 @@ export default function ActivitySection() {
     const [are_training_plans_loading, setAreTrainingPlansLoading] = useState(false) // Stores The Information If Training Plans Are Loading
     const [training_plan_slide, setTrainingPlanSlide] = useState<TrainingPlanSlide>("start_training") // Stores The Training Plan Slide
     const [current_set, setCurrentSet] = useState<number>(1) // Stores The Current Set
+    const [red, setRed] = useState<number>(255) // Starting Progress Bar Color rgb(255, 207, 32)
     
     const [is_xp_boost_available, setIsXpBoostAvailable] = useState<boolean>(false) // Stores The Information If The XP Boost Is Available
     
@@ -65,6 +68,37 @@ export default function ActivitySection() {
     const start_time = useRef<number|null>(null) // Stores The Start Time
     const accumulated_time = useRef<number>(0) // Stores The Accumulated Time
     const interval = useRef<ReturnType<typeof setInterval>|null>(null) // Stores The Interval
+
+    const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
+    const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
+
+    const { width: SCREEN_WIDTH } = Dimensions.get("window") // Gets The Screen Width
+    
+    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+
+    // Orders Exercises From All Training Plans By Their Order Value
+    const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
+        return [...training_plans_exercises].sort(
+            (a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)
+        )
+    }, [training_plans_exercises])
+
+    // Gets The Active Training Plan Exercises
+    const active_training_plan_exercises:TrainingPlanExercise[] = useMemo(() => {
+        return ordered_exercises.filter(one_exercise => one_exercise.day === selected_day)
+    }, [ordered_exercises, selected_day])
+
+    const active_exercise:TrainingPlanExercise = active_training_plan_exercises[active_exercise_index] // Gets The Active Exercise
+
+    // Gets The All Sets From All Active Training Plan Exercises
+    const all_sets:number = useMemo(() => {
+        return active_training_plan_exercises.reduce((total:number, one_exercise:TrainingPlanExercise) => {
+            const current_periods_length:number = one_exercise.periods ? one_exercise.periods.length : 0 // Gets The Current Periods Length (Sets)
+            return total + current_periods_length // Returns The Added Value
+        }, 0)
+    }, [active_training_plan_exercises])
+
+    const MIN_RED:number = 82 // Final Progress Bar Color rgb(82, 207, 32)
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -205,54 +239,17 @@ export default function ActivitySection() {
         getActivity() // Gets The Activity Data
     }, [])
 
-    const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
-    const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
-
-    const { width: SCREEN_WIDTH } = Dimensions.get("window") // Gets The Screen Width
-    
-    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
-
-    // Orders Exercises From All Training Plans By Their Order Value
-    const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
-        return [...training_plans_exercises].sort(
-            (a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)
-        )
-    }, [training_plans_exercises])
-
-    // Sets The Active Training Plan Exercises
-    const active_training_plan_exercises:TrainingPlanExercise[] = useMemo(() => {
-        return ordered_exercises.filter(one_exercise => one_exercise.day === selected_day)
-    }, [ordered_exercises, selected_day])
-
-    const active_exercise:TrainingPlanExercise = active_training_plan_exercises[active_exercise_index] // Gets The Active Exercise
-
-    // Function For Animate The Slide Transition
-    const animateSlideTransition = (next_slide:TrainingPlanSlide, next_index:number = active_exercise_index):void => {
-        Animated.timing(translateX, {
-            toValue: -SCREEN_WIDTH,
-            duration: 250,
-            useNativeDriver: true,
-        }).start(() => {
-            setTrainingPlanSlide(next_slide) // Sets The Training Plan Slide
-            setActiveExerciseIndex(next_index) // Sets The Active Exercise Index
-            setCurrentSet(1) // Sets The Current Set
-
-            translateX.setValue(SCREEN_WIDTH)
-
-            Animated.timing(translateX, {
-                toValue: 0,
-                duration: 250,
-                useNativeDriver: true,
-            }).start()
-        })
-    }
-
     // Function For Render Exercises Of The Selected Training Plan
     const generateTrainingPlan = () => {
         return (
             <>
                 <View className="training_plan" style={styles.training_plan}>
-                    <Animated.View style={{ flex: 1, transform: [{ translateX }] }}>
+                    <Animated.View 
+                        style={{ 
+                            transform: [{ translateX }],
+                            flex: 1,
+                        }}
+                    >
                         {training_plan_slide === "start_training" && (
                             <View className="start_training active" style={styles.start_training}>
                                 <View className="left" style={styles.left}>
@@ -290,45 +287,7 @@ export default function ActivitySection() {
                         )}
 
                         {training_plan_slide === "break" && (
-                            <View className="break" style={styles.break}>
-                                <View className="add_time">
-                                    <IconButton 
-                                        icon_name="plus" 
-                                        // onPress={} 
-                                    />
-
-                                    <Text className="add_time_message" style={styles.add_time_message}>+30s</Text>
-                                </View>
-
-                                <View className="break_timer" style={styles.break_timer}>
-                                    {/* <svg width="100" height="100" viewBox="0 0 100 100">
-                                        <circle
-                                            cx="50"
-                                            cy="50"
-                                            r="40"
-                                            class="progress"
-                                        />
-                                    </svg>
-
-                                    <svg width="100" height="100" viewBox="0 0 100 100">
-                                        <circle
-                                            cx="50"
-                                            cy="50"
-                                            r="40"
-                                            class="progress_background"
-                                        />
-                                    </svg> */}
-
-                                    <Text style={styles.break_timer_text}><Text className="minutes"></Text>:<Text className="seconds"></Text></Text>
-                                </View>
-
-                                <View className="skip_break_button">
-                                    <IconButton 
-                                        icon_name="angle-right" 
-                                        // onPress={} 
-                                    />
-                                </View>
-                            </View>
+                            <Break time={10} skipBreak={() => console.log("TEST")} />
                         )}
 
                         {training_plan_slide === "exercise" && active_exercise && (
@@ -363,7 +322,7 @@ export default function ActivitySection() {
                                         <View className="skip_warm_up_button">
                                             <IconButton 
                                                 icon_name="angle-right" 
-                                                onPress={goToNextExercise}
+                                                onPress={nextExercise}
                                             />
                                         </View>
                                     </View>
@@ -379,6 +338,7 @@ export default function ActivitySection() {
 
                                                 style={[{
                                                     maxWidth: 350,
+                                                    textAlign: "center",
                                                     color: SECONDARY_COLOR,
                                                 }]}
                                             >
@@ -411,7 +371,7 @@ export default function ActivitySection() {
                                                     { color: SECONDARY_COLOR },
                                                 ]}
                                             >
-                                                <Text className="current" style={styles.current}>{current_set}</Text>/<Text className="total" style={styles.total}>{String(active_exercise.periods.length)}</Text>
+                                                <Text className="current" style={styles.current}>{current_set}</Text>/<Text className="total" style={styles.total}>{String(active_exercise.periods.length || 1)}</Text>
                                             </Text> 
                                         </View>
 
@@ -423,23 +383,40 @@ export default function ActivitySection() {
                                         </View>
                                     </View>
                                 )}
-
-                                <View className="bar_container" style={styles.bar_container}>
-                                    {active_training_plan_exercises.map((_, index:number) => (
-                                        // Creates Bar
-                                        <View 
-                                            key={index} 
-                                            className={index === active_exercise_index ? "bar active show" : "bar show"} // Adds Active Class For Bar Of Active Exercise
-                                            // draggable = true
-                                            style={styles.bar}
-                                        >
-                                            <Text style={styles.bar_label}>{active_exercise.exercise}</Text>
-                                        </View>
-                                    ))}
-                                </View>
                             </>
                         )}
                     </Animated.View>
+
+                    <View className="bar_container" style={styles.bar_container}>
+                        {active_training_plan_exercises.map((_, index:number) => {
+                            const is_active:boolean = index === active_exercise_index // Stores The Information If The Bar Is Active
+                            const is_completed:boolean = index < active_exercise_index // Stores The Information If The Bar Is Completed
+                            let percentage:number = 0 // Stores The Percentage
+
+                            if(is_completed) percentage = 100 // Sets The 100% If The Bar Is Completed
+                            else if(is_active && active_exercise.periods.length > 0) percentage = (current_set / active_exercise.periods.length || 1) * 100 // Sets The Percentage
+
+                            return (
+                                <View 
+                                    key={index} 
+                                    className={is_active ? "bar active show" : "bar show"} // Adds Active Class For Bar Of Active Exercise
+                                    // draggable = true
+                                    style={styles.bar}
+                                >
+                                    <Text style={styles.bar_label}>{active_exercise.exercise}</Text>
+
+                                    {index <= active_exercise_index && is_activity_started && (
+                                        <AnimatedProgressBar 
+                                            is_active={is_active}
+                                            is_completed={is_completed}
+                                            percentage={percentage}
+                                            red={red}
+                                        />
+                                    )}
+                                </View>
+                            )
+                        })}
+                    </View>
 
                     <View className="current_activity_info" style={styles.current_activity_info}>
                         <Text style={styles.current_activity_info_text}>{is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP"}</Text>
@@ -645,6 +622,27 @@ export default function ActivitySection() {
     //     }
     // }
 
+    // Function For Animate The Slide Transition
+    const animateSlideTransition = (next_slide:TrainingPlanSlide, next_index:number = active_exercise_index):void => {
+        Animated.timing(translateX, {
+            toValue: -SCREEN_WIDTH,
+            duration: 250,
+            useNativeDriver: true,
+        }).start(() => {
+            setTrainingPlanSlide(next_slide) // Sets The Training Plan Slide
+            setActiveExerciseIndex(next_index) // Sets The Active Exercise Index
+            setCurrentSet(1) // Sets The Current Set
+
+            translateX.setValue(SCREEN_WIDTH)
+
+            Animated.timing(translateX, {
+                toValue: 0,
+                duration: 250,
+                useNativeDriver: true,
+            }).start()
+        })
+    }
+
     // Function For Start Training Plan
     const startTraining = ():void => {
         if(is_activity_running) return
@@ -659,15 +657,32 @@ export default function ActivitySection() {
 
     // Function For Handle Next Step (Increases The Current Set Or Goes To Next Exercise)
     const handleNextStep = (): void => {
-        if(current_set < active_exercise.periods.length) setCurrentSet((previous_set) => previous_set + 1) // Increases The Current Set
-        else goToNextExercise() // Goes To Next Exercise
+        let current_red:number = red // Redeclare The Red
+        
+        if(current_set < active_exercise.periods.length) {
+            setCurrentSet((previous_set) => previous_set + 1) // Increases The Current Set
+            setRed(current_red -= (255 - MIN_RED) / (all_sets - 1)) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+        }
+
+        else nextExercise() // Goes To Next Exercise
     }
 
-    // Function For Go To Next Exercise
-    const goToNextExercise = ():void => {
+    // Function For Change Exercises In The Training Plan
+    const nextExercise = ():void => {
+        let current_red:number = red // Redeclare The Red
+        setRed(current_red -= (255 - MIN_RED) / (all_sets - 1)) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+
+        const sets_amount:number = active_exercise.periods.length || 1 // Gets Total Amount Of Sets Of The Active Exercise
+
         const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
 
-        if(next_active_exercise_index < active_training_plan_exercises.length) {
+        // Exercises Break Slide
+        if(current_set === sets_amount && active_exercise_index < active_training_plan_exercises.length - 1) {
+            animateSlideTransition("break", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
+            // exercisesBreak(container)
+        }
+
+        else if(next_active_exercise_index < active_training_plan_exercises.length) {
             animateSlideTransition("exercise", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
         } 
         
@@ -679,47 +694,32 @@ export default function ActivitySection() {
         }
     }
 
-    // // Function For Start Training Plan
-    // export function startTraining(container:HTMLDivElement):void {
-    //     const playback:HTMLDivElement = container.querySelector(".record_activity") as HTMLDivElement // Gets The Activity Playback
-    //     const training_plan:HTMLDivElement = container.querySelector(".training_plan_container .training_plan") as HTMLDivElement // Gets The Training Plan
-    //     const start_training:HTMLDivElement = training_plan.querySelector(".start_training") as HTMLDivElement // Gets The Start Training Slide
-    //     const exercises:NodeListOf<HTMLDivElement> = container.querySelectorAll<HTMLDivElement>(".training_plan .exercise") // Gets All Training Plan Exercises
+    // // Function For Skip Exercises Break
+    // export function skipBreak(container:HTMLDivElement):void {
+    //     const exercises:NodeListOf<HTMLDivElement> = container.querySelectorAll<HTMLDivElement>(".training_plan_container .training_plan .exercise"); // Gets All Training Plan Exercises
+    //     const exercises_break:HTMLDivElement = container.querySelector(".training_plan_container .training_plan .break") as HTMLDivElement // Gets The Break Slide
+    //     const break_countdown:HTMLParagraphElement = exercises_break.querySelector(".break_timer p") as HTMLParagraphElement // Gets The Break Countdown
 
-    //     // First Exercise Is Ordinary
-    //     if(!(exercises[training_plan_state.active_exercise_index] as HTMLDivElement).classList.contains("warm_up")) {
-    //         const periods_data:number[] = JSON.parse(((exercises[training_plan_state.active_exercise_index] as HTMLDivElement).querySelector(".reps") as HTMLParagraphElement).dataset["periods_data"] || "[0]") // Gets Exercise Sets & Reps Periods
-    //         const unit_data:string = ((exercises[training_plan_state.active_exercise_index] as HTMLDivElement).querySelector(".reps") as HTMLParagraphElement).dataset["unit_data"] || "reps" // Gets Exercise Unit Type (Reps, Seconds Or Steps)
-
-    //         container.querySelectorAll<HTMLDivElement>(".training_plan_bar_container").forEach((one_bar_container:HTMLDivElement) => one_bar_container.style.display = "none") // Hides Training Plan Bar Container
-
-    //         start_training.classList.remove("active") // Hides The Start Training Slide
-    //         start_training.inert = true; // Disables Focus
-
-    //         (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows The Active Exercise
-    //         (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
-
-    //         generateReps(periods_data, 1, unit_data, exercises[training_plan_state.active_exercise_index] as HTMLDivElement); // Sets Exercise Current Reps, Hold Time, Or Steps Amount For The First Set Of The First Exercise
-    //         updateProgress(container.querySelector(".training_plan") as HTMLDivElement) // Updates Progress Bar
-    //         startActivity(container, playback) // Starts Activity
-    //         createExerciseObjects(exercises) // Creates Objects Of Exercises In Training Plan Activity Summary
+    //     // Stops Break Timer
+    //     if(break_interval.interval) {
+    //         clearInterval(break_interval.interval)
+    //         break_interval.interval = null
     //     }
 
-    //     // First Exercise Is Warm Up
-    //     else {
-    //         container.querySelectorAll<HTMLDivElement>(".training_plan_bar_container").forEach((one_bar_container:HTMLDivElement) => one_bar_container.style.display = "none") // Hides Training Plan Bar Container
+    //     break_interval.max_remaining_time = 120 // Sets Max Break Remaining Time Back To Default
+    //     break_interval.remaining_time = 120 // Sets Max Break Remaining Time Back To Default
 
-    //         start_training.classList.remove("active"); // Hides The Start Training Slide
-    //         start_training.inert = true; // Disables Focus
+    //     break_countdown.style.color = "#ffffff" // Sets Break Countdown Color To White
 
-    //         (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows The Active Exercise
-    //         (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
+    //     training_plan_state.active_exercise_index += 1; // Changes Active Exercise Index
 
-    //         warmUp(container) // Starts Warm Up
-    //         updateProgress(container.querySelector(".training_plan") as HTMLDivElement) // Updates Progress Bar
-    //         startActivity(container, playback) // Starts Activity
-    //         createExerciseObjects(exercises) // Creates Objects Of Exercises In Training Plan Activity Summary
-    //     }
+    //     (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows Active Exercise
+    //     (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
+        
+    //     nextExercise(container) // Next Exercise
+
+    //     exercises_break.classList.remove("active") // Hides Break Between Sets Tab
+    //     exercises_break.inert = true // Disables Focus
     // }
 
     return (
@@ -745,7 +745,7 @@ export default function ActivitySection() {
                                 name={is_activity_running ? "pause" : "play"}
                                 size={40}
                                 color={SECONDARY_COLOR}
-                                style={is_activity_running ? styles.pause_icon : styles.pause_icon}
+                                style={is_activity_running ? styles.pause_icon : styles.play_icon}
                             />
                         </Pressable>
 
@@ -936,13 +936,14 @@ const styles = StyleSheet.create({
     },
 
     activity_section: {
-        maxWidth: MAIN_WIDTH,
+        width: "100%",
     },
 
     activity: {
         alignItems: "center",
         justifyContent: "center",
         maxWidth: "100%",
+        width: "100%",
         minHeight: "auto",
         marginHorizontal: "auto",
     },
@@ -993,7 +994,9 @@ const styles = StyleSheet.create({
     },
 
     play: {
-        width: "90%",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
         height: 50,
         paddingHorizontal: 10,
         textAlign: "center",
@@ -1026,36 +1029,19 @@ const styles = StyleSheet.create({
     // }
 
     play_icon: {
-        position: "absolute",
-        top: 50,
-        left: 50,
-        // left: calc(50% + 2.5px);
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
         fontSize: 40,
         color: SECONDARY_COLOR,
     },
 
     pause_icon: {
-        position: "absolute",
-        top: 50,
-        left: 50,
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
         fontSize: 40,
         color: SECONDARY_COLOR,
     },
 
     stop: {
-        width: "90%",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
         height: 50,
         paddingHorizontal: 10,
         textAlign: "center",
@@ -1079,15 +1065,6 @@ const styles = StyleSheet.create({
     },
 
     stop_icon: {
-        position: "absolute",
-        top: 50,
-        left: 50,
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
         fontSize: 40,
         color: BLUE_COLOR,
     },
@@ -1130,13 +1107,14 @@ const styles = StyleSheet.create({
         // @include animated_border;
         position: "relative",
         width: "100%",
-        height: 250,
+        // height: 250,
+        height: 500,
         borderRadius: MEDIUM_BORDER_RADIUS,
-        shadowColor: BLUE_COLOR,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 10,
+        // shadowColor: BLUE_COLOR,
+        // shadowOffset: { width: 0, height: 10 },
+        // shadowOpacity: 0.2,
+        // shadowRadius: 30,
+        // elevation: 10,
         overflow: "hidden",
 
         // &.blur {
@@ -1145,78 +1123,44 @@ const styles = StyleSheet.create({
     },
 
     start_training: {
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: 200,
-        paddingTop: 10,
-        paddingHorizontal: 50,
-        // transition: transform 0.5s ease;
+        height: "100%",
+        paddingVertical: 50,
+        paddingHorizontal: 10,
         zIndex: 100,
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-
-        //     .left {
-        //         opacity: 0;
-        //     }
-        // }
     },
 
     finish_training: {
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: 200,
-        paddingTop: 10,
-        paddingHorizontal: 50,
-        // transition: transform 0.5s ease;
+        height: "100%",
+        paddingVertical: 50,
+        paddingHorizontal: 10,
         zIndex: 100,
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-
-        //     .left {
-        //         opacity: 0;
-        //     }
-        // }
     },
 
     exercise: {
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: 200,
-        paddingTop: 10,
-        paddingHorizontal: 50,
-        // transition: transform 0.5s ease;
+        height: "100%",
+        paddingVertical: 50,
+        paddingHorizontal: 10,
         zIndex: 100,
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-
-        //     .left {
-        //         opacity: 0;
-        //     }
-        // }
     },
 
     reps: {
         // font-family: $article-heading-font;
+        textAlign: "center",
         fontSize: 22,
     },
 
     sets: {
         // font-family: $article-heading-font;
+        textAlign: "center",
         fontSize: 22,
     },
 
@@ -1236,6 +1180,7 @@ const styles = StyleSheet.create({
     },
 
     text: {
+        textAlign: "center",
         color: transparentize(SECONDARY_COLOR, 0.5),
         textTransform: "uppercase",
         letterSpacing: 1,
@@ -1247,107 +1192,9 @@ const styles = StyleSheet.create({
 
     title: {
         // font-family: $article-heading-font;
+        textAlign: "center",
         fontSize: 40,
         color: SECONDARY_COLOR,
-    },
-
-    break: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
-        height: 200,
-        paddingTop: 10,
-        paddingHorizontal: 50,
-        // transition: transform 0.5s ease;
-        zIndex: 100,
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-
-        //     .left {
-        //         opacity: 0;
-        //     }
-        // }
-    },
-
-    add_time: {
-        overflow: "visible",
-    },
-
-    add_time_message: {
-        visibility: "hidden",
-        opacity: 0,
-        position: "absolute",
-        top: "0%",
-        left: "50%",
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
-        textAlign: "center",
-        color: BLUE_COLOR,
-        zIndex: 200,
-
-        // &.animate {
-        //     animation: fadeOut 1s ease-out forwards;
-        // }
-    },
-
-    break_timer: {
-        position: "relative",
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-
-        // svg {
-        //     position: absolute;
-        //     top: 50%;
-        //     left: 50%;
-        //     transform: rotate(-90deg) translate(50%, -50%);
-    
-        //     &:nth-child(1) {
-        //         z-index: 10;
-        //     }
-    
-        //     .progress {
-        //         fill: none;
-        //         stroke-width: 5;
-        //         stroke-linecap: round;
-        //         stroke-linejoin: round;
-        //     }
-    
-        //     .progress_background {
-        //         fill: none;
-        //         stroke: $blue-color;
-        //         stroke-width: 3;
-        //         stroke-dasharray: 2 4;
-        //     }
-        // }
-    },
-
-    break_timer_text: {
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
-        color: SECONDARY_COLOR,
-        // font-family: $timer-font;
-        fontSize: 22,
-
-        // span {
-        //     font-family: inherit;
-        //     font-size: inherit;
-        // }
     },
 
     warm_up: {
@@ -1442,7 +1289,7 @@ const styles = StyleSheet.create({
         // --progress-color: rgb(255, 207, 32);
 
         position: "relative",
-        width: "100%",
+        flex: 1,
         height: 10,
         borderWidth: 1,
         borderColor: transparentize(SECONDARY_COLOR, 0.8),
@@ -1499,7 +1346,7 @@ const styles = StyleSheet.create({
 
         position: "relative",
         marginVertical: 10,
-        textAlign: "center",
+        // textAlign: "center",
         // font-family: $article-heading-font;
         zIndex: 100,
     },
@@ -1522,6 +1369,7 @@ const styles = StyleSheet.create({
 
     current_activity_info_text: {
         // font-family: $article-heading-font;
+        textAlign: "center",
         color: transparentize(SECONDARY_COLOR, 0.5),
         opacity: 0.5,
     },
@@ -1542,7 +1390,7 @@ const styles = StyleSheet.create({
     },
 
     training_plan_bar: {
-        width: "100%",
+        flex: 1,
         height: 10,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
