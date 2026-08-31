@@ -15,6 +15,8 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
 import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
+import { randomColor } from "@/utils/randomColor"
+import { BasicResponse } from "@/components/Feed"
 
 interface TrainingPlanExercise {
     training_plan_key:string,
@@ -61,6 +63,13 @@ interface LoadedTrainingPlansResponse {
     message:string
 }
 
+interface TrainingPlanSummaryExercise {
+    exercise:string,
+    elapsed_time:number,
+    gained_xp:number,
+    color:string
+}
+
 type TrainingPlanSlide = "start_training"|"exercise"|"finish_training"|"break" // Types The Training Plan Slide
 
 export default function ActivitySection() {
@@ -73,6 +82,9 @@ export default function ActivitySection() {
     const [training_plan_slide, setTrainingPlanSlide] = useState<TrainingPlanSlide>("start_training") // Stores The Training Plan Slide
     const [current_set, setCurrentSet] = useState<number>(1) // Stores The Current Set
     const [red, setRed] = useState<number>(255) // Starting Progress Bar Color rgb(255, 207, 32)
+
+    const [current_exercise_start_time, setCurrentExerciseStartTime] = useState<number|null>(null) // Stores The Start Time Of The Current Exercise
+    const [exercises_duration, setExercisesDuration] = useState<{ exercise_index:number, elapsed_time:number }[]>([]) // Stores The Spent Time In Each Exercise
     
     const [is_xp_boost_available, setIsXpBoostAvailable] = useState<boolean>(false) // Stores The Information If The XP Boost Is Available
     const [is_xp_boost_active, setIsXpBoostActive] = useState<boolean>(false) // Stores The Information If The XP Boost Is Active
@@ -84,7 +96,9 @@ export default function ActivitySection() {
     
     const [is_activity_running, setIsActivityRunning] = useState<boolean>(false) // Stores The Information If The Activity Is Running
     const [is_activity_started, setIsActivityStarted] = useState<boolean>(false) // Stores The Information If The Activity Is Started
+    const [is_basic_activity_started, setIsBasicActivityStarted] = useState<boolean>(false) // Stores The Information If The Basic Activity Is Started (Without The Training Plan)
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
+
     const start_time = useRef<number|null>(null) // Stores The Start Time
     const accumulated_time = useRef<number>(0) // Stores The Accumulated Time
     const interval = useRef<ReturnType<typeof setInterval>|null>(null) // Stores The Interval
@@ -315,15 +329,15 @@ export default function ActivitySection() {
     
         if(is_activity_started && xp_boost_expiration_time) {
             const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
-            const TOTAL_BOOST_DURATION:number = 60 * 30 * 1000 // 30 Minutes
+            const MAX_REMAINING_TIME:number = 60 * 30 * 1000 // Defines The Maximum Remaining Time (30 Minutes)
     
             if(xp_boost_expiration_time_ms > Date.now()) {
                 const initial_remaining_time:number = xp_boost_expiration_time_ms - Date.now() // Gets The Initial Remaining Time
-                setXpBoostProgress((initial_remaining_time / TOTAL_BOOST_DURATION) * 100) // Sets XP Boost Progress
+                setXpBoostProgress((initial_remaining_time / MAX_REMAINING_TIME) * 100) // Sets XP Boost Progress
                 
                 xp_boost_interval = setInterval(() => {
-                    const current_now:number = Date.now() // Gets The Current Time
-                    const remaining_time:number = xp_boost_expiration_time_ms - current_now // Gets The Remaining Time
+                    const current_time:number = Date.now() // Gets The Current Time
+                    const remaining_time:number = xp_boost_expiration_time_ms - current_time // Gets The Remaining Time
     
                     // Stops XP Boost Timer When Remaining Time Pass
                     if(remaining_time <= 0) {
@@ -335,7 +349,7 @@ export default function ActivitySection() {
                     } 
                     
                     else {
-                        const current_progress:number = (remaining_time / TOTAL_BOOST_DURATION) * 100 // Gets The Current Progress
+                        const current_progress:number = (remaining_time / MAX_REMAINING_TIME) * 100 // Gets The Current Progress
                         setXpBoostProgress(current_progress) // Sets The XP Boost Progress
                     }
                 }, 1000)
@@ -565,23 +579,23 @@ export default function ActivitySection() {
                                     style={styles.bar}
                                 >
                                     {index <= active_exercise_index && is_activity_started && (
-                                        <>
-                                            <AnimatedProgressBar 
-                                                is_active={is_active}
-                                                is_completed={is_completed || is_break_slide_active} 
-                                                percentage={percentage}
-                                                red={red}
-                                            />
-
-                                            <AnimatedProgressBarLabel
-                                                text={one_exercise.exercise} 
-                                                style={styles.bar_label} 
-                                            />
-                                        </>
+                                        <AnimatedProgressBar 
+                                            is_active={is_active}
+                                            is_completed={is_completed || is_break_slide_active} 
+                                            percentage={percentage}
+                                            red={red}
+                                        />
                                     )}
                                 </View>
                             )
                         })}
+
+                        {is_activity_started && active_exercise && (
+                            <AnimatedProgressBarLabel
+                                text={active_exercise.exercise} 
+                                style={styles.bar_label} 
+                            />
+                        )}
                     </View>
 
                     <View className="current_activity_info" style={styles.current_activity_info}>
@@ -693,6 +707,8 @@ export default function ActivitySection() {
         
         setIsActivityRunning(true) // Sets The Information That The Activity Is Running
         setIsActivityStarted(true) // Sets The Information That The Activity Is Started
+        setIsBasicActivityStarted(true) // Sets The Information That The Basic Activity Is Started (Without The Training Plan)
+
         start_time.current = Date.now() // Sets The Start Time
         interval.current = setInterval(updateTick, 1000) // Sets The Interval
     }
@@ -722,13 +738,76 @@ export default function ActivitySection() {
     }, [])
 
     // Function For Stop Activity
-    const stopActivity = ():void => {
+    const stopActivity = async ():Promise<void> => {
         setIsActivityRunning(false) // Sets The Information That The Activity Isn't Running
         setIsActivityStarted(false) // Sets The Information That The Activity Isn't Started
+        setIsBasicActivityStarted(false) // Sets The Information That The Basic Activity Isn't Started (Without The Training Plan)
  
         if(interval.current) {
             clearInterval(interval.current) // Clears The Interval
             interval.current = null // Resets The Interval
+        }
+
+        // Gets The New Activity Data
+        const new_activity_data:{
+            elapsed_time:number,
+            gained_xp:number,
+            type:string|null,
+            day:number|null,
+            training_plan_summary:TrainingPlanSummaryExercise[]|null
+        } = {
+            elapsed_time, // Stores Formatted Elapsed Time
+            gained_xp: calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100), // Stores Gained XP
+            type: ordered_exercises[active_exercise_index].type || "Tréning", // Stores Training Plan Title
+            day: selected_day, // Stores Training Plan Day
+            training_plan_summary: null // Stores The Training Plan Summary
+        }
+
+        if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
+
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const new_recorded_activity_response:Response = await fetch(`${API_URL}/new-activity/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    new_activity_data
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!new_recorded_activity_response.ok) {
+                Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const new_recorded_activity_data:BasicResponse = await new_recorded_activity_response.json() // Gets The New Recorded Activity Data
+
+            // If The Response Isn't Success
+            if(!new_recorded_activity_data.success) {
+                Alert.alert("Chyba", new_recorded_activity_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                console.log(new_recorded_activity_data)
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+        } 
+        
+        finally {
+            
         }
 
         start_time.current = null // Sets The Start Time
@@ -736,57 +815,54 @@ export default function ActivitySection() {
         setElapsedTime(0) // Sets The Elapsed Time
     }
 
+    // Function For Calculate The Gained XP
+    const calculateGainedXp = (elapsed_time_ms:number, xp_boost_expiration_time:string|null, xp_boost_amount:number = 2, base_xp_per_hour:number = 100):number => {
+        const current_time:number = Date.now() // Gets The Current Time
+        const activity_start_time:number = current_time - elapsed_time_ms // Gets The Activity Start Time
+        const xp_per_ms:number = base_xp_per_hour / (60 * 60 * 1000) // XP Amount Per 1 MS
+    
+        let boosted_time_ms:number = 0 // Stores The Boosted Time In MS
+    
+        if(xp_boost_expiration_time) {
+            const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
+    
+            if(xp_boost_expiration_time_ms > activity_start_time) {
+                const xp_boost_end_time_during_activity:number = Math.min(xp_boost_expiration_time_ms, current_time) // Gets The XP Boost End Time During Activity
+                boosted_time_ms = xp_boost_end_time_during_activity - activity_start_time // Sets The Boosted Time
+            }
+        }
+    
+        boosted_time_ms = Math.max(0, Math.min(boosted_time_ms, elapsed_time_ms)) // Sets The Boosted Time
+        
+        const normal_time_ms:number = elapsed_time_ms - boosted_time_ms // Gets The Normal Time In MS (Without XP Boost)
+
+        const normal_xp:number = normal_time_ms * xp_per_ms // Gets The Amount Of XP For Unboosted Activity
+        const boosted_xp:number = boosted_time_ms * xp_per_ms * xp_boost_amount // Gets The Amount Of XP For Boosted Activity
+    
+        return Math.round(normal_xp + boosted_xp) // Returns The Amount Of Total Gained XP
+    }
+
+    // Function For Create The Training Plan Summary
+    const createTrainingPlanSummary = ():TrainingPlanSummaryExercise[] => {
+        const training_plan_summary:TrainingPlanSummaryExercise[] = [] // Stores The Training PLan Summary
+
+        exercises_duration.forEach((one_exercise:{ exercise_index:number, elapsed_time:number }) => {
+            // Stores The Exercise Information
+            const exercise:TrainingPlanSummaryExercise = {
+                exercise: active_training_plan_exercises[one_exercise.exercise_index].exercise, // Sets Title Of The Exercise In The Training Plan
+                elapsed_time: Math.round(one_exercise.elapsed_time / 1000), // Sets Elapsed Time
+                gained_xp: 0, // Sets Gained XP
+                color: randomColor(128, 255) // Generates Random Color
+            }
+
+            training_plan_summary.push(exercise) // Pushes The New Exercise To The Training Plan Summary
+        })
+
+        return training_plan_summary // Returns The Training Plan Summary
+    }
+
     // // Function For Stop Activity
     // export async function stopActivity(container:HTMLDivElement, playback:HTMLDivElement):Promise<void> {
-    //     if(activity_summary.elapsed_time > 0) {
-    //         const timer:HTMLHeadingElement = playback.querySelector(".timer") as HTMLHeadingElement // Gets The Playback Timer
-    //         const elapsed_time:number = activity_summary.elapsed_time // Gets Activity Elapsed Time
-
-    //         if(!container.querySelector(".no_logged_in")) {
-    //             const gained_xp:number = Math.round(activity_summary.gained_xp) // Gets Gained XP From Activity
-    //             const training_plan_summary:exercise[] = activity_summary.training_plan.map((one_exercise:exercise):exercise => ({ ...one_exercise, gained_xp: Math.round(one_exercise.gained_xp) })).filter((one_exercise:exercise):boolean => one_exercise.gained_xp > 0) // Gets Training Plan Summary With Rounded Gained XP Values (Only Exercises With Gained XP)
-
-    //             const new_activity_data:{
-    //                 elapsed_time:number,
-    //                 gained_xp:number,
-    //                 type:string|null,
-    //                 day:number|null,
-    //                 training_plan_summary:exercise[]|null
-    //             } = {
-    //                 elapsed_time, // Stores Formatted Elapsed Time
-    //                 gained_xp, // Stores Gained XP
-    //                 type: null, // Stores Training Plan Title
-    //                 day: null, // Stores Training Plan Day
-    //                 training_plan_summary: null // Stores The Training Plan Summary
-    //             }
-
-    //             // Commits Activity
-    //             if(gained_xp > 0) {
-    //                 if(!container.querySelector(".no_logged_in")) {
-    //                     if(training_plan_summary.length > 0) {
-    //                         const training_plan:HTMLDivElement = container.querySelector(".training_plan_container .training_plan") as HTMLDivElement // Gets The Training Plan
-    //                         const training_plan_title:string = training_plan.dataset["title"] || "" // Gets Training Plan Title
-    //                         const training_plan_day:number|null = Number(training_plan.dataset["day"]) || null // Gets Training Plan Day
-
-    //                         new_activity_data.type = training_plan_title // Stores Training Plan Title
-    //                         new_activity_data.day = training_plan_day // Stores Training Plan Day
-    //                         new_activity_data.training_plan_summary = training_plan_summary // Stores The Training Plan Summary
-    //                     }
-
-    //                     try {
-    //                         const new_activity_response:response = await sendPOST(window.location.pathname, new_activity_data, "new-activity") // Sends POST Data
-
-    //                         // If The Response Isn't Success
-    //                         if(!new_activity_response.success) {
-    //                             displayMessage(new_activity_response.message, "error") // Displays The Error Message
-    //                             return
-    //                         }
-    //                     }
-
-    //                     catch {
-    //                         displayMessage(gettext("Pri zaznamenávaní aktivity došlo k chybe."), "error") // Displays The Error Message
-    //                     }
-
     //                     finally {
     //                         const todo:HTMLDivElement = document.querySelector(".todo") as HTMLDivElement // Gets The TODO Container
     //                         const official_tasks:HTMLDivElement = todo.querySelector(".official_tasks") as HTMLDivElement // Gets The Official Tasks Container
@@ -873,14 +949,17 @@ export default function ActivitySection() {
 
     // Function For Start Training Plan
     const startTraining = ():void => {
+        const current_time:number = Date.now() // Gets The Current Time
+
         if(is_activity_running) return
         
         setIsActivityRunning(true) // Sets The Information That The Activity Is Running
         setIsActivityStarted(true) // Sets The Information That The Activity Is Started
-        start_time.current = Date.now() // Sets The Start Time
+        start_time.current = current_time // Sets The Start Time
         interval.current = setInterval(updateTick, 1000) // Sets The Interval
 
         animateSlideTransition("exercise", 0) // Animates The Slide Transition To The First Exercise
+        setCurrentExerciseStartTime(current_time) // Sets The Current Exercise Start Time
     }
 
     // Function For Handle Next Step (Increases The Current Set Or Goes To Next Exercise)
@@ -900,6 +979,23 @@ export default function ActivitySection() {
         const sets_amount:number = active_exercise.periods.length || 1 // Gets Total Amount Of Sets Of The Active Exercise
         const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
 
+        const current_time:number = Date.now() // Gets The Current Time
+
+        // Stores The Spent Time In The Current Exercise
+        if(current_exercise_start_time) {
+            const elapsed_time_for_exercise:number = current_time - current_exercise_start_time // Gets The Elapsed Time For Exercise In MS
+
+            // Sets The New Exercise Duration
+            setExercisesDuration(previous_durations => [
+                ...previous_durations, 
+
+                { 
+                    exercise_index: active_exercise_index, 
+                    elapsed_time: elapsed_time_for_exercise 
+                }
+            ])
+        }
+
         // Exercises Break Slide
         if(current_set === sets_amount && active_exercise_index < active_training_plan_exercises.length - 1) {
             animateSlideTransition("break", active_exercise_index) // Animates The Slide Transition To The Next Exercise
@@ -909,6 +1005,7 @@ export default function ActivitySection() {
         else if(next_active_exercise_index < active_training_plan_exercises.length) {
             setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
             animateSlideTransition("exercise", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
+            setCurrentExerciseStartTime(current_time) // Sets The Current Exercise Start Time
         } 
         
         // Finish Training Slide
@@ -922,10 +1019,12 @@ export default function ActivitySection() {
     // Function For Skip Exercises Break
     const skipBreak = ():void => {
         const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
+        const current_time:number = Date.now() // Gets The Current Time
 
         setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
         setCurrentSet(1) // Sets The Current Set
         animateSlideTransition("exercise", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
+        setCurrentExerciseStartTime(current_time) // Sets The Current Exercise Start Time
     }
 
     return (
@@ -1021,7 +1120,7 @@ export default function ActivitySection() {
                     </>
                 )}
 
-                {training_plans_exercises.length > 0 && (
+                {training_plans_exercises.length > 0 && !is_basic_activity_started && (
                     <GestureDetector gesture={swipe_gesture}>
                         <View className="training_plan_container" style={styles.training_plan_container}>
                             {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (generateTrainingPlan())} {/* Generates The Training Plan */}
@@ -1488,10 +1587,6 @@ const styles = StyleSheet.create({
     },
 
     bar: {
-        // --progress: 0%;
-        // --progress-color: rgb(255, 207, 32);
-
-        position: "relative",
         flex: 1,
         height: 10,
         borderWidth: 1,

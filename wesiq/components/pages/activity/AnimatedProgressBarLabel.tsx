@@ -11,12 +11,14 @@ export const AnimatedProgressBarLabel = ({ text, style }:AnimatedProgressBarLabe
 
     // Initializes The Animation
     useEffect(() => {
+        animation.setValue(0) // Resets The Animation
+
         Animated.timing(animation, {
             toValue: 1,
             duration: 300,
             useNativeDriver: true
         }).start()
-    }, [])
+    }, [text])
 
     // Animates The Opacity
     const opacity = animation.interpolate({
@@ -27,7 +29,7 @@ export const AnimatedProgressBarLabel = ({ text, style }:AnimatedProgressBarLabe
     // Animates The Y Translate
     const translateY = animation.interpolate({
         inputRange: [0, 1],
-        outputRange: [10, 0]
+        outputRange: [10, -5]
     })
 
     return (

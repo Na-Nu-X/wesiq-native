@@ -89,6 +89,14 @@ export default function RootLayout() {
           )
         }}
       />
+
+      <Tabs.Screen
+        name="profile/[username]"
+
+        options={{
+          href: null
+        }}
+      />
     </Tabs>
   )
 }

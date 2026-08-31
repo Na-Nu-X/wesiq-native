@@ -49,8 +49,8 @@ export default function ActivityScreen() {
 
                         <View className="training_page" style={styles.training_page}>
                             <ActivitySection />
-                            <TasksSection />
-                            <HistorySection />
+                            {/* <TasksSection /> */}
+                            {/* <HistorySection /> */}
                         </View>
                     </ScrollView>
                 </SafeAreaView>
@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
 
     training_page: {
         maxWidth: MAIN_WIDTH,
+        width: "100%",
         marginHorizontal: "auto",
     },
 })
