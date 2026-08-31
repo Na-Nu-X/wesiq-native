@@ -1,18 +1,30 @@
-import IconButton from '@/components/IconButton';
-import { BLUE_COLOR, SECONDARY_COLOR } from '@/constants/colors';
-import { getFormattedTime } from '@/utils/time';
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, StyleSheet, TouchableOpacity, Easing } from 'react-native'; // Pridaný Easing!
-import Svg, { Circle } from 'react-native-svg';
+import * as Notifications from 'expo-notifications';
+import IconButton from "@/components/IconButton"
+import { BLUE_COLOR, SECONDARY_COLOR } from "@/constants/colors"
+import { getFormattedTime } from "@/utils/time"
+import React, { useEffect, useRef, useState } from "react"
+import { View, Text, Animated, StyleSheet, Easing, Platform } from "react-native"
+import Svg, { Circle } from "react-native-svg"
 
 interface BreakProps {
     time:number // Time In Seconds
     skipBreak:() => void
 }
 
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false
+    })
+})
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle) // Creates The Animated Circle
 
 export const Break = ({ time, skipBreak }:BreakProps) => {
+    const notification_id = useRef<string|null>(null) // Stores The Notification ID
+
     const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The RemainingTime
     const [max_remaining_time, setMaxRemainingTime] = useState<number>(time) // Stores The Max Remaining Time
 
@@ -22,6 +34,65 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
     const RADIUS:number = 40 // Defines The Radius
     const CIRCUMFERENCE:number = 2 * Math.PI * RADIUS // Defines The Circumference
 
+    // Initializes The Notification Permission Request
+    useEffect(() => {
+        // Function For Request The Notification Permissions
+        const requestNotificationPermissions = async ():Promise<void> => {
+            if(Platform.OS === "android") {
+                await Notifications.setNotificationChannelAsync("break-alarm", {
+                    name: "Break alarm",
+                    importance: Notifications.AndroidImportance.MAX,
+                    sound: "default",
+                    vibrationPattern: [0, 250, 250, 250]
+                })
+            }
+    
+            const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
+    
+            if(status !== "granted") console.log("Notifikácie neboli povolené.")
+        }
+    
+        requestNotificationPermissions() // Requests The Notification Permissions
+    }, [])
+
+    // Function For Schedule The Notification
+    const scheduleNotification = async (seconds:number):Promise<void> => {
+        try {
+            if(notification_id.current) {
+                await Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification
+                notification_id.current = null // Removes The Notification ID
+            }
+    
+            if (seconds <= 0) return
+    
+            // Setup The Notification And Gets Its ID
+            const id:string = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: "Čas prestávky vypršal!",
+                    body: "Je čas pokračovať v tréningu. Poďme na to!",
+                    sound: "default"
+                },
+
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                    seconds: Math.ceil(seconds),
+                    repeats: false,
+
+                    ...(Platform.OS === "android" && {
+                        channelId: "break-alarm"
+                    })
+                }
+            })
+    
+            notification_id.current = id // Sets The Notification ID
+        } 
+        
+        catch {
+            console.error("Pri plánovaní notifikácie došlo k chybe.")
+        }
+    }
+
+    // Initializes The Timer
     useEffect(() => {
         const listener_id:string = animated_time.addListener(({ value }) => {
             const current_second:number = Math.ceil(value) // Gets The Current Second
@@ -32,9 +103,11 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
             }
         })
 
+        scheduleNotification(time) // Schedules The Notification
         startAnimation(time) // Starts The Animation
 
         return () => {
+            if(notification_id.current) Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification
             animated_time.removeListener(listener_id)
             animated_time.stopAnimation()
         }
@@ -48,18 +121,22 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
             easing: Easing.linear,
             useNativeDriver: false,
         }).start(({ finished }) => {
-            if(finished) skipBreak() // Skips The Break If The Countdown Has Passed
+
+            if(finished) {
+                // skipBreak() // Skips The Break If The Countdown Has Passed
+            }
         })
     }
 
     // Function For Add Time
-    const addTime = () => {
+    const addTime = ():void => {
         animated_time.stopAnimation((current_time:number):void => {
-            const new_time:number = current_time + 30;
+            const new_time:number = current_time + 30 // Gets The New Time
             
             if(new_time > max_remaining_time) setMaxRemainingTime(new_time) // Sets The Maximum Remaining Time
             
             animated_time.setValue(new_time)
+            scheduleNotification(new_time) // Schedules The Notification
             startAnimation(new_time) // Starts The Animation
         })
     }
@@ -141,25 +218,13 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
 
 const styles = StyleSheet.create({
     break: {
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         width: "100%",
-        height: 200,
-        paddingTop: 10,
-        paddingHorizontal: 50,
-        // transition: transform 0.5s ease;
+        height: "100%",
+        paddingVertical: 50,
+        paddingHorizontal: 10,
         zIndex: 100,
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-
-        //     .left {
-        //         opacity: 0;
-        //     }
-        // }
     },
 
     add_time: {

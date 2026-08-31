@@ -44,15 +44,6 @@ export const AnimatedProgressBar = ({ is_active, is_completed, percentage, red }
 }
 
 const styles = StyleSheet.create({
-    bar: {
-        position: "relative",
-        flex: 1,
-        height: 10,
-        borderWidth: 1,
-        borderColor: transparentize(SECONDARY_COLOR, 0.8),
-        borderRadius: 10 / 2,
-    },
-
     bar_progress: {
         position: "absolute",
         top: 0,
@@ -67,23 +58,5 @@ const styles = StyleSheet.create({
         shadowOpacity: 1,
         shadowRadius: 10,
         elevation: 5,
-    },
-
-    bar_label: {
-        pointerEvents: "none",
-        opacity: 0,
-        // content: attr(data-exercise);
-        position: "absolute",
-        top: -5,
-        left: "50%",
-        transform: [{ translateX: "-50%" }],
-        // width: calc(100% + 10px)
-        textAlign: "center",
-        fontSize: 15,
-        lineHeight: 15,
-        color: transparentize(SECONDARY_COLOR, 0.5),
-        // text-overflow: ellipsis;
-        // overflow: hidden;
-        // transition: opacity 0.3s ease, transform 0.3s ease;
     },
 })

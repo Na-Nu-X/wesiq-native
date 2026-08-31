@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -7,12 +7,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
+import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { Break } from "./Break"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
+import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
 
 interface TrainingPlanExercise {
     training_plan_key:string,
@@ -23,6 +25,20 @@ interface TrainingPlanExercise {
     unit:string,
     order:number,
     is_warm_up:boolean
+}
+
+interface XpBoostResponse {
+    success:boolean,
+    xp_boost_expiration_time:string|null,
+    is_xp_boost_available:boolean,
+    is_xp_boost_active:boolean,
+    message:string
+}
+
+interface UsedXpBoostResponse {
+    success:boolean,
+    xp_boost_expiration_time:string,
+    message:string
 }
 
 interface LoadedActivityResponse {
@@ -59,6 +75,10 @@ export default function ActivitySection() {
     const [red, setRed] = useState<number>(255) // Starting Progress Bar Color rgb(255, 207, 32)
     
     const [is_xp_boost_available, setIsXpBoostAvailable] = useState<boolean>(false) // Stores The Information If The XP Boost Is Available
+    const [is_xp_boost_active, setIsXpBoostActive] = useState<boolean>(false) // Stores The Information If The XP Boost Is Active
+    const [xp_boost_amount, setXpBoostAmount] = useState<number>(2) // Stores The XP Boost Amount
+    const [xp_boost_progress, setXpBoostProgress] = useState<number>(100) // Stores The XP Boost Progress (Remaining Time)
+    const [xp_boost_expiration_time, setXpBoostExpirationTime] = useState<string|null>() // Stores The XP Boost Expiration Time
     
     const [activity_data, setActivityData] = useState<ActivityData|null>(null) // Stores The Activity Data
     
@@ -194,6 +214,146 @@ export default function ActivitySection() {
         getTrainingPlansExercises() // Gets The Training Plans Exercises
     }, [])
 
+    // Function For Get The XP Boost
+    const getXpBoost = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const xp_boost_response:Response = await fetch(`${API_URL}/get-xp-boost/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!xp_boost_response.ok) {
+                Alert.alert("Chyba", "Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const xp_boost_data:XpBoostResponse = await xp_boost_response.json() // Gets The Loaded XP Boost Data
+            console.log(xp_boost_data)
+
+            // If The Response Isn't Success
+            if(!xp_boost_data.success) {
+                Alert.alert("Chyba", xp_boost_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setXpBoostExpirationTime(xp_boost_data.xp_boost_expiration_time || null) // Sets The XP Boost Expiration Time
+                setIsXpBoostAvailable(xp_boost_data.is_xp_boost_available) // Sets The Information If The XP Boost Is Available
+                setIsXpBoostActive(xp_boost_data.is_xp_boost_active) // Sets The Information If The XP Boost Is Active
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The XP Boost
+    useEffect(() => {
+        getXpBoost() // Gets The XP Boost
+    }, [])
+
+    // Function For Use The XP Boost
+    const useXpBoost = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const used_xp_boost_response:Response = await fetch(`${API_URL}/use-xp-boost/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+
+            // If The Response Isn't Success
+            if(!used_xp_boost_response.ok) {
+                Alert.alert("Chyba", "Pri uplatňovaní navýšenia XP došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const used_xp_boost_data:UsedXpBoostResponse = await used_xp_boost_response.json() // Gets The Loaded XP Boost Data
+
+            // If The Response Isn't Success
+            if(!used_xp_boost_data.success) {
+                Alert.alert("Chyba", used_xp_boost_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                setXpBoostExpirationTime(used_xp_boost_data.xp_boost_expiration_time) // Sets The XP Boost Expiration Time
+                setIsXpBoostAvailable(false) // Sets The Information If The XP Boost Isn't Available
+                setIsXpBoostActive(true) // Sets The Information If The XP Boost Is Active
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri uplatňovaní navýšenia XP došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Initializes The Use Of The Available XP Boost
+    useEffect(() => {
+        if(is_activity_started && is_xp_boost_available) useXpBoost() // Uses The XP Boost
+    }, [is_activity_started])
+
+    // Initializes The XP Boost Timer
+    useEffect(() => {
+        let xp_boost_interval:ReturnType<typeof setInterval>|null = null // Stores The XP Boost Interval
+    
+        if(is_activity_started && xp_boost_expiration_time) {
+            const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
+            const TOTAL_BOOST_DURATION:number = 60 * 30 * 1000 // 30 Minutes
+    
+            if(xp_boost_expiration_time_ms > Date.now()) {
+                const initial_remaining_time:number = xp_boost_expiration_time_ms - Date.now() // Gets The Initial Remaining Time
+                setXpBoostProgress((initial_remaining_time / TOTAL_BOOST_DURATION) * 100) // Sets XP Boost Progress
+                
+                xp_boost_interval = setInterval(() => {
+                    const current_now:number = Date.now() // Gets The Current Time
+                    const remaining_time:number = xp_boost_expiration_time_ms - current_now // Gets The Remaining Time
+    
+                    // Stops XP Boost Timer When Remaining Time Pass
+                    if(remaining_time <= 0) {
+                        setIsXpBoostAvailable(false) // Sets The Information That The XP Boost Isn't Available
+                        setIsXpBoostActive(false) // Sets The Information That The XP Boost Isn't Active
+                        setXpBoostAmount(1) // Resets XP Boost Amount
+                        setXpBoostProgress(0) // Sets XP Boost Progress
+                        if(xp_boost_interval) clearInterval(xp_boost_interval) // Clears The XP Boost Interval
+                    } 
+                    
+                    else {
+                        const current_progress:number = (remaining_time / TOTAL_BOOST_DURATION) * 100 // Gets The Current Progress
+                        setXpBoostProgress(current_progress) // Sets The XP Boost Progress
+                    }
+                }, 1000)
+    
+            } 
+
+            else {
+                setIsXpBoostAvailable(false) // Sets The Information That The XP Boost Isn't Available
+                setIsXpBoostActive(false) // Sets The Information That The XP Boost Isn't Active
+                setXpBoostProgress(0) // Sets The XP Boost Progress
+            }
+        }
+    
+        return () => {
+            if(xp_boost_interval) clearInterval(xp_boost_interval) // Clears The XP Boost Interval
+        }
+    }, [xp_boost_expiration_time, is_activity_started])
+
     // Function For Get The Activity Data
     const getActivity = async ():Promise<void> => {
         try {
@@ -287,7 +447,7 @@ export default function ActivitySection() {
                         )}
 
                         {training_plan_slide === "break" && (
-                            <Break time={10} skipBreak={() => console.log("TEST")} />
+                            <Break time={180} skipBreak={skipBreak} />
                         )}
 
                         {training_plan_slide === "exercise" && active_exercise && (
@@ -388,13 +548,14 @@ export default function ActivitySection() {
                     </Animated.View>
 
                     <View className="bar_container" style={styles.bar_container}>
-                        {active_training_plan_exercises.map((_, index:number) => {
+                        {active_training_plan_exercises.map((one_exercise:TrainingPlanExercise, index:number) => {
                             const is_active:boolean = index === active_exercise_index // Stores The Information If The Bar Is Active
                             const is_completed:boolean = index < active_exercise_index // Stores The Information If The Bar Is Completed
+                            const is_break_slide_active:boolean = (training_plan_slide === "break" && is_active) // Checks If Is The Break Slide Active
                             let percentage:number = 0 // Stores The Percentage
 
-                            if(is_completed) percentage = 100 // Sets The 100% If The Bar Is Completed
-                            else if(is_active && active_exercise.periods.length > 0) percentage = (current_set / active_exercise.periods.length || 1) * 100 // Sets The Percentage
+                            if(is_completed || is_break_slide_active) percentage = 100 // Sets The 100% If The Bar Is Completed
+                            else if(is_active && one_exercise.periods.length > 0) percentage = (current_set / one_exercise.periods.length || 1) * 100 // Sets The Percentage
 
                             return (
                                 <View 
@@ -403,15 +564,20 @@ export default function ActivitySection() {
                                     // draggable = true
                                     style={styles.bar}
                                 >
-                                    <Text style={styles.bar_label}>{active_exercise.exercise}</Text>
-
                                     {index <= active_exercise_index && is_activity_started && (
-                                        <AnimatedProgressBar 
-                                            is_active={is_active}
-                                            is_completed={is_completed}
-                                            percentage={percentage}
-                                            red={red}
-                                        />
+                                        <>
+                                            <AnimatedProgressBar 
+                                                is_active={is_active}
+                                                is_completed={is_completed || is_break_slide_active} 
+                                                percentage={percentage}
+                                                red={red}
+                                            />
+
+                                            <AnimatedProgressBarLabel
+                                                text={one_exercise.exercise} 
+                                                style={styles.bar_label} 
+                                            />
+                                        </>
                                     )}
                                 </View>
                             )
@@ -419,14 +585,44 @@ export default function ActivitySection() {
                     </View>
 
                     <View className="current_activity_info" style={styles.current_activity_info}>
-                        <Text style={styles.current_activity_info_text}>{is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP"}</Text>
+                        <Text style={styles.current_activity_info_text}>
+                            {!is_activity_started && is_xp_boost_active ? (
+                                "Navýšenie XP je aktívne"
+                            ) : (
+                                !is_activity_started && (is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP")
+                            )}
+
+                            {is_activity_started && (
+                                <>
+                                    {is_xp_boost_active ? (
+                                        <>
+                                            <FontAwesome6
+                                                name="bolt"
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+
+                                            <Text> {xp_boost_amount}x</Text>
+                                        </>
+                                    ) : (
+                                        <Text>Žiadne aktívne navýšenie XP</Text>
+                                    )}
+                                </>
+                            )}
+                        </Text>
+
+                        {is_activity_started && is_xp_boost_active && (
+                            <View 
+                                style={[
+                                    styles.current_activity_info_progress,
+                                    { width: `${xp_boost_progress}%` },
+                                ]} 
+                            />
+                        )}
                     </View>
                 </View>
 
-                {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
-                {days.length > 1 && !is_activity_started && (
-                    createTrainingPlanBars(days.length)
-                )}
+                {days.length > 1 && !is_activity_started && (createTrainingPlanBars(days.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
             </>
         )
     }
@@ -438,15 +634,48 @@ export default function ActivitySection() {
                 {/* Creates Bars By Amount Of Training Plans */}
                 {Array.from({ length: amount }).map((_, index:number) => (
                     // Creates Bar
-                    <View 
+                    <Pressable 
                         key={index} 
                         className={index === active_training_plan_index ? "bar active" : "bar"} // Adds Active Class For Bar Of Active Training Plan
-                        style={styles.training_plan_bar}
+                        onPress={() => changeTrainingPlans(index)} // Changes Training Plans
+
+                        style={[
+                            styles.training_plan_bar,
+
+                            index === active_training_plan_index ? { 
+                                backgroundColor: BLUE_COLOR,
+                                shadowColor: BLUE_COLOR,
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 1,
+                                shadowRadius: 10,
+                                elevation: 5,
+                            } : {}
+                        ]}
                     />
                 ))}
             </View>
         )
     }
+
+    // Function For Change Training Plans
+    const changeTrainingPlans = (new_index:number, max_index?:number):void => {
+        // Swipe
+        if(max_index) {
+            if(new_index >= 0 && new_index <= max_index) setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
+        }
+
+        // Click
+        else setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
+    }
+
+    // Creates The Swipe Gesture
+    const swipe_gesture = Gesture.Pan()
+        .runOnJS(true)
+
+        .onEnd((event) => {
+            if(event.translationX < -50) changeTrainingPlans(active_training_plan_index + 1, days.length - 1) // Shows The Next Post Media
+            else if (event.translationX > 50) changeTrainingPlans(active_training_plan_index - 1, days.length - 1) // Shows The Previous Post Media
+        })
 
     // Function For Update The Tick
     const updateTick = ():void => {
@@ -631,7 +860,6 @@ export default function ActivitySection() {
         }).start(() => {
             setTrainingPlanSlide(next_slide) // Sets The Training Plan Slide
             setActiveExerciseIndex(next_index) // Sets The Active Exercise Index
-            setCurrentSet(1) // Sets The Current Set
 
             translateX.setValue(SCREEN_WIDTH)
 
@@ -656,71 +884,49 @@ export default function ActivitySection() {
     }
 
     // Function For Handle Next Step (Increases The Current Set Or Goes To Next Exercise)
-    const handleNextStep = (): void => {
-        let current_red:number = red // Redeclare The Red
-        
+    const handleNextStep = ():void => {
+        // Increases The Set
         if(current_set < active_exercise.periods.length) {
-            setCurrentSet((previous_set) => previous_set + 1) // Increases The Current Set
-            setRed(current_red -= (255 - MIN_RED) / (all_sets - 1)) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            setCurrentSet((previous_set) => previous_set + 1) // Sets The Current Set
         }
-
+        
+        // Shows The Next Exercise
         else nextExercise() // Goes To Next Exercise
     }
 
     // Function For Change Exercises In The Training Plan
     const nextExercise = ():void => {
-        let current_red:number = red // Redeclare The Red
-        setRed(current_red -= (255 - MIN_RED) / (all_sets - 1)) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
-
         const sets_amount:number = active_exercise.periods.length || 1 // Gets Total Amount Of Sets Of The Active Exercise
-
         const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
 
         // Exercises Break Slide
         if(current_set === sets_amount && active_exercise_index < active_training_plan_exercises.length - 1) {
-            animateSlideTransition("break", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
-            // exercisesBreak(container)
+            animateSlideTransition("break", active_exercise_index) // Animates The Slide Transition To The Next Exercise
         }
 
+        // Exercise Slide
         else if(next_active_exercise_index < active_training_plan_exercises.length) {
+            setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
             animateSlideTransition("exercise", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
         } 
         
+        // Finish Training Slide
         else {
             setIsActivityRunning(false) // Sets The Information That The Activity Isn't Running
             if(interval.current) clearInterval(interval.current) // Clears The Interval
-
             animateSlideTransition("finish_training") // Animates The Slide Transition To The Finish Training
         }
     }
 
-    // // Function For Skip Exercises Break
-    // export function skipBreak(container:HTMLDivElement):void {
-    //     const exercises:NodeListOf<HTMLDivElement> = container.querySelectorAll<HTMLDivElement>(".training_plan_container .training_plan .exercise"); // Gets All Training Plan Exercises
-    //     const exercises_break:HTMLDivElement = container.querySelector(".training_plan_container .training_plan .break") as HTMLDivElement // Gets The Break Slide
-    //     const break_countdown:HTMLParagraphElement = exercises_break.querySelector(".break_timer p") as HTMLParagraphElement // Gets The Break Countdown
+    // Function For Skip Exercises Break
+    const skipBreak = ():void => {
+        const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
 
-    //     // Stops Break Timer
-    //     if(break_interval.interval) {
-    //         clearInterval(break_interval.interval)
-    //         break_interval.interval = null
-    //     }
-
-    //     break_interval.max_remaining_time = 120 // Sets Max Break Remaining Time Back To Default
-    //     break_interval.remaining_time = 120 // Sets Max Break Remaining Time Back To Default
-
-    //     break_countdown.style.color = "#ffffff" // Sets Break Countdown Color To White
-
-    //     training_plan_state.active_exercise_index += 1; // Changes Active Exercise Index
-
-    //     (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows Active Exercise
-    //     (exercises[training_plan_state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
-        
-    //     nextExercise(container) // Next Exercise
-
-    //     exercises_break.classList.remove("active") // Hides Break Between Sets Tab
-    //     exercises_break.inert = true // Disables Focus
-    // }
+        setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+        setCurrentSet(1) // Sets The Current Set
+        animateSlideTransition("exercise", next_active_exercise_index) // Animates The Slide Transition To The Next Exercise
+    }
 
     return (
         <View 
@@ -816,14 +1022,11 @@ export default function ActivitySection() {
                 )}
 
                 {training_plans_exercises.length > 0 && (
-                    <View className="training_plan_container" style={styles.training_plan_container}>
-                        {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (
-                            generateTrainingPlan() // Generates The Training Plan
-                        )}
-                    </View>
-
-                    // <script src="{% static 'app/ts/dist/pages/training_session/components/training_session.js' %}" type="module"></script>
-                    // <script src="{% static 'app/ts/dist/pages/training_session/components/todo.js' %}" type="module"></script>
+                    <GestureDetector gesture={swipe_gesture}>
+                        <View className="training_plan_container" style={styles.training_plan_container}>
+                            {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (generateTrainingPlan())} {/* Generates The Training Plan */}
+                        </View>
+                    </GestureDetector>
                 )}
 
                 <View className="previous_activity" style={styles.previous_activity}>
@@ -1296,57 +1499,20 @@ const styles = StyleSheet.create({
         borderRadius: 10 / 2,
     },
 
-    bar_progress: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "0%",
-        height: "100%",
-        borderRadius: 10 / 2,
-    },
-
-    bar_progress_active: {
-        // width: var(--progress);
-        // background-color: var(--progress-color);
-        // shadowColor: var(--progress-color),
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 1,
-        shadowRadius: 10,
-        elevation: 5,
-        // transition: width 0.5s linear, background-color 0.5s ease;
-    },
-
     bar_label: {
         pointerEvents: "none",
-        opacity: 0,
-        // content: attr(data-exercise);
         position: "absolute",
-        top: -5,
+        bottom: 15,
         left: "50%",
-        transform: [{ translateX: "-50%" }],
-        // width: calc(100% + 10px)
         textAlign: "center",
         fontSize: 15,
         lineHeight: 15,
         color: transparentize(SECONDARY_COLOR, 0.5),
-        // text-overflow: ellipsis;
-        // overflow: hidden;
-        // transition: opacity 0.3s ease, transform 0.3s ease;
     },
 
-    // &.show {
-    //     bar_label {
-    //         opacity: 0.5;
-    //         transform: translate(-50%, -100%);
-    //     }
-    // }
-
     current_activity_info: {
-        // --progress: 100%;
-
         position: "relative",
         marginVertical: 10,
-        // textAlign: "center",
         // font-family: $article-heading-font;
         zIndex: 100,
     },
