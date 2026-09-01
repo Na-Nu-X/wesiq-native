@@ -41,6 +41,8 @@ export default function HistorySection() {
 
     // Function For Get The Activity History
     const getActivityHistory = async ():Promise<void> => {
+        if(!logged_in_user) return
+
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
@@ -10,6 +10,8 @@ import * as ImagePicker from "expo-image-picker"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+
+import type { LoggedInUser, LoggedInUserResponse } from "./LoginFormDialog"
 
 type UploadPostFormDialogProps = {
     visible:boolean
@@ -66,6 +68,7 @@ export interface UploadProgressResponse {
 }
 
 export default function UploadPostFormDialog({ visible, onClose }:UploadPostFormDialogProps) {
+    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [selected_files, setSelectedFiles] = useState<ImagePicker.ImagePickerAsset[]>([]) // Stores The Selected Files
     const [description, setDescription] = useState<string>("") // Stores The Description
     const [tagged_users, setTaggedUsers] = useState<number[]>([]) // Stores The Tagged Users
@@ -84,6 +87,49 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
     const [upload_progress, setUploadProgress] = useState<number>(0) // Stores The Upload Progress
 
     const MAX_DESCRIPTION_LENGTH:number = 500 // Defines The Maximum Description Length
+
+    // Function For Get The Logged In User
+    const getLoggedInUser = async () => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+    
+            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
+
+            if(logged_in_user_response.status === 401) {
+                await AsyncStorage.removeItem("user_token") // Removes The User Token
+                setLoggedInUser(null) // Removes The Logged In User
+                return null
+            }
+    
+            if(logged_in_user_data.success) {
+                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
+                return logged_in_user_data.logged_in_user || null
+            } 
+            
+            else return null
+    
+        } 
+        
+        catch {
+            return null
+        }
+    }
+
+    // Initializes The Get Logged In User
+    useEffect(() => {
+        getLoggedInUser() // Gets The Logged In User
+    }, [])
 
     // Function For Handle The Media Selection
     const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]) => {
@@ -257,6 +303,11 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
         setButtonText("Overuje sa...") // Sets The Button Text
     
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Príspevok nie je možné pridať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const form_data:FormData = new FormData() // Gets The Form Data
     
             form_data.append("description", post_details.description || "") // Appends The Description To The Form Data

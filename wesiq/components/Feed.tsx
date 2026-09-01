@@ -683,8 +683,6 @@ export default function Feed() {
     // Function For Show The Post Properties
     const showPostProperties = (post:Post):void => {
         setSelectedPost(post) // Sets The Selected Post
-        // post_properties.current?.expand() // Shows The Post Properties
-        // post_properties.current?.snapToIndex(0) // Shows The Post Properties
         post_properties.current?.present() // Shows The Post Properties
     }
 
@@ -720,12 +718,12 @@ export default function Feed() {
 
     // Function For Toggle Post Like
     const togglePostLike = async (post_id:number):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -835,12 +833,12 @@ export default function Feed() {
 
     // Function For Save Or Unsave The Post
     const togglePostSave = async (post_id:number):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Príspevok nie je možné uložiť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Príspevok nie je možné uložiť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -897,12 +895,12 @@ export default function Feed() {
 
     // Function For Report The Post
     const reportPost = async (post_id:number, reason:string) => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -949,12 +947,12 @@ export default function Feed() {
 
     // Function For Edit The Post Settings
     const editPostSettings = async (post_id:number, setting:string, action:boolean):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Príspevok nie je možné upraviť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Príspevok nie je možné upraviť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1010,12 +1008,12 @@ export default function Feed() {
 
     // Function For Delete The Post
     const deletePost = async (post_id:number):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Príspevok nie je možné odstrániť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Príspevok nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1063,7 +1061,6 @@ export default function Feed() {
                 setPosts(previous_posts => previous_posts.filter((one_post:Post) => one_post.id !== post_id)) // Sets The Posts
                 setSelectedPost(null) // Sets The Selected Post
                 hidePostProperties() // Closes The Post Properties
-
                 return
             }
         }
@@ -1075,12 +1072,12 @@ export default function Feed() {
 
     // Function For Toggle Post Comment Like
     const togglePostCommentLike = async (comment_id:number):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1140,12 +1137,12 @@ export default function Feed() {
 
     // Function For Report The Comment
     const reportComment = async (comment_id:number, reason:string) => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1192,12 +1189,12 @@ export default function Feed() {
 
     // Function For Delete The Comment
     const deleteComment = async (comment_id:number):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Komentár nie je možné odstrániť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Komentár nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1248,12 +1245,12 @@ export default function Feed() {
 
     // Function For Add Comment
     const addComment = async (post_id:number, comment:string, parent_id:number|null):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Komentár nie je možné pridať bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Komentár nie je možné pridať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1328,12 +1325,12 @@ export default function Feed() {
 
     // Function For Toggle Follow
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -1546,7 +1543,7 @@ export default function Feed() {
                                                         accessibilityLabel="Otvoriť mapy" 
                                                         style={styles.location}
                                                     >
-                                                        <Text numberOfLines={1}>
+                                                        <Text numberOfLines={1} ellipsizeMode="tail">
                                                             {one_post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
                                                                 <Text key={index}>
                                                                     <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
@@ -1559,7 +1556,7 @@ export default function Feed() {
                                                         </Text>
                                                     </Pressable>
                                                 ) : (
-                                                    <Text className="location" numberOfLines={1} style={{ flex: 1 }}>{one_post.location}</Text>
+                                                    <Text className="location" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{one_post.location}</Text>
                                                 )
                                             )}
 

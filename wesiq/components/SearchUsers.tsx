@@ -316,12 +316,12 @@ export default function SearchUsers() {
 
     // Function For Toggle Follow
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
-            return
-        }
-
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server

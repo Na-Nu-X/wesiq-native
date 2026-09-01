@@ -82,6 +82,7 @@ export default function ActivitySection() {
     const [training_plan_slide, setTrainingPlanSlide] = useState<TrainingPlanSlide>("start_training") // Stores The Training Plan Slide
     const [current_set, setCurrentSet] = useState<number>(1) // Stores The Current Set
     const [red, setRed] = useState<number>(255) // Starting Progress Bar Color rgb(255, 207, 32)
+    const [reset_bar_index, setResetBarIndex] = useState<number|null>(null) // Stores The Reset Bar Index
 
     const [current_exercise_start_time, setCurrentExerciseStartTime] = useState<number|null>(null) // Stores The Start Time Of The Current Exercise
     const [exercises_duration, setExercisesDuration] = useState<{ exercise_index:number, elapsed_time:number }[]>([]) // Stores The Spent Time In Each Exercise
@@ -182,6 +183,8 @@ export default function ActivitySection() {
         setAreTrainingPlansLoading(true) // Stores The Information That Training Plans Are Loading
 
         try {
+            if(!logged_in_user) return
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -231,6 +234,11 @@ export default function ActivitySection() {
     // Function For Get The XP Boost
     const getXpBoost = async ():Promise<void> => {
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Informácie o dostupnom navýšení XP nie je možné získať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -279,6 +287,11 @@ export default function ActivitySection() {
     // Function For Use The XP Boost
     const useXpBoost = async ():Promise<void> => {
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Navýšenie XP nie je možné uplatniť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -371,6 +384,8 @@ export default function ActivitySection() {
     // Function For Get The Activity Data
     const getActivity = async ():Promise<void> => {
         try {
+            if(!logged_in_user) return
+            
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -563,13 +578,21 @@ export default function ActivitySection() {
 
                     <View className="bar_container" style={styles.bar_container}>
                         {active_training_plan_exercises.map((one_exercise:TrainingPlanExercise, index:number) => {
-                            const is_active:boolean = index === active_exercise_index // Stores The Information If The Bar Is Active
-                            const is_completed:boolean = index < active_exercise_index // Stores The Information If The Bar Is Completed
+                            const effective_active_index = reset_bar_index !== null ? reset_bar_index : active_exercise_index
+                            const is_active:boolean = index === effective_active_index // Stores The Information If The Bar Is Active
+                            const is_completed:boolean = index < effective_active_index // Stores The Information If The Bar Is Completed
                             const is_break_slide_active:boolean = (training_plan_slide === "break" && is_active) // Checks If Is The Break Slide Active
                             let percentage:number = 0 // Stores The Percentage
 
-                            if(is_completed || is_break_slide_active) percentage = 100 // Sets The 100% If The Bar Is Completed
-                            else if(is_active && one_exercise.periods.length > 0) percentage = (current_set / one_exercise.periods.length || 1) * 100 // Sets The Percentage
+                            if(reset_bar_index !== null) {
+                                if(is_completed) percentage = 100
+                                else percentage = 0
+                            }
+                            
+                            else {
+                                if(is_completed || is_break_slide_active) percentage = 100 // Sets The 100% If The Bar Is Completed
+                                else if(is_active && is_activity_started && one_exercise.periods.length > 0) percentage = (current_set / (one_exercise.periods.length || 1)) * 100 // Sets The Percentage
+                            }
 
                             return (
                                 <View 
@@ -578,24 +601,15 @@ export default function ActivitySection() {
                                     // draggable = true
                                     style={styles.bar}
                                 >
-                                    {index <= active_exercise_index && is_activity_started && (
-                                        <AnimatedProgressBar 
-                                            is_active={is_active}
-                                            is_completed={is_completed || is_break_slide_active} 
-                                            percentage={percentage}
-                                            red={red}
-                                        />
-                                    )}
+                                    <AnimatedProgressBar 
+                                        is_active={is_active}
+                                        is_completed={is_completed} 
+                                        percentage={percentage}
+                                        red={red}
+                                    />
                                 </View>
                             )
                         })}
-
-                        {is_activity_started && active_exercise && (
-                            <AnimatedProgressBarLabel
-                                text={active_exercise.exercise} 
-                                style={styles.bar_label} 
-                            />
-                        )}
                     </View>
 
                     <View className="current_activity_info" style={styles.current_activity_info}>
@@ -766,6 +780,11 @@ export default function ActivitySection() {
         if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
 
         try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Aktivitu nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -813,6 +832,12 @@ export default function ActivitySection() {
         start_time.current = null // Sets The Start Time
         accumulated_time.current = 0 // Sets The Accumulated Time
         setElapsedTime(0) // Sets The Elapsed Time
+
+        setTrainingPlanSlide("start_training") // Sets The Training Plan Slide
+        setCurrentSet(1) // Sets The Current Set
+        setCurrentExerciseStartTime(null) // Sets The Current Exercise Start Time
+        setExercisesDuration([]) // Sets The Exercise Duration
+        resetProgressBars() // Resets Progress Bar
     }
 
     // Function For Calculate The Gained XP
@@ -859,6 +884,30 @@ export default function ActivitySection() {
         })
 
         return training_plan_summary // Returns The Training Plan Summary
+    }
+
+    // Function For Reset Progress Bar Of Training Plan
+    const resetProgressBars = ():void => {
+        let current_index:number = active_exercise_index // Stores The Current Bar Index
+        let current_red:number = red // Stores The Current Red
+        const red_increasion:number = (255 - current_red) / active_training_plan_exercises.length // Gets Number Of Red Increasion
+    
+        setResetBarIndex(current_index) // Sets The Reset Bar Index
+    
+        const bar_cleaner_interval = setInterval(() => {
+            // Stops Bar Cleaner
+            if(current_index < 0) {
+                clearInterval(bar_cleaner_interval) // Clears The Bar Cleaner Interval
+                setResetBarIndex(null) // Sets The Reset Bar Index
+                setActiveExerciseIndex(0) // Sets The Active Exercise Index
+                return
+            }
+    
+            current_red += red_increasion // Increases Red Color Of Progress Color
+            setRed(current_red) // Sets The Red Color
+            current_index -= 1 // Sets The Current Bar Index
+            setResetBarIndex(current_index) // Sets The Reset Bar Index
+        }, 500)
     }
 
     // // Function For Stop Activity
@@ -909,21 +958,6 @@ export default function ActivitySection() {
     //         }
 
     //         else renderActivitySummary(elapsed_time, 0) // Renders Activity Summary (If The User Isn't Logged In)
-
-    //         pauseActivity(playback) // Pauses Activity
-
-    //         // Stops Break Timer
-    //         if(break_interval.interval) {
-    //             clearInterval(break_interval.interval)
-    //             break_interval.interval = null
-    //         }
-
-    //         activity_summary.elapsed_time = 0 // Resets Elapsed Time
-    //         activity_summary.gained_xp = 0 // Resets Gained XP
-    //         activity_summary.training_plan = [] // Resets Training Plan Activity Summary
-
-    //         updateTimer(timer) // Resets Elapsed Time On The Playback Timer
-    //         if(container.querySelector(".training_plan_container")) resetTrainingPlan(container) // Resets Training Plan
     //     }
     // }
 
@@ -1073,8 +1107,8 @@ export default function ActivitySection() {
                     <>
                         {!logged_in_user && (
                             <View className="no_logged_in">
-                                <Text>Zdá sa, že nie ste prihlásený.</Text>
-                                <Text>Bez prihlásenia nie je možné ukladať vašu aktivitu.</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Zdá sa, že nie ste prihlásený.</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Bez prihlásenia nie je možné ukladať vašu aktivitu.</Text>
 
                                 <Pressable 
                                     // onPress={() => setActiveForm("login_form")}
@@ -1084,6 +1118,7 @@ export default function ActivitySection() {
                                         <Text
                                             style={[
                                                 // styles.login,
+                                                { color: SECONDARY_COLOR, textAlign: "center" },
                                                 pressed && { textDecorationLine: "underline" } 
                                             ]}
                                         >
@@ -1096,7 +1131,7 @@ export default function ActivitySection() {
 
                         {logged_in_user && (
                             <View className="no_training_plan" style={styles.no_training_plan}>
-                                <Text>Zatiaľ nemáte žiaden tréningový plán.</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Zatiaľ nemáte žiaden tréningový plán.</Text>
 
                                 <Pressable 
                                     // onPress={}
@@ -1131,7 +1166,14 @@ export default function ActivitySection() {
                 <View className="previous_activity" style={styles.previous_activity}>
                     <View className="top" style={styles.top}>
                         <View className="average_activity_time_container" style={styles.average_activity_time_container}>
-                            <Text>
+                            <View 
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 5,
+                                }}
+                            >
                                 <FontAwesome6
                                     name="clock"
                                     size={20}
@@ -1139,12 +1181,20 @@ export default function ActivitySection() {
                                 />
 
                                 <Text className="title" style={styles.average_activity_time_title}>priemer&nbsp;/ 7&nbsp;dní</Text>
-                                {/* <Text style={styles.average_activity_time}>{average_activity_time ? average_activity_time_formatted : "0"}</Text> */}
-                            </Text>
+                            </View>
+
+                            <Text style={styles.average_activity_time}>{activity_data && activity_data.average_activity_time_formatted ? activity_data.average_activity_time_formatted : "0"}</Text>
                         </View>
 
                         <View className="activities_amount_container" style={styles.activities_amount_container}>
-                            <Text>
+                            <View 
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    gap: 5,
+                                }}
+                            >
                                 <FontAwesome6
                                     name="calendar"
                                     size={20}
@@ -1153,74 +1203,69 @@ export default function ActivitySection() {
                                 />
 
                                 <Text className="title" style={styles.activities_amount_title}>počet&nbsp;/ 7&nbsp;dní</Text>
-                                <Text className="activities_amount" style={styles.activities_amount}>{activity_data && activity_data.activities_amount ? activity_data.activities_amount : "0"}</Text>
-                            </Text>
+                            </View>
+
+                            <Text className="activities_amount" style={styles.activities_amount}>{activity_data && activity_data.activities_amount ? activity_data.activities_amount : "0"}</Text>
                         </View>
                     </View>
 
                     <View className="bottom" style={styles.bottom}>
-                        <View className="latest_activity_container">
-                            <View 
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 5,
-                                }}
-                            >
-                                <FontAwesome6
-                                    name="list"
-                                    size={20}
-                                    color={BLUE_COLOR}
-                                />
+                        <View className="latest_activity_container" style={styles.latest_activity_container}>
+                            <FontAwesome6
+                                name="list"
+                                size={20}
+                                color={BLUE_COLOR}
+                            />
 
-                                {activity_data && activity_data.latest_activity && (
-                                    <>
-                                        <Text style={styles.latest_activity_text}>{getMinimalistFormattedTime(activity_data.latest_activity.elapsed_time)}</Text>
-                                        <Text className="xp" style={styles.latest_activity_text}>{activity_data.latest_activity.gained_xp}XP</Text>
-                                        <Text style={styles.latest_activity_text}>{getFormattedDate(activity_data.latest_activity.end_time)}</Text>
-                                    </>
-                                )}
+                            {activity_data && activity_data.latest_activity ? (
+                                <>
+                                    <Text 
+                                        style={[
+                                            styles.latest_activity_text, 
+                                            { lineHeight: 1 },
+                                        ]}
+                                    >
+                                        {getMinimalistFormattedTime(activity_data.latest_activity.elapsed_time)}
+                                    </Text>
 
-                                {!activity_data || !activity_data.latest_activity && (
-                                    <>
-                                        <Text className="no_latest_activity" style={styles.no_latest_activity}>posledná aktivita: </Text>
-                                        <Text className="none" style={styles.latest_activity_text}>žiadna</Text>
-                                    </>
-                                )}
-                            </View>
+                                    <Text className="xp" style={styles.xp}>{activity_data.latest_activity.gained_xp}XP</Text>
+                                    <Text style={styles.latest_activity_text}>{getFormattedDate(activity_data.latest_activity.end_time)}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text className="no_latest_activity" style={styles.no_latest_activity}>posledná aktivita: </Text>
+                                    <Text className="none" style={styles.none}>žiadna</Text>
+                                </>
+                            )}
                         </View>
 
-                        <View className="longest_activity_container">
-                            <View 
-                                style={{
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    gap: 5,
-                                }}
-                            >
-                                <FontAwesome6
-                                    name="medal"
-                                    size={20}
-                                    color={BLUE_COLOR}
-                                />
+                        <View className="longest_activity_container" style={styles.latest_activity_container}>
+                            <FontAwesome6
+                                name="medal"
+                                size={20}
+                                color={BLUE_COLOR}
+                            />
 
-                                {activity_data && activity_data.longest_activity && (
-                                    <>
-                                        <Text style={styles.longest_activity_text}>{getMinimalistFormattedTime(activity_data.longest_activity.elapsed_time)}</Text>
-                                        <Text className="xp" style={styles.xp}>{activity_data.longest_activity.gained_xp}XP</Text>
-                                        <Text style={styles.longest_activity_text}>{getFormattedDate(activity_data.longest_activity.end_time)}</Text>
-                                    </>
-                                )}
+                            {activity_data && activity_data.longest_activity ? (
+                                <>
+                                    <Text 
+                                        style={[
+                                            styles.latest_activity_text, 
+                                            { lineHeight: 1 },
+                                        ]}
+                                    >
+                                        {getMinimalistFormattedTime(activity_data.longest_activity.elapsed_time)}
+                                    </Text>
 
-                                {!activity_data || !activity_data.longest_activity && (
-                                    <>
-                                        <Text className="no_longest_activity" style={styles.no_latest_activity}>najdlhšia aktivita: </Text>
-                                        <Text className="none" style={styles.none}>žiadna</Text>
-                                    </>
-                                )}
-                            </View>
+                                    <Text className="xp" style={styles.xp}>{activity_data.longest_activity.gained_xp}XP</Text>
+                                    <Text style={styles.longest_activity_text}>{getFormattedDate(activity_data.longest_activity.end_time)}</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text className="no_longest_activity" style={styles.no_longest_activity}>najdlhšia aktivita: </Text>
+                                    <Text className="none" style={styles.none}>žiadna</Text>
+                                </>
+                            )}
                         </View>
                     </View>
                 </View>
@@ -1256,7 +1301,7 @@ const styles = StyleSheet.create({
         width: "100%",
         marginBottom: 20,
         paddingTop: 20,
-        paddingHorizontal: 50,
+        paddingHorizontal: 20,
         paddingBottom: 30,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -1374,6 +1419,7 @@ const styles = StyleSheet.create({
     no_training_plan: {
         maxWidth: MAIN_WIDTH,
         width: "100%",
+        marginTop: 20,
         marginBottom: 40,
         paddingVertical: 20,
         paddingHorizontal: 10,
@@ -1394,6 +1440,7 @@ const styles = StyleSheet.create({
     },
 
     link: {
+        textAlign: "center",
         color: SECONDARY_COLOR,
         fontStyle: "italic",
     },
@@ -1678,12 +1725,13 @@ const styles = StyleSheet.create({
         gap: 15,
         marginBottom: 15,
     },
-
+    
     average_activity_time_container: {
-        width: "100%",
+        flex: 1,
         paddingVertical: 20,
         paddingHorizontal: 10,
-        textAlign: "center",
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -1698,31 +1746,27 @@ const styles = StyleSheet.create({
         //     cursor: pointer;
         // }
     },
-
+    
     average_activity_time_title: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 5,
         fontSize: 15,
-        textAlign: "center",
-        color: transparentize(SECONDARY_COLOR, 0.5)
+        color: transparentize(SECONDARY_COLOR, 0.5),
     },
-
+    
     average_activity_time: {
         marginTop: 15,
-        lineHeight: 1,
+        textAlign: "center",
         fontSize: 25,
-        fontWeight: "semibold",
+        fontWeight: "600",
         color: BLUE_COLOR,
         // white-space: nowrap;
     },
 
     activities_amount_container: {
-        width: "100%",
+        flex: 1,
         paddingVertical: 20,
         paddingHorizontal: 10,
-        textAlign: "center",
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -1739,26 +1783,22 @@ const styles = StyleSheet.create({
     },
 
     activities_amount_title: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 5,
         fontSize: 15,
-        textAlign: "center",
-        color: transparentize(SECONDARY_COLOR, 0.5)
+        color: transparentize(SECONDARY_COLOR, 0.5),
     },
 
     activities_amount: {
         marginTop: 15,
-        lineHeight: 1,
+        textAlign: "center",
         fontSize: 25,
-        fontWeight: "semibold",
+        fontWeight: "600",
         color: BLUE_COLOR,
         // white-space: nowrap;
     },
 
     bottom: {
         padding: 15,
+        gap: 15,
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -1774,8 +1814,21 @@ const styles = StyleSheet.create({
         // }
     },
 
+    latest_activity_container: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+    },
+
+    longest_activity_container: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+    },
+
     latest_activity_text: {
-        textAlign: "center",
         // white-space: nowrap;
         color: transparentize(SECONDARY_COLOR, 0.5),
     },
@@ -1786,7 +1839,6 @@ const styles = StyleSheet.create({
     },
 
     longest_activity_text: {
-        textAlign: "center",
         // white-space: nowrap;
         color: transparentize(SECONDARY_COLOR, 0.5),
     },
@@ -1798,13 +1850,13 @@ const styles = StyleSheet.create({
 
     xp: {
         fontSize: 22,
-        fontWeight: "semibold",
+        fontWeight: "600",
         color: BLUE_COLOR,
     },
 
     none: {
         fontSize: 22,
-        fontWeight: "semibold",
+        fontWeight: "600",
         color: BLUE_COLOR,
     },
 })
