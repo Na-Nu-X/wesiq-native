@@ -41,8 +41,6 @@ export default function HistorySection() {
 
     // Function For Get The Activity History
     const getActivityHistory = async ():Promise<void> => {
-        if(!logged_in_user) return
-
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
@@ -96,7 +94,13 @@ export default function HistorySection() {
             ]}
         >
             <View className="activity_history_container" style={styles.activity_history_container}>
-                <ScrollView className="activity_history" style={styles.activity_history}>
+                <ScrollView 
+                    className="activity_history" 
+                    showsVerticalScrollIndicator={false}
+                    indicatorStyle="white"
+                    style={styles.activity_history}
+                    contentContainerStyle={styles.activity_history}
+                >
                     {activity_history.map((one_activity:Activity) => (
                         <View className="one_activity" style={styles.one_activity}>
                             <FontAwesome6
@@ -107,7 +111,17 @@ export default function HistorySection() {
 
                             <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : "Aktivita"}</Text>
 
-                            <Text className="elapsed_time" style={{ width: 60 }}>{getMinimalistFormattedTime(one_activity.elapsed_time)}</Text>
+                            <Text 
+                                className="elapsed_time" 
+
+                                style={{ 
+                                    width: 60,
+                                    lineHeight: 1,
+                                    color: SECONDARY_COLOR,
+                                }}
+                            >
+                                {getMinimalistFormattedTime(one_activity.elapsed_time)}
+                            </Text>
 
                             <Text 
                                 className="gained_xp" 
@@ -120,7 +134,15 @@ export default function HistorySection() {
                                 {one_activity.gained_xp}XP
                             </Text>
 
-                            <Text className="date" style={{ width: 40 }}>{getFormattedDate(one_activity.end_time)}</Text>
+                            <Text 
+                                className="date" 
+
+                                style={{ 
+                                    color: SECONDARY_COLOR,
+                                }}
+                            >
+                                {getFormattedDate(one_activity.end_time, false)}
+                            </Text>
                         </View>
                     ))}
                 </ScrollView>
@@ -139,10 +161,12 @@ const styles = StyleSheet.create({
 
     history_section: {
         maxWidth: MAIN_WIDTH,
+        width: "100%",
         marginBottom: 30,
     },
 
     activity_history_container: {
+        width: "100%",
         marginHorizontal: "auto",
         padding: 5,
         // background: linear-gradient(145deg, transparentize($blue-color, 0.95) 0%, transparentize($main-color, 0.95) 100%);

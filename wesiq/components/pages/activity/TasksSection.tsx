@@ -111,8 +111,6 @@ export default function TasksSection() {
     // Function For Get The Official Tasks
     const getOfficialTasks = async ():Promise<void> => {
         try {
-            if(!logged_in_user) return
-
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -158,8 +156,6 @@ export default function TasksSection() {
     // Function For Get The Custom Tasks
     const getCustomTasks = async ():Promise<void> => {
         try {
-            if(!logged_in_user) return
-
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server

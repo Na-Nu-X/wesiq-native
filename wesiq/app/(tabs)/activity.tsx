@@ -50,7 +50,7 @@ export default function ActivityScreen() {
                         <View className="training_page" style={styles.training_page}>
                             <ActivitySection />
                             <TasksSection />
-                            {/* <HistorySection /> */}
+                            <HistorySection />
                         </View>
                     </ScrollView>
                 </SafeAreaView>

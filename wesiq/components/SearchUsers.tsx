@@ -107,9 +107,9 @@ export default function SearchUsers() {
                 if(searched_users_history_json !== null) setSearchedUsersHistory(JSON.parse(searched_users_history_json) as string[]) // Sets The Searched Users History
             }
             
-            catch(error) {
-                console.error("Pri načítavaní užívateľov došlo k chybe: ", error)
+            catch {
                 Alert.alert("Chyba", "Pri načítavaní užívateľov došlo k chybe.") // Shows The Alert
+                return
             }
         }
 
@@ -141,7 +141,6 @@ export default function SearchUsers() {
                 // If The Response Isn't Success
                 if(!first_loaded_users_data.success) {
                     console.error(first_loaded_users_data.message)
-                    // displayMessage(first_loaded_users_response.message, "error") // Displays The Error Message
                     return
                 }
 
@@ -153,7 +152,7 @@ export default function SearchUsers() {
             
             catch {
                 console.error("Pri načítavaní užívateľov došlo k chybe.")
-                // displayMessage(gettext("Pri načítavaní užívateľov došlo k chybe."), "error") // Displays The Error Message
+                return
             }
         }
 
@@ -167,9 +166,9 @@ export default function SearchUsers() {
             await AsyncStorage.setItem("searched_users_history", JSON.stringify(new_history)) // Sets The Searched Users History
         }
         
-        catch(error) {
-            console.error("Pri ukladaní histórie užívateľov došlo k chybe: ", error)
-            Alert.alert("Chyba", "Pri ukladaní histórie užívateľov došlo k chybe.") // Shows The Alert
+        catch {
+            console.error("Pri ukladaní histórie užívateľov došlo k chybe.")
+            return
         }
     }
 
@@ -273,7 +272,6 @@ export default function SearchUsers() {
                     const searched_users_data:SearchedUsersResponse = await searched_users_response.json() // Gets The Searched Users Data
 
                     if(!searched_users_data.success) {
-                        console.log(searched_users_data.message)
                         // displayMessage(searched_users_data.message, "error") // Displays The Error Message
                         return
                     }
@@ -286,7 +284,7 @@ export default function SearchUsers() {
                 
                 catch {
                     console.error("Pri hľadaní užívateľov došlo k chybe.")
-                    // displayMessage(gettext("Pri hľadaní užívateľov došlo k chybe."), "error") // Displays The Error Message
+                    return
                 } 
                 
                 finally {

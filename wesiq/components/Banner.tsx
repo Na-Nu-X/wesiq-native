@@ -38,7 +38,7 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                     <View className="notifications">
                         <IconButton 
                             icon_name="bell" 
-                            onPress={() => console.log("Notifications clicked")} 
+                            // onPress={} 
                         />
                     </View>
                 </View>

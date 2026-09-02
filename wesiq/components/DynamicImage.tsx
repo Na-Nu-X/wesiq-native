@@ -18,7 +18,7 @@ export const DynamicImage = ({ uri }:DynamicImageProps) => {
                 }, 
 
                 (error) => {
-                    console.log("Nepodarilo sa zistiť veľkosť obrázka:", error)
+                    console.error("Nepodarilo sa zistiť veľkosť obrázka:", error)
                 }
             )
         }

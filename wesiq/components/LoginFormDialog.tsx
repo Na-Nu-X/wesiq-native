@@ -20,6 +20,20 @@ export interface LoggedInUser {
     friend_code:string,
     saved_posts:number[],
     private_account:boolean,
+
+    follow_requests:{
+        from_user:{
+            first_name:string,
+            last_name:string,
+            username:string,
+            profile_picture_name:string|null,
+            private_account:boolean
+        },
+
+        status:string,
+        created_at:string
+    }[],
+
     followers_amount:number,
 
     subscription:{

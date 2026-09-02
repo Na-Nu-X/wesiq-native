@@ -51,7 +51,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                 }, 
 
                 (error) => {
-                    console.log("Nepodarilo sa zistiť veľkosť náhľadu videa:", error)
+                    console.error("Nepodarilo sa zistiť veľkosť náhľadu videa:", error)
                 }
             )
         }
@@ -184,7 +184,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
             }
             
             catch {
-                console.log("Chyba pri zmene rýchlosti videa.")
+                console.error("Chyba pri zmene rýchlosti videa.")
             }
         }
 

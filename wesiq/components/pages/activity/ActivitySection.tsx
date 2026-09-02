@@ -85,7 +85,7 @@ export default function ActivitySection() {
     const [reset_bar_index, setResetBarIndex] = useState<number|null>(null) // Stores The Reset Bar Index
 
     const [current_exercise_start_time, setCurrentExerciseStartTime] = useState<number|null>(null) // Stores The Start Time Of The Current Exercise
-    const [exercises_duration, setExercisesDuration] = useState<{ exercise_index:number, elapsed_time:number }[]>([]) // Stores The Spent Time In Each Exercise
+    const [exercises_duration, setExercisesDuration] = useState<{ exercise_index:number, elapsed_time:number, start_time:number }[]>([]) // Stores The Spent Time In Each Exercise
     
     const [is_xp_boost_available, setIsXpBoostAvailable] = useState<boolean>(false) // Stores The Information If The XP Boost Is Available
     const [is_xp_boost_active, setIsXpBoostActive] = useState<boolean>(false) // Stores The Information If The XP Boost Is Active
@@ -183,8 +183,6 @@ export default function ActivitySection() {
         setAreTrainingPlansLoading(true) // Stores The Information That Training Plans Are Loading
 
         try {
-            if(!logged_in_user) return
-
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -259,7 +257,6 @@ export default function ActivitySection() {
             }
 
             const xp_boost_data:XpBoostResponse = await xp_boost_response.json() // Gets The Loaded XP Boost Data
-            console.log(xp_boost_data)
 
             // If The Response Isn't Success
             if(!xp_boost_data.success) {
@@ -384,8 +381,6 @@ export default function ActivitySection() {
     // Function For Get The Activity Data
     const getActivity = async ():Promise<void> => {
         try {
-            if(!logged_in_user) return
-            
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
@@ -779,6 +774,8 @@ export default function ActivitySection() {
 
         if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
 
+        console.log(new_activity_data)
+
         try {
             if(!logged_in_user) {
                 Alert.alert("Chyba", "Aktivitu nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
@@ -815,10 +812,6 @@ export default function ActivitySection() {
                 Alert.alert("Chyba", new_recorded_activity_data.message) // Shows The Alert
                 return
             }
-            
-            else {
-                console.log(new_recorded_activity_data)
-            }
         } 
         
         catch {
@@ -841,18 +834,25 @@ export default function ActivitySection() {
     }
 
     // Function For Calculate The Gained XP
-    const calculateGainedXp = (elapsed_time_ms:number, xp_boost_expiration_time:string|null, xp_boost_amount:number = 2, base_xp_per_hour:number = 100):number => {
-        const current_time:number = Date.now() // Gets The Current Time
-        const activity_start_time:number = current_time - elapsed_time_ms // Gets The Activity Start Time
+    const calculateGainedXp = (
+        elapsed_time_ms:number, 
+        xp_boost_expiration_time:string|null, 
+        xp_boost_amount:number = 2, 
+        base_xp_per_hour:number = 100, 
+        start_time_ms?:number,
+        end_time_ms?:number
+    ):number => {
+        const activity_end_time:number = end_time_ms !== undefined ? end_time_ms : Date.now() // Gets The Activity End Time Or The Current Time
+        const activity_start_time: number = start_time_ms !== undefined ? start_time_ms : (activity_end_time - elapsed_time_ms) // Gets The Activity Start Time
+
         const xp_per_ms:number = base_xp_per_hour / (60 * 60 * 1000) // XP Amount Per 1 MS
-    
         let boosted_time_ms:number = 0 // Stores The Boosted Time In MS
     
         if(xp_boost_expiration_time) {
             const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
     
             if(xp_boost_expiration_time_ms > activity_start_time) {
-                const xp_boost_end_time_during_activity:number = Math.min(xp_boost_expiration_time_ms, current_time) // Gets The XP Boost End Time During Activity
+                const xp_boost_end_time_during_activity:number = Math.min(xp_boost_expiration_time_ms, activity_end_time) // Gets The XP Boost End Time During Activity
                 boosted_time_ms = xp_boost_end_time_during_activity - activity_start_time // Sets The Boosted Time
             }
         }
@@ -870,16 +870,19 @@ export default function ActivitySection() {
     // Function For Create The Training Plan Summary
     const createTrainingPlanSummary = ():TrainingPlanSummaryExercise[] => {
         const training_plan_summary:TrainingPlanSummaryExercise[] = [] // Stores The Training PLan Summary
-
-        exercises_duration.forEach((one_exercise:{ exercise_index:number, elapsed_time:number }) => {
+    
+        exercises_duration.forEach((one_exercise:{ exercise_index:number, elapsed_time:number, start_time:number }) => {
+            const end_time:number = one_exercise.start_time + one_exercise.elapsed_time // Gets The Exercise End Time
+            const gained_xp = calculateGainedXp(one_exercise.elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100, one_exercise.start_time, end_time) // Calculates The Gained XP For Exercise
+    
             // Stores The Exercise Information
             const exercise:TrainingPlanSummaryExercise = {
                 exercise: active_training_plan_exercises[one_exercise.exercise_index].exercise, // Sets Title Of The Exercise In The Training Plan
                 elapsed_time: Math.round(one_exercise.elapsed_time / 1000), // Sets Elapsed Time
-                gained_xp: 0, // Sets Gained XP
+                gained_xp: gained_xp, // Sets Gained XP
                 color: randomColor(128, 255) // Generates Random Color
             }
-
+    
             training_plan_summary.push(exercise) // Pushes The New Exercise To The Training Plan Summary
         })
 
@@ -1025,7 +1028,8 @@ export default function ActivitySection() {
 
                 { 
                     exercise_index: active_exercise_index, 
-                    elapsed_time: elapsed_time_for_exercise 
+                    elapsed_time: elapsed_time_for_exercise,
+                    start_time: current_exercise_start_time
                 }
             ])
         }

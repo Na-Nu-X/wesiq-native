@@ -49,7 +49,7 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
     
             const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
     
-            if(status !== "granted") console.log("Notifikácie neboli povolené.")
+            if(status !== "granted") console.error("Notifikácie neboli povolené.")
         }
     
         requestNotificationPermissions() // Requests The Notification Permissions
