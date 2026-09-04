@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, Alert, Pressable, TextInput } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Image, Alert, Pressable, TextInput, Switch, Keyboard } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -22,6 +22,7 @@ import { DynamicImage } from "../../../components/DynamicImage"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
+import EmojiPicker from "rn-emoji-keyboard"
 
 interface ProfileResponse {
     success:boolean,
@@ -148,9 +149,9 @@ export default function ProfileScreen() {
 
     const account_properties = useRef<BottomSheetModal>(null) // Stores The Account Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
-    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"delete">("main") // Stores The Active Account Properties Sheet
+    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings">("main") // Stores The Active Account Properties Sheet
 
-    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form"|null>("profile") // Stores The Information Which Section Is Active
+    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form"|null>("edit_account_form") // Stores The Information Which Section Is Active
 
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
 
@@ -164,6 +165,12 @@ export default function ProfileScreen() {
     const [phone_number, setPhoneNumber] = useState<string>("") // Stores The Phone Number
     const [is_phone_number_valid, setIsPhoneNumberValid] = useState<boolean>(false) // Stores The Information If The Phone Number Is Valid
     const [flag, setFlag] = useState<string|null>(null) // Stores The Country Flag For The Entered Phone Number
+
+    const [data_saving_mode, setDataSavingMode] = useState<boolean>(false) // Stores The Information If The Data Saving Mode Option Is Enabled
+    const [private_account, setPrivateAccount] = useState<boolean>(false) // Stores The Information If The Private Account Option Is Enabled
+    const [delete_profile_picture, setDeleteProfilePicture] = useState<boolean>(false) // Stores The Information If The Delete Profile Picture Option Is Enabled
+    const [delete_account, setDeleteAccount] = useState<boolean>(false) // Stores The Information If The Delete Account Option Is Enabled
+
     const [form_report, setFormReport] = useState<string>("") // Stores The Form Report
     const [form_report_appearance, setFormReportAppearance] = useState<"success"|"error">("success") // Stores The Form Report Appearance
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
@@ -237,16 +244,28 @@ export default function ProfileScreen() {
             const profile_data:ProfileResponse = await profile_response.json() // Gets The Profile Data
 
             // If The Response Isn't Success
-            if(!profile_data.success) {
+            if(!profile_data.success || !profile_data.user) {
                 Alert.alert("Chyba", profile_data.message) // Shows The Alert
                 return
             }
             
             else {
                 console.log(profile_data)
+
                 setIsFound(profile_data.is_found || false) // Sets The Information If The User Was Found
-                setProfile(profile_data.user || null) // Sets The Profile
-                if(profile_data.user && profile_data.user.bio.trim()) setBio(profile_data.user.bio) // Sets The Bio
+                setProfile(profile_data.user) // Sets The Profile
+                if(profile_data.user.bio.trim()) setBio(profile_data.user.bio) // Sets The Bio
+                setFirstName(profile_data.user.first_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
+                setLastName(profile_data.user.last_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
+                if(profile_data.user.email_address) setEmailAddress(profile_data.user.email_address) // Sets The Information If The Data Saving Mode Option Is Enabled
+
+                if(profile_data.user.phone_number) {
+                    setPhoneNumber(profile_data.user.phone_number) // Sets The Information If The Data Saving Mode Option Is Enabled
+                    setIsPhoneNumberValid(isValidPhoneNumber(profile_data.user.phone_number)) // Sets The Information If The Phone Number Is Valid
+                }
+
+                setDataSavingMode(profile_data.user.data_saving_mode || false) // Sets The Information If The Data Saving Mode Option Is Enabled
+                setPrivateAccount(profile_data.user.private_account) // Sets The Information If The Private Account Option Is Enabled
             }
         } 
         
@@ -260,8 +279,71 @@ export default function ProfileScreen() {
         if(username) getProfile(username) // Gets The Profile
     }, [username])
 
-     // Function For Toggle Follow
-     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
+    // Function For Handle The Edit Account
+    const handleEditAccount = async ():Promise<void> => {
+        Keyboard.dismiss() // Hides The Keyboard
+
+        if(!logged_in_user) {
+            Alert.alert("Chyba", "Zmeny nie je možné uložiť bez prihlásenia.") // Shows The Alert
+            return
+        }
+    
+        if(!email_address.trim() || !is_phone_number_valid) {
+            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre vykonanie zmien.") // Shows The Alert
+            return
+        }
+    
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+            
+            // Sends The POST Request To The Server
+            const edit_account_response:Response = await fetch(`${API_URL}/edit-account/`, {
+                method: "POST",
+        
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    delete_account: delete_account,
+                    delete_profile_picture: delete_profile_picture,
+                    data_saving_mode: data_saving_mode,
+                    private_account: private_account,
+                    bio: bio,
+                    bio_links: bio_links,
+                    first_name: first_name,
+                    last_name: last_name,
+                    email_address: email_address,
+                    phone_number: phone_number
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!edit_account_response.ok) {
+                Alert.alert("Chyba", "Pri vykonávaní zmien v účte došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const edit_account_data:BasicResponse = await edit_account_response.json() // Gets The Edit Account Data
+
+            // If The Response Isn't Success
+            if(!edit_account_data.success) {
+                Alert.alert("Chyba", edit_account_data.message) // Shows The Alert
+                return
+            }
+            
+            console.log(edit_account_data)
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri vykonávaní zmien v účte došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Toggle Follow
+    const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
@@ -318,6 +400,12 @@ export default function ProfileScreen() {
         }
     }
 
+    // Function For Handle The Emoji Select
+    const handleEmojiSelect = (emoji:{ emoji:string }) => {
+        if(bio.length >= 100) return
+        setBio((previous_bio) => previous_bio + emoji.emoji) // Sets The Bio
+    }
+
     // Function For Get The Domain
     const getDomain = (url:string):string => {
         try {
@@ -368,6 +456,114 @@ export default function ProfileScreen() {
         if(index === -1) setAccountPropertiesSheet("main") // Sets The Account Properties Sheet To Default
     }
 
+    // Function For Report The User
+    const reportUser = async (user_id:number, reason:string):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const reported_user_response:Response = await fetch(`${API_URL}/report-user/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    reported_user_id: user_id,
+                    reason: reason
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!reported_user_response.ok) {
+                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const reported_user_data:BasicResponse = await reported_user_response.json() // Gets The Reported User Data
+
+            // If The Response Isn't Success
+            if(!reported_user_data.success) {
+                Alert.alert("Chyba", reported_user_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", reported_user_data.message) // Shows The Alert
+                hideAccountProperties() // Closes The Account Properties
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+        }
+    }
+
+    // Function For Suspend The User
+    const suspendUser = async (user_id:number):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
+            if(!["admin", "developer"].includes(logged_in_user.role)) {
+                Alert.alert("Chyba", "Užívateľa môže obmedziť len správca.") // Shows The Alert
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const suspended_user_response:Response = await fetch(`${API_URL}/suspend-user/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    user_id: user_id
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!suspended_user_response.ok) {
+                Alert.alert("Chyba", "Pri pokuse o obmedzenie užívateľa došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const suspended_user_data:BasicResponse = await suspended_user_response.json() // Gets The Suspended User Data
+
+            // If The Response Isn't Success
+            if(!suspended_user_data.success) {
+                Alert.alert("Chyba", suspended_user_data.message) // Shows The Alert
+                return
+            }
+            
+            else {
+                Alert.alert("Úspech", suspended_user_data.message) // Shows The Alert
+                hideAccountProperties() // Closes The Account Properties
+                return
+            }
+        }
+        
+        catch {
+            Alert.alert("Chyba", "Pri pokuse o obmedzenie užívateľa došlo k chybe.") // Shows The Alert
+        }
+    }
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <BackgroundContainer>
@@ -412,314 +608,13 @@ export default function ProfileScreen() {
                                                 </View>
                                             )}
 
-                                            {(!logged_in_user || !profile || logged_in_user.id !== profile.id) && (
-                                                <>
-                                                    <View className="show_account_properties_button" accessibilityLabel="Viac...">
-                                                        <Icon
-                                                            icon_name="ellipsis-vertical"
-                                                            onPress={showAccountProperties}
-                                                        />
-                                                    </View>
-                                                    
-                                                    <BottomSheetModal
-                                                        ref={account_properties}
-                                                        snapPoints={snap_points}
-                                                        enablePanDownToClose={true}
-                                                        onChange={handleAccountPropertiesChanges}
-                                                        containerStyle={{ zIndex: 9999 }}
-                                                    >
-                                                        <BottomSheetView style={{ padding: 20 }}>
-                                                            <View className="account_properties">
-                                                                {account_properties_sheet === "main" && (
-                                                                    <View style={styles.sheet_container}>
-                                                                        {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
-                                                                        {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
-                                                                            <Pressable
-                                                                                className="show_suspend_account_button red"
-                                                                                onPress={() => setAccountPropertiesSheet("suspend")}
-                                                                                accessibilityRole="button"
-
-                                                                                style={({ pressed }) => [
-                                                                                    styles.sheet_item, 
-                                                                                    styles.sheet_item_border, 
-                                                                                    pressed && styles.sheet_item_pressed
-                                                                                ]}
-                                                                            >
-                                                                                <View style={styles.sheet_icon}>
-                                                                                    <FontAwesome6
-                                                                                        name="flag"
-                                                                                        size={20}
-                                                                                        color={BLUE_COLOR}
-                                                                                    />
-                                                                                </View>
-
-                                                                                <Text 
-                                                                                    style={[
-                                                                                        styles.sheet_text,
-                                                                                        // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                                                        { color: logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
-                                                                                    ]}
-                                                                                >
-                                                                                    Obmedziť
-                                                                                </Text>
-                                                                            </Pressable>
-                                                                        )}
-
-                                                                        <Pressable
-                                                                            className="show_report_profile_button"
-                                                                            onPress={() => setAccountPropertiesSheet("report")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="flag"
-                                                                                    size={20}
-                                                                                    solid={false}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
-                                                                        </Pressable>
-
-                                                                        <Pressable
-                                                                            className="hide_account_properties_button"
-                                                                            onPress={hideAccountProperties}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="xmark"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
-                                                                        </Pressable>
-                                                                    </View>
-                                                                )}
-
-                                                                {account_properties_sheet === "suspend" && (
-                                                                    <View className="suspend_account" style={styles.sheet_container}>
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.sheet_text, 
-                                                                                { textAlign: "center" }
-                                                                            ]}
-                                                                        >
-                                                                            Naozaj chcete obmedziť tento účet?
-                                                                        </Text>
-
-                                                                        <Pressable
-                                                                            // onPress={() => suspendAccount(selected_post.id)}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="eraser"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>Obmedziť</Text>
-                                                                        </Pressable>
-
-                                                                        <Pressable
-                                                                            className="back_suspend_account_button"
-                                                                            onPress={() => setAccountPropertiesSheet("main")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="xmark"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
-                                                                        </Pressable>
-                                                                    </View>
-                                                                )}
-
-                                                                {account_properties_sheet === "report" && (
-                                                                    <View className="report report_profile" style={styles.sheet_container}>
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "spam")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Spam</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "harassment")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Obťažovanie</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "hate_speech")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "misinformation")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Dezinformácie</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "explicit_content")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Explicitný obsah</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            // onPress={() => reportAccount(selected_post.id, "other")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="list"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Iné</Text>
-                                                                        </Pressable>
-                                
-                                                                        <Pressable
-                                                                            className="back_report_profile_button"
-                                                                            onPress={() => setAccountPropertiesSheet("main")}
-                                                                            accessibilityRole="button"
-                                
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="xmark"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-                                
-                                                                            <Text style={styles.sheet_text}>Späť</Text>
-                                                                        </Pressable>
-                                                                    </View>
-                                                                )}
-                                                            </View>
-                                                        </BottomSheetView>
-                                                    </BottomSheetModal>
-                                                </>
+                                            {(logged_in_user && profile && logged_in_user.id !== profile.id) && (
+                                                <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                                    <Icon
+                                                        icon_name="ellipsis-vertical"
+                                                        onPress={showAccountProperties}
+                                                    />
+                                                </View>
                                             )}
                                         </View>
 
@@ -752,6 +647,13 @@ export default function ProfileScreen() {
                                                             </Pressable>
 
                                                             <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
+                                                        </View>
+
+                                                        <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                                            <Icon
+                                                                icon_name="ellipsis-vertical"
+                                                                onPress={showAccountProperties}
+                                                            />
                                                         </View>
                                                     </View>
 
@@ -811,13 +713,36 @@ export default function ProfileScreen() {
                                                                 </button>
                                                             </div> */}
 
-                                                            <View className="add_emoji">
+                                                            <View 
+                                                                className="add_emoji"
+                                                                accessibilityLabel="Pridať emoji"
+                                                            >
                                                                 <Icon 
                                                                     icon_name="face-surprise"
                                                                     onPress={() => setIsEmojiPickerOpen(true)}
                                                                     is_regular={true}
                                                                 />
                                                             </View>
+
+                                                            <EmojiPicker
+                                                                onEmojiSelected={handleEmojiSelect}
+                                                                open={is_emoji_picker_open}
+                                                                onClose={() => setIsEmojiPickerOpen(false)}
+
+                                                                translation={{
+                                                                    smileys_emotion: "Smajlíky",
+                                                                    people_body: "Ľudia", 
+                                                                    recently_used: "Naposledy použité",
+                                                                    animals_nature: "Zvieratá",
+                                                                    food_drink: "Jedlo a nápoje",
+                                                                    activities: "Aktivity",
+                                                                    travel_places: "Cestovanie",
+                                                                    objects: "Predmety",
+                                                                    symbols: "Symboly",
+                                                                    flags: "Vlajky",
+                                                                    search: "Hľadať...",
+                                                                }}
+                                                            />
                                                         </View>
                                                     </View>
 
@@ -1005,7 +930,7 @@ export default function ProfileScreen() {
 
                                                     <Pressable 
                                                         className="edit_account_form_submit"
-                                                        // onPress={}
+                                                        onPress={handleEditAccount}
                                                         disabled={is_loading}
                                                         accessibilityLabel="Uložiť zmeny"
 
@@ -2331,6 +2256,480 @@ export default function ProfileScreen() {
                                                         )}
                                                     </View>
                                                 </View>
+                                            )}
+
+                                            {profile && (
+                                                <BottomSheetModal
+                                                    ref={account_properties}
+                                                    snapPoints={snap_points}
+                                                    enablePanDownToClose={true}
+                                                    onChange={handleAccountPropertiesChanges}
+                                                    containerStyle={{ zIndex: 9999 }}
+                                                >
+                                                    <BottomSheetView style={{ padding: 20 }}>
+                                                        <View className="account_properties">
+                                                            {account_properties_sheet === "main" && (
+                                                                <View style={styles.sheet_container}>
+                                                                    {logged_in_user && profile && logged_in_user.id === profile.id && (
+                                                                        <Pressable
+                                                                            className="show_account_settings_button"
+                                                                            onPress={() => setAccountPropertiesSheet("account_settings")}
+                                                                            accessibilityRole="button"
+
+                                                                            style={({ pressed }) => [
+                                                                                styles.sheet_item, 
+                                                                                styles.sheet_item_border, 
+                                                                                pressed && styles.sheet_item_pressed
+                                                                            ]}
+                                                                        >
+                                                                            <View style={styles.sheet_icon}>
+                                                                                <FontAwesome6
+                                                                                    name="gear"
+                                                                                    size={20}
+                                                                                    color={BLUE_COLOR}
+                                                                                />
+                                                                            </View>
+
+                                                                            <Text style={styles.sheet_text}>Nastavenia</Text>
+                                                                        </Pressable>
+                                                                    )}
+
+                                                                    {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
+                                                                    {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                                        <Pressable
+                                                                            className="show_suspend_account_button red"
+                                                                            onPress={() => setAccountPropertiesSheet("suspend")}
+                                                                            accessibilityRole="button"
+
+                                                                            style={({ pressed }) => [
+                                                                                styles.sheet_item, 
+                                                                                styles.sheet_item_border, 
+                                                                                pressed && styles.sheet_item_pressed
+                                                                            ]}
+                                                                        >
+                                                                            <View style={styles.sheet_icon}>
+                                                                                <FontAwesome6
+                                                                                    name="flag"
+                                                                                    size={20}
+                                                                                    color={BLUE_COLOR}
+                                                                                />
+                                                                            </View>
+
+                                                                            <Text 
+                                                                                style={[
+                                                                                    styles.sheet_text,
+                                                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                                                    { color: logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                                                ]}
+                                                                            >
+                                                                                Obmedziť
+                                                                            </Text>
+                                                                        </Pressable>
+                                                                    )}
+
+                                                                    <Pressable
+                                                                        className="show_report_profile_button"
+                                                                        onPress={() => setAccountPropertiesSheet("report")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="flag"
+                                                                                size={20}
+                                                                                solid={false}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                                    </Pressable>
+
+                                                                    <Pressable
+                                                                        className="hide_account_properties_button"
+                                                                        onPress={hideAccountProperties}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="xmark"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    </Pressable>
+                                                                </View>
+                                                            )}
+
+                                                            {account_properties_sheet === "suspend" && (
+                                                                <View className="suspend_account" style={styles.sheet_container}>
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.sheet_text, 
+                                                                            { textAlign: "center" }
+                                                                        ]}
+                                                                    >
+                                                                        Naozaj chcete obmedziť tento účet?
+                                                                    </Text>
+
+                                                                    <Pressable
+                                                                        onPress={() => suspendUser(profile.id)}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="eraser"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Obmedziť</Text>
+                                                                    </Pressable>
+
+                                                                    <Pressable
+                                                                        className="back_suspend_account_button"
+                                                                        onPress={() => setAccountPropertiesSheet("main")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="xmark"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    </Pressable>
+                                                                </View>
+                                                            )}
+
+                                                            {account_properties_sheet === "report" && (
+                                                                <View className="report report_profile" style={styles.sheet_container}>
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "spam")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Spam</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "harassment")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "hate_speech")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "misinformation")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "explicit_content")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        onPress={() => reportUser(profile.id, "other")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="list"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Iné</Text>
+                                                                    </Pressable>
+                            
+                                                                    <Pressable
+                                                                        className="back_report_profile_button"
+                                                                        onPress={() => setAccountPropertiesSheet("main")}
+                                                                        accessibilityRole="button"
+                            
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="xmark"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+                            
+                                                                        <Text style={styles.sheet_text}>Späť</Text>
+                                                                    </Pressable>
+                                                                </View>
+                                                            )}
+
+                                                            {account_properties_sheet === "account_settings" && (
+                                                                <View className="account_settings" style={styles.sheet_container}>
+                                                                    <View 
+                                                                        className="data_saving_mode_container"
+
+                                                                        style={[
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border,
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="signal"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Switch 
+                                                                            value={data_saving_mode}
+                                                                            onValueChange={(new_value:boolean) => setDataSavingMode(new_value)}
+                                                                            
+                                                                            trackColor={{ 
+                                                                                false: transparentize(RED_COLOR, 0.8), 
+                                                                                true: transparentize(GREEN_COLOR, 0.8) 
+                                                                            }}
+                                                                            
+                                                                            thumbColor={data_saving_mode ? GREEN_COLOR : RED_COLOR}
+                                                                        />
+
+                                                                        <Text style={styles.sheet_text}>Šetrenie dát</Text>
+                                                                    </View>
+
+                                                                    <View 
+                                                                        className="private_account_container"
+
+                                                                        style={[
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border,
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name={!private_account ? "lock-open" : "lock"}
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Switch 
+                                                                            value={private_account}
+                                                                            onValueChange={(new_value:boolean) => setPrivateAccount(new_value)}
+                                                                            
+                                                                            trackColor={{ 
+                                                                                false: transparentize(RED_COLOR, 0.8), 
+                                                                                true: transparentize(GREEN_COLOR, 0.8) 
+                                                                            }}
+                                                                            
+                                                                            thumbColor={private_account ? GREEN_COLOR : RED_COLOR}
+                                                                        />
+
+                                                                        <Text style={styles.sheet_text}>Súkromný účet</Text>
+                                                                    </View>
+
+                                                                    <View 
+                                                                        className="delete_profile_picture_container"
+
+                                                                        style={[
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border,
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="trash-can"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Switch 
+                                                                            value={delete_profile_picture}
+                                                                            onValueChange={(new_value:boolean) => setDeleteProfilePicture(new_value)}
+                                                                            
+                                                                            trackColor={{ 
+                                                                                false: transparentize(RED_COLOR, 0.8), 
+                                                                                true: transparentize(GREEN_COLOR, 0.8) 
+                                                                            }}
+                                                                            
+                                                                            thumbColor={delete_profile_picture ? GREEN_COLOR : RED_COLOR}
+                                                                        />
+
+                                                                        <Text style={styles.sheet_text}>Odstrániť profilový obrázok</Text>
+                                                                    </View>
+
+                                                                    <View 
+                                                                        className="delete_account_container"
+
+                                                                        style={[
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border,
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="user-minus"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Switch 
+                                                                            value={delete_account}
+                                                                            onValueChange={(new_value:boolean) => setDeleteAccount(new_value)}
+                                                                            
+                                                                            trackColor={{ 
+                                                                                false: transparentize(RED_COLOR, 0.8), 
+                                                                                true: transparentize(GREEN_COLOR, 0.8) 
+                                                                            }}
+                                                                            
+                                                                            thumbColor={delete_account ? GREEN_COLOR : RED_COLOR}
+                                                                        />
+
+                                                                        <Text style={styles.sheet_text}>Odstrániť účet</Text>
+                                                                    </View>
+
+                                                                    <Pressable
+                                                                        className="back_account_settings_button"
+                                                                        onPress={() => setAccountPropertiesSheet("main")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="xmark"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    </Pressable>
+                                                                </View>
+                                                            )}
+                                                        </View>
+                                                    </BottomSheetView>
+                                                </BottomSheetModal>
                                             )}
                                         </View>
                                     </View>
