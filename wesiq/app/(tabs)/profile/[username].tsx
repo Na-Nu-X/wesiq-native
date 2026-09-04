@@ -16,11 +16,12 @@ import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR,
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { getFollowButtonProperties } from "@/components/SearchUsers"
+import IconButton from "@/components/IconButton"
+import { MAIN_WIDTH } from "@/constants/dimensions"
+import { DynamicImage } from "../../../components/DynamicImage"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
-import IconButton from "@/components/IconButton"
-import { MAIN_WIDTH } from "@/constants/dimensions"
 
 interface ProfileResponse {
     success:boolean,
@@ -75,8 +76,8 @@ interface Profile {
         created_at:string
     }[],
 
-    has_follow:boolean|null,
-    has_pending_follow_request:boolean|null,
+    has_follow:boolean,
+    has_pending_follow_request:boolean,
 
     posts:{
         id:number,
@@ -123,7 +124,7 @@ interface Profile {
     total_activities:number,
     total_received_likes:number,
     post_comments:[],
-    badges:{ data:string, title:string }[],
+    badges:{ title:string, data:string }[],
 }
 
 interface BioLink {
@@ -149,6 +150,8 @@ export default function ProfileScreen() {
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"delete">("main") // Stores The Active Account Properties Sheet
 
+    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form"|null>("profile") // Stores The Information Which Section Is Active
+
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
 
     const [bio, setBio] = useState<string>("") // Stores The Bio
@@ -164,6 +167,8 @@ export default function ProfileScreen() {
     const [form_report, setFormReport] = useState<string>("") // Stores The Form Report
     const [form_report_appearance, setFormReportAppearance] = useState<"success"|"error">("success") // Stores The Form Report Appearance
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
+
+    const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -719,7 +724,7 @@ export default function ProfileScreen() {
                                         </View>
 
                                         <View className="profile_content" style={styles.profile_content}>
-                                            {logged_in_user && profile && logged_in_user.id === profile.id && (
+                                            {active_section === "edit_account_form" && logged_in_user && profile && logged_in_user.id === profile.id && (
                                                 <View className="edit_account_form hidden" style={styles.edit_account_form}>
                                                     <View className="header" style={styles.header}>
                                                         <View className="info" style={styles.info}>
@@ -729,13 +734,13 @@ export default function ProfileScreen() {
                                                                 accessibilityLabel="Nahrať obrázok"
                                                                 style={styles.profile_picture_container}
                                                             >
-                                                                {/* <Image 
+                                                                <Image 
                                                                     className={`profile_picture skeleton_loading ${
                                                                         logged_in_user.subscription && logged_in_user.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
                                                                     }`}
 
                                                                     source={
-                                                                        logged_in_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${logged_in_user.id}/${logged_in_user.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                                        logged_in_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${logged_in_user.id}/${logged_in_user.profile_picture_name}` } : require("../../../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                                                                     }
 
                                                                     style={[
@@ -743,7 +748,7 @@ export default function ProfileScreen() {
                                                                         logged_in_user.subscription && logged_in_user.subscription.is_active && styles.subscriber_profile_picture,
                                                                         // { transform: [{ scale: animated_scale }] }
                                                                     ]}
-                                                                /> */}
+                                                                />
                                                             </Pressable>
 
                                                             <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
@@ -866,7 +871,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     )}
 
-                                                                    <Text>{getDomain(one_bio_link.url)}</Text>
+                                                                    <Text style={{ color: SECONDARY_COLOR }}>{getDomain(one_bio_link.url)}</Text>
                                                                 </Pressable>
 
                                                                 <View className="remove_link" accessibilityLabel="Odstrániť odkaz">
@@ -1041,26 +1046,31 @@ export default function ProfileScreen() {
                                                 </View>
                                             )}
 
-                                            {profile && (
+                                            {active_section === "profile" && profile && (
                                                 <View className="profile" style={styles.profile}>
                                                     <View className="header" style={styles.profile_header}>
                                                         <View className="top" style={styles.top}>
                                                             <View className="info" style={styles.profile_info}>
-                                                                {/* <Image 
-                                                                    className={`profile_picture ${
-                                                                        profile.subscription && profile.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                                                    }`}
+                                                                <View 
+                                                                    className="profile_picture_container"
+                                                                    style={styles.profile_picture_container}
+                                                                >
+                                                                    <Image 
+                                                                        className={`profile_picture ${
+                                                                            profile.subscription && profile.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
+                                                                        }`}
 
-                                                                    source={
-                                                                        profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                    }
+                                                                        source={
+                                                                            profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : require("../../../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                                        }
 
-                                                                    style={[
-                                                                        styles.profile_picture,
-                                                                        profile.subscription && profile.subscription.is_active && styles.subscriber_profile_picture,
-                                                                        // { transform: [{ scale: animated_scale }] }
-                                                                    ]}
-                                                                /> */}
+                                                                        style={[
+                                                                            styles.profile_picture,
+                                                                            profile.subscription && profile.subscription.is_active && styles.subscriber_profile_picture,
+                                                                            // { transform: [{ scale: animated_scale }] }
+                                                                        ]}
+                                                                    />
+                                                                </View>
 
                                                                 <View className="name" style={styles.name}>
                                                                     <Text className="username" style={styles.profile_username}>{profile.username}</Text>
@@ -1362,15 +1372,13 @@ export default function ProfileScreen() {
                                                         )}
 
                                                         <View className="badges_container" style={styles.badges_container}>
-                                                            <View className="previous" style={styles.previous}>
-                                                                <IconButton 
-                                                                    icon_name="angle-left" 
-                                                                    // onPress={}
-                                                                    size={30}
-                                                                />
-                                                            </View>
-
-                                                            <View className="badges" style={styles.badges}>
+                                                            <ScrollView 
+                                                                className="badges" 
+                                                                horizontal={true}
+                                                                showsHorizontalScrollIndicator={true}
+                                                                style={styles.badges}
+                                                                contentContainerStyle={styles.badges_content}
+                                                            >
                                                                 {profile.role === "developer" && (
                                                                     <View 
                                                                         className="badge developer" 
@@ -1384,7 +1392,7 @@ export default function ProfileScreen() {
                                                                         <FontAwesome6
                                                                             name="code"
                                                                             size={20}
-                                                                            color={BLUE_COLOR}
+                                                                            color={RED_RARITY}
                                                                             style={styles.badge_icon}
                                                                         />
                                                                     </View>
@@ -1403,7 +1411,7 @@ export default function ProfileScreen() {
                                                                         <FontAwesome6
                                                                             name="crown"
                                                                             size={20}
-                                                                            color={BLUE_COLOR}
+                                                                            color={YELLOW_RARITY}
                                                                             style={styles.badge_icon}
                                                                         />
                                                                     </View>
@@ -1437,11 +1445,30 @@ export default function ProfileScreen() {
                                                                         <FontAwesome6
                                                                             name="dollar-sign"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? BLUE_RARITY :
+                                                                                profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? GREEN_RARITY : 
+                                                                                profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? YELLOW_RARITY : 
+                                                                                profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? ORANGE_RARITY : 
+                                                                                profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? { color: BLUE_RARITY } : {},
+                                                                                profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? { color: GREEN_RARITY } : {},
+                                                                                profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? { color: RED_RARITY } : {},
+                                                                                profile.total_transactions_amount >= 100 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
                                                                             {profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && ("1€")}
                                                                             {profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 && ("2€")}
                                                                             {profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 && ("5€")}
@@ -1456,11 +1483,11 @@ export default function ProfileScreen() {
                                                                     className={[
                                                                         "badge", 
                                                                         "level",
-                                                                        profile.level <= 10 && "blue",
-                                                                        profile.level <= 25 && "green",
-                                                                        profile.level <= 50 && "yellow",
-                                                                        profile.level <= 75 && "orange",
-                                                                        profile.level <= 100 && "red",
+                                                                        profile.level >= 1 && profile.level <= 10 && "blue",
+                                                                        profile.level > 10 && profile.level <= 25 && "green",
+                                                                        profile.level > 25 && profile.level <= 50 && "yellow",
+                                                                        profile.level > 50 && profile.level <= 75 && "orange",
+                                                                        profile.level > 75 && profile.level <= 100 && "red",
                                                                         profile.level > 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
@@ -1468,22 +1495,43 @@ export default function ProfileScreen() {
 
                                                                     style={[
                                                                         styles.badge,
-                                                                        profile.level <= 10 ? styles.badge_blue_rarity : {},
-                                                                        profile.level <= 25 ? styles.badge_green_rarity : {},
-                                                                        profile.level <= 50 ? styles.badge_yellow_rarity : {},
-                                                                        profile.level <= 75 ? styles.badge_orange_rarity : {},
-                                                                        profile.level <= 100 ? styles.badge_red_rarity : {},
+                                                                        profile.level >= 1 && profile.level <= 10 ? styles.badge_blue_rarity : {},
+                                                                        profile.level > 10 && profile.level <= 25 ? styles.badge_green_rarity : {},
+                                                                        profile.level > 25 && profile.level <= 50 ? styles.badge_yellow_rarity : {},
+                                                                        profile.level > 50 && profile.level <= 75 ? styles.badge_orange_rarity : {},
+                                                                        profile.level > 75 && profile.level <= 100 ? styles.badge_red_rarity : {},
                                                                         profile.level > 100 ? styles.badge_purple_rarity : {},
                                                                     ]}
                                                                 >
                                                                     <FontAwesome6
                                                                         name="arrow-trend-up"
                                                                         size={30}
-                                                                        color={BLUE_COLOR}
+
+                                                                        color={
+                                                                            profile.level >= 1 && profile.level <= 10 ? BLUE_RARITY :
+                                                                            profile.level > 10 && profile.level <= 25 ? GREEN_RARITY : 
+                                                                            profile.level > 25 && profile.level <= 50 ? YELLOW_RARITY : 
+                                                                            profile.level > 50 && profile.level <= 75 ? ORANGE_RARITY : 
+                                                                            profile.level > 75 && profile.level <= 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
                                                                         style={styles.badge_icon}
                                                                     />
 
-                                                                    <Text>{profile.level}</Text>
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.level >= 1 && profile.level <= 10 ? { color: BLUE_RARITY } : {},
+                                                                            profile.level > 10 && profile.level <= 25 ? { color: GREEN_RARITY } : {},
+                                                                            profile.level > 25 && profile.level <= 50 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.level > 50 && profile.level <= 75 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.level > 75 && profile.level <= 100 ? { color: RED_RARITY } : {},
+                                                                            profile.level > 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.level}
+                                                                    </Text>
                                                                 </View>
 
                                                                 {profile.xp !== 0 && (
@@ -1492,10 +1540,10 @@ export default function ProfileScreen() {
                                                                             "badge", 
                                                                             "xp",
                                                                             profile.xp < 1000 && "blue",
-                                                                            profile.xp <= 5000 && "green",
-                                                                            profile.xp <= 10000 && "yellow",
-                                                                            profile.xp <= 50000 && "orange",
-                                                                            profile.xp <= 100000 && "red",
+                                                                            profile.xp >= 1000 && profile.xp <= 5000 && "green",
+                                                                            profile.xp > 5000 && profile.xp <= 10000 && "yellow",
+                                                                            profile.xp > 10000 && profile.xp <= 50000 && "orange",
+                                                                            profile.xp > 50000 && profile.xp <= 100000 && "red",
                                                                             profile.xp > 100000 && "purple"
                                                                         ].filter(Boolean).join(" ")}
                                                                         
@@ -1504,31 +1552,80 @@ export default function ProfileScreen() {
                                                                         style={[
                                                                             styles.badge,
                                                                             profile.xp < 1000 ? styles.badge_blue_rarity : {},
-                                                                            profile.xp <= 5000 ? styles.badge_green_rarity : {},
-                                                                            profile.xp <= 10000 ? styles.badge_yellow_rarity : {},
-                                                                            profile.xp <= 50000 ? styles.badge_orange_rarity : {},
-                                                                            profile.xp <= 100000 ? styles.badge_red_rarity : {},
+                                                                            profile.xp >= 1000 && profile.xp <= 5000 ? styles.badge_green_rarity : {},
+                                                                            profile.xp > 5000 && profile.xp <= 10000 ? styles.badge_yellow_rarity : {},
+                                                                            profile.xp > 10000 && profile.xp <= 50000 ? styles.badge_orange_rarity : {},
+                                                                            profile.xp > 50000 && profile.xp <= 100000 ? styles.badge_red_rarity : {},
                                                                             profile.xp > 100000 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="bolt"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.xp < 1000 ? BLUE_RARITY :
+                                                                                profile.xp >= 1000 && profile.xp <= 5000 ? GREEN_RARITY : 
+                                                                                profile.xp > 5000 && profile.xp <= 10000 ? YELLOW_RARITY : 
+                                                                                profile.xp > 10000 && profile.xp <= 50000 ? ORANGE_RARITY : 
+                                                                                profile.xp > 50000 && profile.xp <= 100000 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <View style={styles.badge_xp_text}>
-                                                                            <Text>
-                                                                                {profile.xp < 1000 && ("<1000")}
-                                                                                {profile.xp <= 5000 && ("1K")}
-                                                                                {profile.xp <= 10000 && ("5K")}
-                                                                                {profile.xp <= 50000 && ("10K")}
-                                                                                {profile.xp <= 100000 && ("50K")}
-                                                                                {profile.xp > 100000 && ("100K+")}
+                                                                        <View 
+                                                                            style={[
+                                                                                {
+                                                                                    position: "absolute",
+                                                                                    top: 0, 
+                                                                                    bottom: 0,
+                                                                                    left: 0,
+                                                                                    right: 0,
+                                                                                },
+                                                                               
+                                                                                styles.badge_xp_text,
+                                                                            ]}
+                                                                        >
+                                                                            <Text 
+                                                                                style={[
+                                                                                    { 
+                                                                                        textAlign: "center",
+                                                                                        lineHeight: 22,
+                                                                                        fontSize: 22,
+                                                                                        fontWeight: "bold", 
+                                                                                    },
+
+                                                                                    profile.xp < 1000 ? { color: BLUE_RARITY } : {},
+                                                                                    profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
+                                                                                    profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
+                                                                                    profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
+                                                                                    profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
+                                                                                    profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
+                                                                                ]}
+                                                                            >
+                                                                                {profile.xp < 1000 && "<1000"}
+                                                                                {profile.xp >= 1000 && profile.xp <= 5000 && "1K"}
+                                                                                {profile.xp > 5000 && profile.xp <= 10000 && "5K"}
+                                                                                {profile.xp > 10000 && profile.xp <= 50000 && "10K"}
+                                                                                {profile.xp > 50000 && profile.xp <= 100000 && "50K"}
+                                                                                {profile.xp > 100000 && "100K+"}
                                                                             </Text>
 
-                                                                            <Text>XP</Text>
+                                                                            <Text 
+                                                                                style={[
+                                                                                    { textAlign: "center" },
+                                                                                    profile.xp < 1000 ? { color: BLUE_RARITY } : {},
+                                                                                    profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
+                                                                                    profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
+                                                                                    profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
+                                                                                    profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
+                                                                                    profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
+                                                                                ]}
+                                                                            >
+                                                                                XP
+                                                                            </Text>
                                                                         </View>
                                                                     </View>
                                                                 )}
@@ -1546,15 +1643,22 @@ export default function ProfileScreen() {
                                                                         <FontAwesome6
                                                                             name="fire"
                                                                             size={20}
-                                                                            color={BLUE_COLOR}
+                                                                            color={YELLOW_RARITY}
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>{profile.max_activity_streak}</Text>
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                { color: YELLOW_RARITY }
+                                                                            ]}
+                                                                        >
+                                                                            {profile.max_activity_streak}
+                                                                        </Text>
                                                                     </View>
                                                                 )}
 
-                                                                {profile.total_transactions_amount !== 0 && (
+                                                                {profile.years_since_registration !== 0 && (
                                                                     <View 
                                                                         className={[
                                                                             "badge", 
@@ -1582,11 +1686,32 @@ export default function ProfileScreen() {
                                                                         <FontAwesome6
                                                                             name="cake-candles"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.years_since_registration === 1 ? BLUE_RARITY :
+                                                                                profile.years_since_registration === 2 ? GREEN_RARITY : 
+                                                                                profile.years_since_registration === 3 ? YELLOW_RARITY : 
+                                                                                profile.years_since_registration === 4 ? ORANGE_RARITY : 
+                                                                                profile.years_since_registration === 5 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>{profile.years_since_registration}</Text>
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.years_since_registration === 1 ? { color: BLUE_RARITY } : {},
+                                                                                profile.years_since_registration === 2 ? { color: GREEN_RARITY } : {},
+                                                                                profile.years_since_registration === 3 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.years_since_registration === 4 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.years_since_registration === 5 ? { color: RED_RARITY } : {},
+                                                                                profile.years_since_registration > 5 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.years_since_registration}
+                                                                        </Text>
                                                                     </View>
                                                                 )}
 
@@ -1607,28 +1732,47 @@ export default function ProfileScreen() {
 
                                                                         style={[
                                                                             styles.badge,
-                                                                            profile.total_activities < 10 ? styles.badge_blue_rarity : {},
-                                                                            profile.total_activities <= 50 ? styles.badge_green_rarity : {},
-                                                                            profile.total_activities <= 100 ? styles.badge_yellow_rarity : {},
-                                                                            profile.total_activities <= 250 ? styles.badge_orange_rarity : {},
-                                                                            profile.total_activities <= 500 ? styles.badge_red_rarity : {},
+                                                                            profile.total_activities >= 1 && profile.total_activities < 10 ? styles.badge_blue_rarity : {},
+                                                                            profile.total_activities >= 10 && profile.total_activities <= 50 ? styles.badge_green_rarity : {},
+                                                                            profile.total_activities > 50 && profile.total_activities <= 100 ? styles.badge_yellow_rarity : {},
+                                                                            profile.total_activities > 100 && profile.total_activities <= 250 ? styles.badge_orange_rarity : {},
+                                                                            profile.total_activities > 250 && profile.total_activities <= 500 ? styles.badge_red_rarity : {},
                                                                             profile.total_activities > 500 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="dumbbell"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.total_activities >= 1 && profile.total_activities < 10 ? BLUE_RARITY :
+                                                                                profile.total_activities >= 10 && profile.total_activities <= 50 ? GREEN_RARITY : 
+                                                                                profile.total_activities > 50 && profile.total_activities <= 100 ? YELLOW_RARITY : 
+                                                                                profile.total_activities > 100 && profile.total_activities <= 250 ? ORANGE_RARITY : 
+                                                                                profile.total_activities > 250 && profile.total_activities <= 500 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
-                                                                            {profile.total_activities < 10 && ("1")}
-                                                                            {profile.total_activities <= 50 && ("10")}
-                                                                            {profile.total_activities <= 100 && ("50")}
-                                                                            {profile.total_activities <= 250 && ("100")}
-                                                                            {profile.total_activities <= 500 && ("250")}
-                                                                            {profile.total_activities > 500 && ("500+")}
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.total_activities >= 1 && profile.total_activities < 10 ? { color: BLUE_RARITY } : {},
+                                                                                profile.total_activities >= 10 && profile.total_activities <= 50 ? { color: GREEN_RARITY } : {},
+                                                                                profile.total_activities > 50 && profile.total_activities <= 100 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.total_activities > 100 && profile.total_activities <= 250 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.total_activities > 250 && profile.total_activities <= 500 ? { color: RED_RARITY } : {},
+                                                                                profile.total_activities > 500 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.total_activities < 10 && "1"}
+                                                                            {profile.total_activities >= 10 && profile.total_activities <= 50 && "10"}
+                                                                            {profile.total_activities > 50 && profile.total_activities <= 100 && "50"}
+                                                                            {profile.total_activities > 100 && profile.total_activities <= 250 && "100"}
+                                                                            {profile.total_activities > 250 && profile.total_activities <= 500 && "250"}
+                                                                            {profile.total_activities > 500 && "500+"}
                                                                         </Text>
                                                                     </View>
                                                                 )}
@@ -1638,11 +1782,11 @@ export default function ProfileScreen() {
                                                                         className={[
                                                                             "badge", 
                                                                             "followers",
-                                                                            profile.followers.length < 5 && "blue",
-                                                                            profile.followers.length <= 10 && "green",
-                                                                            profile.followers.length <= 25 && "yellow",
-                                                                            profile.followers.length <= 50 && "orange",
-                                                                            profile.followers.length <= 100 && "red",
+                                                                            profile.followers.length >= 1 && profile.followers.length < 5 && "blue",
+                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 && "green",
+                                                                            profile.followers.length > 10 && profile.followers.length <= 25 && "yellow",
+                                                                            profile.followers.length > 25 && profile.followers.length <= 50 && "orange",
+                                                                            profile.followers.length > 50 && profile.followers.length <= 100 && "red",
                                                                             profile.followers.length > 100 && "purple"
                                                                         ].filter(Boolean).join(" ")}
                                                                         
@@ -1650,28 +1794,47 @@ export default function ProfileScreen() {
 
                                                                         style={[
                                                                             styles.badge,
-                                                                            profile.followers.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.followers.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.followers.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.followers.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.followers.length <= 100 ? styles.badge_red_rarity : {},
+                                                                            profile.followers.length >= 1 && profile.followers.length < 5 ? styles.badge_blue_rarity : {},
+                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 ? styles.badge_green_rarity : {},
+                                                                            profile.followers.length > 10 && profile.followers.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                            profile.followers.length > 25 && profile.followers.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                            profile.followers.length > 50 && profile.followers.length <= 100 ? styles.badge_red_rarity : {},
                                                                             profile.followers.length > 100 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="bluesky"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.followers.length >= 1 && profile.followers.length < 5 ? BLUE_RARITY :
+                                                                                profile.followers.length >= 5 && profile.followers.length <= 10 ? GREEN_RARITY : 
+                                                                                profile.followers.length > 10 && profile.followers.length <= 25 ? YELLOW_RARITY : 
+                                                                                profile.followers.length > 25 && profile.followers.length <= 50 ? ORANGE_RARITY : 
+                                                                                profile.followers.length > 50 && profile.followers.length <= 100 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
-                                                                            {profile.followers.length < 5 && ("1")}
-                                                                            {profile.followers.length <= 10 && ("5")}
-                                                                            {profile.followers.length <= 25 && ("10")}
-                                                                            {profile.followers.length <= 50 && ("25")}
-                                                                            {profile.followers.length <= 100 && ("50")}
-                                                                            {profile.followers.length > 100 && ("100+")}
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.followers.length >= 1 && profile.followers.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                                profile.followers.length >= 5 && profile.followers.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                                profile.followers.length > 10 && profile.followers.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.followers.length > 25 && profile.followers.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.followers.length > 50 && profile.followers.length <= 100 ? { color: RED_RARITY } : {},
+                                                                                profile.followers.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.followers.length < 5 && "1"}
+                                                                            {profile.followers.length >= 5 && profile.followers.length <= 10 && "5"}
+                                                                            {profile.followers.length > 10 && profile.followers.length <= 25 && "10"}
+                                                                            {profile.followers.length > 25 && profile.followers.length <= 50 && "25"}
+                                                                            {profile.followers.length > 50 && profile.followers.length <= 100 && "50"}
+                                                                            {profile.followers.length > 100 && "100+"}
                                                                         </Text>
                                                                     </View>
                                                                 )}
@@ -1681,11 +1844,11 @@ export default function ProfileScreen() {
                                                                         className={[
                                                                             "badge", 
                                                                             "posts",
-                                                                            profile.posts.length < 5 && "blue",
-                                                                            profile.posts.length <= 10 && "green",
-                                                                            profile.posts.length <= 25 && "yellow",
-                                                                            profile.posts.length <= 50 && "orange",
-                                                                            profile.posts.length <= 100 && "red",
+                                                                            profile.posts.length >= 1 && profile.posts.length < 5 && "blue",
+                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 && "green",
+                                                                            profile.posts.length > 10 && profile.posts.length <= 25 && "yellow",
+                                                                            profile.posts.length > 25 && profile.posts.length <= 50 && "orange",
+                                                                            profile.posts.length > 50 && profile.posts.length <= 100 && "red",
                                                                             profile.posts.length > 100 && "purple"
                                                                         ].filter(Boolean).join(" ")}
                                                                         
@@ -1693,28 +1856,47 @@ export default function ProfileScreen() {
 
                                                                         style={[
                                                                             styles.badge,
-                                                                            profile.posts.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.posts.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.posts.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.posts.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.posts.length <= 100 ? styles.badge_red_rarity : {},
+                                                                            profile.posts.length >= 1 && profile.posts.length < 5 ? styles.badge_blue_rarity : {},
+                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 ? styles.badge_green_rarity : {},
+                                                                            profile.posts.length > 10 && profile.posts.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                            profile.posts.length > 25 && profile.posts.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                            profile.posts.length > 50 && profile.posts.length <= 100 ? styles.badge_red_rarity : {},
                                                                             profile.posts.length > 100 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="bluesky"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.posts.length >= 1 && profile.posts.length < 5 ? BLUE_RARITY :
+                                                                                profile.posts.length >= 5 && profile.posts.length <= 10 ? GREEN_RARITY : 
+                                                                                profile.posts.length > 10 && profile.posts.length <= 25 ? YELLOW_RARITY : 
+                                                                                profile.posts.length > 25 && profile.posts.length <= 50 ? ORANGE_RARITY : 
+                                                                                profile.posts.length > 50 && profile.posts.length <= 100 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
-                                                                            {profile.posts.length < 5 && ("1")}
-                                                                            {profile.posts.length <= 10 && ("5")}
-                                                                            {profile.posts.length <= 25 && ("10")}
-                                                                            {profile.posts.length <= 50 && ("25")}
-                                                                            {profile.posts.length <= 100 && ("50")}
-                                                                            {profile.posts.length > 100 && ("100+")}
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.posts.length >= 1 && profile.posts.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                                profile.posts.length >= 5 && profile.posts.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                                profile.posts.length > 10 && profile.posts.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.posts.length > 25 && profile.posts.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.posts.length > 50 && profile.posts.length <= 100 ? { color: RED_RARITY } : {},
+                                                                                profile.posts.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.posts.length >= 1 && profile.posts.length < 5 && "1"}
+                                                                            {profile.posts.length >= 5 && profile.posts.length <= 10 && "5"}
+                                                                            {profile.posts.length > 10 && profile.posts.length <= 25 && "10"}
+                                                                            {profile.posts.length > 25 && profile.posts.length <= 50 && "25"}
+                                                                            {profile.posts.length > 50 && profile.posts.length <= 100 && "50"}
+                                                                            {profile.posts.length > 100 && "100+"}
                                                                         </Text>
                                                                     </View>
                                                                 )}
@@ -1724,11 +1906,11 @@ export default function ProfileScreen() {
                                                                         className={[
                                                                             "badge", 
                                                                             "received_likes",
-                                                                            profile.total_received_likes < 5 && "blue",
-                                                                            profile.total_received_likes <= 10 && "green",
-                                                                            profile.total_received_likes <= 25 && "yellow",
-                                                                            profile.total_received_likes <= 50 && "orange",
-                                                                            profile.total_received_likes <= 100 && "red",
+                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "blue",
+                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "green",
+                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "yellow",
+                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "orange",
+                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "red",
                                                                             profile.total_received_likes > 100 && "purple"
                                                                         ].filter(Boolean).join(" ")}
                                                                         
@@ -1736,28 +1918,47 @@ export default function ProfileScreen() {
 
                                                                         style={[
                                                                             styles.badge,
-                                                                            profile.total_received_likes < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.total_received_likes <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.total_received_likes <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.total_received_likes <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.total_received_likes <= 100 ? styles.badge_red_rarity : {},
+                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? styles.badge_blue_rarity : {},
+                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? styles.badge_green_rarity : {},
+                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? styles.badge_yellow_rarity : {},
+                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? styles.badge_orange_rarity : {},
+                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? styles.badge_red_rarity : {},
                                                                             profile.total_received_likes > 100 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="heart"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? BLUE_RARITY :
+                                                                                profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? GREEN_RARITY : 
+                                                                                profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? YELLOW_RARITY : 
+                                                                                profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? ORANGE_RARITY : 
+                                                                                profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
-                                                                            {profile.total_received_likes < 5 && ("1")}
-                                                                            {profile.total_received_likes <= 10 && ("5")}
-                                                                            {profile.total_received_likes <= 25 && ("10")}
-                                                                            {profile.total_received_likes <= 50 && ("25")}
-                                                                            {profile.total_received_likes <= 100 && ("50")}
-                                                                            {profile.total_received_likes > 100 && ("100+")}
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? { color: BLUE_RARITY } : {},
+                                                                                profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? { color: GREEN_RARITY } : {},
+                                                                                profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? { color: RED_RARITY } : {},
+                                                                                profile.total_received_likes > 100 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "1"}
+                                                                            {profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "5"}
+                                                                            {profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "10"}
+                                                                            {profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "25"}
+                                                                            {profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "50"}
+                                                                            {profile.total_received_likes > 100 && "100+"}
                                                                         </Text>
                                                                     </View>
                                                                 )}
@@ -1767,11 +1968,11 @@ export default function ProfileScreen() {
                                                                         className={[
                                                                             "badge", 
                                                                             "written_comments",
-                                                                            profile.post_comments.length < 5 && "blue",
-                                                                            profile.post_comments.length <= 10 && "green",
-                                                                            profile.post_comments.length <= 25 && "yellow",
-                                                                            profile.post_comments.length <= 50 && "orange",
-                                                                            profile.post_comments.length <= 100 && "red",
+                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "blue",
+                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "green",
+                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "yellow",
+                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "orange",
+                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "red",
                                                                             profile.post_comments.length > 100 && "purple"
                                                                         ].filter(Boolean).join(" ")}
                                                                         
@@ -1779,33 +1980,52 @@ export default function ProfileScreen() {
 
                                                                         style={[
                                                                             styles.badge,
-                                                                            profile.post_comments.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.post_comments.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.post_comments.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.post_comments.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.post_comments.length <= 100 ? styles.badge_red_rarity : {},
+                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? styles.badge_blue_rarity : {},
+                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? styles.badge_green_rarity : {},
+                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? styles.badge_red_rarity : {},
                                                                             profile.post_comments.length > 100 ? styles.badge_purple_rarity : {},
                                                                         ]}
                                                                     >
                                                                         <FontAwesome6
                                                                             name="heart"
                                                                             size={30}
-                                                                            color={BLUE_COLOR}
+
+                                                                            color={
+                                                                                profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? BLUE_RARITY :
+                                                                                profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? GREEN_RARITY : 
+                                                                                profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? YELLOW_RARITY : 
+                                                                                profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? ORANGE_RARITY : 
+                                                                                profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? RED_RARITY : 
+                                                                                PURPLE_RARITY
+                                                                            }
+
                                                                             style={styles.badge_icon}
                                                                         />
 
-                                                                        <Text>
-                                                                            {profile.post_comments.length < 5 && ("1")}
-                                                                            {profile.post_comments.length <= 10 && ("5")}
-                                                                            {profile.post_comments.length <= 25 && ("10")}
-                                                                            {profile.post_comments.length <= 50 && ("25")}
-                                                                            {profile.post_comments.length <= 100 && ("50")}
-                                                                            {profile.post_comments.length > 100 && ("100+")}
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.badge_text,
+                                                                                profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                                profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                                profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? { color: RED_RARITY } : {},
+                                                                                profile.post_comments.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "1"}
+                                                                            {profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "5"}
+                                                                            {profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "10"}
+                                                                            {profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "25"}
+                                                                            {profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "50"}
+                                                                            {profile.post_comments.length > 100 && "100+"}
                                                                         </Text>
                                                                     </View>
                                                                 )}
 
-                                                                {profile.badges.map((one_badge:{ data:string, title:string }, index:number) => (
+                                                                {profile.badges.map((one_badge:{ title:string, data:string }, index:number) => (
                                                                     <View 
                                                                         key={index} 
                                                                         className="badge"
@@ -1822,11 +2042,18 @@ export default function ProfileScreen() {
                                                                                 <FontAwesome6
                                                                                     name="calendar-check"
                                                                                     size={30}
-                                                                                    color={BLUE_COLOR}
+                                                                                    color={YELLOW_RARITY}
                                                                                     style={styles.badge_icon}
                                                                                 />
 
-                                                                                <Text>7</Text>
+                                                                                <Text 
+                                                                                    style={[
+                                                                                        styles.badge_text,
+                                                                                        { color: YELLOW_RARITY },
+                                                                                    ]}
+                                                                                >
+                                                                                    7
+                                                                                </Text>
                                                                             </>
                                                                         )}
 
@@ -1835,7 +2062,7 @@ export default function ProfileScreen() {
                                                                                 <FontAwesome6
                                                                                     name="gift"
                                                                                     size={20}
-                                                                                    color={BLUE_COLOR}
+                                                                                    color={"#dc2626"}
                                                                                     style={styles.badge_icon}
                                                                                 />
                                                                             </>
@@ -1846,21 +2073,14 @@ export default function ProfileScreen() {
                                                                                 <FontAwesome6
                                                                                     name="champagne-glasses"
                                                                                     size={20}
-                                                                                    color={BLUE_COLOR}
+                                                                                    color={"#a57e05"}
                                                                                     style={styles.badge_icon}
                                                                                 />
                                                                             </>
                                                                         )}
                                                                     </View>
                                                                 ))}
-                                                            </View>
-
-                                                            <View className="next" style={styles.next}>
-                                                                <IconButton 
-                                                                    icon_name="angle-right" 
-                                                                    // onPress={}
-                                                                />
-                                                            </View>
+                                                            </ScrollView>
                                                         </View>
                                                     </View>
 
@@ -1870,12 +2090,17 @@ export default function ProfileScreen() {
                                                                 <Pressable
                                                                     className="all_posts_icon active"
                                                                     // onPress={}
-                                                                    style={styles.all_posts_icon}
+
+                                                                    style={[
+                                                                        styles.all_posts_icon,
+                                                                        grid_select_active_menu === "posts" ? {backgroundColor: transparentize(BLUE_COLOR, 0.8)} : {}
+                                                                    ]}
                                                                 >
                                                                     <FontAwesome6
                                                                         name="buffer"
                                                                         size={25}
-                                                                        color={DARK_BLUE_COLOR}
+                                                                        color={grid_select_active_menu === "posts" ? BLUE_COLOR : DARK_BLUE_COLOR}
+                                                                        style={grid_select_active_menu === "posts" ? {transform: [{ scale: 1.1 }]} : {}}
                                                                     />
                                                                 </Pressable>
 
@@ -1909,9 +2134,9 @@ export default function ProfileScreen() {
                                                                 <View className="posts_container" style={styles.posts_container}>
                                                                     {profile.posts.length > 0 && (
                                                                         <View className="posts" style={styles.posts}>
-                                                                            {profile.posts.map(one_post => (
+                                                                            {profile.posts.map((one_post, index:number) => (
                                                                                 !one_post.public_visibility && logged_in_user?.id !== profile.id && !profile.has_follow ? (
-                                                                                    <View className="private_post_notice" style={styles.private_post_notice}>
+                                                                                    <View key={index} className="private_post_notice" style={styles.private_post_notice}>
                                                                                         <FontAwesome6
                                                                                             name="lock"
                                                                                             size={30}
@@ -1920,35 +2145,55 @@ export default function ProfileScreen() {
                                                                                     </View>
                                                                                 ) : (
                                                                                     <Pressable
+                                                                                        key={one_post.media[0].id || index}
                                                                                         // onPress={}
                                                                                         accessibilityLabel="Zobraziť príspevok"
                                                                                         style={styles.post_link}
                                                                                     >
                                                                                         {one_post.media[0].is_video ? (
-                                                                                            <View></View>
+                                                                                            <View 
+                                                                                                className="thumbnail"
+                                                                                                accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
 
-                                                                                            // <img 
-                                                                                            //     class="thumbnail"
-                                                                                            //     src="{{ one_post.media.first.thumbnail.url }}" 
-                                                                                            //     alt="
-                                                                                            //         {% blocktranslate with first_name=one_post.user.first_name last_name=one_post.user.last_name %}
-                                                                                            //             Príspevok užívateľa {{ username }}
-                                                                                            //         {% endblocktranslate %}
-                                                                                            //     "
-                                                                                            // >
+                                                                                                style={{ 
+                                                                                                    width: "100%", 
+                                                                                                    height: "100%",
+                                                                                                    aspectRatio: 1 / 1,
+                                                                                                }}
+                                                                                            >
+                                                                                                <Image
+                                                                                                    source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
+
+                                                                                                    style={{ 
+                                                                                                        width: "100%", 
+                                                                                                        height: "100%",
+                                                                                                        aspectRatio: 1 / 1,
+                                                                                                        resizeMode: "cover"
+                                                                                                    }}
+                                                                                                />
+                                                                                            </View>
                                                                                         ) : (
-                                                                                            <View></View>
+                                                                                            <View 
+                                                                                                className="image"
+                                                                                                accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
 
-                                                                                            // <img 
-                                                                                            //     class="image"
-                                                                                            //     src="/../media/{{ one_post.media.first.file }}" 
-                                                                                            //     alt="
-                                                                                            //         {% blocktranslate with first_name=one_post.user.first_name last_name=one_post.user.last_name %}
-                                                                                            //             Príspevok užívateľa {{ username }}
-                                                                                            //         {% endblocktranslate %}
-                                                                                            //     "
-                                                                                            //     data-post_id="{{ one_post.id }}"
-                                                                                            // >
+                                                                                                style={{ 
+                                                                                                    width: "100%", 
+                                                                                                    height: "100%",
+                                                                                                    aspectRatio: 1 / 1,
+                                                                                                }}
+                                                                                            >
+                                                                                                    <Image
+                                                                                                        source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
+
+                                                                                                        style={{ 
+                                                                                                            width: "100%", 
+                                                                                                            height: "100%",
+                                                                                                            aspectRatio: 1 / 1,
+                                                                                                            resizeMode: "cover"
+                                                                                                        }}
+                                                                                                    />
+                                                                                            </View>
                                                                                         )}
 
                                                                                         <View className="post_info" style={styles.post_info}>
@@ -2016,36 +2261,46 @@ export default function ProfileScreen() {
                                                                 <View className="saved_posts_container hidden" style={styles.posts_container}>
                                                                     {logged_in_user && profile.saved_posts && profile.saved_posts.length > 0 && logged_in_user.id === profile.id && (
                                                                         <View className="saved_posts" style={styles.posts}>
-                                                                            {profile.saved_posts.map((one_post) => (
+                                                                            {profile.saved_posts.map((one_post, index:number) => (
                                                                                 <Pressable
+                                                                                    key={one_post.media[0].id || index}
                                                                                     // onPress={}
                                                                                     accessibilityLabel="Zobraziť príspevok"
                                                                                 >
                                                                                     {one_post.media[0].is_video ? (
-                                                                                        <View></View>
+                                                                                        <View 
+                                                                                            className="thumbnail"
+                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                            style={{ width: 150, height: 150 }}
+                                                                                        >
+                                                                                            <Image
+                                                                                                source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
 
-                                                                                        // <img 
-                                                                                        //     class="thumbnail"
-                                                                                        //     src="{{ one_post.media.first.thumbnail.url }}" 
-                                                                                        //     alt="
-                                                                                        //         {% blocktranslate with first_name=one_post.user.first_name last_name=one_post.user.last_name %}
-                                                                                        //             Príspevok užívateľa {{ username }}
-                                                                                        //         {% endblocktranslate %}
-                                                                                        //     "
-                                                                                        // >
+                                                                                                style={{ 
+                                                                                                    width: 150, 
+                                                                                                    height: 150,
+                                                                                                    aspectRatio: 1 / 1,
+                                                                                                    resizeMode: "cover"
+                                                                                                }}
+                                                                                            />
+                                                                                        </View>
                                                                                     ) : (
-                                                                                        <View></View>
+                                                                                        <View 
+                                                                                            className="image"
+                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                            style={{ width: 150, height: 150 }}
+                                                                                        >
+                                                                                            <Image
+                                                                                                source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
 
-                                                                                        // <img 
-                                                                                        //     class="image"
-                                                                                        //     src="/../media/{{ one_post.media.first.file }}" 
-                                                                                        //     alt="
-                                                                                        //         {% blocktranslate with first_name=one_post.user.first_name last_name=one_post.user.last_name %}
-                                                                                        //             Príspevok užívateľa {{ username }}
-                                                                                        //         {% endblocktranslate %}
-                                                                                        //     "
-                                                                                        //     data-post_id="{{ one_post.id }}"
-                                                                                        // >
+                                                                                                style={{ 
+                                                                                                    width: 150, 
+                                                                                                    height: 150,
+                                                                                                    aspectRatio: 1 / 1,
+                                                                                                    resizeMode: "cover"
+                                                                                                }}
+                                                                                            />
+                                                                                        </View>
                                                                                     )}
 
                                                                                     {one_post.media.length > 1 && (
@@ -2099,11 +2354,16 @@ export default function ProfileScreen() {
                                                 <View className="header" style={styles.profile_header}>
                                                     <View className="top" style={styles.top}>
                                                         <View className="info" style={styles.profile_info}>
-                                                            {/* <Image 
-                                                                className="profile_picture"
-                                                                source={require("../assets/images/profile_picture.png")} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                style={styles.profile_picture}
-                                                            /> */}
+                                                            <View 
+                                                                className="profile_picture_container"
+                                                                style={styles.profile_picture_container}
+                                                            >
+                                                                <Image 
+                                                                    className="profile_picture"
+                                                                    source={require("../../../assets/images/profile_picture.png")} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                                    style={styles.profile_picture}
+                                                                />
+                                                            </View>
 
                                                             <View className="name" style={styles.name}>
                                                                 <Text className="username" style={styles.profile_username}>Neexistujúci účet</Text>
@@ -2138,14 +2398,6 @@ export default function ProfileScreen() {
                                                     </View>
 
                                                     <View className="badges_container" style={styles.badges_container}>
-                                                        <View className="previous" style={styles.previous}>
-                                                            <IconButton 
-                                                                icon_name="angle-left" 
-                                                                // onPress={}
-                                                                size={30}
-                                                            />
-                                                        </View>
-
                                                         <View className="badges" style={styles.badges}>
                                                             <View 
                                                                 className="badge level blue" 
@@ -2160,13 +2412,6 @@ export default function ProfileScreen() {
 
                                                                 <Text>1</Text>
                                                             </View>
-                                                        </View>
-
-                                                        <View className="next" style={styles.next}>
-                                                            <IconButton 
-                                                                icon_name="angle-right" 
-                                                                // onPress={}
-                                                            />
                                                         </View>
                                                     </View>
                                                 </View>
@@ -2377,6 +2622,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         padding: 20,
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        color: SECONDARY_COLOR,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
@@ -2730,6 +2976,7 @@ const styles = StyleSheet.create({
         // background-clip: text;
         // -webkit-background-clip: text;
         // -webkit-text-fill-color: transparent;
+        color: SECONDARY_COLOR,
     },
 
     full_name: {
@@ -2766,6 +3013,7 @@ const styles = StyleSheet.create({
 
     streak_text: {
         lineHeight: 1,
+        color: SECONDARY_COLOR,
     },
 
     profile_bio_container: {
@@ -2815,7 +3063,7 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: "50%",
+        borderRadius: MEDIUM_BORDER_RADIUS,
         // backdrop-filter: blur(5px);
         // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 
@@ -2841,12 +3089,12 @@ const styles = StyleSheet.create({
     followers_amount: {
         fontSize: 25,
         fontWeight: "bold",
-        lineHeight: 1,
+        // lineHeight: 1,
         color: BLUE_COLOR,
     },
 
     followers_label: {
-        marginTop: 5,
+        // marginTop: 5,
         color: LIGHT_BLUE_COLOR,
         textTransform: "uppercase",
         fontSize: 15,
@@ -2861,12 +3109,12 @@ const styles = StyleSheet.create({
     following_amount: {
         fontSize: 25,
         fontWeight: "bold",
-        lineHeight: 1,
+        // lineHeight: 1,
         color: BLUE_COLOR,
     },
 
     following_label: {
-        marginTop: 5,
+        // marginTop: 5,
         color: LIGHT_BLUE_COLOR,
         textTransform: "uppercase",
         fontSize: 15,
@@ -2876,18 +3124,16 @@ const styles = StyleSheet.create({
     posts_amount: {
         fontSize: 25,
         fontWeight: "bold",
-        lineHeight: 1,
+        // lineHeight: 1,
         color: BLUE_COLOR,
-        textAlign: "center",
     },
 
     posts_label: {
-        marginTop: 5,
+        // marginTop: 5,
         color: LIGHT_BLUE_COLOR,
         textTransform: "uppercase",
         fontSize: 15,
         letterSpacing: 0.5,
-        textAlign: "center",
     },
 
     show_follow_requests: {
@@ -3069,8 +3315,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         // background: linear-gradient(145deg, transparentize($blue-color, 0.95) 0%, transparentize($main-color, 0.95) 100%);
         // border: 1px solid $profile-surface-border;
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
-        borderColor: LIGHT_BLUE_COLOR,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
     },
 
@@ -3101,8 +3348,7 @@ const styles = StyleSheet.create({
     badges_container: {
         position: "relative",
         marginBottom: 40,
-        paddingVertical: 20,
-        paddingHorizontal: 40,
+        padding: 10,
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -3120,33 +3366,18 @@ const styles = StyleSheet.create({
         // }
     },
 
-    previous: {
-        position: "absolute",
-        top: "50%",
-        left: 10,
-        transform: [{ translateY: "-50%" }],
-        color: BLUE_COLOR,
-        // transition: transform 0.2s ease, color 0.3s ease;
-
-        // &:hover {
-        //     transform: translateY(-50%) scale(1.1);
-        //     color: $dark-blue-color;
-        //     cursor: pointer;
-        // }
-    },
-
     badges: {
-        // @include scrollbar($direction: "horizontal");
-        // @include focus;
-        // display: grid;
-        // grid-auto-flow: column;
-        // grid-template-rows: repeat(2, 50px);
-        // grid-auto-columns: 50px;
-        gap: 10,
         flex: 1,
         width: "100%",
+    },
+    
+    badges_content: {
+        flexDirection: "column",
+        alignContent: "flex-start",
+        flexWrap: "wrap",
+        gap: 10,
+        height: 50 + 10 + 50 + 20,             
         padding: 10,
-        // scroll-behavior: smooth;
     },
 
     badge: {
@@ -3169,6 +3400,7 @@ const styles = StyleSheet.create({
     },
 
     badge_text: {
+        position: "absolute",
         fontSize: 22,
         fontWeight: "bold",
 
@@ -3259,8 +3491,8 @@ const styles = StyleSheet.create({
     },
 
     badge_xp_text: {
-        display: "flex",
-        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
         lineHeight: 1,
 
         // span {
@@ -3324,21 +3556,6 @@ const styles = StyleSheet.create({
         elevation: 4,
     },
 
-    next: {
-        position: "absolute",
-        top: "50%",
-        right: 10,
-        transform: [{ translateY: "-50%" }],
-        color: BLUE_COLOR,
-        // transition: transform 0.2s ease, color 0.3s ease;
-
-        // &:hover {
-        //     transform: translateY(-50%) scale(1.1);
-        //     color: $dark-blue-color;
-        //     cursor: pointer;
-        // }
-    },
-
     bottom: {
         position: "relative",
         paddingTop: 10,
@@ -3347,6 +3564,8 @@ const styles = StyleSheet.create({
     grid_select: {
         // display: grid;
         // grid-template-columns: repeat(3, 1fr);
+        flexDirection: "row",
+        justifyContent: "space-between",
         gap: 5,
         marginHorizontal: 5,
         marginBottom: 10,
@@ -3358,8 +3577,11 @@ const styles = StyleSheet.create({
 
     all_posts_icon: {
         position: "relative",
-        width: "100%",
-        marginHorizontal: "auto",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
+        maxWidth: "31.5%",
+        // marginHorizontal: "auto",
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: "transparent",
@@ -3391,8 +3613,11 @@ const styles = StyleSheet.create({
 
     saved_posts_icon: {
         position: "relative",
-        width: "100%",
-        marginHorizontal: "auto",
+        alignItems: "center",
+        justifyContent: "center",
+        flex: 1,
+        maxWidth: "31.5%",
+        // marginHorizontal: "auto",
         paddingVertical: 10,
         borderBottomWidth: 1,
         borderBottomColor: "transparent",
@@ -3444,6 +3669,9 @@ const styles = StyleSheet.create({
     posts: {
         // display: grid;
         // grid-template-columns: repeat(3, 1fr);
+        flexDirection: "row",
+        flexWrap: "wrap",
+        // justifyContent: "center",
         gap: 10,
         margin: 5,
     },
@@ -3462,6 +3690,8 @@ const styles = StyleSheet.create({
 
     post_link: {
         position: "relative",
+        width: "31.5%",
+        aspectRatio: 1 / 1,
         color: SECONDARY_COLOR,
         borderRadius: SMALL_BORDER_RADIUS,
         borderWidth: 1,
@@ -3546,6 +3776,7 @@ const styles = StyleSheet.create({
     multiple_posts_text: {
         fontSize: 15,
         fontWeight: "bold",
+        color: SECONDARY_COLOR,
     },
 
     no_posts: {
