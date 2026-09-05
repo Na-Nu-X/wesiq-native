@@ -132,7 +132,7 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
     }, [])
 
     // Function For Handle The Media Selection
-    const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]) => {
+    const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]):void => {
         setSelectedFiles((previous_selected_files) => [...previous_selected_files, ...new_selected_files]) // Sets The Selected Files
     }
 
@@ -308,7 +308,7 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
                 return
             }
 
-            const form_data:FormData = new FormData() // Gets The Form Data
+            const form_data:FormData = new FormData() // Creates The Form Data
     
             form_data.append("description", post_details.description || "") // Appends The Description To The Form Data
             form_data.append("tagged_users", JSON.stringify(post_details.tagged_users || [])) // Appends The Tagged Users To The Form Data
@@ -329,7 +329,7 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
 
             for(const one_selected_file of selected_files) {
                 const file_data:any = await prepareFileForFormData(one_selected_file) // Gets The File Data
-                form_data.append("select_posts", file_data) // Appends The Selected Posts To The Form Data
+                form_data.append("selected_posts", file_data) // Appends The Selected Posts To The Form Data
             }
             
             for(const one_thumbnail of thumbnail_files) {

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, Alert, Pressable, TextInput, Switch, Keyboard } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Image, Alert, Pressable, TextInput, Switch, Keyboard, Platform } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -19,10 +19,12 @@ import { getFollowButtonProperties } from "@/components/SearchUsers"
 import IconButton from "@/components/IconButton"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { DynamicImage } from "../../../components/DynamicImage"
+import * as ImagePicker from "expo-image-picker"
+import EmojiPicker from "rn-emoji-keyboard"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
-import EmojiPicker from "rn-emoji-keyboard"
+import SelectProfilePicture from "@/components/pages/profile/SelectProfilePicture"
 
 interface ProfileResponse {
     success:boolean,
@@ -159,6 +161,8 @@ export default function ProfileScreen() {
     const [bio_links, setBioLinks] = useState<BioLink[]>([]) // Stores The Bio
     const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
 
+    const [selected_profile_picture, setSelectedProfilePicture] = useState<ImagePicker.ImagePickerAsset|null>(null) // Stores The Selected Profile Picture
+
     const [first_name, setFirstName] = useState<string>("") // Stores The First Name
     const [last_name, setLastName] = useState<string>("") // Stores The Last Name
     const [email_address, setEmailAddress] = useState<string>("") // Stores The Email Address
@@ -294,30 +298,53 @@ export default function ProfileScreen() {
         }
     
         try {
+            const form_data:FormData = new FormData() // Creates The Form Data
+    
+            form_data.append("delete_account", delete_account ? "True" : "False") // Appends The Information If The Delete Account Option Is Enabled To The Form Data
+            form_data.append("delete_profile_picture", delete_profile_picture ? "True" : "False") // Appends The Information If The Delete Profile Picture Option Is Enabled To The Form Data
+            form_data.append("data_saving_mode", data_saving_mode ? "True" : "False") // Appends The Information If The Data Saving Mode Option Is Enabled To The Form Data
+            form_data.append("private_account", private_account ? "True" : "False") // Appends The Information If The Private Account Option Is Enabled To The Form Data
+            form_data.append("bio", bio || "") // Appends The Bio To The Form Data
+            form_data.append("bio_links", JSON.stringify(bio_links || [])) // Appends The Bio Links To The Form Data
+            form_data.append("first_name", first_name || "") // Appends The First Name To The Form Data
+            form_data.append("last_name", last_name || "") // Appends The Last Name To The Form Data
+            form_data.append("email_address", email_address || "") // Appends The E-mail Address To The Form Data
+            form_data.append("phone_number", phone_number || "") // Appends The Phone Number To The Form Data
+
+            if(selected_profile_picture && selected_profile_picture.uri) {
+                const file_uri:string = selected_profile_picture.uri // Gets The File URI
+                const file_extension:string|null = selected_profile_picture.mimeType?.split("/")[1] || "jpeg" // Gets The File Extension
+
+                // Web
+                if(Platform.OS === "web" || file_uri.startsWith("blob:")) {
+                    const file_response:Response = await fetch(file_uri)
+                    const blob:Blob = await file_response.blob()
+
+                    form_data.append("selected_profile_picture", blob, `file_${Date.now()}.${file_extension}`) // Appends The Selected Profile Picture To The Form Data
+                } 
+                
+                // iOS And Android
+                else {
+                    form_data.append("selected_profile_picture", {
+                        uri: file_uri,
+                        name: selected_profile_picture.fileName || `file_${Date.now()}.${file_extension}`,
+                        type: selected_profile_picture.mimeType || `image/${file_extension}`
+                    } as any)
+                }
+            }
+
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
             
             // Sends The POST Request To The Server
             const edit_account_response:Response = await fetch(`${API_URL}/edit-account/`, {
                 method: "POST",
-        
+
                 headers: {
-                    "Content-Type": "application/json",
                     "Accept": "application/json",
                     "Authorization": `Bearer ${user_token}`
                 },
 
-                body: JSON.stringify({
-                    delete_account: delete_account,
-                    delete_profile_picture: delete_profile_picture,
-                    data_saving_mode: data_saving_mode,
-                    private_account: private_account,
-                    bio: bio,
-                    bio_links: bio_links,
-                    first_name: first_name,
-                    last_name: last_name,
-                    email_address: email_address,
-                    phone_number: phone_number
-                })
+                body: form_data
             })
 
             // If The Response Isn't Success
@@ -340,6 +367,18 @@ export default function ProfileScreen() {
         catch {
             Alert.alert("Chyba", "Pri vykonávaní zmien v účte došlo k chybe.") // Shows The Alert
         }
+    }
+
+    // Function For Get The Profile Picture Path
+    const getProfilePicturePath = (user_id:number, profile_picture_name:string|null):string|null => {
+        if(selected_profile_picture) return selected_profile_picture.uri // Gets The Selected Profile Picture
+        if(profile_picture_name) return `${DOMAIN}/media/images/${user_id}/${profile_picture_name}` // Gets The Current Profile Picture
+        return null
+    }
+
+    // Function For Handle The Profile Picture Selection
+    const handleProfilePictureSelection = (new_selected_profile_picture:ImagePicker.ImagePickerAsset):void => {
+        setSelectedProfilePicture(new_selected_profile_picture) // Sets The Selected Profile Picture
     }
 
     // Function For Toggle Follow
@@ -623,28 +662,11 @@ export default function ProfileScreen() {
                                                 <View className="edit_account_form hidden" style={styles.edit_account_form}>
                                                     <View className="header" style={styles.header}>
                                                         <View className="info" style={styles.info}>
-                                                            <Pressable 
-                                                                className="profile_picture_container"
-                                                                // onPress={}
-                                                                accessibilityLabel="Nahrať obrázok"
-                                                                style={styles.profile_picture_container}
-                                                            >
-                                                                <Image 
-                                                                    className={`profile_picture skeleton_loading ${
-                                                                        logged_in_user.subscription && logged_in_user.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                                                    }`}
-
-                                                                    source={
-                                                                        logged_in_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${logged_in_user.id}/${logged_in_user.profile_picture_name}` } : require("../../../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                    }
-
-                                                                    style={[
-                                                                        styles.profile_picture,
-                                                                        logged_in_user.subscription && logged_in_user.subscription.is_active && styles.subscriber_profile_picture,
-                                                                        // { transform: [{ scale: animated_scale }] }
-                                                                    ]}
-                                                                />
-                                                            </Pressable>
+                                                            <SelectProfilePicture 
+                                                                onProfilePictureSelection={handleProfilePictureSelection} 
+                                                                previous_profile_picture={getProfilePicturePath(profile.id, profile.profile_picture_name)} 
+                                                                is_subscriber={profile.subscription && profile.subscription.is_active || false}
+                                                            />
 
                                                             <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
                                                         </View>
@@ -2985,7 +3007,6 @@ const styles = StyleSheet.create({
     profile_picture: {
         width: 64,
         height: 64,
-        padding: 2,
         borderWidth: 1,
         borderColor: LIGHT_BLUE_COLOR,
         borderRadius: 64 / 2,
