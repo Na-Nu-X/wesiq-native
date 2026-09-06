@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Alert } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Alert, Share } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
@@ -91,6 +91,30 @@ export default function BlogScreen() {
     useEffect(() => {
         getArticles() // Gets The Articles
     }, [])
+
+    // Function For Share The Article
+    const shareArticle = async (article_title:string, article_link:string):Promise<void> => {
+        const link: string = `${DOMAIN}/sk/blog/${article_link}` // Sets The Link To The Article
+    
+        try {
+            const result = await Share.share({
+                message: `Wesiq - ${article_title}\n${link}`,
+                url: link, // Only IOS
+                title: `Wesiq - ${article_title}`
+            })
+    
+            if(result.action === Share.sharedAction) {
+                if(result.activityType) console.log("Zdieľané cez: ", result.activityType) // Only IOS
+                else console.log("Úspešne zdieľané")
+            } 
+            
+            else if(result.action === Share.dismissedAction) console.log("Zdieľanie zrušené") // Only IOS
+        } 
+
+        catch(error:any) {
+            Alert.alert("Chyba", "Nepodarilo sa otvoriť menu na zdieľanie.")
+        }
+    }
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -485,6 +509,7 @@ export default function BlogScreen() {
 
                             {articles.map((one_article:Article, index:number) => (
                                 <ImageBackground
+                                    key={one_article.id || index}
                                     className={one_article.link || "article"}
                                     source={one_article.image_name ? { uri: `${DOMAIN}/static/images/articles/${one_article.image_name}`} : ""}
                                     contentFit="cover"
@@ -517,7 +542,7 @@ export default function BlogScreen() {
                                             >
                                                 <Icon
                                                     icon_name="share-nodes"
-                                                    // onPress={() => shareArticle(one_article.id, one_article.title)}
+                                                    onPress={() => shareArticle(one_article.title, one_article.link)}
                                                     size={30}
                                                 />
                                             </View>
@@ -581,7 +606,7 @@ export default function BlogScreen() {
                                                     <View className="skeleton_loading skeleton_text" style={{ flexDirection: "row" }}>
                                                         {Array.from({ length: 5 }).map((_, index:number) => (
                                                             index < one_article.average_rating ? (
-                                                                <View className="full" style={{ cursor: "pointer" }}>
+                                                                <View key={index} className="full" style={{ cursor: "pointer" }}>
                                                                     <FontAwesome6
                                                                         name="star"
                                                                         size={15}
@@ -591,7 +616,7 @@ export default function BlogScreen() {
                                                                     />
                                                                 </View>
                                                             ) : (
-                                                                <View className="empty" style={{ cursor: "pointer" }}>
+                                                                <View key={index} className="empty" style={{ cursor: "pointer" }}>
                                                                     <FontAwesome6
                                                                         name="star"
                                                                         size={15}

@@ -57,7 +57,7 @@ export default function RootLayout() {
       />
       
       <Tabs.Screen
-        name="chat"
+        name="chat/index"
 
         options={{
           title: "",
@@ -91,7 +91,32 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
+        name="blog"
+
+        options={{
+          title: "",
+
+          tabBarIcon: ({ color, focused, size }) => (
+            <FontAwesome6
+              name="book"
+              size={size}
+              solid={focused}
+              color={color}
+            />
+          )
+        }}
+      />
+
+      <Tabs.Screen
         name="profile/[username]"
+
+        options={{
+          href: null
+        }}
+      />
+
+      <Tabs.Screen
+        name="chat/[username]"
 
         options={{
           href: null

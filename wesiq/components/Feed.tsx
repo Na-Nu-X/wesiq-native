@@ -809,7 +809,7 @@ export default function Feed() {
     // Function For Share The Post
     const sharePost = async (post_id:number, username:string):Promise<void> => {
         // const link:string = interpolate(gettext("/sk/prispevok/%s"), [post_id]) // Sets The Link To The Post
-        const link: string = `${API_URL}/sk/prispevok/${post_id}` // Sets The Link To The Post
+        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
     
         try {
             const result = await Share.share({

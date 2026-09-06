@@ -153,7 +153,7 @@ export default function ProfileScreen() {
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings">("main") // Stores The Active Account Properties Sheet
 
-    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form"|null>("edit_account_form") // Stores The Information Which Section Is Active
+    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form"|null>("profile") // Stores The Information Which Section Is Active
 
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
 
@@ -2317,7 +2317,7 @@ export default function ProfileScreen() {
                                                                     )}
 
                                                                     {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
-                                                                    {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                                    {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && logged_in_user.id !== profile.id && (
                                                                         <Pressable
                                                                             className="show_suspend_account_button red"
                                                                             onPress={() => setAccountPropertiesSheet("suspend")}
@@ -2349,28 +2349,30 @@ export default function ProfileScreen() {
                                                                         </Pressable>
                                                                     )}
 
-                                                                    <Pressable
-                                                                        className="show_report_profile_button"
-                                                                        onPress={() => setAccountPropertiesSheet("report")}
-                                                                        accessibilityRole="button"
+                                                                    {logged_in_user && logged_in_user.id !== profile.id && (
+                                                                        <Pressable
+                                                                            className="show_report_profile_button"
+                                                                            onPress={() => setAccountPropertiesSheet("report")}
+                                                                            accessibilityRole="button"
 
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="flag"
-                                                                                size={20}
-                                                                                solid={false}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
+                                                                            style={({ pressed }) => [
+                                                                                styles.sheet_item, 
+                                                                                styles.sheet_item_border, 
+                                                                                pressed && styles.sheet_item_pressed
+                                                                            ]}
+                                                                        >
+                                                                            <View style={styles.sheet_icon}>
+                                                                                <FontAwesome6
+                                                                                    name="flag"
+                                                                                    size={20}
+                                                                                    solid={false}
+                                                                                    color={BLUE_COLOR}
+                                                                                />
+                                                                            </View>
 
-                                                                        <Text style={styles.sheet_text}>Nahlásiť</Text>
-                                                                    </Pressable>
+                                                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                                        </Pressable>
+                                                                    )}
 
                                                                     <Pressable
                                                                         className="hide_account_properties_button"
