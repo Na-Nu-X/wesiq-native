@@ -64,7 +64,7 @@ export default function ProfilePictureLink({ user_id, user_profile_picture_name,
                     }`}
 
                     source={
-                        user_profile_picture_name ? { uri: `${DOMAIN}/media/images/${user_id}/${user_profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        user_profile_picture_name ? { uri: `${DOMAIN}/media/images/${user_id}/${user_profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                     }
 
                     style={[

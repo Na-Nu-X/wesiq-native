@@ -196,7 +196,7 @@ export default function SearchUsers() {
                         }`}
 
                         source={
-                            one_loaded_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_loaded_user.id}/${one_loaded_user.profile_picture_name}` } : require("../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                            one_loaded_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_loaded_user.id}/${one_loaded_user.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                         }
 
                         style={[

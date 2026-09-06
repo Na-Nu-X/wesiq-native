@@ -2,6 +2,7 @@ import React, { useState, useRef } from "react"
 import { Pressable, Alert, StyleSheet, Animated, Image, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import {LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { DOMAIN } from "@/constants/general"
 
 type SelectProfilePictureProps = {
     onProfilePictureSelection:(media:ImagePicker.ImagePickerAsset) => void,
@@ -83,7 +84,7 @@ export default function SelectProfilePicture({
                     }`}
 
                     source={
-                        previous_profile_picture ? { uri: previous_profile_picture } : require("../../../assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        previous_profile_picture ? { uri: previous_profile_picture } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                     }
 
                     style={[
