@@ -230,7 +230,6 @@ export default function Feed() {
             } 
             
             else return null
-    
         } 
         
         catch {

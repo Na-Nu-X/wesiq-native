@@ -71,14 +71,26 @@ interface MessageReaction {
     emoji:string
 }
 
+interface ChatSocketResponse {
+    action:"new"|"edit"|"delete"|"add_reaction"|"remove_reaction",
+    chat_id:number,
+    message:string,
+    formatted_time:string,
+    sender_id:number,
+    sender_profile_picture_name:string,
+    emoji:string,
+    emoji_sender_username:string
+}
+
 export default function ChatDetailScreen() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
 
     const [receiver, setReceiver] = useState<Receiver|null>() // Stores The Receiver
-    const [chats, setChats] = useState<Chat[]|null>() // Stores The Chats
+    const [chats, setChats] = useState<Chat[]>([]) // Stores The Chats
 
     const [new_message, setNewMessage] = useState<string>("") // Stores The New Message
     const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
@@ -91,6 +103,8 @@ export default function ChatDetailScreen() {
 
     const [write_message_action, setWriteMessageAction] = useState<"new"|"edit">("new") // Stores The Write Message Action
     const [selected_message_for_edit, setSelectedMessageForEdit] = useState<Chat|null>(null) // Stores The Selected Message For Edit
+
+    const all_messages = useRef<ScrollView|null>(null) // Sets The All Messages Reference
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -171,7 +185,7 @@ export default function ChatDetailScreen() {
             
             else {
                 setReceiver(loaded_chat_data.receiver) // Sets The Receiver
-                setChats(loaded_chat_data.chats) // Sets The Chats
+                if(loaded_chat_data.chats) setChats(loaded_chat_data.chats) // Sets The Chats
             }
         } 
         
@@ -203,22 +217,11 @@ export default function ChatDetailScreen() {
             // Succeeded Open Of Chat Socket
             chat_socket.current.onopen = () => {
                 // markMessagesAsRead() // Marks Messages As Read
-    
-                console.log("WebSocket pripojený")
             }
     
             // Response From The Server (The DOM Changes Will Be Visible To Every User In Chat)
             chat_socket.current.onmessage = (event) => {
-                const data = JSON.parse(event.data) // Gets The Data
-
-                // {
-                //     "action": "new",
-                //     "chat_id": 110,
-                //     "message": "a",
-                //     "formatted_time": "now",
-                //     "sender_id": 16,
-                //     "sender_profile_picture_name": "IMG-75a2ff770861da3a10d9.jpeg"
-                // }
+                const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
 
                 // New Message
                 if(data.action === "new") {
@@ -227,8 +230,6 @@ export default function ChatDetailScreen() {
                     const formatted_time:string = data.formatted_time as string // Gets The Formatted Time
                     const sender_id:number = data.sender_id as number // Gets The Sender's ID
                     const sender_profile_picture_name:string = data.sender_profile_picture_name as string // Gets The Sender's Profile Picture Name
-
-                    console.log(data)
 
                     const new_chat:Chat = {
                         id: chat_id,
@@ -249,13 +250,7 @@ export default function ChatDetailScreen() {
                         is_older_than_1_day: false
                     }
 
-                    setChats(previous_chats => [new_chat, ...(previous_chats || [])]) // Sets The Chats
-
-                    //     // Auto Scrolls To The Bottom
-                    //     all_messages.scrollTo({
-                    //         top: all_messages.scrollHeight,
-                    //         behavior: "smooth"
-                    //     })
+                    setChats(previous_chats => [new_chat, ...previous_chats]) // Sets The Chats
                 
                     //     // If Message Isn't From Logged In User
                     //     if(logged_in_user_id && logged_in_user_id !== data.sender_id) {
@@ -265,12 +260,12 @@ export default function ChatDetailScreen() {
                 }
 
                 // Edited Message
-                if(data.action === "edit") {
+                else if(data.action === "edit") {
                     const chat_id:number = data.chat_id as number // Gets The Chat ID
                     const message_content:string = data.message as string // Gets The Message Content
 
                     // Sets The Chats
-                    setChats(previous_chats => (previous_chats || []).map((one_chat:Chat) => {
+                    setChats(previous_chats => previous_chats.map((one_chat:Chat) => {
                         if(one_chat.id === chat_id) {
                             // Updates The Post Likes Amount And Stored Likes From Users
                             return {
@@ -286,80 +281,84 @@ export default function ChatDetailScreen() {
                     cancelEditMessage() // Cancels The Edit Message
                 }
 
-                // // Delete Message
-                // else if(data.action === "delete") {
-                //     const chat_id:number = data.chat_id as number // Gets The Chat ID
+                // Delete Message
+                else if(data.action === "delete") {
+                    const chat_id:number = data.chat_id as number // Gets The Chat ID
 
-                //     const deleted_message:HTMLDivElement|null = [...all_messages.querySelectorAll<HTMLDivElement>(".one_message")].find((one_message) => one_message.dataset["chat_id"] === String(chat_id)) || null // Gets The Edited Message Container
+                    setChats(previous_chats => previous_chats.filter((one_chat:Chat) => one_chat.id !== chat_id)) // Sets The Chats
+                }
 
-                //     if(deleted_message) deleted_message.classList.add("deleted") // Adds The Deleted Class
-                // }
+                // Add Message Reaction
+                else if(data.action === "add_reaction") {
+                    const chat_id:number = data.chat_id as number // Gets The Chat ID
+                    const emoji:string = data.emoji as string // Gets The Emoji
+                    const emoji_sender_username:string = data.emoji_sender_username as string // Gets The Sender's Username 
 
-                // // Add Message Reaction
-                // else if(data.action === "add_reaction") {
-                //     const chat_id:number = data.chat_id as number // Gets The Chat ID
-                //     const emoji:string = data.emoji as string // Gets The Emoji
-                //     const emoji_sender_username:string = data.emoji_sender_username as string // Gets The Sender's Username 
+                    // Creates The New Message Reaction
+                    const new_message_reaction:MessageReaction = {
+                        user: {
+                            username: emoji_sender_username
+                        },
 
-                //     const one_message:HTMLDivElement|null = [...all_messages.querySelectorAll<HTMLDivElement>(".one_message")].find((one_message) => one_message.dataset["chat_id"] === String(chat_id)) || null // Gets The One Message Container
+                        emoji
+                    }
 
-                //     if(one_message) {
-                //         const reactions:HTMLDivElement = one_message.querySelector(".reactions") as HTMLDivElement // Gets The Reactions Container
-                //         const is_existing_reaction:boolean = [...reactions.querySelectorAll<HTMLDivElement>(".one_reaction")].some(one_reaction => one_reaction.textContent.trim() === emoji) // Checks If The Reaction Has Been Already Added
-            
-                //         // Removes The Reaction
-                //         if(is_existing_reaction) {
-                //             const reaction_to_remove:HTMLDivElement|null = [...reactions.querySelectorAll<HTMLDivElement>(".one_reaction")].find(one_reaction => one_reaction.textContent.trim() === emoji) || null // Gets The Reaction To Remove
-            
-                //             if(reaction_to_remove) reaction_to_remove.remove() // Removes The Reaction From The DOM
-                //         }
-            
-                //         // Adds The Reaction
-                //         else {
-                //             const one_reaction:HTMLDivElement = document.createElement("div") // Creates The One Reaction Container
-                //             one_reaction.classList.add("one_reaction") // Adds The One Reaction Class
-                //             one_reaction.title = interpolate(gettext("Reakciu pridal: %s"), [emoji_sender_username])
-                //             one_reaction.ariaLabel = interpolate(gettext("Reakciu pridal: %s"), [emoji_sender_username])
-                //             one_reaction.textContent = emoji // Sets The Emoji
-                            
-                //             if(reactions.children.length >= 3) {
-                //                 (reactions.firstElementChild as HTMLDivElement).remove() // Removes The Last Reaction From The DOM
-                //             }
-            
-                //             reactions.appendChild(one_reaction) // Appends The One Reaction Container To The Reactions Container
-                //         }
-                //     }
-                // }
+                    // Sets The Chats
+                    setChats(previous_chats => previous_chats.map((one_chat:Chat) => {
+                        if(one_chat.id === chat_id) {
+                            // Checks If The Reaction Has Been Already Added
+                            const is_existing_reaction: boolean = one_chat.message_reactions.some(
+                                (one_message_reaction:MessageReaction) => one_message_reaction.emoji === emoji && one_message_reaction.user.username === emoji_sender_username
+                            )
 
-                // // Remove Message Reaction
-                // else if(data.action === "remove_reaction") {
-                //     const chat_id:number = data.chat_id as number // Gets The Chat ID
-                //     const emoji:string = data.emoji as string // Gets The Emoji
+                            // Updates The Chat Message Reactions
+                            return {
+                                ...one_chat,
 
-                //     const one_message:HTMLDivElement|null = [...all_messages.querySelectorAll<HTMLDivElement>(".one_message")].find((one_message) => one_message.dataset["chat_id"] === String(chat_id)) || null // Gets The One Message Container
+                                message_reactions: is_existing_reaction
+                                    // Removes The Reaction
+                                    ? one_chat.message_reactions.filter(
+                                        (one_message_reaction:MessageReaction) => !(one_message_reaction.emoji === emoji && one_message_reaction.user.username === emoji_sender_username)
+                                    )
 
-                //     if(one_message) {
-                //         const reactions:HTMLDivElement = one_message.querySelector(".reactions") as HTMLDivElement // Gets The Reactions Container
-                //         const reaction_to_remove:HTMLDivElement|null = [...reactions.querySelectorAll<HTMLDivElement>(".one_reaction")].find(one_reaction => one_reaction.textContent.trim() === emoji) || null // Gets The Reaction To Remove
+                                    : one_chat.message_reactions.length >= 3 
+                                        ? [...one_chat.message_reactions.slice(1), new_message_reaction] // Removes The Last Reaction And Adds The New One
+                                        : [...one_chat.message_reactions, new_message_reaction] // Adds The Reaction
+                            }
+                        }
 
-                //         if(reaction_to_remove) reaction_to_remove.remove() // Removes The Reaction From The DOM
-                //     }
-                // }
-    
-                console.log("Prijaté dáta zo socketu:", data)
+                        return one_chat // Returns The Unchanged Chat
+                    }))
+                }
+
+                // Remove Message Reaction
+                else if(data.action === "remove_reaction") {
+                    const chat_id:number = data.chat_id as number // Gets The Chat ID
+                    const emoji:string = data.emoji as string // Gets The Emoji
+
+                    // Sets The Chats
+                    setChats(previous_chats => previous_chats.map((one_chat:Chat) => {
+                        if(one_chat.id === chat_id) {
+                            // Updates The Chat Message Reactions
+                            return {
+                                ...one_chat,
+                                message_reactions: one_chat.message_reactions.filter((one_message_reaction:MessageReaction) => one_message_reaction.emoji !== emoji) // Removes The Reaction
+                            }
+                        }
+
+                        return one_chat // Returns The Unchanged Chat
+                    }))
+                }
             }
     
             // Interrupted Connection
             chat_socket.current.onclose = () => {
                 Alert.alert("Chyba", "Spojenie sa neočakávane prerušilo.") // Shows The Alert
-    
-                console.log("Spojenie sa neočakávane prerušilo.")
             }
     
-            chat_socket.current.onerror = (error) => {
+            // Interrupted Connection
+            chat_socket.current.onerror = () => {
                 Alert.alert("Chyba", "Pri pokuse o spojenie došlo k chybe.") // Shows The Alert
-    
-                console.error("WebSocket chyba:", error)
             }
         }
 
@@ -368,7 +367,7 @@ export default function ChatDetailScreen() {
         return () => {
             if(chat_socket.current) chat_socket.current.close() // Closes The Socket
         }
-    }, [username])
+    }, [username, logged_in_user])
 
     // Function For Mark Messages As Read
     const markMessagesAsRead = ():void => {
@@ -450,7 +449,7 @@ export default function ChatDetailScreen() {
     }
 
     // Function For Add The Reaction
-    const addReaction = (emoji:string):void => {
+    const addReaction = (emoji_hex:string):void => {
         hideMessageProperties() // Closes The Message Properties
 
         if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
@@ -459,7 +458,7 @@ export default function ChatDetailScreen() {
                     JSON.stringify({
                         action: "add_reaction",
                         chat_id: selected_message.id,
-                        emoji: emoji
+                        emoji: String.fromCodePoint(parseInt(emoji_hex, 16))
                     })
                 )
             }
@@ -550,11 +549,18 @@ export default function ChatDetailScreen() {
 
                                     <View className="middle" style={styles.middle}>
                                         <ScrollView 
+                                            ref={all_messages}
                                             className="all_messages" 
+                                            showsVerticalScrollIndicator={false}
+                                            indicatorStyle="white"
                                             keyboardShouldPersistTaps="handled" 
                                             keyboardDismissMode="on-drag"
                                             style={styles.all_messages}
                                             contentContainerStyle={styles.all_messages}
+
+                                            onContentSizeChange={() => {
+                                                if(all_messages.current) all_messages.current.scrollToEnd({ animated: true }) // Auto Scrolls To The Bottom
+                                            }}
                                         >
                                             {chats.map((one_chat:Chat, index:number) => (
                                                 <View
@@ -616,14 +622,14 @@ export default function ChatDetailScreen() {
                                                             ]}
                                                         >
                                                             {one_chat.message_reactions.map((one_reaction:MessageReaction, index:number) => (
-                                                                <View 
+                                                                <Text 
                                                                     key={index}
                                                                     className="one_reaction" 
                                                                     accessibilityLabel={`Reakciu pridal: ${one_reaction.user.username}`}
-                                                                    // style={styles.one_reaction}
+                                                                    style={styles.one_reaction}
                                                                 >
-
-                                                                </View>
+                                                                    {one_reaction.emoji}
+                                                                </Text>
                                                             ))}
                                                         </View>
 
@@ -1186,15 +1192,13 @@ const styles = StyleSheet.create({
 
     middle: {
         marginBottom: 30,
+        paddingTop: 12 + 5,
     },
 
     all_messages: {
-        // @include scrollbar;
         flexDirection: "column-reverse",
         gap: 50,
         maxHeight: 400,
-        paddingTop: 12 + 5,
-        paddingBottom: 12 + 5,
     },
 
     one_message_container: {
