@@ -487,41 +487,55 @@ export default function TasksSection() {
                                                 style={styles.official_task_checkbox}
                                             />
 
-                                            {one_task.data === "30_minutes_activity" && (
-                                                <Text className="title" style={styles.title}>Zaznamenaj 30 minút aktivity.</Text>
-                                            )}
+                                            {/* .task {
+                                                &:has(.checkbox.checked) {
+                                                    --progress: 100;
+                                                    --progress-color: rgba(82, 207, 32, 0.1);
+                                                    border-color: transparentize($green-color, 0.8);
+                                                }
 
-                                            {one_task.data === "1_hour_activity" && (
-                                                <Text className="title" style={styles.title}>Zaznamenaj 1h aktivity.</Text>
-                                            )}
+                                                .checkbox {
+                                                    position: relative;
+                                                    display: block;
+                                                    flex-shrink: 0;
+                                                    width: 15px;
+                                                    height: 15px;
+                                                    border-radius: 2px;
+                                                    outline: 1px solid transparentize($blue-color, 0.8);
+                                                    background: transparentize($main-color, 0.5);
 
-                                            {one_task.data === "2_hours_activity" && (
-                                                <Text className="title" style={styles.title}>Zaznamenaj 2h aktivity.</Text>
-                                            )}
+                                                    &::before {
+                                                        content: "";
+                                                        position: absolute;
+                                                        width: inherit;
+                                                        height: inherit;
+                                                        background-image: url("../../../../static/images/check.png"); // https://www.flaticon.com/free-icon/check_16750043
+                                                        background-size: contain;
+                                                        transform: scale(0);
+                                                        opacity: 0;
+                                                        transition: transform 0.2s ease, opacity 0.2s ease;
+                                                    }
 
-                                            {one_task.data === "3_hours_activity" && (
-                                                <Text className="title" style={styles.title}>Zaznamenaj 3h aktivity.</Text>
-                                            )}
+                                                    &.checked {
+                                                        outline: 1px solid darken($green-color, 10%);
 
-                                            {one_task.data === "beat_average_activity_time" && (
-                                                <Text className="title" style={styles.title}>Prekonaj týždenný priemer času aktivity.</Text>
-                                            )}
+                                                        &::before {
+                                                            transform: scale(1.5);
+                                                            opacity: 1;
+                                                            transition: transform 0.3s ease, opacity 0.3s ease;
+                                                        }
+                                                    }
+                                                } */}
 
-                                            {one_task.data === "complete_training_plan_activity" && (
-                                                <Text className="title" style={styles.title}>Dokonči aktivitu podľa tréningového plánu.</Text>
-                                            )}
-
-                                            {one_task.data === "2_activities" && (
-                                                <Text className="title" style={styles.title}>Zaznamenaj 2 aktivity.</Text>
-                                            )}
-
-                                            {one_task.data === "complete_all_official_tasks" && (
-                                                <Text className="title" style={styles.title}>Splň všetky dnešné výzvy.</Text>
-                                            )}
-
-                                            {one_task.data === "add_custom_task" && (
-                                                <Text className="title" style={styles.title}>Pridaj vlastnú úlohu.</Text>
-                                            )}
+                                            {one_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 30 minút aktivity.</Text>)}
+                                            {one_task.data === "1_hour_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 1h aktivity.</Text>)}
+                                            {one_task.data === "2_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 2h aktivity.</Text>)}
+                                            {one_task.data === "3_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 3h aktivity.</Text>)}
+                                            {one_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title}>Prekonaj týždenný priemer času aktivity.</Text>)}
+                                            {one_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title}>Dokonči aktivitu podľa tréningového plánu.</Text>)}
+                                            {one_task.data === "2_activities" && (<Text className="title" style={styles.title}>Zaznamenaj 2 aktivity.</Text>)}
+                                            {one_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>Splň všetky dnešné výzvy.</Text>)}
+                                            {one_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>Pridaj vlastnú úlohu.</Text>)}
 
                                             <View className="xp" style={styles.xp}>
                                                 <Text 

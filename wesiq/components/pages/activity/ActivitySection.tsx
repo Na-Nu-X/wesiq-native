@@ -464,7 +464,7 @@ export default function ActivitySection() {
                                 <View className="finish_training_button">
                                     <IconButton 
                                         icon_name="stop" 
-                                        // onPress={} 
+                                        onPress={stopActivity}
                                     />
                                 </View>
                             </View>
@@ -682,13 +682,15 @@ export default function ActivitySection() {
 
     // Function For Change Training Plans
     const changeTrainingPlans = (new_index:number, max_index?:number):void => {
-        // Swipe
-        if(max_index) {
-            if(new_index >= 0 && new_index <= max_index) setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
+        if(!is_activity_started) {
+            // Swipe
+            if(max_index) {
+                if(new_index >= 0 && new_index <= max_index) setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
+            }
+    
+            // Click
+            else setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
         }
-
-        // Click
-        else setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
     }
 
     // Creates The Swipe Gesture
@@ -1048,8 +1050,6 @@ export default function ActivitySection() {
         
         // Finish Training Slide
         else {
-            setIsActivityRunning(false) // Sets The Information That The Activity Isn't Running
-            if(interval.current) clearInterval(interval.current) // Clears The Interval
             animateSlideTransition("finish_training") // Animates The Slide Transition To The Finish Training
         }
     }

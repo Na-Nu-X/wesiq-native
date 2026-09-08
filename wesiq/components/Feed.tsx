@@ -1461,7 +1461,12 @@ export default function Feed() {
 
                             <View className="header">
                                 <View className="left">
-                                    <ProfilePictureLink user_id={one_processing_post.user.id} user_profile_picture_name={one_processing_post.user.profile_picture_name || null} user_subscription={one_processing_post.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
+                                    <ProfilePictureLink 
+                                        user_id={one_processing_post.user.id} 
+                                        user_profile_picture_name={one_processing_post.user.profile_picture_name || null} 
+                                        user_subscription={one_processing_post.user.subscription?.is_active || false} 
+                                        label="Zobraziť užívateľa" 
+                                    />
                                 </View>
 
                                 <View className="right">

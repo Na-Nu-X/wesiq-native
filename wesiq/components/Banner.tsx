@@ -34,13 +34,6 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                             />
                         </View>
                     )}
-        
-                    <View className="notifications">
-                        <IconButton 
-                            icon_name="bell" 
-                            // onPress={} 
-                        />
-                    </View>
                 </View>
     
                 <View className="right" style={styles.right}>
