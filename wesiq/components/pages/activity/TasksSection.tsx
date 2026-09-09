@@ -1,18 +1,18 @@
 import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import Checkbox from "expo-checkbox"
+import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
-import { getFormattedDate } from "@/utils/time"
+import { BasicResponse } from "@/components/Feed"
+import { AnimatedCustomTask } from "./AnimatedCustomTask"
+import { AnimatedOfficialTask } from "./AnimatedOfficialTask"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import { BasicResponse } from "@/components/Feed"
 
 interface OfficialTasksResponse {
     success:boolean,
@@ -21,7 +21,7 @@ interface OfficialTasksResponse {
     message:string
 }
 
-interface OfficialTask {
+export interface OfficialTask {
     title:string,
     data:string,
     xp:number,
@@ -35,7 +35,7 @@ interface CustomTasksResponse {
     message:string
 }
 
-interface CustomTask {
+export interface CustomTask {
     id:number,
     title:string,
     is_completed:boolean,
@@ -49,7 +49,25 @@ interface NewCustomTaskResponse {
     message:string
 }
 
-export default function TasksSection() {
+interface CompletedOfficialTaskResponse {
+    success: boolean,
+
+    task?:{
+        progress_percentage:number,
+        is_completed:boolean,
+        first_completion:boolean,
+        gained_xp: number
+    },
+    
+    message: string
+}
+
+interface TasksSectionProps {
+    elapsed_time:number,
+    average_activity_time:number
+}
+
+export default function TasksSection({ elapsed_time, average_activity_time }:TasksSectionProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
     const [official_tasks_remaining_hours, setOfficialTasksRemainingHours] = useState<number>(0) // Stores The Official Tasks Remaining Hours
@@ -152,6 +170,108 @@ export default function TasksSection() {
     useEffect(() => {
         getOfficialTasks() // Gets The Official Tasks
     }, [])
+
+    // Function For Check The Official Tasks
+    const checkOfficialTasksCompletion = ():void => {
+        const MAX_RED:number = 255 // Defines The Maximum Red Color
+        const MIN_RED:number = 82 // Defines The Minimum Red Color
+
+        const _30_minutes_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "30_minutes_activity") || null // Gets The "30 Minutes Activity" Official Task If Is Available
+        const _1_hour_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "1_hour_activity") || null // Gets The "1 Hour Activity" Official Task If Is Available
+        const _2_hours_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "2_hours_activity") || null // Gets The "2 Hours Activity" Official Task If Is Available
+        const _3_hours_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "3_hours_activity") || null // Gets The "3 Hours Activity" Official Task If Is Available
+        const beat_average_activity_time:OfficialTask|null = official_tasks.find(one_task => one_task.data === "beat_average_activity_time") || null // Gets The "Beat Average Activity Time" Official Task If Is Available
+
+        // 30 Minutes Activity
+        if(_30_minutes_activity && !_30_minutes_activity.is_completed) {
+            const progress:number = (elapsed_time / (3600 / 2)) * 100 // Calculates The Progress
+        
+            if(progress <= 100) {
+                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+        
+                // _30_minutes_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
+                // _30_minutes_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+    
+                // 100% Completed
+                if(progress === 100) {
+                    completeOfficialTask("30_minutes_activity") // Completes The "30 Minutes Activity" Official Task
+                }
+            }
+        }
+
+        // 1 Hour Activity
+        if(_1_hour_activity && !_1_hour_activity.is_completed) {
+            const progress:number = (elapsed_time / 3600) * 100 // Calculates The Progress
+    
+            if(progress <= 100) {
+                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+
+                // _1_hour_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
+                // _1_hour_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+
+                // 100% Completed
+                if(progress === 100) {
+                    completeOfficialTask("1_hour_activity") // Completes The "1 Hour Activity" Official Task
+                }
+            }
+        }
+
+        // 2 Hours Activity
+        if(_2_hours_activity && !_2_hours_activity.is_completed) {
+            const progress:number = (elapsed_time / (3600 * 2)) * 100 // Calculates The Progress
+    
+            if(progress <= 100) {
+                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+
+                // _2_hours_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
+                // _2_hours_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+
+                // 100% Completed
+                if(progress === 100) {
+                    completeOfficialTask("2_hours_activity") // Completes The "2 Hours Activity" Official Task
+                }
+            }
+        }
+
+        // 3 Hours Activity
+        if(_3_hours_activity && !_3_hours_activity.is_completed) {
+            const progress:number = (elapsed_time / (3600 * 3)) * 100 // Calculates The Progress
+    
+            if(progress <= 100) {
+                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+
+                // _3_hours_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
+                // _3_hours_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+
+                // 100% Completed
+                if(progress === 100) {
+                    completeOfficialTask("3_hours_activity") // Completes The "3 Hours Activity" Official Task
+                }
+            }
+        }
+
+        // Longer Activity Than The Weekly Average Activity
+        if(beat_average_activity_time && !beat_average_activity_time.is_completed) {
+            const progress:number = (elapsed_time / average_activity_time) * 100 // Calculates The Progress
+
+            if(progress <= 100) {
+                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+
+                // beat_average_activity_time.style.setProperty("--progress", String(progress)) // Sets The Progress
+                // beat_average_activity_time.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+
+                // 100% Completed
+                if(progress === 100) {
+                    completeOfficialTask("beat_average_activity_time") // Completes The "Beat Average Activity Time" Official Task
+                }
+            }
+        }
+    }
+
+    // Initializes The Completion Ckeck Of Official Tasks
+    useEffect(() => {
+        checkOfficialTasksCompletion() // Ckecks The Completion Of The Official Tasks
+    }, [elapsed_time])
 
     // Function For Get The Custom Tasks
     const getCustomTasks = async ():Promise<void> => {
@@ -302,18 +422,19 @@ export default function TasksSection() {
                 return
             }
             
-            else {
-                // Creates The New Custom Task
-                const new_custom_task:CustomTask = {
-                    ...new_custom_task_data.custom_task,
-                    is_completed: false,
-                    order: custom_tasks.length + 1
-                }
-
-                setCustomTasks([new_custom_task, ...custom_tasks]) // Sets The Custom Tasks
-                return
+            // Creates The New Custom Task
+            const new_custom_task:CustomTask = {
+                ...new_custom_task_data.custom_task,
+                is_completed: false,
+                order: custom_tasks.length + 1
             }
-        } 
+
+            setCustomTasks([new_custom_task, ...custom_tasks]) // Sets The Custom Tasks
+            setNewTaskTitle("") // Sets The New Task Title
+
+            const add_custom_task:OfficialTask|null = official_tasks.find(one_task => one_task.data === "add_custom_task") || null // Gets The "Add Custom Task" Official Task If Is Available
+            if(add_custom_task && !add_custom_task.is_completed) completeOfficialTask("add_custom_task") // Completes The "Add Custom Task" Official Task
+        }
         
         catch {
             Alert.alert("Chyba", "Pri pridávaní úlohy došlo k chybe.") // Shows The Alert
@@ -435,6 +556,109 @@ export default function TasksSection() {
         setSelectedCustomTask(null) // Sets The Selected Custom Task
         custom_task_properties.current?.dismiss() // Hides The Custom Task Properties
     }
+    
+    // Function For Complete Official Task
+    const completeOfficialTask = async (task_data:string):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Úlohu nie je možné dokončiť bez prihlásenia.") // Shows The Alert
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const completed_official_task_response:Response = await fetch(`${API_URL}/complete-official-task/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    task_data: task_data
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!completed_official_task_response.ok) {
+                Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const completed_official_task_data:CompletedOfficialTaskResponse = await completed_official_task_response.json() // Gets The Completed Official Task Data
+
+            // If The Response Isn't Success
+            if(!completed_official_task_data.success || !completed_official_task_data.task) {
+                Alert.alert("Chyba", completed_official_task_data.message) // Shows The Alert
+                return
+            }
+
+            // Sets The Official Tasks
+            setOfficialTasks(previous_tasks => previous_tasks.map((one_task:OfficialTask) => {
+                if(one_task.data === task_data) {
+                    return { 
+                        ...one_task, 
+                        progress_percentage: completed_official_task_data.task ? completed_official_task_data.task.progress_percentage : one_task.progress_percentage,
+                        is_completed: completed_official_task_data.task ? completed_official_task_data.task.is_completed : one_task.is_completed
+                    }
+                }
+
+                return one_task
+            }))
+
+            // // If The User's Daily Official Task Wasn't Previously Completed
+            // if(completed_official_task_response.first_completion) {
+            //     // If The Task Was Completed
+            //     if(completed_official_task_response.is_completed) {
+            //         const checkbox:HTMLDivElement = task_container.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
+
+            //         // activity_summary.gained_xp += completed_official_task_response.gained_xp // Increases The Gained XP For The Activity
+
+            //         window.setTimeout(function():void {
+            //             displayMessage(`+${completed_official_task_response.gained_xp} XP`, "success") // Displays The Amount Of Gained XP For The Completed Task
+            //             success_sound.play() // Plays The Success Sound
+            //         }, 100)
+
+            //         checkbox.classList.add("checked") // Marks The Checkbox As Checked
+            //     }
+
+            //     task_container.dataset["progress_percentage"] = String(completed_official_task_response.progress_percentage) // Updates The Progress Percentage Of The Task
+            //     initializeOfficialTasksProgression() // Initializes The Completion Progress Of The Official Tasks
+
+            //     // Completes The "Complete All Official Tasks" Official Task
+
+            //     const tasks:HTMLDivElement = task_container.parentElement as HTMLDivElement // Gets The Tasks Container
+            //     const complete_all_official_tasks:HTMLDivElement|null = tasks.querySelector("[data-task='complete_all_official_tasks']") || null; // Gets The "Complete All Official Tasks" Official Task If Is Available
+
+            //     // Checks If All Official Tasks Were Completed
+            //     if(complete_all_official_tasks) {
+            //         const checkbox:HTMLDivElement = complete_all_official_tasks.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
+
+            //         // If The Task Isn't Already Completed
+            //         if(!checkbox.classList.contains("checked")) {
+            //             const all_tasks:NodeListOf<HTMLDivElement> = tasks.querySelectorAll(".task"); // Gets All Tasks
+            //             const all_tasks_except_complete_all_official_tasks = [...all_tasks].filter(one_task => one_task.dataset["task"] !== "complete_all_official_tasks")
+
+            //             const has_completed_all_official_tasks:boolean = [...all_tasks_except_complete_all_official_tasks].every(function(one_task:HTMLDivElement) {
+            //                 if(one_task.dataset["task"] !== "complete_all_official_tasks") {
+            //                     const checkbox:HTMLDivElement = one_task.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
+            //                     return checkbox.classList.contains("checked")
+            //                 }
+            //             })
+            
+            //             if(has_completed_all_official_tasks) completeOfficialTask("complete_all_official_tasks", complete_all_official_tasks, success_sound)
+            //         }
+            //     }
+            // }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
+        }
+    }
 
     return (
         <BottomSheetModalProvider>
@@ -477,87 +701,11 @@ export default function TasksSection() {
                                 </View>
 
                                 <View className="tasks" style={styles.official_tasks_container}>
-                                    {official_tasks.map((one_task:OfficialTask) => (
-                                        <View className="task" style={styles.official_task}>
-                                            <Checkbox
-                                                className="checkbox"
-                                                // value={isChecked}
-                                                // onValueChange={setIsChecked}
-                                                // color={isChecked ? '#4630EB' : undefined}
-                                                style={styles.official_task_checkbox}
-                                            />
-
-                                            {/* .task {
-                                                &:has(.checkbox.checked) {
-                                                    --progress: 100;
-                                                    --progress-color: rgba(82, 207, 32, 0.1);
-                                                    border-color: transparentize($green-color, 0.8);
-                                                }
-
-                                                .checkbox {
-                                                    position: relative;
-                                                    display: block;
-                                                    flex-shrink: 0;
-                                                    width: 15px;
-                                                    height: 15px;
-                                                    border-radius: 2px;
-                                                    outline: 1px solid transparentize($blue-color, 0.8);
-                                                    background: transparentize($main-color, 0.5);
-
-                                                    &::before {
-                                                        content: "";
-                                                        position: absolute;
-                                                        width: inherit;
-                                                        height: inherit;
-                                                        background-image: url("../../../../static/images/check.png"); // https://www.flaticon.com/free-icon/check_16750043
-                                                        background-size: contain;
-                                                        transform: scale(0);
-                                                        opacity: 0;
-                                                        transition: transform 0.2s ease, opacity 0.2s ease;
-                                                    }
-
-                                                    &.checked {
-                                                        outline: 1px solid darken($green-color, 10%);
-
-                                                        &::before {
-                                                            transform: scale(1.5);
-                                                            opacity: 1;
-                                                            transition: transform 0.3s ease, opacity 0.3s ease;
-                                                        }
-                                                    }
-                                                } */}
-
-                                            {one_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 30 minút aktivity.</Text>)}
-                                            {one_task.data === "1_hour_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 1h aktivity.</Text>)}
-                                            {one_task.data === "2_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 2h aktivity.</Text>)}
-                                            {one_task.data === "3_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 3h aktivity.</Text>)}
-                                            {one_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title}>Prekonaj týždenný priemer času aktivity.</Text>)}
-                                            {one_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title}>Dokonči aktivitu podľa tréningového plánu.</Text>)}
-                                            {one_task.data === "2_activities" && (<Text className="title" style={styles.title}>Zaznamenaj 2 aktivity.</Text>)}
-                                            {one_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>Splň všetky dnešné výzvy.</Text>)}
-                                            {one_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>Pridaj vlastnú úlohu.</Text>)}
-
-                                            <View className="xp" style={styles.xp}>
-                                                <Text 
-                                                    style={{ 
-                                                        color: GREEN_COLOR,
-                                                        fontWeight: "bold",
-                                                    }}
-                                                >
-                                                    {one_task.xp}
-                                                </Text>
-
-                                                <Text 
-                                                    style={{ 
-                                                        color: GREEN_COLOR,
-                                                        fontSize: 15, 
-                                                        opacity: 0.8,
-                                                    }}
-                                                >
-                                                    XP
-                                                </Text>
-                                            </View>
-                                        </View>
+                                    {official_tasks.map((one_task:OfficialTask, index:number) => (
+                                        <AnimatedOfficialTask 
+                                            key={one_task.data || index} 
+                                            official_task={one_task} 
+                                        />
                                     ))}
                                 </View>
                             </>
@@ -660,44 +808,12 @@ export default function TasksSection() {
                             </View>
 
                             {custom_tasks.map((one_task:CustomTask) => (
-                                <View className="task" style={styles.custom_task}>
-                                    {/* <View className="checkbox" style={styles.custom_task_checkbox}></View> */}
-
-                                    <Checkbox
-                                        className="checkbox"
-                                        // value={isChecked}
-                                        // onValueChange={setIsChecked}
-                                        // color={isChecked ? '#4630EB' : undefined}
-                                        // style={styles.checkbox}
-                                    />
-
-                                    <Pressable 
-                                        className="title" 
-
-                                        onPress={() => toggleCompleteCustomTask(one_task.id)}
-
-                                        style={{ 
-                                            flex: 1,
-                                            justifyContent: "center",
-                                            height: "100%",
-                                            cursor: "pointer" 
-                                        }}
-                                    >
-                                        <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: SECONDARY_COLOR }}>{one_task.title}</Text>
-                                    </Pressable>
-
-                                    <Text className="date" style={styles.date}>{getFormattedDate(one_task.created_at, false)}</Text>
-
-                                    <View 
-                                        className="show_custom_task_properties_button"
-                                        accessibilityLabel="Viac..." 
-                                    >
-                                        <Icon
-                                            icon_name="ellipsis-vertical"
-                                            onPress={() => showCustomTaskProperties(one_task)}
-                                        />
-                                    </View>
-                                </View>
+                                <AnimatedCustomTask 
+                                    key={one_task.id} 
+                                    custom_task={one_task} 
+                                    onToggleCompleteCustomTask={() => toggleCompleteCustomTask(one_task.id)} 
+                                    onShowCustomTaskProperties={() => showCustomTaskProperties(one_task)}
+                                />
                             ))}
                         </ScrollView>
                     </View>
@@ -979,73 +1095,6 @@ const styles = StyleSheet.create({
         //     color: $dark-blue-color;
         //     cursor: pointer;
         // }
-    },
-
-    custom_task: {
-        flexDirection: "row",
-        // justifyContent: "space-between",
-        alignItems: "center",
-        gap: 10,
-        flexShrink: 0,
-        height: 50,
-        paddingHorizontal: 15,
-        backgroundColor: transparentize(MAIN_COLOR, 0.5),
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.8),
-        borderRadius: SMALL_BORDER_RADIUS,
-        overflow: "hidden",
-        // transition: transform 0.2s ease;
-
-        // &::before {
-        //     transition: transform 0.3s ease, background-color 0.3s ease;
-        // }
-
-        // &:hover {
-        //     transform: translateY(-2px);
-        //     cursor: pointer;
-        // }
-
-        // &:has(input[type="checkbox"]:checked) {
-        //     --progress: 100;
-        //     --progress-color: rgba(82, 207, 32, 0.1);
-        //     border-color: transparentize($green-color, 0.8);
-
-        //     .checkbox {
-        //         outline: 1px solid darken($green-color, 10%);
-
-        //         &::before {
-        //             transform: scale(1.5);
-        //             opacity: 1;
-        //             transition: transform 0.3s ease, opacity 0.3s ease;
-        //         }
-        //     }
-        // }
-
-        // &.dragging {
-        //     transform: scale(0.98);
-        //     opacity: 0.8;
-        // }
-    },
-
-    custom_task_checkbox: {
-        position: "relative",
-        flexShrink: 0,
-        width: 15,
-        height: 15,
-        borderRadius: 2,
-        // outline: 1px solid transparentize($blue-color, 0.8);
-        backgroundColor: transparentize(MAIN_COLOR, 0.5),
-    },
-
-    custom_task_checkbox_icon: {
-        position: "absolute",
-        width: 15,
-        height: 15,
-        // background-image: url("../../../../static/images/check.png"); // https://www.flaticon.com/free-icon/check_16750043
-        resizeMode: "contain",
-        transform: [{ scale: 0 }],
-        opacity: 0,
-        // transition: transform 0.2s ease, opacity 0.2s ease;
     },
 
     date: {

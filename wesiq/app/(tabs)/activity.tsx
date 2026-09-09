@@ -17,6 +17,9 @@ export default function ActivityScreen() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
+    const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
+    const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
             <BackgroundContainer>
@@ -48,8 +51,17 @@ export default function ActivityScreen() {
                         />
 
                         <View className="training_page" style={styles.training_page}>
-                            <ActivitySection />
-                            <TasksSection />
+                            <ActivitySection 
+                                onElapsedTimeUpdate={setElapsedTime} 
+                                elapsed_time={elapsed_time} 
+                                onAverageActivityTimeLoad={setAverageActivityTime} 
+                            />
+
+                            <TasksSection 
+                                elapsed_time={elapsed_time} 
+                                average_activity_time={average_activity_time} 
+                            />
+                            
                             <HistorySection />
                         </View>
                     </ScrollView>

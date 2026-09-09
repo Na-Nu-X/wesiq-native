@@ -72,7 +72,13 @@ interface TrainingPlanSummaryExercise {
 
 type TrainingPlanSlide = "start_training"|"exercise"|"finish_training"|"break" // Types The Training Plan Slide
 
-export default function ActivitySection() {
+interface ActivitySectionProps {
+    onElapsedTimeUpdate:(elapsed_time:number) => void,
+    elapsed_time:number,
+    onAverageActivityTimeLoad:(average_activity_time:number) => void
+}
+
+export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onAverageActivityTimeLoad }:ActivitySectionProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
@@ -98,7 +104,6 @@ export default function ActivitySection() {
     const [is_activity_running, setIsActivityRunning] = useState<boolean>(false) // Stores The Information If The Activity Is Running
     const [is_activity_started, setIsActivityStarted] = useState<boolean>(false) // Stores The Information If The Activity Is Started
     const [is_basic_activity_started, setIsBasicActivityStarted] = useState<boolean>(false) // Stores The Information If The Basic Activity Is Started (Without The Training Plan)
-    const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
 
     const start_time = useRef<number|null>(null) // Stores The Start Time
     const accumulated_time = useRef<number>(0) // Stores The Accumulated Time
@@ -111,7 +116,7 @@ export default function ActivitySection() {
     
     const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
 
-    // Orders Exercises From All Training Plans By Their Order Value
+    // Orders Exercises From All Turaining Plans By Their Order Value
     const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
         return [...training_plans_exercises].sort(
             (a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)
@@ -410,6 +415,7 @@ export default function ActivitySection() {
             
             else {
                 setActivityData(loaded_activity_data.activity) // Sets The Activity Data
+                onAverageActivityTimeLoad(loaded_activity_data.activity.average_activity_time) // Sets The Average Activity Time
             }
         } 
         
@@ -709,7 +715,8 @@ export default function ActivitySection() {
         const now:number = Date.now() // Gets The Current Time
         const current_elapsed_time:number = accumulated_time.current + (now - start_time.current) // Gets The Current Elapsed Time
         
-        setElapsedTime(current_elapsed_time) // Sets The Elapsed Time
+        // setElapsedTime(current_elapsed_time) // Sets The Elapsed Time
+        onElapsedTimeUpdate(current_elapsed_time) // Sets The Elapsed Time
     }
 
     // Function For Start Activity
@@ -826,7 +833,8 @@ export default function ActivitySection() {
 
         start_time.current = null // Sets The Start Time
         accumulated_time.current = 0 // Sets The Accumulated Time
-        setElapsedTime(0) // Sets The Elapsed Time
+        // setElapsedTime(0) // Sets The Elapsed Time
+        onElapsedTimeUpdate(0) // Sets The Elapsed Time
 
         setTrainingPlanSlide("start_training") // Sets The Training Plan Slide
         setCurrentSet(1) // Sets The Current Set
