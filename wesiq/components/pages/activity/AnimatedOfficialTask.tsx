@@ -13,32 +13,35 @@ interface AnimatedOfficialTaskProps {
 const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Animated View
 
 export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps) => {
-    const animation_value = useRef(new Animated.Value(official_task.is_completed ? 1 : 0)).current // Stores The Animation Value
+    const animation_value = useRef(new Animated.Value(official_task.progress_percentage || 0)).current // Stores The Animation Value
 
     useEffect(() => {
         Animated.timing(animation_value, {
-            toValue: official_task.is_completed ? 1 : 0,
-            duration: 300,
-            useNativeDriver: false
+            toValue: Math.min(official_task.progress_percentage || 0, 100),
+            duration: 1000,
+            useNativeDriver: false,
         }).start()
-    }, [official_task.is_completed])
+    }, [official_task.progress_percentage])
 
     // Converts A Numeric Range To Percentages
     const animated_width = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["0%", "100%"]
+        inputRange: [0, 100],
+        outputRange: ["0%", "100%"],
+        extrapolate: "clamp"
     })
 
     // Animates The Background Color
     const animated_background_color = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["rgba(255, 207, 32, 0.1)", "rgba(82, 207, 32, 0.1)"] // Makes Color Transition For Progress From rgba(255, 207, 32, 0.1) To rgba(82, 207, 32, 0.1)
+        inputRange: [0, 100],
+        outputRange: ["rgba(255, 207, 32, 0.1)", "rgba(82, 207, 32, 0.1)"], // Makes Color Transition For Progress From rgba(255, 207, 32, 0.1) To rgba(82, 207, 32, 0.1)
+        extrapolate: "clamp"
     })
 
     // Animates The Border Color
     const animated_border_color = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: [transparentize(BLUE_COLOR, 0.8), transparentize(GREEN_COLOR, 0.8)]
+        inputRange: [0, 100],
+        outputRange: [transparentize(BLUE_COLOR, 0.8), transparentize(GREEN_COLOR, 0.8)],
+        extrapolate: "clamp"
     })
 
     return (

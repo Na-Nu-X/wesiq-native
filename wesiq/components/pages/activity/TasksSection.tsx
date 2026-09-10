@@ -49,27 +49,16 @@ interface NewCustomTaskResponse {
     message:string
 }
 
-interface CompletedOfficialTaskResponse {
-    success: boolean,
-
-    task?:{
-        progress_percentage:number,
-        is_completed:boolean,
-        first_completion:boolean,
-        gained_xp: number
-    },
-    
-    message: string
-}
-
 interface TasksSectionProps {
     elapsed_time:number,
-    average_activity_time:number
+    average_activity_time:number,
+    onOfficialTasksUpdate:(official_tasks:OfficialTask[]) => void
+    official_tasks:OfficialTask[],
+    onCompleteOfficialTask:(task_data:string) => void
 }
 
-export default function TasksSection({ elapsed_time, average_activity_time }:TasksSectionProps) {
+export default function TasksSection({ elapsed_time, average_activity_time, onOfficialTasksUpdate, official_tasks, onCompleteOfficialTask }:TasksSectionProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
-    const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
     const [official_tasks_remaining_hours, setOfficialTasksRemainingHours] = useState<number>(0) // Stores The Official Tasks Remaining Hours
     const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
     
@@ -156,10 +145,9 @@ export default function TasksSection({ elapsed_time, average_activity_time }:Tas
                 return
             }
             
-            else {
-                setOfficialTasks(official_tasks_data.official_tasks || []) // Sets The Official Tasks
-            }
-        } 
+            onOfficialTasksUpdate(official_tasks_data.official_tasks || []) // Sets The Official Tasks
+            setOfficialTasksRemainingHours(official_tasks_data.official_tasks_remaining_hours || 0) // Sets The Official Tasks Remaining Hours
+        }
         
         catch {
             Alert.alert("Chyba", "Pri získavaní oficiálnych úloh došlo k chybe.") // Shows The Alert
@@ -173,9 +161,6 @@ export default function TasksSection({ elapsed_time, average_activity_time }:Tas
 
     // Function For Check The Official Tasks
     const checkOfficialTasksCompletion = ():void => {
-        const MAX_RED:number = 255 // Defines The Maximum Red Color
-        const MIN_RED:number = 82 // Defines The Minimum Red Color
-
         const _30_minutes_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "30_minutes_activity") || null // Gets The "30 Minutes Activity" Official Task If Is Available
         const _1_hour_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "1_hour_activity") || null // Gets The "1 Hour Activity" Official Task If Is Available
         const _2_hours_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "2_hours_activity") || null // Gets The "2 Hours Activity" Official Task If Is Available
@@ -184,85 +169,130 @@ export default function TasksSection({ elapsed_time, average_activity_time }:Tas
 
         // 30 Minutes Activity
         if(_30_minutes_activity && !_30_minutes_activity.is_completed) {
-            const progress:number = (elapsed_time / (3600 / 2)) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / (3600 / 600)) * 100 // Calculates The Progress
         
-            if(progress <= 100) {
-                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
-        
-                // _30_minutes_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
-                // _30_minutes_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "30_minutes_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
+
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
     
                 // 100% Completed
-                if(progress === 100) {
-                    completeOfficialTask("30_minutes_activity") // Completes The "30 Minutes Activity" Official Task
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("30_minutes_activity") // Completes The "30 Minutes Activity" Official Task
                 }
             }
         }
 
         // 1 Hour Activity
         if(_1_hour_activity && !_1_hour_activity.is_completed) {
-            const progress:number = (elapsed_time / 3600) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / 3600) * 100 // Calculates The Progress
     
-            if(progress <= 100) {
-                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "1_hour_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
 
-                // _1_hour_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
-                // _1_hour_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
 
                 // 100% Completed
-                if(progress === 100) {
-                    completeOfficialTask("1_hour_activity") // Completes The "1 Hour Activity" Official Task
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("1_hour_activity") // Completes The "1 Hour Activity" Official Task
                 }
             }
         }
 
         // 2 Hours Activity
         if(_2_hours_activity && !_2_hours_activity.is_completed) {
-            const progress:number = (elapsed_time / (3600 * 2)) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / (3600 * 2)) * 100 // Calculates The Progress
     
-            if(progress <= 100) {
-                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "2_hours_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
 
-                // _2_hours_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
-                // _2_hours_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
 
                 // 100% Completed
-                if(progress === 100) {
-                    completeOfficialTask("2_hours_activity") // Completes The "2 Hours Activity" Official Task
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("2_hours_activity") // Completes The "2 Hours Activity" Official Task
                 }
             }
         }
 
         // 3 Hours Activity
         if(_3_hours_activity && !_3_hours_activity.is_completed) {
-            const progress:number = (elapsed_time / (3600 * 3)) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / (3600 * 3)) * 100 // Calculates The Progress
     
-            if(progress <= 100) {
-                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "3_hours_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
 
-                // _3_hours_activity.style.setProperty("--progress", String(progress)) // Sets The Progress
-                // _3_hours_activity.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
 
                 // 100% Completed
-                if(progress === 100) {
-                    completeOfficialTask("3_hours_activity") // Completes The "3 Hours Activity" Official Task
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("3_hours_activity") // Completes The "3 Hours Activity" Official Task
                 }
             }
         }
 
         // Longer Activity Than The Weekly Average Activity
         if(beat_average_activity_time && !beat_average_activity_time.is_completed) {
-            const progress:number = (elapsed_time / average_activity_time) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / average_activity_time) * 100 // Calculates The Progress
 
-            if(progress <= 100) {
-                let red:number = MAX_RED - (progress / 100) * (MAX_RED - MIN_RED) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "beat_average_activity_time") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
 
-                // beat_average_activity_time.style.setProperty("--progress", String(progress)) // Sets The Progress
-                // beat_average_activity_time.style.setProperty("--progress-color", `rgba(${red}, 207, 32, 0.1)`) // Sets The Progress Color
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
 
                 // 100% Completed
-                if(progress === 100) {
-                    completeOfficialTask("beat_average_activity_time") // Completes The "Beat Average Activity Time" Official Task
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("beat_average_activity_time") // Completes The "Beat Average Activity Time" Official Task
                 }
             }
         }
@@ -433,7 +463,7 @@ export default function TasksSection({ elapsed_time, average_activity_time }:Tas
             setNewTaskTitle("") // Sets The New Task Title
 
             const add_custom_task:OfficialTask|null = official_tasks.find(one_task => one_task.data === "add_custom_task") || null // Gets The "Add Custom Task" Official Task If Is Available
-            if(add_custom_task && !add_custom_task.is_completed) completeOfficialTask("add_custom_task") // Completes The "Add Custom Task" Official Task
+            if(add_custom_task && !add_custom_task.is_completed) onCompleteOfficialTask("add_custom_task") // Completes The "Add Custom Task" Official Task
         }
         
         catch {
@@ -555,109 +585,6 @@ export default function TasksSection({ elapsed_time, average_activity_time }:Tas
     const hideCustomTaskProperties = ():void => {
         setSelectedCustomTask(null) // Sets The Selected Custom Task
         custom_task_properties.current?.dismiss() // Hides The Custom Task Properties
-    }
-    
-    // Function For Complete Official Task
-    const completeOfficialTask = async (task_data:string):Promise<void> => {
-        try {
-            if(!logged_in_user) {
-                Alert.alert("Chyba", "Úlohu nie je možné dokončiť bez prihlásenia.") // Shows The Alert
-                return
-            }
-
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The POST Request To The Server
-            const completed_official_task_response:Response = await fetch(`${API_URL}/complete-official-task/`, {
-                method: "POST",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                },
-
-                body: JSON.stringify({
-                    task_data: task_data
-                })
-            })
-
-            // If The Response Isn't Success
-            if(!completed_official_task_response.ok) {
-                Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
-                return
-            }
-
-            const completed_official_task_data:CompletedOfficialTaskResponse = await completed_official_task_response.json() // Gets The Completed Official Task Data
-
-            // If The Response Isn't Success
-            if(!completed_official_task_data.success || !completed_official_task_data.task) {
-                Alert.alert("Chyba", completed_official_task_data.message) // Shows The Alert
-                return
-            }
-
-            // Sets The Official Tasks
-            setOfficialTasks(previous_tasks => previous_tasks.map((one_task:OfficialTask) => {
-                if(one_task.data === task_data) {
-                    return { 
-                        ...one_task, 
-                        progress_percentage: completed_official_task_data.task ? completed_official_task_data.task.progress_percentage : one_task.progress_percentage,
-                        is_completed: completed_official_task_data.task ? completed_official_task_data.task.is_completed : one_task.is_completed
-                    }
-                }
-
-                return one_task
-            }))
-
-            // // If The User's Daily Official Task Wasn't Previously Completed
-            // if(completed_official_task_response.first_completion) {
-            //     // If The Task Was Completed
-            //     if(completed_official_task_response.is_completed) {
-            //         const checkbox:HTMLDivElement = task_container.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
-
-            //         // activity_summary.gained_xp += completed_official_task_response.gained_xp // Increases The Gained XP For The Activity
-
-            //         window.setTimeout(function():void {
-            //             displayMessage(`+${completed_official_task_response.gained_xp} XP`, "success") // Displays The Amount Of Gained XP For The Completed Task
-            //             success_sound.play() // Plays The Success Sound
-            //         }, 100)
-
-            //         checkbox.classList.add("checked") // Marks The Checkbox As Checked
-            //     }
-
-            //     task_container.dataset["progress_percentage"] = String(completed_official_task_response.progress_percentage) // Updates The Progress Percentage Of The Task
-            //     initializeOfficialTasksProgression() // Initializes The Completion Progress Of The Official Tasks
-
-            //     // Completes The "Complete All Official Tasks" Official Task
-
-            //     const tasks:HTMLDivElement = task_container.parentElement as HTMLDivElement // Gets The Tasks Container
-            //     const complete_all_official_tasks:HTMLDivElement|null = tasks.querySelector("[data-task='complete_all_official_tasks']") || null; // Gets The "Complete All Official Tasks" Official Task If Is Available
-
-            //     // Checks If All Official Tasks Were Completed
-            //     if(complete_all_official_tasks) {
-            //         const checkbox:HTMLDivElement = complete_all_official_tasks.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
-
-            //         // If The Task Isn't Already Completed
-            //         if(!checkbox.classList.contains("checked")) {
-            //             const all_tasks:NodeListOf<HTMLDivElement> = tasks.querySelectorAll(".task"); // Gets All Tasks
-            //             const all_tasks_except_complete_all_official_tasks = [...all_tasks].filter(one_task => one_task.dataset["task"] !== "complete_all_official_tasks")
-
-            //             const has_completed_all_official_tasks:boolean = [...all_tasks_except_complete_all_official_tasks].every(function(one_task:HTMLDivElement) {
-            //                 if(one_task.dataset["task"] !== "complete_all_official_tasks") {
-            //                     const checkbox:HTMLDivElement = one_task.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
-            //                     return checkbox.classList.contains("checked")
-            //                 }
-            //             })
-            
-            //             if(has_completed_all_official_tasks) completeOfficialTask("complete_all_official_tasks", complete_all_official_tasks, success_sound)
-            //         }
-            //     }
-            // }
-        } 
-        
-        catch {
-            Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
-        }
     }
 
     return (

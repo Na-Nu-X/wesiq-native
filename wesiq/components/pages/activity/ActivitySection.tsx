@@ -11,12 +11,13 @@ import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedT
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { Break } from "./Break"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import type { Activity } from "./HistorySection"
 import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
+
+import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { Activity } from "./HistorySection"
+import type { OfficialTask } from "./TasksSection"
 
 interface TrainingPlanExercise {
     training_plan_key:string,
@@ -75,10 +76,12 @@ type TrainingPlanSlide = "start_training"|"exercise"|"finish_training"|"break" /
 interface ActivitySectionProps {
     onElapsedTimeUpdate:(elapsed_time:number) => void,
     elapsed_time:number,
-    onAverageActivityTimeLoad:(average_activity_time:number) => void
+    onAverageActivityTimeLoad:(average_activity_time:number) => void,
+    official_tasks:OfficialTask[],
+    onCompleteOfficialTask:(task_data:string) => void
 }
 
-export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onAverageActivityTimeLoad }:ActivitySectionProps) {
+export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onAverageActivityTimeLoad, official_tasks, onCompleteOfficialTask }:ActivitySectionProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
@@ -470,7 +473,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                 <View className="finish_training_button">
                                     <IconButton 
                                         icon_name="stop" 
-                                        onPress={stopActivity}
+                                        onPress={stopTrainingPlanActivity}
                                     />
                                 </View>
                             </View>
@@ -757,6 +760,13 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
     // Function For Stop Activity
     const stopActivity = async ():Promise<void> => {
+        const _2_activities:OfficialTask|null = official_tasks.find(one_task => one_task.data === "2_activities") || null // Gets The "Complete 2 Activities" Official Task If Is Available
+
+        // Complete Training Plan Activity
+        if(_2_activities && !_2_activities.is_completed) {
+            onCompleteOfficialTask("2_activities") // Completes The "Complete Training Plan Activity" Official Task
+        }
+
         setIsActivityRunning(false) // Sets The Information That The Activity Isn't Running
         setIsActivityStarted(false) // Sets The Information That The Activity Isn't Started
         setIsBasicActivityStarted(false) // Sets The Information That The Basic Activity Isn't Started (Without The Training Plan)
@@ -843,6 +853,24 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         resetProgressBars() // Resets Progress Bar
     }
 
+    // Function For Stop The Training Plan Activity
+    const stopTrainingPlanActivity = () => {
+        const complete_training_plan_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "complete_training_plan_activity") || null // Gets The "Complete Training Plan Activity" Official Task If Is Available
+
+        // Complete Training Plan Activity
+        if(complete_training_plan_activity && !complete_training_plan_activity.is_completed) {
+            onCompleteOfficialTask("complete_training_plan_activity") // Completes The "Complete Training Plan Activity" Official Task
+        }
+
+        // renderActivitySummary(elapsed_time, gained_xp) // Renders Activity Summary
+
+        // if(training_plan_summary.length > 0) {
+        //     renderTrainingPlanActivitySummary(training_plan_summary) // Renders Training Plan Activity Summary
+        // }
+
+        stopActivity() // Stops The Activity
+    }
+
     // Function For Calculate The Gained XP
     const calculateGainedXp = (
         elapsed_time_ms:number, 
@@ -922,57 +950,6 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
             setResetBarIndex(current_index) // Sets The Reset Bar Index
         }, 500)
     }
-
-    // // Function For Stop Activity
-    // export async function stopActivity(container:HTMLDivElement, playback:HTMLDivElement):Promise<void> {
-    //                     finally {
-    //                         const todo:HTMLDivElement = document.querySelector(".todo") as HTMLDivElement // Gets The TODO Container
-    //                         const official_tasks:HTMLDivElement = todo.querySelector(".official_tasks") as HTMLDivElement // Gets The Official Tasks Container
-    //                         const tasks:HTMLDivElement = official_tasks.querySelector(".tasks") as HTMLDivElement // Gets The Tasks Container
-
-    //                         const _2_activities:HTMLDivElement|null = tasks.querySelector("[data-task='2_activities']") || null // Gets The "Complete 2 Activities" Official Task If Is Available
-
-    //                         const success_sound:HTMLAudioElement = todo.querySelector(".success_sound") as HTMLAudioElement // Gets The Success Sound
-
-    //                         const training_plan:HTMLDivElement|null = container.querySelector(".training_plan_container .training_plan") as HTMLDivElement || null // Gets The Training Plan
-    //                         const finish_training:HTMLDivElement|null = training_plan ? training_plan.querySelector(".finish_training") as HTMLDivElement : null // Gets The Finish Training Slide
-
-    //                         if(_2_activities) {
-    //                             const checkbox:HTMLDivElement = _2_activities.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
-
-    //                             // If The Task Isn't Already Completed
-    //                             if(!checkbox.classList.contains("checked")) {
-    //                                 completeOfficialTask("2_activities", _2_activities, success_sound) // Completes The "Complete 2 Activities" Official Task
-    //                             }
-    //                         }
-
-    //                         renderActivitySummary(elapsed_time, gained_xp) // Renders Activity Summary
-
-    //                         // If User Has Completely Finished The Training Plan Activity
-    //                         if(finish_training && finish_training.classList.contains("active")) {
-    //                             const complete_training_plan_activity:HTMLDivElement|null = tasks.querySelector("[data-task='complete_training_plan_activity']") || null // Gets The "Complete Training Plan Activity" Official Task If Is Available
-
-    //                             if(complete_training_plan_activity) {
-    //                                 const checkbox:HTMLDivElement = complete_training_plan_activity.querySelector(".checkbox") as HTMLDivElement // Gets The Custom Checkbox Container
-
-    //                                 // If The Task Isn't Already Completed
-    //                                 if(!checkbox.classList.contains("checked")) {
-    //                                     completeOfficialTask("complete_training_plan_activity", complete_training_plan_activity, success_sound) // Completes The "Complete Training Plan Activity" Official Task
-    //                                 }
-    //                             }
-    //                         }
-
-    //                         if(training_plan_summary.length > 0) {
-    //                             renderTrainingPlanActivitySummary(training_plan_summary) // Renders Training Plan Activity Summary
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-
-    //         else renderActivitySummary(elapsed_time, 0) // Renders Activity Summary (If The User Isn't Logged In)
-    //     }
-    // }
 
     // Function For Animate The Slide Transition
     const animateSlideTransition = (next_slide:TrainingPlanSlide, next_index:number = active_exercise_index):void => {
