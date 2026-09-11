@@ -67,8 +67,8 @@ export default function EditTrainingPlan() {
     return (
         <>
             {training_plans_exercises.length > 0 && (
-                <View className="edit_training_plan hidden">
-                    <View className="additional_info">
+                <View className="edit_training_plan hidden" style={styles.edit_training_plan}>
+                    <View className="additional_info" style={styles.additional_info}>
                         <TextInput
                             className="title"
                             keyboardType="default"
@@ -83,13 +83,13 @@ export default function EditTrainingPlan() {
                             maxLength={50}
         
                             style={[
-                                // styles.title, 
+                                styles.title, 
                                 { outlineStyle: "none" } as any
                             ]}
                         />
         
-                        <View className="day_select_menu">
-                            <View className="select">
+                        <View className="day_select_menu" style={styles.day_select_menu}>
+                            <View className="select" style={styles.select}>
                                 <Text>Nepriradiť deň</Text>
         
                                 <Icon
@@ -99,11 +99,11 @@ export default function EditTrainingPlan() {
                                 />
                             </View>
         
-                            <View className="options_list">
+                            <View className="options_list" style={styles.options_list}>
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay("not_selected"}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -118,7 +118,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(1}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="eye"
@@ -133,7 +133,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(2}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -148,7 +148,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(3}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -163,7 +163,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(4}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -178,7 +178,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(5}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -193,7 +193,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(6}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -208,7 +208,7 @@ export default function EditTrainingPlan() {
                                 <Pressable 
                                     className="option"
                                     // onPress={() => setDay(0}
-                                    // style={styles.option}
+                                    style={styles.option}
                                 >
                                     <FontAwesome6
                                         name="list"
@@ -223,8 +223,8 @@ export default function EditTrainingPlan() {
                         </View>
                     </View>
         
-                    <View className="training_plan">
-                        <View className="drop_zone">
+                    <View className="training_plan" style={styles.training_plan}>
+                        <View className="drop_zone" style={styles.drop_zone}>
                             <FontAwesome6
                                 name="compress"
                                 size={20}
@@ -233,11 +233,12 @@ export default function EditTrainingPlan() {
                         </View>
                     </View>
         
-                    <View className="buttons">
+                    <View className="buttons" style={styles.buttons}>
                         <Pressable
                             className="save"
                             // onPress={}
                             accessibilityLabel="Uložiť zmeny"
+                            style={styles.save}
                         >
                             <Text>Uložiť zmeny</Text>
                         </Pressable>
@@ -246,6 +247,7 @@ export default function EditTrainingPlan() {
                             className="delete"
                             // onPress={}
                             accessibilityLabel="Vymazať"
+                            style={styles.delete}
                         >
                             <Text>Vymazať</Text>
                         </Pressable>
@@ -257,7 +259,7 @@ export default function EditTrainingPlan() {
 }
 
 const styles = StyleSheet.create({
-    new_training_plan: {
+    edit_training_plan: {
         alignItems: "center",
         justifyContent: "center",
 

@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Image } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Image, ScrollView } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import IconButton from "@/components/IconButton"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL, DOMAIN } from "@/constants/general"
@@ -15,6 +15,7 @@ import Icon from "@/components/Icon"
 import { opacity } from "react-native-reanimated/lib/typescript/Colors"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import { ExerciseItem } from "./ExerciseItem"
 
 interface LoadedExercisesResponse {
     success:boolean, 
@@ -22,20 +23,25 @@ interface LoadedExercisesResponse {
     message:string
 }
 
-interface Exercise {
+export interface Exercise {
     id:number,
     exercise:string,
-    image_filename?:string,
     unit:"reps"|"seconds"|"steps",
+    categories:string[]
     requires_weight:boolean,
-    categories:string
+    image_filename?:string,
+    is_hidden:boolean,
+    weight:number|null,
+    is_weight_selection_active:boolean|null
 }
 
 export default function ExerciseSelection() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [exercises, setExercises] = useState<Exercise[]>([]) // Stores The Exercises
-    const [are_exercises, setAreExercisesLoading] = useState(false) // Stores The Information If Exercises Are Loading
+    const [are_exercises, setAreExercisesLoading] = useState<boolean>(false) // Stores The Information If Exercises Are Loading
+
+    const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -101,7 +107,7 @@ export default function ExerciseSelection() {
                 return
             }
 
-            const loaded_exercises_data = await loaded_exercises_response.json() // Gets The Loaded Exercises Data
+            const loaded_exercises_data:LoadedExercisesResponse = await loaded_exercises_response.json() // Gets The Loaded Exercises Data
 
             // If The Response Isn't Success
             if(!loaded_exercises_data.success) {
@@ -111,7 +117,16 @@ export default function ExerciseSelection() {
             
             else {
                 console.log(loaded_exercises_data)
-                setExercises(loaded_exercises_data.exercises) // Sets The Exercises
+
+                // Sets The Exercises
+                setExercises(
+                    loaded_exercises_data.exercises.map((one_exercise:Exercise) => ({
+                        ...one_exercise,
+                        is_hidden: false, // Shows The Exercise
+                        weight: one_exercise.requires_weight ? 0 : null,
+                        is_weight_selection_active: one_exercise.requires_weight ? false : null
+                    }))
+                )
             }
         } 
         
@@ -129,13 +144,91 @@ export default function ExerciseSelection() {
         getExercises() // Gets The Exercises
     }, [])
 
-    return (
-        <View className="exercise_selection">
-            <View className="search_bar_menu">
-                <Icon icon_name="magnifying-glass" />
+    // Function For Search The Exercises
+    const searchExercises = (text:string):void => {
+        setSearchedText(text) // Sets The Searched Text
 
-                <View className="delete_search_bar">
-                    <Icon icon_name="xmark" />
+        const query:string = text.toLowerCase().trim() // Gets The Query (Clean Searched Text)
+
+        if(!query) {
+            // Sets The Exercises
+            setExercises(
+                exercises.map((one_exercise:Exercise) => ({
+                    ...one_exercise,
+                    is_hidden: false // Shows The Exercise
+                }))
+            )
+        }
+
+        // Filters Exercises by Searched Bar Value (Returns Not Corresponding Exercises)
+        const filtered_selection_exercises:Exercise[] = exercises.filter((one_exercise:Exercise):boolean => {
+            const matches_name:boolean = one_exercise.exercise.toLowerCase().trim().includes(query) // Checks If The Query Matches The Exercise Name
+            const matches_category:boolean = one_exercise.categories.some((one_category:string):boolean => one_category.toLowerCase().trim().includes(query)) // Checks If The Query Matches The Name Of Any Category
+            return matches_name || matches_category // Returns The Matching Exercise
+        })
+
+        // Sets The Exercises
+        setExercises((previous_exercises:Exercise[]) =>
+            previous_exercises.map((one_exercise:Exercise) => {
+                const matches_name:boolean = one_exercise.exercise.toLowerCase().trim().includes(query) // Checks If The Query Matches The Exercise Name
+                const matches_category:boolean = one_exercise.categories.some((one_category:string):boolean => one_category.toLowerCase().trim().includes(query)) // Checks If The Query Matches The Name Of Any Category
+                const is_match:boolean = matches_name || matches_category // Stores The Information If The Exercise Matches The Query
+        
+                return {
+                    ...one_exercise,
+                    is_hidden: query ? !is_match : false // Hides Filtered Exercises
+                }
+            })
+        )
+
+        console.log(filtered_selection_exercises)
+    }
+
+    // Function For Delete Search Bar
+    const deleteSearchBar = ():void => {
+        setSearchedText("") // Sets The Searched Text
+
+        // Sets The Exercises
+        setExercises(
+            exercises.map((one_exercise:Exercise) => ({
+                ...one_exercise,
+                is_hidden: false // Shows The Exercise
+            }))
+        )
+    }
+
+    // Function For Change Weight In Exercise
+    const changeWeight = (target_exercise:Exercise, operation:string):void => {
+        // Sets The Exercises
+        setExercises((previous_exercises:Exercise[]) =>
+            previous_exercises.map((one_exercise:Exercise) => {
+                if(one_exercise.id === target_exercise.id) {
+                    let current_weight:number = one_exercise.weight || 0 // Gets The Current Weight
+    
+                    if(one_exercise.requires_weight) {
+                        if(operation === "increase") current_weight += 1 // Increases The Weight
+                        else if(operation === "decrease" && current_weight > 0) current_weight -= 1 // Decreases The Weight
+                    }
+    
+                    return { 
+                        ...one_exercise, 
+                        weight: current_weight, 
+                        is_weight_selection_active: true 
+                    }
+                }
+    
+                return { ...one_exercise, is_weight_selection_active: false }
+            })
+        )
+    }
+
+    return (
+        <View className="exercise_selection" style={styles.exercise_selection}>
+            <View className="search_bar_menu" style={styles.search_bar_menu}>
+                <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
+
+                <View className="delete_search_bar" style={styles.delete_search_bar}>
+                    <Icon icon_name="xmark" onPress={deleteSearchBar} />
                 </View>
 
                 <TextInput
@@ -144,98 +237,64 @@ export default function ExerciseSelection() {
                     placeholder="Nájsť cvik" 
                     placeholderTextColor={LIGHT_BLUE_COLOR}
                     accessibilityLabel="Nájsť cvik" 
-                    // value={}
-                    // onChangeText={}
+                    value={searched_text}
+                    onChangeText={searchExercises}
 
                     style={[
-                        // styles.search_bar, 
+                        styles.search_bar, 
                         { outlineStyle: "none" } as any
                     ]}
                 />
             </View>
 
-            <View className="exercises">
+            <ScrollView 
+                className="exercises" 
+                showsVerticalScrollIndicator={false}
+                indicatorStyle="white"
+                keyboardShouldPersistTaps="handled" 
+                keyboardDismissMode="on-drag"
+                style={styles.exercises} 
+                contentContainerStyle={styles.exercises}
+            >
                 <View 
                     className="custom_exercise exercise"
                     // draggable="true"
+                    style={styles.exercise}
                 >
                     <FontAwesome6
                         name="plus"
-                        size={20}
-                        color={LIGHT_BLUE_COLOR}
-                        style={{marginRight: 8.5}}
+                        size={40}
+                        color={BLUE_COLOR}
                     />
 
-                    <Text className="name">Vlastný cvik</Text>
+                    {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Vlastný cvik</Text> */}
                 </View>
 
                 <View 
                     className="warm_up exercise"
                     // draggable="true"
+                    style={styles.exercise}
                 >
                     <FontAwesome6
                         name="dumbbell"
-                        size={20}
-                        color={LIGHT_BLUE_COLOR}
-                        style={{marginRight: 8.5}}
+                        size={40}
+                        color={BLUE_COLOR}
                     />
 
-                    <Text className="name">Rozcvička</Text>
+                    {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Rozcvička</Text> */}
                 </View>
 
                 {exercises.map((one_exercise:Exercise, index:number) => (
-                    <View 
-                        key={one_exercise.id || index}
-                        className="exercise"
-                        // draggable="true" 
-                    >
-                        {one_exercise.image_filename && (
-                            <Image 
-                                source={{ uri: `${DOMAIN}/static/images/exercises/${one_exercise.image_filename}`}}
-                                resizeMode="cover"
-
-                                style={[
-                                    StyleSheet.absoluteFillObject,
-                                    
-                                    { 
-                                        // width: "100%",
-                                        // height: "100%",
-                                        opacity: 0.2 
-                                    }
-                                ]}
-                            />
-                        )}
-
-                        <Text className="name">{one_exercise.exercise}</Text>
-
-                        <View className="weight_selection">
-                            <Pressable
-                                className="increase_weight"
-                                // onPress={}
-                            >
-                                <FontAwesome6
-                                    name="plus"
-                                    size={20}
-                                    color={BLUE_COLOR}
-                                />
-                            </Pressable>
-
-                            <Text className="weight"><Text>0</Text><Text>kg</Text></Text>
-
-                            <Pressable
-                                className="decrease_weight"
-                                // onPress={}
-                            >
-                                <FontAwesome6
-                                    name="minus"
-                                    size={20}
-                                    color={BLUE_COLOR}
-                                />
-                            </Pressable>
-                        </View>
-                    </View>
+                    !one_exercise.is_hidden && (
+                        <ExerciseItem
+                            key={one_exercise.id || index}
+                            one_exercise={one_exercise}
+                            onSwipeUp={() => changeWeight(one_exercise, "increase")} // Increases The Weight
+                            onSwipeDown={() => changeWeight(one_exercise, "decrease")} // Decreases The Weight
+                        />
+                    )
                 ))}
-            </View>
+            </ScrollView>
         </View>
     )
 }
@@ -247,6 +306,7 @@ const styles = StyleSheet.create({
         maxWidth: MAIN_WIDTH,
         width: "100%",
         minHeight: 500,
+        marginHorizontal: "auto",
     },
 
     search_bar_menu: {
@@ -304,11 +364,13 @@ const styles = StyleSheet.create({
         // @include scrollbar;
         // display: grid;
         // grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        flexDirection: "row",
+        flexWrap: "wrap",
         gap: 10,
         width: "100%",
         maxHeight: 450,
         marginHorizontal: "auto",
-        padding: 5,
+        // padding: 5,
         textAlign: "center",
 
         // .custom_exercise,
@@ -323,8 +385,6 @@ const styles = StyleSheet.create({
 
         //     .fa-plus,
         //     .fa-dumbbell {
-        //         font-size: 2.5em;
-        //         color: $blue-color;
         //         transition: filter 0.3s ease, transform 0.3s ease;
         //     }
 
@@ -336,10 +396,13 @@ const styles = StyleSheet.create({
 
     exercise: {
         // @include scrollbar;
+        position: "relative",
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        position: "relative",
+        flexBasis: 100,
+        flexGrow: 1,
+        minWidth: 100,
         gap: 5,
         aspectRatio: 1 / 1,
         padding: 10,
@@ -349,6 +412,7 @@ const styles = StyleSheet.create({
         borderRadius: MEDIUM_BORDER_RADIUS,
         // backdrop-filter: blur(5px);
         // cursor: move;
+        overflow: "hidden",
         // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 
         // &.hidden {
@@ -365,46 +429,6 @@ const styles = StyleSheet.create({
         //     .name {
         //         filter: blur(2px);
         //     }
-
-        //     .weight_selection {
-        //         @include position_center;
-        //         @include flex_center($direction: column);
-        //         width: 100%;
-        //         height: 100%;
-                
-        //         .decrease_weight, 
-        //         .increase_weight {
-        //             background: none;
-        //             color: $secondary-color;
-        //             border: none;
-        //             outline: none;
-        //             cursor: pointer;
-        //             transition: color 0.2s ease;
-
-        //             &:hover {
-        //                 color: $blue-color;
-        //             }
-                    
-        //             i {
-        //                 pointer-events: none;
-        //                 font-size: 1.2em;
-        //             }
-        //         }
-
-        //         .weight {
-        //             font-size: 2em;
-        //             cursor: default;
-        //             color: $secondary-color;
-
-        //             span {
-        //                 font-size: inherit;
-        //             }
-        //         }
-        //     }
         // }
-    },
-
-    weight_selection: {
-        display: "none",
     },
 })

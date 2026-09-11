@@ -62,8 +62,8 @@ export default function NewTrainingPlan() {
     }, [])
 
     return (
-        <View className="new_training_plan">
-            <View className="additional_info">
+        <View className="new_training_plan" style={styles.new_training_plan}>
+            <View className="additional_info" style={styles.additional_info}>
                 <TextInput
                     className="title"
                     keyboardType="default"
@@ -78,13 +78,13 @@ export default function NewTrainingPlan() {
                     maxLength={50}
 
                     style={[
-                        // styles.title, 
+                        styles.title, 
                         { outlineStyle: "none" } as any
                     ]}
                 />
 
-                <View className="day_select_menu">
-                    <View className="select">
+                <View className="day_select_menu" style={styles.day_select_menu}>
+                    <View className="select" style={styles.select}>
                         <Text>Nepriradiť deň</Text>
 
                         <Icon
@@ -94,11 +94,11 @@ export default function NewTrainingPlan() {
                         />
                     </View>
 
-                    <View className="options_list">
+                    <View className="options_list" style={styles.options_list}>
                         <Pressable 
                             className="option"
                             // onPress={() => setDay("not_selected"}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -113,7 +113,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(1}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="eye"
@@ -128,7 +128,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(2}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -143,7 +143,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(3}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -158,7 +158,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(4}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -173,7 +173,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(5}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -188,7 +188,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(6}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -203,7 +203,7 @@ export default function NewTrainingPlan() {
                         <Pressable 
                             className="option"
                             // onPress={() => setDay(0}
-                            // style={styles.option}
+                            style={styles.option}
                         >
                             <FontAwesome6
                                 name="list"
@@ -218,8 +218,8 @@ export default function NewTrainingPlan() {
                 </View>
             </View>
 
-            <View className="training_plan">
-                <View className="drop_zone active">
+            <View className="training_plan" style={styles.training_plan}>
+                <View className="drop_zone active" style={styles.drop_zone}>
                     <FontAwesome6
                         name="compress"
                         size={40}
@@ -232,8 +232,9 @@ export default function NewTrainingPlan() {
                 className="save"
                 // onPress={}
                 accessibilityLabel="Pridať tréningový plán"
+                style={styles.save}
             >
-                <Text>Pridať tréningový plán</Text>
+                <Text style={{ color: SECONDARY_COLOR }}>Pridať tréningový plán</Text>
             </Pressable>
         </View>
     )
@@ -243,6 +244,10 @@ const styles = StyleSheet.create({
     new_training_plan: {
         alignItems: "center",
         justifyContent: "center",
+        maxWidth: MAIN_WIDTH,
+        width: "100%",
+        marginHorizontal: "auto",
+        marginBottom: 50,
 
         // &.hidden {
         //     display: none;
@@ -258,12 +263,9 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        width: "100%",
+        // width: "100%",
         height: 50,
-        // flex: 1 1 0px; 
         flex: 1,
-        minWidth: 0,
-        maxWidth: "50%",
         // max-width: calc(50% - 10px);
         paddingHorizontal: 10,
         color: SECONDARY_COLOR,
@@ -283,6 +285,7 @@ const styles = StyleSheet.create({
     day_select_menu: {
         position: "relative",
         cursor: "pointer",
+        flex: 1,
     },
 
     select: {
@@ -296,7 +299,6 @@ const styles = StyleSheet.create({
         color: LIGHT_BLUE_COLOR,
         borderBottomWidth: 1,
         borderBottomColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: SMALL_BORDER_RADIUS,
         // transition: border 0.3s ease, box-shadow 0.3s ease;
     
         // &:hover,
@@ -732,6 +734,8 @@ const styles = StyleSheet.create({
 
     save: {
         // @include crop_text;
+        alignItems: "center",
+        justifyContent: "center",
         width: "100%",
         height: 50,
         marginTop: 20,

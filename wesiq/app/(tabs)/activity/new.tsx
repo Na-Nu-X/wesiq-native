@@ -9,6 +9,7 @@ import Banner from "@/components/Banner"
 import NewTrainingPlan from "@/components/pages/manage_training_plans/NewTrainingPlan"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
+import ExerciseSelection from "@/components/pages/manage_training_plans/ExerciseSelection"
 
 export default function HomeScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -47,6 +48,7 @@ export default function HomeScreen() {
             />
   
             <NewTrainingPlan />
+            <ExerciseSelection />
           </ScrollView>
         </SafeAreaView>
       </BackgroundContainer>
