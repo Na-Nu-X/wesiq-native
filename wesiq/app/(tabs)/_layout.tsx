@@ -74,7 +74,7 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
-        name="activity"
+        name="activity/index"
 
         options={{
           title: "",
@@ -87,6 +87,22 @@ export default function RootLayout() {
               color={color}
             />
           )
+        }}
+      />
+
+      <Tabs.Screen
+        name="activity/new"
+
+        options={{
+          href: null
+        }}
+      />
+
+      <Tabs.Screen
+        name="activity/edit"
+
+        options={{
+          href: null
         }}
       />
 

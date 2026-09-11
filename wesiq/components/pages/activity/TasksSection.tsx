@@ -169,7 +169,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
         // 30 Minutes Activity
         if(_30_minutes_activity && !_30_minutes_activity.is_completed) {
-            const progress:number = ((elapsed_time / 1000) / (3600 / 600)) * 100 // Calculates The Progress
+            const progress:number = ((elapsed_time / 1000) / (3600 / 2)) * 100 // Calculates The Progress
         
             if(Math.floor(progress) <= 100) {
                 // Stores The New State Of Updated Official Tasks
@@ -716,7 +716,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                     accessibilityLabel="Pridať úlohu" 
                                     value={new_task_title}
                                     onChangeText={setNewTaskTitle}
-                                    // maxLength={50}
+                                    maxLength={100}
 
                                     style={[
                                         styles.new_task, 

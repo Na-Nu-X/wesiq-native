@@ -10,11 +10,11 @@ import ActivitySection from "@/components/pages/activity/ActivitySection"
 import TasksSection from "@/components/pages/activity/TasksSection"
 import HistorySection from "@/components/pages/activity/HistorySection"
 import { MAIN_WIDTH } from "@/constants/dimensions"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { API_URL } from "@/constants/general"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
 
 interface CompletedOfficialTaskResponse {
     success: boolean,
@@ -35,7 +35,6 @@ export default function ActivityScreen() {
 
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
     const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time
-    // const [official_tasks_gained_xp, setOfficialTasksGainedXp] = useState<number>(0) // Stores The Official Tasks Gained XP
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
 
     // Function For Complete Official Task
@@ -95,8 +94,6 @@ export default function ActivityScreen() {
             const complete_all_official_tasks:OfficialTask|null = official_tasks.find(one_task => one_task.data === "complete_all_official_tasks") || null // Gets The "Complete All Official Tasks" Official Task If Is Available
 
             if(completed_official_task_data.task.first_completion && completed_official_task_data.task.is_completed) {
-                // setOfficialTasksGainedXp((previous_gained_xp:number) => previous_gained_xp += completed_official_task_data.task?.gained_xp || 0)
-
                 // window.setTimeout(function():void {
                 //     displayMessage(`+${completed_official_task_response.gained_xp} XP`, "success") // Displays The Amount Of Gained XP For The Completed Task
                 //     success_sound.play() // Plays The Success Sound

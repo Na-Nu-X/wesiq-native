@@ -19,7 +19,7 @@ import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormD
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 
-interface TrainingPlanExercise {
+export interface TrainingPlanExercise {
     training_plan_key:string,
     day:number,
     type:string,
@@ -228,7 +228,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         } 
         
         finally {
-            setAreTrainingPlansLoading(false) // Stores The Information That Posts Aren't Loading
+            setAreTrainingPlansLoading(false) // Stores The Information That Training Plans Aren't Loading
         }
     }
 
@@ -727,8 +727,8 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         if(is_activity_running) return
         
         setIsActivityRunning(true) // Sets The Information That The Activity Is Running
+        if(!is_activity_started) setIsBasicActivityStarted(true) // Sets The Information That The Basic Activity Is Started (Without The Training Plan)
         setIsActivityStarted(true) // Sets The Information That The Activity Is Started
-        setIsBasicActivityStarted(true) // Sets The Information That The Basic Activity Is Started (Without The Training Plan)
 
         start_time.current = Date.now() // Sets The Start Time
         interval.current = setInterval(updateTick, 1000) // Sets The Interval
@@ -776,69 +776,70 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
             interval.current = null // Resets The Interval
         }
 
-        // Gets The New Activity Data
-        const new_activity_data:{
-            elapsed_time:number,
-            gained_xp:number,
-            type:string|null,
-            day:number|null,
-            training_plan_summary:TrainingPlanSummaryExercise[]|null
-        } = {
-            elapsed_time, // Stores Formatted Elapsed Time
-            gained_xp: calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100), // Stores Gained XP
-            type: ordered_exercises[active_exercise_index].type || "Tréning", // Stores Training Plan Title
-            day: selected_day, // Stores Training Plan Day
-            training_plan_summary: null // Stores The Training Plan Summary
-        }
+        const gained_xp:number = calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100) // Calculates The Gained XP
 
-        if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
-
-        console.log(new_activity_data)
-
-        try {
-            if(!logged_in_user) {
-                Alert.alert("Chyba", "Aktivitu nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
-                return
+        // Commits Activity
+        if(gained_xp > 0) {
+            // Gets The New Activity Data
+            const new_activity_data:{
+                elapsed_time:number,
+                gained_xp:number,
+                type:string|null,
+                day:number|null,
+                training_plan_summary:TrainingPlanSummaryExercise[]|null
+            } = {
+                elapsed_time, // Stores Formatted Elapsed Time
+                gained_xp: gained_xp, // Stores Gained XP
+                type: ordered_exercises[active_exercise_index].type || "Tréning", // Stores Training Plan Title
+                day: selected_day, // Stores Training Plan Day
+                training_plan_summary: null // Stores The Training Plan Summary
             }
 
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The POST Request To The Server
-            const new_recorded_activity_response:Response = await fetch(`${API_URL}/new-activity/`, {
-                method: "POST",
+            if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                },
+            console.log(new_activity_data)
 
-                body: JSON.stringify({
-                    new_activity_data
+            try {
+                if(!logged_in_user) {
+                    Alert.alert("Chyba", "Aktivitu nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
+                    return
+                }
+
+                const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+        
+                // Sends The POST Request To The Server
+                const new_recorded_activity_response:Response = await fetch(`${API_URL}/new-activity/`, {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${user_token}`
+                    },
+
+                    body: JSON.stringify({
+                        new_activity_data
+                    })
                 })
-            })
 
-            // If The Response Isn't Success
-            if(!new_recorded_activity_response.ok) {
-                Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
-                return
-            }
+                // If The Response Isn't Success
+                if(!new_recorded_activity_response.ok) {
+                    Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+                    return
+                }
 
-            const new_recorded_activity_data:BasicResponse = await new_recorded_activity_response.json() // Gets The New Recorded Activity Data
+                const new_recorded_activity_data:BasicResponse = await new_recorded_activity_response.json() // Gets The New Recorded Activity Data
 
-            // If The Response Isn't Success
-            if(!new_recorded_activity_data.success) {
-                Alert.alert("Chyba", new_recorded_activity_data.message) // Shows The Alert
-                return
-            }
-        } 
-        
-        catch {
-            Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
-        } 
-        
-        finally {
+                // If The Response Isn't Success
+                if(!new_recorded_activity_data.success) {
+                    Alert.alert("Chyba", new_recorded_activity_data.message) // Shows The Alert
+                    return
+                }
+            } 
             
+            catch {
+                Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+            } 
         }
 
         start_time.current = null // Sets The Start Time
@@ -988,6 +989,15 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
     // Function For Handle Next Step (Increases The Current Set Or Goes To Next Exercise)
     const handleNextStep = ():void => {
+        // Starts The Timer If Is Paused
+        if(!is_activity_running) {
+            const current_time:number = Date.now() // Gets The Current Time
+
+            setIsActivityRunning(true) // Sets The Information That The Activity Is Running
+            start_time.current = current_time // Sets The Start Time
+            interval.current = setInterval(updateTick, 1000) // Sets The Interval
+        }
+
         // Increases The Set
         if(current_set < active_exercise.periods.length) {
             setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
@@ -1043,6 +1053,13 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
     const skipBreak = ():void => {
         const next_active_exercise_index:number = active_exercise_index + 1 // Gets The Next Active Exercise Index
         const current_time:number = Date.now() // Gets The Current Time
+
+        // Starts The Timer If Is Paused
+        if(!is_activity_running) {
+            setIsActivityRunning(true) // Sets The Information That The Activity Is Running
+            start_time.current = current_time // Sets The Start Time
+            interval.current = setInterval(updateTick, 1000) // Sets The Interval
+        }
 
         setRed((previous_red:number) => previous_red - ((255 - MIN_RED) / (all_sets - 1))) // Makes Color Transition For Progress Bar From rgb(255, 207, 32) To rgb(82, 207, 32)
         setCurrentSet(1) // Sets The Current Set
