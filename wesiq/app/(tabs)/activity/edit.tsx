@@ -8,6 +8,7 @@ import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import Banner from "@/components/Banner"
 import NewTrainingPlan from "@/components/pages/manage_training_plans/NewTrainingPlan"
 import EditTrainingPlan from "@/components/pages/manage_training_plans/EditTrainingPlan"
+import ExerciseSelection from "@/components/pages/manage_training_plans/ExerciseSelection"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -48,6 +49,7 @@ export default function HomeScreen() {
             />
   
             <EditTrainingPlan />
+            <ExerciseSelection />
           </ScrollView>
         </SafeAreaView>
       </BackgroundContainer>

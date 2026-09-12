@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import * as Notifications from "expo-notifications"
 import IconButton from "@/components/IconButton"
 import { BLUE_COLOR, SECONDARY_COLOR } from "@/constants/colors"
 import { getFormattedTime } from "@/utils/time"

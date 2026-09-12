@@ -20,12 +20,13 @@ import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 
 export interface TrainingPlanExercise {
+    id:number,
     training_plan_key:string,
     day:number,
     type:string,
     exercise:string,
     periods:number[],
-    unit:string,
+    unit:"reps"|"seconds"|"steps",
     order:number,
     is_warm_up:boolean
 }
@@ -58,7 +59,7 @@ interface ActivityData {
     activities_amount:number
 }
 
-interface LoadedTrainingPlansResponse {
+export interface LoadedTrainingPlansResponse {
     success:boolean,
     training_plans:TrainingPlanExercise[],
     message:string
