@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Platform } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Platform, useWindowDimensions } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -14,6 +14,8 @@ import { BasicResponse } from "@/components/Feed"
 import * as Notifications from "expo-notifications"
 import Icon from "@/components/Icon"
 import { generateKey } from "@/utils/generateKey"
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist"
+import { TouchableOpacity } from "react-native-gesture-handler"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
@@ -274,18 +276,37 @@ export default function EditTrainingPlan() {
                                     {/* Creates Exercise */}
                                     {!active_exercise.is_warm_up && (
                                         <View className="exercise" style={styles.exercise}>
-                                            {/* Sets Exercise Title */}
-                                            <Text 
-                                                className="title" 
+                                            {active_exercise.is_custom_exercise ? (
+                                                // Sets Exercise Title
+                                                <TextInput 
+                                                    className="title" 
+                                                    keyboardType="default"
+                                                    textAlignVertical="top"
+                                                    value={active_exercise.exercise}
+                                                    onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
+                                                    maxLength={50}
 
-                                                style={[{
-                                                    maxWidth: 350,
-                                                    textAlign: "center",
-                                                    color: SECONDARY_COLOR,
-                                                }]}
-                                            >
-                                                {active_exercise.exercise}
-                                            </Text> 
+                                                    style={[{
+                                                        maxWidth: 350,
+                                                        textAlign: "center",
+                                                        color: SECONDARY_COLOR,
+                                                        outlineStyle: "none" as any
+                                                    }]}
+                                                /> 
+                                            ) : (
+                                                // Sets Exercise Title
+                                                <Text 
+                                                    className="title" 
+
+                                                    style={[{
+                                                        maxWidth: 350,
+                                                        textAlign: "center",
+                                                        color: SECONDARY_COLOR,
+                                                    }]}
+                                                >
+                                                    {active_exercise.exercise}
+                                                </Text> 
+                                            )}
 
                                             <View className="labels" style={styles.labels}>
                                                 <Text className="unit_amount" style={styles.label}>
@@ -320,7 +341,41 @@ export default function EditTrainingPlan() {
                             )}
                         </Animated.View>
 
-                        <View className="bar_container" style={styles.bar_container}>
+                        <View className="bar_container" style={{ width: "100%" }}>
+                            <DraggableFlatList
+                                horizontal
+                                data={active_training_plan_exercises}
+                                keyExtractor={(one_exercise) => String(one_exercise.id)}
+                                renderItem={renderBar}
+                                activationDistance={5}
+
+                                contentContainerStyle={[
+                                    styles.bar_container,
+
+                                    {
+                                        justifyContent: "center",
+                                        flexGrow: 1,
+                                        gap: 10,
+                                    },
+                                ]}
+                                
+                                onDragEnd={({ data, from, to }) => {
+                                    const dragged_exercise:TrainingPlanExercise = active_training_plan_exercises[from]
+                                    const dropped_exercise:TrainingPlanExercise = active_training_plan_exercises[to]
+
+                                    if (
+                                        dragged_exercise.exercise === "Warm Up" ||
+                                        dropped_exercise.exercise === "Warm Up"
+                                    ) {
+                                        return
+                                    }
+
+                                    setTrainingPlansExercises(data)
+                                }}
+                            />
+                        </View>
+
+                        {/* <View className="bar_container" style={styles.bar_container}>
                             {active_training_plan_exercises.map((one_exercise:TrainingPlanExercise, index:number) => (
                                 // Creates Bar
                                 <Pressable 
@@ -342,7 +397,7 @@ export default function EditTrainingPlan() {
                                     ]}
                                 />
                             ))}
-                        </View>
+                        </View> */}
                     </View>
                 </GestureDetector>
 
@@ -386,7 +441,7 @@ export default function EditTrainingPlan() {
                                         keyboardType="number-pad"
                                         textAlignVertical="top" 
                                         value={String(compressConsecutiveNumbers(periods_data)[index])}
-                                        // onChangeText={}
+                                        onChangeText={(text:string) => changeRepsWithInput(active_exercise, index, text)}
                                         maxLength={4}
 
                                         style={[
@@ -434,7 +489,7 @@ export default function EditTrainingPlan() {
                             keyboardType="number-pad"
                             textAlignVertical="top" 
                             value={String(one_unit)}
-                            // onChangeText={}
+                            onChangeText={(text:string) => changeSetsWithInput(active_exercise, index, text)}
                             maxLength={4}
 
                             style={[
@@ -489,6 +544,99 @@ export default function EditTrainingPlan() {
 
         return result
     }
+
+    const total_gaps:number = (active_training_plan_exercises.length - 1) * 10 // Defines The Total Gaps
+    const bar_width:number = (MAIN_WIDTH - 20 - total_gaps) / active_training_plan_exercises.length // Defines The Bar Width
+
+    const renderBar = ({ item, getIndex, drag, isActive }: RenderItemParams<TrainingPlanExercise>) => {
+        const index = getIndex();
+        
+        return (
+            <ScaleDecorator>
+                <Pressable
+                    className={index === active_exercise_index ? "bar active" : "bar"} // Adds Active Class For Bar Of Active Training Plan
+                    onLongPress={drag}
+                    onPress={() => changeExercises(index as number)} // Changes Training Plans
+                    disabled={isActive}
+
+                    hitSlop={{
+                        top: 20,
+                        right: 10,
+                        bottom: 20,
+                        left: 10,
+                    }}
+
+                    style={{
+                        justifyContent: "center",
+                        width: Math.max(bar_width, 10),
+                        paddingVertical: 15,
+                    }}
+                >
+                    <View
+                        style={[
+                            styles.bar,
+                            { width: "100%" },
+
+                            index === active_exercise_index ? { 
+                                backgroundColor: BLUE_COLOR,
+                                shadowColor: BLUE_COLOR,
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 1,
+                                shadowRadius: 10,
+                                elevation: 5,
+                            } : {}
+                        ]}
+                    />
+                </Pressable>
+            </ScaleDecorator>
+        )
+    }
+
+    // // Function For Change Exercises In The Training Plan
+    // export function changeExercises(exercise_index:number, training_plan:HTMLDivElement, state:{active_exercise_index:number}):void {
+    //     const exercises:NodeListOf<HTMLDivElement> = training_plan.querySelectorAll<HTMLDivElement>(".exercise"); // Gets All Training Plan Exercises
+
+    //     (exercises[state.active_exercise_index] as HTMLDivElement).classList.remove("active"); // Hides Previous Active Exercise
+    //     (exercises[state.active_exercise_index] as HTMLDivElement).inert = true // Disables Focus
+
+    //     if(exercise_index < 0) state.active_exercise_index = exercises.length - 1 // Shows The Last Exercise
+    //     else if(exercise_index > exercises.length - 1) state.active_exercise_index = 0 // Shows The First Exercise
+    //     else state.active_exercise_index = exercise_index; // Updates Index Of Active Exercise
+        
+    //     (exercises[state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows New Active Exercise
+    //     (exercises[state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
+
+    //     // Creates And Renders Bars
+    //     const bar_container:HTMLDivElement = createBars(exercises.length, state)
+    //     renderBars(training_plan, bar_container)
+    // }
+
+    // // Function For Change Exercises Order In The Training Plan With Bars
+    // export function changeExercisePosition(dropped_bar_index:number, dragged_bar:HTMLDivElement, training_plan:HTMLDivElement, state:{active_exercise_index:number}):void {
+    //     // Executes Only If The Dragged Element Is Dragged Bar
+    //     if(dragged_bar) {
+    //         const dragged_bar_index:number = [...dragged_bar.parentNode!.querySelectorAll<HTMLDivElement>(".bar")].indexOf(dragged_bar) // Gets Index Of The Dragged Bar In The Training Plan
+    //         const exercises:NodeListOf<HTMLDivElement> = training_plan.querySelectorAll<HTMLDivElement>(".exercise") // Gets All Training Plan Exercises
+
+    //         const active_exercise:HTMLDivElement = exercises[state.active_exercise_index] as HTMLDivElement // Gets The Active Exercise
+    //         const dragged_exercise:HTMLDivElement = exercises[dragged_bar_index] as HTMLDivElement // Gets The Dragged Exercise
+    //         const dropped_exercise:HTMLDivElement = exercises[dropped_bar_index] as HTMLDivElement // Gets The Dropped Exercise
+
+    //         if((dragged_exercise.querySelector(".title") as HTMLHeadingElement).textContent === "Warm Up" || (dropped_exercise.querySelector(".title") as HTMLHeadingElement).textContent === "Warm Up") return // Do Nothing If Exercise Of Dropped Bar Index Or Dragged Bar Index Is Warm Up
+
+    //         dragged_bar_index < dropped_bar_index ? training_plan.insertBefore(dragged_exercise, dropped_exercise.nextSibling) : training_plan.insertBefore(dragged_exercise, dropped_exercise); // Changes DOM Position Of Exercises
+
+    //         active_exercise.classList.remove("active") // Hides Previous Active Exercise
+    //         dragged_exercise.classList.remove("active") // Hides Previous Active Exercise
+    //         dropped_exercise.classList.remove("active") // Hides Previous Active Exercise
+
+    //         active_exercise.inert = true // Disables Focus
+    //         dragged_exercise.inert = true // Disables Focus
+    //         dropped_exercise.inert = true // Disables Focus
+            
+    //         changeExercises(dropped_bar_index, training_plan, state) // Shows The Exercise Of Dropped Bar Index
+    //     }
+    // }
 
     // Function For Creating Bar Container With Amount Of Bars By Training Plans Amount
     const createTrainingPlanBars = (amount:number) => {
@@ -551,6 +699,23 @@ export default function EditTrainingPlan() {
             })
     }, [active_exercise_index, active_training_plan_exercises.length])
 
+    // Function For Change The Exercise Title
+    const changeExerciseTitle = (exercise:TrainingPlanExercise, new_title:string):void => {
+        if(new_title.length > 50) return // Do Nothing
+
+        // Sets The Training Plans Exercises
+        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                return {
+                    ...one_exercise,
+                    exercise: new_title
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        }))
+    }
+
     // Function Add Period To The Exercise
     const addPeriod = (exercise:TrainingPlanExercise):void => {
         // Sets The Training Plans Exercises
@@ -609,6 +774,41 @@ export default function EditTrainingPlan() {
         }))
     }
 
+    // Function For Change The Reps Value Via Text Input
+    const changeRepsWithInput = (exercise:TrainingPlanExercise, period_index:number, new_value:string):void => {
+        const clean_value:string = new_value.replace(/[^0-9]/g, "") // Cleans The New Entered Value
+        const reps_number:number = clean_value === "" ? 0 : parseInt(clean_value, 10) // Gets Current Reps Amount
+
+        if(reps_number > 100) return // Do Nothing
+
+        // Sets The Training Plans Exercises
+        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+                
+                const end_index:number = start_index + counts[period_index] // Gets The Period End Index
+
+                return {
+                    ...one_exercise,
+
+                    // Updates Exercise Reps Amount
+                    periods: one_exercise.periods.map((one_period:number, index:number) => 
+                        (index >= start_index && index < end_index) ? reps_number : one_period
+                    )
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        }))
+    }
+
     // Function For Change The Sets Value
     const changeSets = (exercise: TrainingPlanExercise, period_index: number, operation: "decrease" | "increase"): void => {
         let sets_number:number = getConsecutiveNumbersCount(exercise.periods)[period_index] // Gets Current Sets Amount
@@ -636,6 +836,46 @@ export default function EditTrainingPlan() {
 
                 if(operation === "increase") updated_periods.splice(start_index, 0, reps_number) // Updates Exercise Sets Amount
                 else if(operation === "decrease") updated_periods.splice(start_index, 1) // Updates Exercise Sets Amount Or Deletes The Period
+
+                return {
+                    ...one_exercise,
+                    periods: updated_periods
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        }))
+    }
+
+    // Function For Change The Sets Value Via Text Input
+    const changeSetsWithInput = (exercise:TrainingPlanExercise, period_index:number, new_value:string):void => {
+        const clean_value:string = new_value.replace(/[^0-9]/g, "") // Cleans The New Entered Value
+        const sets_number:number = clean_value === "" ? 1 : parseInt(clean_value, 10) // Gets Current Sets Amount
+
+        if(sets_number < 1 || sets_number > 100) return // Do Nothing
+
+        // Sets The Training Plans Exercises
+        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+                const reps_number:number = compressConsecutiveNumbers(one_exercise.periods)[period_index] // Gets Current Reps Amount
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+                
+                const current_sets_amount: number = counts[period_index] // Gets The Current Sets Amount
+            
+                const updated_periods:number[] = [...one_exercise.periods] // Gets The Updated Periods
+
+                updated_periods.splice(
+                    start_index, 
+                    current_sets_amount, 
+                    ...Array(sets_number).fill(reps_number)
+                )
 
                 return {
                     ...one_exercise,
@@ -1476,7 +1716,7 @@ const styles = StyleSheet.create({
 
     bar: {
         position: "relative",
-        flex: 1,
+        // flex: 1,
         height: 10,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),

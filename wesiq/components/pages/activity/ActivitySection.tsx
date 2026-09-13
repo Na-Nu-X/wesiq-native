@@ -28,7 +28,8 @@ export interface TrainingPlanExercise {
     periods:number[],
     unit:"reps"|"seconds"|"steps",
     order:number,
-    is_warm_up:boolean
+    is_warm_up:boolean,
+    is_custom_exercise:boolean
 }
 
 interface XpBoostResponse {
