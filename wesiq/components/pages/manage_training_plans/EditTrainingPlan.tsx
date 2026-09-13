@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
+import { getDayName, getElapsedSeconds, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
@@ -16,6 +16,7 @@ import Icon from "@/components/Icon"
 import { generateKey } from "@/utils/generateKey"
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist"
 import { TouchableOpacity } from "react-native-gesture-handler"
+import Svg, { Circle } from "react-native-svg"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
@@ -246,7 +247,16 @@ export default function EditTrainingPlan() {
                                     {/* Creates Warm Up */}
                                     {active_exercise.is_warm_up && (
                                         <View className="exercise warm_up" style={styles.warm_up}>
-                                            <Text className="title">Warm Up</Text>
+                                            <Text 
+                                                className="title" 
+
+                                                style={{ 
+                                                    color: SECONDARY_COLOR,
+                                                    fontSize: 30,
+                                                }}
+                                            >
+                                                Warm Up
+                                            </Text>
 
                                             <View className="timer_container" style={styles.timer_container}>
                                                 <View className="subtract_time">
@@ -254,16 +264,18 @@ export default function EditTrainingPlan() {
                                                 </View>
 
                                                 <View className="timer" style={styles.warm_up_timer}>
-                                                    {/* <svg width="100" height="100" viewBox="0 0 100 100">
-                                                        <circle
+                                                    <Svg width="100" height="100" viewBox="0 0 100 100">
+                                                        <Circle
                                                             cx="50"
                                                             cy="50"
-                                                            r="40"
-                                                            class="progress_background"
+                                                            r={40}
+                                                            fill="transparent"
+                                                            stroke={BLUE_COLOR}
+                                                            strokeWidth="3"
                                                         />
-                                                    </svg> */}
+                                                    </Svg>
 
-                                                    <Text className="countdown" style={styles.warm_up_timer_text}>`${getFormattedTime("minutes", active_exercise.periods[0])}:${getFormattedTime("seconds", active_exercise.periods[0], true)}`</Text> {/* Stores Timer Of Warm Up */}
+                                                    <Text className="countdown" style={styles.warm_up_timer_text}>{`${getFormattedTime("minutes", active_exercise.periods[0])}:${getFormattedTime("seconds", active_exercise.periods[0], true)}`}</Text> {/* Stores Timer Of Warm Up */}
                                                 </View>
 
                                                 <View className="add_time">
@@ -298,11 +310,12 @@ export default function EditTrainingPlan() {
                                                 <Text 
                                                     className="title" 
 
-                                                    style={[{
+                                                    style={{
                                                         maxWidth: 350,
                                                         textAlign: "center",
                                                         color: SECONDARY_COLOR,
-                                                    }]}
+                                                        fontSize: 30,
+                                                    }}
                                                 >
                                                     {active_exercise.exercise}
                                                 </Text> 
@@ -358,8 +371,10 @@ export default function EditTrainingPlan() {
                                         gap: 10,
                                     },
                                 ]}
-                                
+
                                 onDragEnd={({ data, from, to }) => {
+                                    if(from === to) return
+                                
                                     const dragged_exercise:TrainingPlanExercise = active_training_plan_exercises[from]
                                     const dropped_exercise:TrainingPlanExercise = active_training_plan_exercises[to]
 
@@ -370,7 +385,18 @@ export default function EditTrainingPlan() {
                                         return
                                     }
 
-                                    setTrainingPlansExercises(data)
+                                    console.log(dragged_exercise)
+                                    console.log(dropped_exercise)
+
+                                    console.log(data)
+                                
+                                    // Gets The Updated Exercises
+                                    const updated_exercises:TrainingPlanExercise[] = data.map((one_exercise:TrainingPlanExercise, index:number) => ({
+                                        ...one_exercise,
+                                        order: index + 1
+                                    }))
+                                
+                                    setTrainingPlansExercises(updated_exercises) // Sets The Training Plan Exercises
                                 }}
                             />
                         </View>
@@ -887,6 +913,29 @@ export default function EditTrainingPlan() {
         }))
     }
 
+    // Function For Changing Warm Up Time
+    const changeWarmUpTime = (warm_up:TrainingPlanExercise, operation:"subtract"|"add"):void => {
+        let elapsed_seconds:number = getElapsedSeconds(String(warm_up.periods[0])) // Gets Elapsed Seconds From Timer Value
+
+        if(elapsed_seconds <= 30 && operation === "subtract") return // Stop Subtracting When On Timer Is 30 Seconds
+        if(elapsed_seconds === 3600 && operation === "add") return // Stop Adding When On Timer Is 1 Hour
+
+        if(operation === "subtract") elapsed_seconds -= 30 // Subtracts 30 Seconds
+        if(operation === "add") elapsed_seconds += 30 // Adds 30 Seconds
+
+        // Sets The Training Plans Exercises
+        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === warm_up.id) {
+                return {
+                    ...one_exercise,
+                    periods: warm_up.periods = [elapsed_seconds] // Sets New Timer Value
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        }))
+    }
+
     // Function For Save The Training Plan
     const saveTrainingPlan = async ():Promise<void> => {
         if(!training_plan_title.trim()) {
@@ -916,7 +965,18 @@ export default function EditTrainingPlan() {
         if(training_plan_title.trim() && active_training_plan_exercises.length > 0 && custom_exercises_without_name.length === 0) {
             const fallback_new_training_plan_key:string = generateKey(50) // Gets Random 50 Characters Long Generated Key
 
-            const training_plan_data:{}[] = [] // Stores All New Saved Training Plan Data
+            // Stores All New Saved Training Plan Data
+            const training_plan_data:{
+                previous_training_plan_key:string|null,
+                training_plan_key:string,
+                action:string,
+                day:number|null,
+                type:string,
+                exercise:string,
+                periods:number[],
+                unit:string,
+                order:number
+            }[] = []
 
             const existing_exercise:TrainingPlanExercise|null = training_plans_exercises.find(one_exercise => one_exercise.training_plan_key) || null // Gets The Existing Exercise
 
@@ -994,6 +1054,84 @@ export default function EditTrainingPlan() {
             catch {
                 Alert.alert("Chyba", "Pri vykonávaní zmien v tréningovom pláne došlo k chybe.") // Shows The Alert
             }
+        }
+    }
+
+    // Function For Delete The Training Plan
+    const deleteTrainingPlan = async ():Promise<void> => {
+        // Stores All Delete Training Plan Data
+        const training_plan_data:{
+            training_plan_key:string,
+            action:string
+        }[] = []
+
+        // Gets Info From Every Exercise
+        active_training_plan_exercises.forEach(function(one_exercise:TrainingPlanExercise, index:number) {
+            const training_plan_key:string|null = one_exercise.training_plan_key || null // Gets Training Plan Key
+
+            if(!training_plan_key) return
+
+            // Creates And Fills The Object Of One Exercise For Delete Training Plan
+            const delete_training_plan_object:{
+                training_plan_key:string,
+                action:string
+            } = {
+                training_plan_key: training_plan_key,
+                action: "delete_training_plan"
+            }
+
+            training_plan_data.push(delete_training_plan_object) // Fills Training Plan Data Array With Objects Of Exercises
+        })
+
+        try {
+            if(!logged_in_user) {
+                Alert.alert("Chyba", "Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const manage_training_plan_response:Response = await fetch(`${API_URL}/manage-training-plan/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify(training_plan_data)
+            })
+
+            // If The Response Isn't Success
+            if(!manage_training_plan_response.ok) {
+                Alert.alert("Chyba", "Pri odstraňovaní tréningového plánu došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const manage_training_plan_data:BasicResponse = await manage_training_plan_response.json() // Gets The Loaded Training Plans Data
+
+            // If The Response Isn't Success
+            if(!manage_training_plan_data.success) {
+                Alert.alert("Chyba", manage_training_plan_data.message) // Shows The Alert
+                return
+            }
+
+            setActiveExerciseIndex(0) // Sets The Active Exercise Index
+            setActiveTrainingPlanIndex(0) // Sets The Active Training Plan Index
+
+            // Sets The Training Plans Exercises
+            setTrainingPlansExercises((previous_exercises:TrainingPlanExercise[]) => {
+                const training_plan_key:string = training_plan_data[0].training_plan_key // Gets The Training Plan Key
+                return previous_exercises.filter((one_exercise:TrainingPlanExercise) => one_exercise.training_plan_key !== training_plan_key) // Removes Deleted Exercises
+            })
+
+            scheduleNotification(10) // Schedules The Notification (After 10 Seconds)
+        }
+
+        catch {
+            Alert.alert("Chyba", "Pri odstraňovaní tréningového plánu došlo k chybe.") // Shows The Alert
         }
     }
 
@@ -1170,7 +1308,7 @@ export default function EditTrainingPlan() {
 
                         <Pressable
                             className="delete"
-                            // onPress={}
+                            onPress={deleteTrainingPlan}
                             accessibilityLabel="Vymazať"
                             style={styles.delete}
                         >
@@ -1626,10 +1764,12 @@ const styles = StyleSheet.create({
     },
 
     warm_up: {
-        flexDirection: "row",
+        // flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
+        // justifyContent: "space-between",
+        justifyContent: "flex-start",
+        flex: 1,
+        // width: "100%",
         height: 200,
         paddingTop: 10,
         paddingHorizontal: 50,

@@ -117,573 +117,571 @@ export default function BlogScreen() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
+        <BackgroundContainer>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                />
+
+                <ScrollView 
+                    className="content" 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                >
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    <ScrollView 
-                        className="content" 
-                        style={styles.content} 
-                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                    >
-                        <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                    <View className="articles_amount">
+                        {articles_amount == 1 && (<Text>Našiel sa {articles_amount} článok.</Text>)}
+                        {articles_amount > 1 && articles_amount < 5 && (<Text>Našli sa {articles_amount} články.</Text>)}
+                        {articles_amount >= 5 && (<Text>Našlo sa {articles_amount} článkov.</Text>)}
+                    </View>
 
-                        <View className="articles_amount">
-                            {articles_amount == 1 && (<Text>Našiel sa {articles_amount} článok.</Text>)}
-                            {articles_amount > 1 && articles_amount < 5 && (<Text>Našli sa {articles_amount} články.</Text>)}
-                            {articles_amount >= 5 && (<Text>Našlo sa {articles_amount} článkov.</Text>)}
-                        </View>
+                    <View className="search_bar_container" style={styles.search_bar_container}>
+                        <View className="search_bar_menu" style={styles.search_bar_menu}>
+                            <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
 
-                        <View className="search_bar_container" style={styles.search_bar_container}>
-                            <View className="search_bar_menu" style={styles.search_bar_menu}>
-                                <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
-
-                                <View className="delete_search_bar" style={styles.delete_search_bar}>
-                                    <Icon icon_name="xmark" />
-                                </View>
-
-                                <TextInput
-                                    className="search_bar"
-                                    textAlignVertical="top" 
-                                    placeholder="Nájsť článok" 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Nájsť článok" 
-                                    // value={}
-                                    // onChangeText={}
-
-                                    style={[
-                                        styles.search_bar, 
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
+                            <View className="delete_search_bar" style={styles.delete_search_bar}>
+                                <Icon icon_name="xmark" />
                             </View>
 
-                            <View className="select_menus" style={styles.select_menus}>
-                                <View className="sort_select_menu" style={styles.select_menu}>
-                                    <View 
-                                        className="refresh" 
-                                        accessibilityLabel="Obnoviť predvolené filtre"
-                                        style={styles.refresh}
-                                    >
-                                        <IconButton 
-                                            icon_name="arrow-rotate-right" 
-                                            // onPress={} 
-                                        />
-                                    </View>
+                            <TextInput
+                                className="search_bar"
+                                textAlignVertical="top" 
+                                placeholder="Nájsť článok" 
+                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                accessibilityLabel="Nájsť článok" 
+                                // value={}
+                                // onChangeText={}
 
-                                    <View className="select" style={styles.select}>
-                                        <Text>Najnovšie články</Text>
-
-                                        <Icon
-                                            icon_name="angle-down"
-                                            // onPress={}
-                                            size={20}
-                                        />
-                                    </View>
-
-                                    <View className="options_list" style={styles.options_list}>
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setSort(latest}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="clock"
-                                                size={20}
-                                                solid={false}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Najnovšie články</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setSort(popular}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="eye"
-                                                size={20}
-                                                solid={false}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Populárne články</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setSort(best}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="star"
-                                                size={20}
-                                                solid={false}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Najlepšie hodnotené</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setSort(a-z}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="arrow-up-a-z"
-                                                size={20}
-                                                solid={false}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (A-Z)</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setSort(z-a}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="arrow-up-z-a"
-                                                size={20}
-                                                solid={false}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (Z-A)</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-
-                                <View className="category_select_menu" style={styles.select_menu}>
-                                    <View 
-                                        className="refresh" 
-                                        accessibilityLabel="Obnoviť predvolené filtre" 
-                                        style={styles.refresh}
-                                    >
-                                        <IconButton 
-                                            icon_name="arrow-rotate-right" 
-                                            // onPress={} 
-                                        />
-                                    </View>
-
-                                    <View className="select" style={styles.select}>
-                                        <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
-
-                                        <Icon
-                                            icon_name="angle-down"
-                                            // onPress={}
-                                            size={20}
-                                        />
-                                    </View>
-
-                                    <View className="options_list" style={styles.options_list}>
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(all}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="icons"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(static}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Statické prvky</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(dynamic}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Dynamické triky</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(isotonic}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Izotonické cviky</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(balance}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>O rovnováhe</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(flexibility}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>O flexibilite</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(push}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Tlak</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(pull}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Ťah</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(legs}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Nohy</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(beginner}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Pre začiatočníkov</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(intermediate}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Pre stredne pokročilých</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(advanced}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Pre pokročilých</Text>
-                                        </Pressable>
-
-                                        <Pressable 
-                                            className="option"
-                                            // onPress={() => setCategory(elite}
-                                            style={styles.option}
-                                        >
-                                            <FontAwesome6
-                                                name="list"
-                                                size={20}
-                                                color={LIGHT_BLUE_COLOR}
-                                                style={{marginRight: 8.5}}
-                                            />
-
-                                            <Text style={{ color: SECONDARY_COLOR }}>Pre profesionálov</Text>
-                                        </Pressable>
-                                    </View>
-                                </View>
-                            </View>
+                                style={[
+                                    styles.search_bar, 
+                                    { outlineStyle: "none" } as any
+                                ]}
+                            />
                         </View>
 
-                        <View className="articles" style={styles.articles}>
-                            {no_articles && (<Text className="no_articles" style={styles.no_articles}>{"Ospravedlňujeme sa!\nNepodarilo sa nájsť žiadne články."}</Text>)}
-
-                            {articles.map((one_article:Article, index:number) => (
-                                <ImageBackground
-                                    key={one_article.id || index}
-                                    className={one_article.link || "article"}
-                                    source={one_article.image_name ? { uri: `${DOMAIN}/static/images/articles/${one_article.image_name}`} : ""}
-                                    contentFit="cover"
-                                    style={styles.article}
+                        <View className="select_menus" style={styles.select_menus}>
+                            <View className="sort_select_menu" style={styles.select_menu}>
+                                <View 
+                                    className="refresh" 
+                                    accessibilityLabel="Obnoviť predvolené filtre"
+                                    style={styles.refresh}
                                 >
-                                    <LinearGradient
-                                        colors={["rgba(0, 0, 0, 0.4)", "rgba(0, 0, 0, 0.6)"]}
+                                    <IconButton 
+                                        icon_name="arrow-rotate-right" 
+                                        // onPress={} 
+                                    />
+                                </View>
 
-                                        style={{
-                                            flex: 1,
-                                            width: "100%",
-                                            height: "100%",
-                                        }}
+                                <View className="select" style={styles.select}>
+                                    <Text>Najnovšie články</Text>
+
+                                    <Icon
+                                        icon_name="angle-down"
+                                        // onPress={}
+                                        size={20}
+                                    />
+                                </View>
+
+                                <View className="options_list" style={styles.options_list}>
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setSort(latest}
+                                        style={styles.option}
                                     >
-                                        <View className="top" style={styles.top}>
-                                            <View className="info" style={styles.info}>
-                                                {/* <div class="tooltip" data-tooltip="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}" aria-label="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}">
-                                                    <i class="fa-solid fa-circle-info"></i> <!-- https://fontawesome.com/icons/circle-info -->
-                                                </div> */}
+                                        <FontAwesome6
+                                            name="clock"
+                                            size={20}
+                                            solid={false}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Najnovšie články</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setSort(popular}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="eye"
+                                            size={20}
+                                            solid={false}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Populárne články</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setSort(best}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="star"
+                                            size={20}
+                                            solid={false}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Najlepšie hodnotené</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setSort(a-z}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="arrow-up-a-z"
+                                            size={20}
+                                            solid={false}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (A-Z)</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setSort(z-a}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="arrow-up-z-a"
+                                            size={20}
+                                            solid={false}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (Z-A)</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            <View className="category_select_menu" style={styles.select_menu}>
+                                <View 
+                                    className="refresh" 
+                                    accessibilityLabel="Obnoviť predvolené filtre" 
+                                    style={styles.refresh}
+                                >
+                                    <IconButton 
+                                        icon_name="arrow-rotate-right" 
+                                        // onPress={} 
+                                    />
+                                </View>
+
+                                <View className="select" style={styles.select}>
+                                    <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
+
+                                    <Icon
+                                        icon_name="angle-down"
+                                        // onPress={}
+                                        size={20}
+                                    />
+                                </View>
+
+                                <View className="options_list" style={styles.options_list}>
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(all}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="icons"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(static}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Statické prvky</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(dynamic}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Dynamické triky</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(isotonic}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Izotonické cviky</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(balance}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>O rovnováhe</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(flexibility}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>O flexibilite</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(push}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Tlak</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(pull}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Ťah</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(legs}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Nohy</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(beginner}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Pre začiatočníkov</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(intermediate}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Pre stredne pokročilých</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(advanced}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Pre pokročilých</Text>
+                                    </Pressable>
+
+                                    <Pressable 
+                                        className="option"
+                                        // onPress={() => setCategory(elite}
+                                        style={styles.option}
+                                    >
+                                        <FontAwesome6
+                                            name="list"
+                                            size={20}
+                                            color={LIGHT_BLUE_COLOR}
+                                            style={{marginRight: 8.5}}
+                                        />
+
+                                        <Text style={{ color: SECONDARY_COLOR }}>Pre profesionálov</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+
+                    <View className="articles" style={styles.articles}>
+                        {no_articles && (<Text className="no_articles" style={styles.no_articles}>{"Ospravedlňujeme sa!\nNepodarilo sa nájsť žiadne články."}</Text>)}
+
+                        {articles.map((one_article:Article, index:number) => (
+                            <ImageBackground
+                                key={one_article.id || index}
+                                className={one_article.link || "article"}
+                                source={one_article.image_name ? { uri: `${DOMAIN}/static/images/articles/${one_article.image_name}`} : ""}
+                                contentFit="cover"
+                                style={styles.article}
+                            >
+                                <LinearGradient
+                                    colors={["rgba(0, 0, 0, 0.4)", "rgba(0, 0, 0, 0.6)"]}
+
+                                    style={{
+                                        flex: 1,
+                                        width: "100%",
+                                        height: "100%",
+                                    }}
+                                >
+                                    <View className="top" style={styles.top}>
+                                        <View className="info" style={styles.info}>
+                                            {/* <div class="tooltip" data-tooltip="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}" aria-label="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}">
+                                                <i class="fa-solid fa-circle-info"></i> <!-- https://fontawesome.com/icons/circle-info -->
+                                            </div> */}
+                                        </View>
+                                        
+                                        <View className="skeleton_loading skeleton_text" style={{ zIndex: 60 }}>
+                                            <Text className="title" style={styles.title}>{one_article.title}</Text>
+                                        </View>
+
+                                        <View 
+                                            className="share" 
+                                            accessibilityLabel="Zdielať..." 
+                                            style={styles.share}
+                                        >
+                                            <Icon
+                                                icon_name="share-nodes"
+                                                onPress={() => shareArticle(one_article.title, one_article.link)}
+                                                size={30}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    <View className="description skeleton_loading skeleton_text" style={styles.description}>
+                                        <Text 
+                                            className={one_article.html_filename ? "hidden" : "hidden unfinished"}
+
+                                            style={{
+                                                paddingHorizontal: 20,
+                                                textAlign: "left",
+
+                                                // &.unfinished {
+                                                //     filter: blur(5px);
+                                                // }
+
+                                                // &::first-letter {
+                                                //     margin-right: 10px;
+                                                //     initial-letter: 2;
+                                                // }
+                                            }}
+                                        >
+                                            {one_article.description}
+                                        </Text>
+
+                                        {!one_article.html_filename && (
+                                            <View className="unfinished_article_notice" style={styles.unfinished_article_notice}>
+                                                <FontAwesome6
+                                                    name="lock"
+                                                    size={45}
+                                                    color={BLUE_COLOR}
+                                                />
+
+                                                <Text 
+                                                    style={{
+                                                        textAlign: "center",
+
+                                                        // &::first-letter {
+                                                        //     all: unset;
+                                                        // }
+                                                    }}
+                                                >
+                                                    Tento článok nie je ešte dokončený.
+                                                </Text>
                                             </View>
-                                            
-                                            <View className="skeleton_loading skeleton_text" style={{ zIndex: 60 }}>
-                                                <Text className="title" style={styles.title}>{one_article.title}</Text>
+                                        )}
+                                    </View>
+
+                                    <Pressable
+                                        // onPress={one_article.html_filename ? () => goToArticle(one_article.link) : () => console.log("Tento článok nie je ešte dokončený.")}
+                                        accessibilityLabel="Zobraziť"
+                                        style={styles.article_link}
+                                    >
+                                        <View className="article_info" style={styles.article_info}>
+                                            <View 
+                                                className="rating"
+                                                accessibilityLabel={one_article.average_rating === 0 ? "Zatiaľ žiadne hodnotenia" : `Priemerné hodnotenie ${one_article.average_rating}`}
+                                                style={styles.rating}
+                                            >
+                                                <View className="skeleton_loading skeleton_text" style={{ flexDirection: "row" }}>
+                                                    {Array.from({ length: 5 }).map((_, index:number) => (
+                                                        index < one_article.average_rating ? (
+                                                            <View key={index} className="full" style={{ cursor: "pointer" }}>
+                                                                <FontAwesome6
+                                                                    name="star"
+                                                                    size={15}
+                                                                    solid={true}
+                                                                    color={YELLOW_COLOR}
+                                                                    style={{ opacity: 1 }}
+                                                                />
+                                                            </View>
+                                                        ) : (
+                                                            <View key={index} className="empty" style={{ cursor: "pointer" }}>
+                                                                <FontAwesome6
+                                                                    name="star"
+                                                                    size={15}
+                                                                    solid={true}
+                                                                    color={LIGHT_BLUE_COLOR}
+                                                                    style={{ opacity: 0.5 }}
+                                                                />
+                                                            </View>
+                                                        )
+                                                    ))}
+                                                </View>
+                                            </View>
+
+                                            <View className="category" style={styles.category}>
+                                                <FontAwesome6
+                                                    name="list"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+
+                                                <View className="skeleton_loading skeleton_text">
+                                                    <Text className="hidden" style={{ color: BLUE_COLOR }}>
+                                                        {one_article.categories.map((one_category, index:number) => (
+                                                            <Text key={index}>{one_category}</Text>
+                                                        ))}
+                                                    </Text>
+                                                </View>
                                             </View>
 
                                             <View 
-                                                className="share" 
-                                                accessibilityLabel="Zdielať..." 
-                                                style={styles.share}
+                                                className="visitors" 
+                                                accessibilityLabel={`${one_article.visitors} unikátnych návštevníkov`} 
+                                                style={styles.visitors}
                                             >
-                                                <Icon
-                                                    icon_name="share-nodes"
-                                                    onPress={() => shareArticle(one_article.title, one_article.link)}
-                                                    size={30}
-                                                />
-                                            </View>
-                                        </View>
+                                                <View className="skeleton_loading skeleton_text">
+                                                    <View className="hidden" style={{ flexDirection: "row" }}>
+                                                        <FontAwesome6
+                                                            name="eye"
+                                                            size={20}
+                                                            solid={false}
+                                                            color={BLUE_COLOR}
+                                                        />
 
-                                        <View className="description skeleton_loading skeleton_text" style={styles.description}>
-                                            <Text 
-                                                className={one_article.html_filename ? "hidden" : "hidden unfinished"}
-
-                                                style={{
-                                                    paddingHorizontal: 20,
-                                                    textAlign: "left",
-
-                                                    // &.unfinished {
-                                                    //     filter: blur(5px);
-                                                    // }
-
-                                                    // &::first-letter {
-                                                    //     margin-right: 10px;
-                                                    //     initial-letter: 2;
-                                                    // }
-                                                }}
-                                            >
-                                                {one_article.description}
-                                            </Text>
-
-                                            {!one_article.html_filename && (
-                                                <View className="unfinished_article_notice" style={styles.unfinished_article_notice}>
-                                                    <FontAwesome6
-                                                        name="lock"
-                                                        size={45}
-                                                        color={BLUE_COLOR}
-                                                    />
-
-                                                    <Text 
-                                                        style={{
-                                                            textAlign: "center",
-
-                                                            // &::first-letter {
-                                                            //     all: unset;
-                                                            // }
-                                                        }}
-                                                    >
-                                                        Tento článok nie je ešte dokončený.
-                                                    </Text>
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <Pressable
-                                            // onPress={one_article.html_filename ? () => goToArticle(one_article.link) : () => console.log("Tento článok nie je ešte dokončený.")}
-                                            accessibilityLabel="Zobraziť"
-                                            style={styles.article_link}
-                                        >
-                                            <View className="article_info" style={styles.article_info}>
-                                                <View 
-                                                    className="rating"
-                                                    accessibilityLabel={one_article.average_rating === 0 ? "Zatiaľ žiadne hodnotenia" : `Priemerné hodnotenie ${one_article.average_rating}`}
-                                                    style={styles.rating}
-                                                >
-                                                    <View className="skeleton_loading skeleton_text" style={{ flexDirection: "row" }}>
-                                                        {Array.from({ length: 5 }).map((_, index:number) => (
-                                                            index < one_article.average_rating ? (
-                                                                <View key={index} className="full" style={{ cursor: "pointer" }}>
-                                                                    <FontAwesome6
-                                                                        name="star"
-                                                                        size={15}
-                                                                        solid={true}
-                                                                        color={YELLOW_COLOR}
-                                                                        style={{ opacity: 1 }}
-                                                                    />
-                                                                </View>
-                                                            ) : (
-                                                                <View key={index} className="empty" style={{ cursor: "pointer" }}>
-                                                                    <FontAwesome6
-                                                                        name="star"
-                                                                        size={15}
-                                                                        solid={true}
-                                                                        color={LIGHT_BLUE_COLOR}
-                                                                        style={{ opacity: 0.5 }}
-                                                                    />
-                                                                </View>
-                                                            )
-                                                        ))}
-                                                    </View>
-                                                </View>
-
-                                                <View className="category" style={styles.category}>
-                                                    <FontAwesome6
-                                                        name="list"
-                                                        size={20}
-                                                        color={BLUE_COLOR}
-                                                    />
-
-                                                    <View className="skeleton_loading skeleton_text">
-                                                        <Text className="hidden" style={{ color: BLUE_COLOR }}>
-                                                            {one_article.categories.map((one_category, index:number) => (
-                                                                <Text key={index}>{one_category}</Text>
-                                                            ))}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-
-                                                <View 
-                                                    className="visitors" 
-                                                    accessibilityLabel={`${one_article.visitors} unikátnych návštevníkov`} 
-                                                    style={styles.visitors}
-                                                >
-                                                    <View className="skeleton_loading skeleton_text">
-                                                        <View className="hidden" style={{ flexDirection: "row" }}>
-                                                            <FontAwesome6
-                                                                name="eye"
-                                                                size={20}
-                                                                solid={false}
-                                                                color={BLUE_COLOR}
-                                                            />
-
-                                                            <Text style={{ color: BLUE_COLOR }}>{one_article.visitors}</Text>
-                                                        </View>
-                                                    </View>
-                                                </View>
-
-                                                <View 
-                                                    className="date" 
-                                                    accessibilityLabel="Dátum zverejnenia" 
-                                                    style={styles.date}
-                                                >
-                                                    <View className="skeleton_loading skeleton_text">
-                                                        <Text className="hidden" style={{ color: BLUE_COLOR }}>{getFormattedDate(one_article.creation_time)}</Text>
+                                                        <Text style={{ color: BLUE_COLOR }}>{one_article.visitors}</Text>
                                                     </View>
                                                 </View>
                                             </View>
-                                        </Pressable>
-                                    </LinearGradient>
-                                </ImageBackground>
-                            ))}
-                        </View>
-                    </ScrollView>
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+
+                                            <View 
+                                                className="date" 
+                                                accessibilityLabel="Dátum zverejnenia" 
+                                                style={styles.date}
+                                            >
+                                                <View className="skeleton_loading skeleton_text">
+                                                    <Text className="hidden" style={{ color: BLUE_COLOR }}>{getFormattedDate(one_article.creation_time)}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </Pressable>
+                                </LinearGradient>
+                            </ImageBackground>
+                        ))}
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
     )
 }
 

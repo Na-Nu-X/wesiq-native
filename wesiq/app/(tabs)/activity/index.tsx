@@ -115,58 +115,56 @@ export default function ActivityScreen() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
+        <BackgroundContainer>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                />
+
+                <ScrollView 
+                    className="content" 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                >
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    <ScrollView 
-                        className="content" 
-                        style={styles.content} 
-                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                    >
-                        <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
+                    />
+
+                    <View className="training_page" style={styles.training_page}>
+                        <ActivitySection 
+                            onElapsedTimeUpdate={setElapsedTime} 
+                            elapsed_time={elapsed_time} 
+                            onAverageActivityTimeLoad={setAverageActivityTime} 
+                            official_tasks={official_tasks}
+                            onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
                         />
 
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
+                        <TasksSection 
+                            elapsed_time={elapsed_time} 
+                            average_activity_time={average_activity_time} 
+                            onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
+                            official_tasks={official_tasks}
+                            onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
                         />
-
-                        <View className="training_page" style={styles.training_page}>
-                            <ActivitySection 
-                                onElapsedTimeUpdate={setElapsedTime} 
-                                elapsed_time={elapsed_time} 
-                                onAverageActivityTimeLoad={setAverageActivityTime} 
-                                official_tasks={official_tasks}
-                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
-                            />
-
-                            <TasksSection 
-                                elapsed_time={elapsed_time} 
-                                average_activity_time={average_activity_time} 
-                                onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
-                                official_tasks={official_tasks}
-                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
-                            />
-                            
-                            <HistorySection />
-                        </View>
-                    </ScrollView>
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+                        
+                        <HistorySection />
+                    </View>
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
     )
 }
 

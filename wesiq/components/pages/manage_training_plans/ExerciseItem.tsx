@@ -40,7 +40,7 @@ export const ExerciseItem = ({ one_exercise, onSwipeUp, onSwipeDown }:ExerciseIt
                     resizeMode="cover"
 
                     style={[
-                        StyleSheet.absoluteFillObject,
+                        StyleSheet.absoluteFill,
                         { opacity: 0.2 },
                     ]}
                 />

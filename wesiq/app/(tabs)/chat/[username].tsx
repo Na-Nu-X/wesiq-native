@@ -493,280 +493,304 @@ export default function ChatDetailScreen() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
+        <BackgroundContainer>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                />
+
+                <ScrollView 
+                    className="content" 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                >
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    <ScrollView 
-                        className="content" 
-                        style={styles.content} 
-                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                    >
-                        <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                    {receiver && chats && (
+                        <BottomSheetModalProvider>
+                            <View className="chat" style={styles.chat}>
+                                <View style={styles.circle_decoration_before} />
+                                <View style={styles.circle_decoration_after} />
 
-                        {receiver && chats && (
-                            <BottomSheetModalProvider>
-                                <View className="chat" style={styles.chat}>
-                                    <View style={styles.circle_decoration_before} />
-                                    <View style={styles.circle_decoration_after} />
+                                <View className="top" style={styles.top}>
+                                    <View className="receiver" style={styles.receiver}>
+                                        <ProfilePictureLink 
+                                            user_id={receiver.id} 
+                                            user_profile_picture_name={receiver.profile_picture_name || null} 
+                                            user_subscription={receiver.subscription?.is_active || false} 
+                                            label="Zobraziť užívateľa" 
+                                        />
 
-                                    <View className="top" style={styles.top}>
-                                        <View className="receiver" style={styles.receiver}>
-                                            <ProfilePictureLink 
-                                                user_id={receiver.id} 
-                                                user_profile_picture_name={receiver.profile_picture_name || null} 
-                                                user_subscription={receiver.subscription?.is_active || false} 
-                                                label="Zobraziť užívateľa" 
-                                            />
+                                        <View className="name">
+                                            <Text className="username" style={styles.username}>{receiver.username}</Text>
 
-                                            <View className="name">
-                                                <Text className="username" style={styles.username}>{receiver.username}</Text>
-
-                                                {receiver.first_name && receiver.last_name && (
-                                                    <Text className="full_name" style={{ color: SECONDARY_COLOR }}>{`${receiver.first_name} ${receiver.last_name}`}</Text>
-                                                )}
-                                            </View>
+                                            {receiver.first_name && receiver.last_name && (
+                                                <Text className="full_name" style={{ color: SECONDARY_COLOR }}>{`${receiver.first_name} ${receiver.last_name}`}</Text>
+                                            )}
                                         </View>
                                     </View>
+                                </View>
 
-                                    <View className="middle" style={styles.middle}>
-                                        <ScrollView 
-                                            ref={all_messages}
-                                            className="all_messages" 
-                                            showsVerticalScrollIndicator={false}
-                                            indicatorStyle="white"
-                                            keyboardShouldPersistTaps="handled" 
-                                            keyboardDismissMode="on-drag"
-                                            style={styles.all_messages}
-                                            contentContainerStyle={styles.all_messages}
+                                <View className="middle" style={styles.middle}>
+                                    <ScrollView 
+                                        ref={all_messages}
+                                        className="all_messages" 
+                                        showsVerticalScrollIndicator={false}
+                                        indicatorStyle="white"
+                                        keyboardShouldPersistTaps="handled" 
+                                        keyboardDismissMode="on-drag"
+                                        style={styles.all_messages}
+                                        contentContainerStyle={styles.all_messages}
 
-                                            onContentSizeChange={() => {
-                                                if(all_messages.current) all_messages.current.scrollToEnd({ animated: true }) // Auto Scrolls To The Bottom
-                                            }}
-                                        >
-                                            {chats.map((one_chat:Chat, index:number) => (
-                                                <View
-                                                    key={one_chat.id || index}
-                                                    className="one_message_container"
-
-                                                    style={[
-                                                        styles.one_message_container,
-                                                        one_chat.is_sender ? styles.one_message_container_sender : styles.one_message_container_receiver
-                                                    ]}
-                                                >
-                                                    <Pressable 
-                                                        key={one_chat.id || index}
-                                                        className={one_chat.is_sender ? "one_message sender" : "one_message receiver"}
-                                                        onPress={one_chat === selected_message_for_edit ? cancelEditMessage : null}
-
-                                                        style={[
-                                                            styles.one_message,
-                                                            one_chat.is_sender ? styles.one_message_sender : styles.one_message_receiver,
-                                                            one_chat === selected_message_for_edit ? styles.edit : {}
-                                                        ]}
-                                                    >
-                                                        <View className="profile_picture_container" style={styles.profile_picture_container}>
-                                                            <Image 
-                                                                className={`profile_picture ${
-                                                                    one_chat.sender.subscription && one_chat.sender.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                                                }`}
-
-                                                                source={
-                                                                    one_chat.sender.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_chat.sender.id}/${one_chat.sender.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                }
-
-                                                                style={[
-                                                                    styles.profile_picture,
-                                                                    one_chat.sender.subscription && one_chat.sender.subscription.is_active && styles.subscriber_profile_picture,
-                                                                    // { transform: [{ scale: animated_scale }] }
-                                                                ]}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>
-
-                                                        {one_chat.is_sender && one_chat.is_read && (
-                                                            <View style={{ marginLeft: "auto" }}>
-                                                                <FontAwesome6
-                                                                    name="check-double"
-                                                                    size={20}
-                                                                    color={transparentize(BLUE_COLOR, 0.5)}
-                                                                />
-                                                            </View>
-                                                        )}
-
-                                                        <View 
-                                                            className="reactions"
-
-                                                            style={[
-                                                                styles.reactions,
-                                                                one_chat.is_sender ? styles.sender_reactions : styles.receiver_reactions
-                                                            ]}
-                                                        >
-                                                            {one_chat.message_reactions.map((one_reaction:MessageReaction, index:number) => (
-                                                                <Text 
-                                                                    key={index}
-                                                                    className="one_reaction" 
-                                                                    accessibilityLabel={`Reakciu pridal: ${one_reaction.user.username}`}
-                                                                    style={styles.one_reaction}
-                                                                >
-                                                                    {one_reaction.emoji}
-                                                                </Text>
-                                                            ))}
-                                                        </View>
-
-                                                        <View 
-                                                            className="show_message_properties_button"
-                                                            accessibilityLabel="Viac..." 
-                                                            
-                                                            style={{ 
-                                                                marginLeft: "auto", 
-                                                                marginRight: 10,
-                                                            }}
-                                                        >
-                                                            <Icon
-                                                                icon_name="ellipsis-vertical"
-                                                                onPress={() => showMessageProperties(one_chat)}
-                                                            />
-                                                        </View>
-                                                    </Pressable>
-
-                                                    <Text 
-                                                        numberOfLines={1} 
-
-                                                        style={[
-                                                            styles.time_label,
-                                                            one_chat.is_sender ? { marginLeft: 20 } : { marginRight: 20, textAlign: "right" }
-                                                        ]}
-                                                    >
-                                                        {one_chat.formatted_time}
-                                                        {one_chat.is_edited && (" (upravené)")}
-                                                    </Text>
-                                                </View>
-                                            ))}
-                                        </ScrollView>
-                                    </View>
-
-                                    <View className="bottom">
-                                        <View className="write_message" style={styles.write_message}>
-                                            <TextInput
-                                                className="new_message"
-                                                textAlignVertical="top" 
-                                                placeholder={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"} 
-                                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                accessibilityLabel={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"}
-                                                value={new_message}
-                                                onChangeText={setNewMessage}
-                                                maxLength={MAX_MESSAGE_LENGTH}
+                                        onContentSizeChange={() => {
+                                            if(all_messages.current) all_messages.current.scrollToEnd({ animated: true }) // Auto Scrolls To The Bottom
+                                        }}
+                                    >
+                                        {chats.map((one_chat:Chat, index:number) => (
+                                            <View
+                                                key={one_chat.id || index}
+                                                className="one_message_container"
 
                                                 style={[
-                                                    styles.new_message, 
-                                                    { outlineStyle: "none" } as any
+                                                    styles.one_message_container,
+                                                    one_chat.is_sender ? styles.one_message_container_sender : styles.one_message_container_receiver
                                                 ]}
-                                            />
-
-                                            {logged_in_user && (
-                                                <View 
-                                                    style={{ 
-                                                        position: "absolute",
-                                                        top: 6,
-                                                        left: 6,
-                                                    }}
-                                                >
-                                                    <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
-                                                </View>
-                                            )}
-
-                                            <View 
-                                                className="add_emoji"
-                                                accessibilityLabel="Pridať emoji"
-                                                style={styles.add_emoji}
                                             >
-                                                <Icon 
-                                                    icon_name="face-surprise"
-                                                    is_regular={true}
-                                                    onPress={() => setIsEmojiPickerOpen(true)}
-                                                />
+                                                <Pressable 
+                                                    key={one_chat.id || index}
+                                                    className={one_chat.is_sender ? "one_message sender" : "one_message receiver"}
+                                                    onPress={one_chat === selected_message_for_edit ? cancelEditMessage : null}
+
+                                                    style={[
+                                                        styles.one_message,
+                                                        one_chat.is_sender ? styles.one_message_sender : styles.one_message_receiver,
+                                                        one_chat === selected_message_for_edit ? styles.edit : {}
+                                                    ]}
+                                                >
+                                                    <View className="profile_picture_container" style={styles.profile_picture_container}>
+                                                        <Image 
+                                                            className={`profile_picture ${
+                                                                one_chat.sender.subscription && one_chat.sender.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
+                                                            }`}
+
+                                                            source={
+                                                                one_chat.sender.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_chat.sender.id}/${one_chat.sender.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                            }
+
+                                                            style={[
+                                                                styles.profile_picture,
+                                                                one_chat.sender.subscription && one_chat.sender.subscription.is_active && styles.subscriber_profile_picture,
+                                                                // { transform: [{ scale: animated_scale }] }
+                                                            ]}
+                                                        />
+                                                    </View>
+
+                                                    <Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>
+
+                                                    {one_chat.is_sender && one_chat.is_read && (
+                                                        <View style={{ marginLeft: "auto" }}>
+                                                            <FontAwesome6
+                                                                name="check-double"
+                                                                size={20}
+                                                                color={transparentize(BLUE_COLOR, 0.5)}
+                                                            />
+                                                        </View>
+                                                    )}
+
+                                                    <View 
+                                                        className="reactions"
+
+                                                        style={[
+                                                            styles.reactions,
+                                                            one_chat.is_sender ? styles.sender_reactions : styles.receiver_reactions
+                                                        ]}
+                                                    >
+                                                        {one_chat.message_reactions.map((one_reaction:MessageReaction, index:number) => (
+                                                            <Text 
+                                                                key={index}
+                                                                className="one_reaction" 
+                                                                accessibilityLabel={`Reakciu pridal: ${one_reaction.user.username}`}
+                                                                style={styles.one_reaction}
+                                                            >
+                                                                {one_reaction.emoji}
+                                                            </Text>
+                                                        ))}
+                                                    </View>
+
+                                                    <View 
+                                                        className="show_message_properties_button"
+                                                        accessibilityLabel="Viac..." 
+                                                        
+                                                        style={{ 
+                                                            marginLeft: "auto", 
+                                                            marginRight: 10,
+                                                        }}
+                                                    >
+                                                        <Icon
+                                                            icon_name="ellipsis-vertical"
+                                                            onPress={() => showMessageProperties(one_chat)}
+                                                        />
+                                                    </View>
+                                                </Pressable>
+
+                                                <Text 
+                                                    numberOfLines={1} 
+
+                                                    style={[
+                                                        styles.time_label,
+                                                        one_chat.is_sender ? { marginLeft: 20 } : { marginRight: 20, textAlign: "right" }
+                                                    ]}
+                                                >
+                                                    {one_chat.formatted_time}
+                                                    {one_chat.is_edited && (" (upravené)")}
+                                                </Text>
                                             </View>
+                                        ))}
+                                    </ScrollView>
+                                </View>
 
-                                            <EmojiPicker
-                                                onEmojiSelected={handleEmojiSelect}
-                                                open={is_emoji_picker_open}
-                                                onClose={() => setIsEmojiPickerOpen(false)}
+                                <View className="bottom">
+                                    <View className="write_message" style={styles.write_message}>
+                                        <TextInput
+                                            className="new_message"
+                                            textAlignVertical="top" 
+                                            placeholder={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"} 
+                                            placeholderTextColor={LIGHT_BLUE_COLOR}
+                                            accessibilityLabel={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"}
+                                            value={new_message}
+                                            onChangeText={setNewMessage}
+                                            maxLength={MAX_MESSAGE_LENGTH}
 
-                                                translation={{
-                                                    smileys_emotion: "Smajlíky",
-                                                    people_body: "Ľudia", 
-                                                    recently_used: "Naposledy použité",
-                                                    animals_nature: "Zvieratá",
-                                                    food_drink: "Jedlo a nápoje",
-                                                    activities: "Aktivity",
-                                                    travel_places: "Cestovanie",
-                                                    objects: "Predmety",
-                                                    symbols: "Symboly",
-                                                    flags: "Vlajky",
-                                                    search: "Hľadať...",
+                                            style={[
+                                                styles.new_message, 
+                                                { outlineStyle: "none" } as any
+                                            ]}
+                                        />
+
+                                        {logged_in_user && (
+                                            <View 
+                                                style={{ 
+                                                    position: "absolute",
+                                                    top: 6,
+                                                    left: 6,
                                                 }}
-                                            />
-
-                                            <Pressable 
-                                                className="send" 
-                                                accessibilityLabel="Odoslať správu"
-                                                accessibilityRole="button"
-                                                onPress={sendMessage}
-                                                style={styles.send}
                                             >
-                                                <Svg 
-                                                    width={30} 
-                                                    height={30} 
-                                                    fill="none" 
-                                                    viewBox="0 0 24 24" 
-                                                    strokeWidth={1.5} 
-                                                    stroke={BLUE_COLOR}
-                                                >
-                                                    <Path 
-                                                        strokeLinecap="round" 
-                                                        strokeLinejoin="round" 
-                                                        d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
-                                                    />
-                                                </Svg>
-                                            </Pressable>
-                                        </View>
-                                    </View>
+                                                <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                            </View>
+                                        )}
 
-                                    <BottomSheetModal
-                                        ref={message_properties}
-                                        snapPoints={snap_points}
-                                        enablePanDownToClose={true}
-                                        onChange={handleMessagePropertiesChanges}
-                                        containerStyle={{ zIndex: 9999 }}
-                                    >
-                                        <BottomSheetView style={{ padding: 20 }}>
-                                            {selected_message ? (
-                                                <View className="message_properties">
-                                                    {message_properties_sheet === "main" && (
-                                                        <View style={styles.sheet_container}>
+                                        <View 
+                                            className="add_emoji"
+                                            accessibilityLabel="Pridať emoji"
+                                            style={styles.add_emoji}
+                                        >
+                                            <Icon 
+                                                icon_name="face-surprise"
+                                                is_regular={true}
+                                                onPress={() => setIsEmojiPickerOpen(true)}
+                                            />
+                                        </View>
+
+                                        <EmojiPicker
+                                            onEmojiSelected={handleEmojiSelect}
+                                            open={is_emoji_picker_open}
+                                            onClose={() => setIsEmojiPickerOpen(false)}
+
+                                            translation={{
+                                                smileys_emotion: "Smajlíky",
+                                                people_body: "Ľudia", 
+                                                recently_used: "Naposledy použité",
+                                                animals_nature: "Zvieratá",
+                                                food_drink: "Jedlo a nápoje",
+                                                activities: "Aktivity",
+                                                travel_places: "Cestovanie",
+                                                objects: "Predmety",
+                                                symbols: "Symboly",
+                                                flags: "Vlajky",
+                                                search: "Hľadať...",
+                                            }}
+                                        />
+
+                                        <Pressable 
+                                            className="send" 
+                                            accessibilityLabel="Odoslať správu"
+                                            accessibilityRole="button"
+                                            onPress={sendMessage}
+                                            style={styles.send}
+                                        >
+                                            <Svg 
+                                                width={30} 
+                                                height={30} 
+                                                fill="none" 
+                                                viewBox="0 0 24 24" 
+                                                strokeWidth={1.5} 
+                                                stroke={BLUE_COLOR}
+                                            >
+                                                <Path 
+                                                    strokeLinecap="round" 
+                                                    strokeLinejoin="round" 
+                                                    d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
+                                                />
+                                            </Svg>
+                                        </Pressable>
+                                    </View>
+                                </View>
+
+                                <BottomSheetModal
+                                    ref={message_properties}
+                                    snapPoints={snap_points}
+                                    enablePanDownToClose={true}
+                                    onChange={handleMessagePropertiesChanges}
+                                    containerStyle={{ zIndex: 9999 }}
+                                >
+                                    <BottomSheetView style={{ padding: 20 }}>
+                                        {selected_message ? (
+                                            <View className="message_properties">
+                                                {message_properties_sheet === "main" && (
+                                                    <View style={styles.sheet_container}>
+                                                        <Pressable
+                                                            className="add_reaction_button"
+                                                            onPress={() => setMessagePropertiesSheet("reaction")}
+                                                            accessibilityRole="button"
+
+                                                            style={({ pressed }) => [
+                                                                styles.sheet_item, 
+                                                                styles.sheet_item_border, 
+                                                                pressed && styles.sheet_item_pressed
+                                                            ]}
+                                                        >
+                                                            <View style={styles.sheet_icon}>
+                                                                <FontAwesome6
+                                                                    name="face-surprise"
+                                                                    size={20}
+                                                                    solid={false}
+                                                                    color={BLUE_COLOR}
+                                                                />
+                                                            </View>
+
+                                                            <Text style={styles.sheet_text}>Reakcia</Text>
+                                                        </Pressable>
+
+                                                        {/* If The Post Belongs To The Logged In User And Isn't Older Than 15 Minutes The Edit Option Will Be Shown */}
+                                                        {selected_message.is_sender && !selected_message.is_older_than_15_minutes && (
                                                             <Pressable
-                                                                className="add_reaction_button"
-                                                                onPress={() => setMessagePropertiesSheet("reaction")}
+                                                                className="edit_message_button"
+                                                                onPress={() => handleEditMessage(selected_message)}
                                                                 accessibilityRole="button"
 
                                                                 style={({ pressed }) => [
@@ -777,348 +801,322 @@ export default function ChatDetailScreen() {
                                                             >
                                                                 <View style={styles.sheet_icon}>
                                                                     <FontAwesome6
-                                                                        name="face-surprise"
+                                                                        name="pen"
                                                                         size={20}
-                                                                        solid={false}
                                                                         color={BLUE_COLOR}
                                                                     />
                                                                 </View>
 
-                                                                <Text style={styles.sheet_text}>Reakcia</Text>
+                                                                <Text style={styles.sheet_text}>Upraviť</Text>
                                                             </Pressable>
+                                                        )}
 
-                                                            {/* If The Post Belongs To The Logged In User And Isn't Older Than 15 Minutes The Edit Option Will Be Shown */}
-                                                            {selected_message.is_sender && !selected_message.is_older_than_15_minutes && (
-                                                                <Pressable
-                                                                    className="edit_message_button"
-                                                                    onPress={() => handleEditMessage(selected_message)}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="pen"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Text style={styles.sheet_text}>Upraviť</Text>
-                                                                </Pressable>
-                                                            )}
-
-                                                            {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
-                                                            {selected_message.is_sender && !selected_message.is_older_than_1_day && (
-                                                                <Pressable
-                                                                    className="delete_message_button"
-                                                                    onPress={(deleteMessage)}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="eraser"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Text style={styles.sheet_text}>Vymazať</Text>
-                                                                </Pressable>
-                                                            )}
-
+                                                        {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                                        {selected_message.is_sender && !selected_message.is_older_than_1_day && (
                                                             <Pressable
-                                                                className="hide_message_properties_button"
-                                                                onPress={hideMessageProperties}
+                                                                className="delete_message_button"
+                                                                onPress={(deleteMessage)}
                                                                 accessibilityRole="button"
 
                                                                 style={({ pressed }) => [
                                                                     styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
                                                                     pressed && styles.sheet_item_pressed
                                                                 ]}
                                                             >
                                                                 <View style={styles.sheet_icon}>
                                                                     <FontAwesome6
-                                                                        name="xmark"
+                                                                        name="eraser"
                                                                         size={20}
                                                                         color={BLUE_COLOR}
                                                                     />
                                                                 </View>
 
-                                                                <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                <Text style={styles.sheet_text}>Vymazať</Text>
                                                             </Pressable>
-                                                        </View>
-                                                    )}
+                                                        )}
 
-                                                    {message_properties_sheet === "reaction" && (
-                                                        <View className="add_reaction" style={styles.sheet_container}>
-                                                            <View style={styles.sheet_item}>
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F600")}
-                                                                    accessibilityRole="button"
+                                                        <Pressable
+                                                            className="hide_message_properties_button"
+                                                            onPress={hideMessageProperties}
+                                                            accessibilityRole="button"
 
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F600}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F602")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F602}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F923")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F923}"}
-                                                                    </Text>
-                                                                </Pressable>
+                                                            style={({ pressed }) => [
+                                                                styles.sheet_item, 
+                                                                pressed && styles.sheet_item_pressed
+                                                            ]}
+                                                        >
+                                                            <View style={styles.sheet_icon}>
+                                                                <FontAwesome6
+                                                                    name="xmark"
+                                                                    size={20}
+                                                                    color={BLUE_COLOR}
+                                                                />
                                                             </View>
 
-                                                            <View style={styles.sheet_item}>
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F92F")}
-                                                                    accessibilityRole="button"
+                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                        </Pressable>
+                                                    </View>
+                                                )}
 
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F92F}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F60D")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F60D}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F44D")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F44D}"}
-                                                                    </Text>
-                                                                </Pressable>
-                                                            </View>
-
-                                                            <View style={styles.sheet_item}>
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F44E")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F44E}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F4AA")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F4AA}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F64C")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F64C}"}
-                                                                    </Text>
-                                                                </Pressable>
-                                                            </View>
-
-                                                            <View style={styles.sheet_item}>
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F44F")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F44F}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F91D")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F91D}"}
-                                                                    </Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => addReaction("1F64F")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text,
-                                                                            { fontSize: 30 }
-                                                                        ]}
-                                                                    >
-                                                                        {"\u{1F64F}"}
-                                                                    </Text>
-                                                                </Pressable>
-                                                            </View>
-
+                                                {message_properties_sheet === "reaction" && (
+                                                    <View className="add_reaction" style={styles.sheet_container}>
+                                                        <View style={styles.sheet_item}>
                                                             <Pressable
-                                                                className="back_add_reaction_button"
-                                                                onPress={() => setMessagePropertiesSheet("main")}
+                                                                onPress={() => addReaction("1F600")}
                                                                 accessibilityRole="button"
 
                                                                 style={({ pressed }) => [
-                                                                    styles.sheet_item, 
                                                                     pressed && styles.sheet_item_pressed
                                                                 ]}
                                                             >
-                                                                <View style={styles.sheet_icon}>
-                                                                    <FontAwesome6
-                                                                        name="xmark"
-                                                                        size={20}
-                                                                        color={BLUE_COLOR}
-                                                                    />
-                                                                </View>
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F600}"}
+                                                                </Text>
+                                                            </Pressable>
 
-                                                                <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F602")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F602}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F923")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F923}"}
+                                                                </Text>
                                                             </Pressable>
                                                         </View>
-                                                    )}
-                                                </View>
-                                            ) : null}
-                                        </BottomSheetView>
-                                    </BottomSheetModal>
-                                </View>
-                            </BottomSheetModalProvider>
-                        )}
-                    </ScrollView>
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+
+                                                        <View style={styles.sheet_item}>
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F92F")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F92F}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F60D")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F60D}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F44D")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F44D}"}
+                                                                </Text>
+                                                            </Pressable>
+                                                        </View>
+
+                                                        <View style={styles.sheet_item}>
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F44E")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F44E}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F4AA")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F4AA}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F64C")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F64C}"}
+                                                                </Text>
+                                                            </Pressable>
+                                                        </View>
+
+                                                        <View style={styles.sheet_item}>
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F44F")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F44F}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F91D")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F91D}"}
+                                                                </Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => addReaction("1F64F")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text,
+                                                                        { fontSize: 30 }
+                                                                    ]}
+                                                                >
+                                                                    {"\u{1F64F}"}
+                                                                </Text>
+                                                            </Pressable>
+                                                        </View>
+
+                                                        <Pressable
+                                                            className="back_add_reaction_button"
+                                                            onPress={() => setMessagePropertiesSheet("main")}
+                                                            accessibilityRole="button"
+
+                                                            style={({ pressed }) => [
+                                                                styles.sheet_item, 
+                                                                pressed && styles.sheet_item_pressed
+                                                            ]}
+                                                        >
+                                                            <View style={styles.sheet_icon}>
+                                                                <FontAwesome6
+                                                                    name="xmark"
+                                                                    size={20}
+                                                                    color={BLUE_COLOR}
+                                                                />
+                                                            </View>
+
+                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                        </Pressable>
+                                                    </View>
+                                                )}
+                                            </View>
+                                        ) : null}
+                                    </BottomSheetView>
+                                </BottomSheetModal>
+                            </View>
+                        </BottomSheetModalProvider>
+                    )}
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
     )
 }
 

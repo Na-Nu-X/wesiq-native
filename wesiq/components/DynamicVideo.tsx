@@ -292,7 +292,7 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                 ) : (
                     <Image 
                         source={{ uri: thumbnail_url }} 
-                        style={StyleSheet.absoluteFillObject} 
+                        style={StyleSheet.absoluteFill} 
                         resizeMode="cover"
                     />
                 )}

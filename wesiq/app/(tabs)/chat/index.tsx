@@ -160,118 +160,116 @@ export default function ChatScreen() {
     console.log(grouped_senders)
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
+        <BackgroundContainer>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                />
+
+                <ScrollView 
+                    className="content" 
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                    style={styles.content} 
+
+                    contentContainerStyle={{ 
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: 20, 
+                        flexGrow: 1 
+                    }}
+                >
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    <ScrollView 
-                        className="content" 
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                        style={styles.content} 
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-                        contentContainerStyle={{ 
-                            alignItems: "center",
-                            justifyContent: "center",
-                            padding: 20, 
-                            flexGrow: 1 
-                        }}
-                    >
-                        <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                    {unread_chats.length > 0 ? (
+                        <ScrollView 
+                            className="all_messages" 
+                            showsVerticalScrollIndicator={false}
+                            indicatorStyle="white"
+                            keyboardShouldPersistTaps="handled" 
+                            keyboardDismissMode="on-drag"
+                            style={styles.all_messages}
+                        >
+                            <View style={styles.circle_decoration_before} />
+                            <View style={styles.circle_decoration_after} />
 
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
-
-                        {unread_chats.length > 0 ? (
-                            <ScrollView 
-                                className="all_messages" 
-                                showsVerticalScrollIndicator={false}
-                                indicatorStyle="white"
-                                keyboardShouldPersistTaps="handled" 
-                                keyboardDismissMode="on-drag"
-                                style={styles.all_messages}
-                            >
-                                <View style={styles.circle_decoration_before} />
-                                <View style={styles.circle_decoration_after} />
-
-                                <View className="search_bar_container" style={styles.search_bar_container}>
-                                    <View className="magnifying_glass_icon" style={styles.magnifying_glass_icon}>
-                                        <Icon icon_name="magnifying-glass" />
-                                    </View>
-
-                                    <View className="delete_search_bar" style={styles.delete_search_bar}>
-                                        <Icon icon_name="xmark" />
-                                    </View>
-
-                                    <TextInput
-                                        className="search_bar"
-                                        textAlignVertical="top" 
-                                        placeholder="Nájsť užívateľa" 
-                                        placeholderTextColor={LIGHT_BLUE_COLOR}
-                                        accessibilityLabel="Nájsť užívateľa" 
-                                        // value={searched_text}
-                                        // onChangeText={getSearchedUsers}
-
-                                        style={[
-                                            styles.search_bar, 
-                                            { outlineStyle: "none" } as any
-                                        ]}
-                                    />
+                            <View className="search_bar_container" style={styles.search_bar_container}>
+                                <View className="magnifying_glass_icon" style={styles.magnifying_glass_icon}>
+                                    <Icon icon_name="magnifying-glass" />
                                 </View>
 
-                                {grouped_senders.map((one_item:{
-                                    sender:Sender,
-                                    first_message:UnreadChat,
-                                    list:UnreadChat[]
-                                }, index:number) => (
-                                    <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
-                                        <ProfilePictureLink 
-                                            user_id={one_item.sender.id} 
-                                            user_profile_picture_name={one_item.sender.profile_picture_name || null} 
-                                            user_subscription={one_item.sender.subscription?.is_active || false} 
-                                            label="Zobraziť užívateľa" 
-                                        />
+                                <View className="delete_search_bar" style={styles.delete_search_bar}>
+                                    <Icon icon_name="xmark" />
+                                </View>
 
-                                        <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
+                                <TextInput
+                                    className="search_bar"
+                                    textAlignVertical="top" 
+                                    placeholder="Nájsť užívateľa" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Nájsť užívateľa" 
+                                    // value={searched_text}
+                                    // onChangeText={getSearchedUsers}
 
-                                        <View className="message_container" style={styles.message_container}>
-                                            <Text className="unread_messages" style={styles.unread_messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>
+                                    style={[
+                                        styles.search_bar, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+                            </View>
 
-                                            <View 
-                                                className="chat"
-                                                accessibilityLabel="Zobraziť správy"
-                                            >
-                                                <Icon 
-                                                    icon_name="comment-dots"
-                                                    // onPress={}
-                                                    size={25}
-                                                    is_regular={true}
-                                                />
-                                            </View>
+                            {grouped_senders.map((one_item:{
+                                sender:Sender,
+                                first_message:UnreadChat,
+                                list:UnreadChat[]
+                            }, index:number) => (
+                                <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
+                                    <ProfilePictureLink 
+                                        user_id={one_item.sender.id} 
+                                        user_profile_picture_name={one_item.sender.profile_picture_name || null} 
+                                        user_subscription={one_item.sender.subscription?.is_active || false} 
+                                        label="Zobraziť užívateľa" 
+                                    />
+
+                                    <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
+
+                                    <View className="message_container" style={styles.message_container}>
+                                        <Text className="unread_messages" style={styles.unread_messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>
+
+                                        <View 
+                                            className="chat"
+                                            accessibilityLabel="Zobraziť správy"
+                                        >
+                                            <Icon 
+                                                icon_name="comment-dots"
+                                                // onPress={}
+                                                size={25}
+                                                is_regular={true}
+                                            />
                                         </View>
                                     </View>
-                                ))}
-                            </ScrollView>
-                        ) : (
-                            <Text className="no_messages" style={styles.no_messages}>Žiadne nové správy</Text>
-                        )}
-                    </ScrollView>
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    ) : (
+                        <Text className="no_messages" style={styles.no_messages}>Žiadne nové správy</Text>
+                    )}
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
     )
 }
 

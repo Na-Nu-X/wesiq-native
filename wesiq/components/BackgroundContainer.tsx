@@ -1,6 +1,6 @@
 import React from "react"
-import { StyleSheet, ViewProps } from "react-native"
-import { ImageBackground } from "expo-image"
+import { StyleSheet, View, ViewProps } from "react-native"
+import { Image } from "expo-image"
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg"
 import { MAIN_COLOR, BLUE_COLOR } from "@/constants/colors"
 
@@ -10,13 +10,14 @@ type Props = ViewProps & {
 
 export default function BackgroundContainer({ children, style, ...props }:Props) {
     return (
-        <ImageBackground
-            source={require("@/assets/images/background.jpeg")}
-            style={[styles.container, style]}
-            contentFit="cover"
-            {...props}
-        >
-            <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject}>
+        <View style={[styles.container, style]} {...props}>
+            <Image
+                source={require("@/assets/images/background.jpeg")}
+                style={StyleSheet.absoluteFill}
+                contentFit="cover"
+            />
+
+            <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
                 <Defs>
                     <RadialGradient
                         id="main_gradient"
@@ -27,17 +28,8 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
                         fx="50%"
                         fy="40%"
                     >
-                        <Stop 
-                            offset="35%" 
-                            stopColor={MAIN_COLOR} 
-                            stopOpacity={0.88} 
-                        />
-
-                        <Stop 
-                            offset="100%" 
-                            stopColor={MAIN_COLOR} 
-                            stopOpacity={0.72} 
-                        />
+                        <Stop offset="35%" stopColor={MAIN_COLOR} stopOpacity={0.88} />
+                        <Stop offset="100%" stopColor={MAIN_COLOR} stopOpacity={0.72} />
                     </RadialGradient>
             
                     <RadialGradient
@@ -49,17 +41,8 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
                         fx="50%"
                         fy="-20%"
                     >
-                        <Stop 
-                            offset="0%" 
-                            stopColor={BLUE_COLOR} 
-                            stopOpacity={0.22} 
-                        />
-
-                        <Stop 
-                            offset="55%" 
-                            stopColor={BLUE_COLOR} 
-                            stopOpacity="0" 
-                        />
+                        <Stop offset="0%" stopColor={BLUE_COLOR} stopOpacity={0.22} />
+                        <Stop offset="55%" stopColor={BLUE_COLOR} stopOpacity="0" />
                     </RadialGradient>
                 </Defs>
             
@@ -68,7 +51,7 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
             </Svg>
 
             {children}
-        </ImageBackground>
+        </View>
     )
 }
 

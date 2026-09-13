@@ -1595,7 +1595,7 @@ export default function Feed() {
                                                     </View>
                                                 )}
 
-                                                {one_post_media.is_video && (
+                                                {/* {one_post_media.is_video && (
                                                     <DynamicVideo 
                                                         one_post={one_post}
                                                         one_post_media={one_post_media}
@@ -1604,7 +1604,7 @@ export default function Feed() {
                                                         data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
                                                         is_volume_slider_sliding={is_volume_slider_sliding}
                                                     />
-                                                )}
+                                                )} */}
 
                                                 {/* else if(one_post_media.is_video) {
                                                     const video_container_template:HTMLTemplateElement = feed.querySelector(".video_container_template") as HTMLTemplateElement // Gets The Video Container Template
@@ -1736,42 +1736,40 @@ export default function Feed() {
                                     </View>
 
                                     {logged_in_user && one_post.user.id === logged_in_user.id && (
-                                        one_post.media.map((one_post_media:Media, index:number) => (
-                                            one_post_media.is_video && index === 0 && (
-                                                one_post_media.average_watch_time !== null && one_post_media.video_views !== null && (
-                                                    <>
-                                                        <View className="show_video_metrics" accessibilityLabel="Štatistiky...">
+                                        one_post.media.map((one_post_media:Media, index:number) =>
+                                            Boolean(one_post_media.is_video) && index === 0 && one_post_media.average_watch_time !== null && one_post_media.video_views !== null ? (
+                                                <View key={one_post_media.id || index}>
+                                                    <View className="show_video_metrics" accessibilityLabel="Štatistiky...">
+                                                        <Icon
+                                                            icon_name="chart-simple"
+                                                            // onPress={}
+                                                            size={25}
+                                                        />
+                                                    </View>
+
+                                                    <View className="video_metrics" style={styles.video_metrics}>
+                                                        <View className="views" style={styles.video_metrics_views}>
                                                             <Icon
-                                                                icon_name="chart-simple"
+                                                                icon_name="eye"
                                                                 // onPress={}
-                                                                size={25}
                                                             />
+                                                            
+                                                            <Text className="views_counter" style={styles.video_metrics_views_counter}>{String(one_post_media.video_views)}</Text>
                                                         </View>
 
-                                                        <View className="video_metrics" style={styles.video_metrics}>
-                                                            <View className="views" style={styles.video_metrics_views}>
-                                                                <Icon
-                                                                    icon_name="eye"
-                                                                    // onPress={}
-                                                                />
-                                                                
-                                                                <Text className="views_counter" style={styles.video_metrics_views_counter}>{String(one_post_media.video_views)}</Text>
-                                                            </View>
-
-                                                            <View className="duration_container" style={styles.duration_container}>
-                                                                <View className="duration_bar" style={styles.duration_bar} />
-                                                                {/* <Text className="duration_label" style={styles.duration_label}>{`${getFormattedTime("minutes", video_duration)}:${getFormattedTime("seconds", video_duration, true)}`}</Text> */}
-                                                            </View>
-
-                                                            <View className="watch_time_container" style={styles.watch_time_container}>
-                                                                <View className="watch_time_bar" style={styles.watch_time_bar} />
-                                                                {/* <Text className="watch_time_label" style={styles.watch_time_label}>{`${getFormattedTime("minutes", one_post_media.average_watch_time)}:${getFormattedTime("seconds", one_post_media.average_watch_time, true)} - ${((one_post_media.average_watch_time / video_duration) * 100).toFixed(2)}%`}</Text> */}
-                                                            </View>
+                                                        <View className="duration_container" style={styles.duration_container}>
+                                                            <View className="duration_bar" style={styles.duration_bar} />
+                                                            {/* <Text className="duration_label" style={styles.duration_label}>{`${getFormattedTime("minutes", video_duration)}:${getFormattedTime("seconds", video_duration, true)}`}</Text> */}
                                                         </View>
-                                                    </>
-                                                )
-                                            )
-                                        ))
+
+                                                        <View className="watch_time_container" style={styles.watch_time_container}>
+                                                            <View className="watch_time_bar" style={styles.watch_time_bar} />
+                                                            {/* <Text className="watch_time_label" style={styles.watch_time_label}>{`${getFormattedTime("minutes", one_post_media.average_watch_time)}:${getFormattedTime("seconds", one_post_media.average_watch_time, true)} - ${((one_post_media.average_watch_time / video_duration) * 100).toFixed(2)}%`}</Text> */}
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            ) : null
+                                        )
                                     )}
 
                                     <View className={logged_in_user && logged_in_user.saved_posts.includes(one_post.id) ? "save active" : ""} accessibilityLabel="Uložiť...">

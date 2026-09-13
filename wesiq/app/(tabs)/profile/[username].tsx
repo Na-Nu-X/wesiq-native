@@ -604,2175 +604,395 @@ export default function ProfileScreen() {
     }
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
-                    />
+        <BackgroundContainer>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                />
 
-                    <ScrollView 
-                        className="content" 
-                        style={styles.content} 
-                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                    >
-                        <BottomSheetModalProvider>
-                            {is_found ? (
-                                <View className="profile_page" style={styles.profile_page}>
-                                    <View className="profile_container" style={styles.profile_container}>
-                                        <View style={styles.circle_decoration_before} />
-                                        <View style={styles.circle_decoration_after} />
+                <ScrollView 
+                    className="content" 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                >
+                    <BottomSheetModalProvider>
+                        {is_found ? (
+                            <View className="profile_page" style={styles.profile_page}>
+                                <View className="profile_container" style={styles.profile_container}>
+                                    <View style={styles.circle_decoration_before} />
+                                    <View style={styles.circle_decoration_after} />
 
-                                        <View className="options_container" style={styles.options_container}>
-                                            <View className="back" accessibilityLabel="Späť na úvodnú stránku">
+                                    <View className="options_container" style={styles.options_container}>
+                                        <View className="back" accessibilityLabel="Späť na úvodnú stránku">
+                                            <Icon
+                                                icon_name="chevron-left"
+                                                // onPress={}
+                                                size={30}
+                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                            />
+                                        </View>
+
+                                        {logged_in_user && profile && logged_in_user.id === profile.id && (
+                                            <View className="toggle_settings" accessibilityLabel="">
                                                 <Icon
-                                                    icon_name="chevron-left"
+                                                    icon_name="gear"
                                                     // onPress={}
                                                     size={30}
                                                     pressed_style={{ transform: [{ scale: 1.1 }] }}
                                                 />
                                             </View>
+                                        )}
 
-                                            {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                <View className="toggle_settings" accessibilityLabel="">
-                                                    <Icon
-                                                        icon_name="gear"
-                                                        // onPress={}
-                                                        size={30}
-                                                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                                    />
-                                                </View>
-                                            )}
+                                        {(logged_in_user && profile && logged_in_user.id !== profile.id) && (
+                                            <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                                <Icon
+                                                    icon_name="ellipsis-vertical"
+                                                    onPress={showAccountProperties}
+                                                />
+                                            </View>
+                                        )}
+                                    </View>
 
-                                            {(logged_in_user && profile && logged_in_user.id !== profile.id) && (
-                                                <View className="show_account_properties_button" accessibilityLabel="Viac...">
-                                                    <Icon
-                                                        icon_name="ellipsis-vertical"
-                                                        onPress={showAccountProperties}
-                                                    />
-                                                </View>
-                                            )}
-                                        </View>
-
-                                        <View className="profile_content" style={styles.profile_content}>
-                                            {active_section === "edit_account_form" && logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                <View className="edit_account_form hidden" style={styles.edit_account_form}>
-                                                    <View className="header" style={styles.header}>
-                                                        <View className="info" style={styles.info}>
-                                                            <SelectProfilePicture 
-                                                                onProfilePictureSelection={handleProfilePictureSelection} 
-                                                                previous_profile_picture={getProfilePicturePath(profile.id, profile.profile_picture_name)} 
-                                                                is_subscriber={profile.subscription && profile.subscription.is_active || false}
-                                                            />
-
-                                                            <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
-                                                        </View>
-
-                                                        <View className="show_account_properties_button" accessibilityLabel="Viac...">
-                                                            <Icon
-                                                                icon_name="ellipsis-vertical"
-                                                                onPress={showAccountProperties}
-                                                            />
-                                                        </View>
-                                                    </View>
-
-                                                    <Text className="friend_code" style={styles.friend_code}>Friend Code - <Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text></Text>
-
-                                                    <View className="bio_container" style={styles.bio_container}>
-                                                        <TextInput
-                                                            className="bio"
-                                                            keyboardType="default"
-                                                            autoCapitalize="none"
-                                                            autoCorrect={false}
-                                                            textAlignVertical="top" 
-                                                            placeholder="Niečo o Vás" 
-                                                            placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                            accessibilityLabel="Niečo o Vás" 
-                                                            value={bio}
-                                                            onChangeText={setBio}
-                                                            maxLength={100}
-
-                                                            style={[
-                                                                styles.bio, 
-                                                                { outlineStyle: "none" } as any
-                                                            ]}
+                                    <View className="profile_content" style={styles.profile_content}>
+                                        {active_section === "edit_account_form" && logged_in_user && profile && logged_in_user.id === profile.id && (
+                                            <View className="edit_account_form hidden" style={styles.edit_account_form}>
+                                                <View className="header" style={styles.header}>
+                                                    <View className="info" style={styles.info}>
+                                                        <SelectProfilePicture 
+                                                            onProfilePictureSelection={handleProfilePictureSelection} 
+                                                            previous_profile_picture={getProfilePicturePath(profile.id, profile.profile_picture_name)} 
+                                                            is_subscriber={profile.subscription && profile.subscription.is_active || false}
                                                         />
 
-                                                        <View className="icons" style={styles.icons}>
-                                                            {/* <button 
-                                                                class="show_add_link_form_button" 
+                                                        <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
+                                                    </View>
+
+                                                    <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                                        <Icon
+                                                            icon_name="ellipsis-vertical"
+                                                            onPress={showAccountProperties}
+                                                        />
+                                                    </View>
+                                                </View>
+
+                                                <Text className="friend_code" style={styles.friend_code}>Friend Code - <Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text></Text>
+
+                                                <View className="bio_container" style={styles.bio_container}>
+                                                    <TextInput
+                                                        className="bio"
+                                                        keyboardType="default"
+                                                        autoCapitalize="none"
+                                                        autoCorrect={false}
+                                                        textAlignVertical="top" 
+                                                        placeholder="Niečo o Vás" 
+                                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                        accessibilityLabel="Niečo o Vás" 
+                                                        value={bio}
+                                                        onChangeText={setBio}
+                                                        maxLength={100}
+
+                                                        style={[
+                                                            styles.bio, 
+                                                            { outlineStyle: "none" } as any
+                                                        ]}
+                                                    />
+
+                                                    <View className="icons" style={styles.icons}>
+                                                        {/* <button 
+                                                            class="show_add_link_form_button" 
+                                                            type="button"
+                                                            popovertarget="add_link_form"
+                                                            style="anchor-name: --show_add_link_form_button;"
+                                                            title="{% translate 'Pridať odkaz' %}"
+                                                            aria-label="{% translate 'Pridať odkaz' %}"
+                                                        >
+                                                            <i class="fa-solid fa-link"></i> <!-- https://fontawesome.com/icons/link -->
+                                                        </button>
+
+                                                        <div 
+                                                            class="add_link_form" 
+                                                            id="add_link_form"
+                                                            popover
+                                                            style="position-anchor: --show_add_link_form_button;"
+                                                        >
+                                                            <div class="form">
+                                                                <input class="url" type="text" placeholder="https://example.com">
+                                                                <button class="add_link" type="button"><i class="fa-solid fa-plus"></i></button> <!-- https://fontawesome.com/icons/plus -->
+                                                            </div>
+
+                                                            <button 
+                                                                class="hide_add_link_form_button" 
                                                                 type="button"
                                                                 popovertarget="add_link_form"
-                                                                style="anchor-name: --show_add_link_form_button;"
-                                                                title="{% translate 'Pridať odkaz' %}"
-                                                                aria-label="{% translate 'Pridať odkaz' %}"
+                                                                popovertargetaction="hide"
                                                             >
-                                                                <i class="fa-solid fa-link"></i> <!-- https://fontawesome.com/icons/link -->
+                                                                <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
+                                                                <span>{% translate "Zavrieť" %}</span>
                                                             </button>
+                                                        </div> */}
 
-                                                            <div 
-                                                                class="add_link_form" 
-                                                                id="add_link_form"
-                                                                popover
-                                                                style="position-anchor: --show_add_link_form_button;"
+                                                        <View 
+                                                            className="add_emoji"
+                                                            accessibilityLabel="Pridať emoji"
+                                                        >
+                                                            <Icon 
+                                                                icon_name="face-surprise"
+                                                                onPress={() => setIsEmojiPickerOpen(true)}
+                                                                is_regular={true}
+                                                            />
+                                                        </View>
+
+                                                        <EmojiPicker
+                                                            onEmojiSelected={handleEmojiSelect}
+                                                            open={is_emoji_picker_open}
+                                                            onClose={() => setIsEmojiPickerOpen(false)}
+
+                                                            translation={{
+                                                                smileys_emotion: "Smajlíky",
+                                                                people_body: "Ľudia", 
+                                                                recently_used: "Naposledy použité",
+                                                                animals_nature: "Zvieratá",
+                                                                food_drink: "Jedlo a nápoje",
+                                                                activities: "Aktivity",
+                                                                travel_places: "Cestovanie",
+                                                                objects: "Predmety",
+                                                                symbols: "Symboly",
+                                                                flags: "Vlajky",
+                                                                search: "Hľadať...",
+                                                            }}
+                                                        />
+                                                    </View>
+                                                </View>
+
+                                                {/*
+                                                                {{ one_bio_link.domain }}
+                                                            </a>
+
+                                                            <button class="remove_link" type="button" title="{% translate 'Odstrániť odkaz' %}"><i class="fa-solid fa-xmark"></i></button> <!-- https://fontawesome.com/icons/xmark -->
+                                                        </div>
+                                                    
+                                                    {% endfor %}
+                                                </div> */}
+
+                                                <View className="added_links_container" style={styles.added_links_container}>
+                                                    {profile.bio_links.map((one_bio_link:BioLink, index:number) => (
+                                                        <View key={one_bio_link.id || index} className="link" style={styles.link}>
+                                                            <Pressable 
+                                                                // onPress={}
+                                                                accessibilityLabel="Otvoriť odkaz"
+
+                                                                style={[
+                                                                    styles.link_anchor, 
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
                                                             >
-                                                                <div class="form">
-                                                                    <input class="url" type="text" placeholder="https://example.com">
-                                                                    <button class="add_link" type="button"><i class="fa-solid fa-plus"></i></button> <!-- https://fontawesome.com/icons/plus -->
-                                                                </div>
+                                                                {one_bio_link.url.includes("instagram.com") && (
+                                                                    <Icon
+                                                                        icon_name="instagram"
+                                                                        // onPress={}
+                                                                    />
+                                                                )}
 
-                                                                <button 
-                                                                    class="hide_add_link_form_button" 
-                                                                    type="button"
-                                                                    popovertarget="add_link_form"
-                                                                    popovertargetaction="hide"
-                                                                >
-                                                                    <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                                                                    <span>{% translate "Zavrieť" %}</span>
-                                                                </button>
-                                                            </div> */}
+                                                                {one_bio_link.url.includes("facebook.com") && (
+                                                                    <Icon
+                                                                        icon_name="facebook"
+                                                                        // onPress={}
+                                                                    />
+                                                                )}
 
-                                                            <View 
-                                                                className="add_emoji"
-                                                                accessibilityLabel="Pridať emoji"
-                                                            >
-                                                                <Icon 
-                                                                    icon_name="face-surprise"
-                                                                    onPress={() => setIsEmojiPickerOpen(true)}
-                                                                    is_regular={true}
+                                                                {one_bio_link.url.includes("youtube.com") && (
+                                                                    <Icon
+                                                                        icon_name="youtube"
+                                                                        // onPress={}
+                                                                    />
+                                                                )}
+
+                                                                {!one_bio_link.url.includes("instagram.com") && !one_bio_link.url.includes("facebook.com") && !one_bio_link.url.includes("youtube.com") && (
+                                                                    <Icon
+                                                                        icon_name="link"
+                                                                        // onPress={}
+                                                                    />
+                                                                )}
+
+                                                                <Text style={{ color: SECONDARY_COLOR }}>{getDomain(one_bio_link.url)}</Text>
+                                                            </Pressable>
+
+                                                            <View className="remove_link" accessibilityLabel="Odstrániť odkaz">
+                                                                <Icon
+                                                                    icon_name="xmark"
+                                                                    // onPress={}
                                                                 />
                                                             </View>
+                                                        </View>
+                                                    ))}
+                                                </View>
 
-                                                            <EmojiPicker
-                                                                onEmojiSelected={handleEmojiSelect}
-                                                                open={is_emoji_picker_open}
-                                                                onClose={() => setIsEmojiPickerOpen(false)}
+                                                <View className="inputs">
+                                                    <View className="name_container" style={styles.name_container}>
+                                                        <View className="first_name_container" style={styles.first_name_container}>
+                                                            <View className="first_name_icon" style={styles.first_name_icon}>
+                                                                <Icon icon_name="user" />
+                                                            </View>
 
-                                                                translation={{
-                                                                    smileys_emotion: "Smajlíky",
-                                                                    people_body: "Ľudia", 
-                                                                    recently_used: "Naposledy použité",
-                                                                    animals_nature: "Zvieratá",
-                                                                    food_drink: "Jedlo a nápoje",
-                                                                    activities: "Aktivity",
-                                                                    travel_places: "Cestovanie",
-                                                                    objects: "Predmety",
-                                                                    symbols: "Symboly",
-                                                                    flags: "Vlajky",
-                                                                    search: "Hľadať...",
-                                                                }}
+                                                            <TextInput
+                                                                className="first_name"
+                                                                keyboardType="default"
+                                                                autoCapitalize="words"
+                                                                textAlignVertical="top" 
+                                                                placeholder="Zmeniť meno" 
+                                                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                                accessibilityLabel="Zmeniť meno" 
+                                                                value={first_name}
+                                                                onChangeText={setFirstName}
+                                                                maxLength={20}
+
+                                                                style={[
+                                                                    styles.first_name, 
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
+                                                            />
+                                                        </View>
+
+                                                        <View className="last_name_container" style={styles.last_name_container}>
+                                                            <View className="last_name_icon" style={styles.last_name_icon}>
+                                                                <Icon icon_name="user" />
+                                                            </View>
+
+                                                            <TextInput
+                                                                className="last_name"
+                                                                keyboardType="default"
+                                                                autoCapitalize="words"
+                                                                textAlignVertical="top" 
+                                                                placeholder="Zmeniť priezvisko" 
+                                                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                                accessibilityLabel="Zmeniť priezvisko" 
+                                                                value={last_name}
+                                                                onChangeText={setLastName}
+                                                                maxLength={50}
+
+                                                                style={[
+                                                                    styles.last_name, 
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
                                                             />
                                                         </View>
                                                     </View>
 
-                                                    {/*
-                                                                    {{ one_bio_link.domain }}
-                                                                </a>
-
-                                                                <button class="remove_link" type="button" title="{% translate 'Odstrániť odkaz' %}"><i class="fa-solid fa-xmark"></i></button> <!-- https://fontawesome.com/icons/xmark -->
-                                                            </div>
-                                                        
-                                                        {% endfor %}
-                                                    </div> */}
-
-                                                    <View className="added_links_container" style={styles.added_links_container}>
-                                                        {profile.bio_links.map((one_bio_link:BioLink, index:number) => (
-                                                            <View key={one_bio_link.id || index} className="link" style={styles.link}>
-                                                                <Pressable 
-                                                                    // onPress={}
-                                                                    accessibilityLabel="Otvoriť odkaz"
-
-                                                                    style={[
-                                                                        styles.link_anchor, 
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                >
-                                                                    {one_bio_link.url.includes("instagram.com") && (
-                                                                        <Icon
-                                                                            icon_name="instagram"
-                                                                            // onPress={}
-                                                                        />
-                                                                    )}
-
-                                                                    {one_bio_link.url.includes("facebook.com") && (
-                                                                        <Icon
-                                                                            icon_name="facebook"
-                                                                            // onPress={}
-                                                                        />
-                                                                    )}
-
-                                                                    {one_bio_link.url.includes("youtube.com") && (
-                                                                        <Icon
-                                                                            icon_name="youtube"
-                                                                            // onPress={}
-                                                                        />
-                                                                    )}
-
-                                                                    {!one_bio_link.url.includes("instagram.com") && !one_bio_link.url.includes("facebook.com") && !one_bio_link.url.includes("youtube.com") && (
-                                                                        <Icon
-                                                                            icon_name="link"
-                                                                            // onPress={}
-                                                                        />
-                                                                    )}
-
-                                                                    <Text style={{ color: SECONDARY_COLOR }}>{getDomain(one_bio_link.url)}</Text>
-                                                                </Pressable>
-
-                                                                <View className="remove_link" accessibilityLabel="Odstrániť odkaz">
-                                                                    <Icon
-                                                                        icon_name="xmark"
-                                                                        // onPress={}
-                                                                    />
-                                                                </View>
-                                                            </View>
-                                                        ))}
-                                                    </View>
-
-                                                    <View className="inputs">
-                                                        <View className="name_container" style={styles.name_container}>
-                                                            <View className="first_name_container" style={styles.first_name_container}>
-                                                                <View className="first_name_icon" style={styles.first_name_icon}>
-                                                                    <Icon icon_name="user" />
-                                                                </View>
-
-                                                                <TextInput
-                                                                    className="first_name"
-                                                                    keyboardType="default"
-                                                                    autoCapitalize="words"
-                                                                    textAlignVertical="top" 
-                                                                    placeholder="Zmeniť meno" 
-                                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                    accessibilityLabel="Zmeniť meno" 
-                                                                    value={first_name}
-                                                                    onChangeText={setFirstName}
-                                                                    maxLength={20}
-
-                                                                    style={[
-                                                                        styles.first_name, 
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                />
+                                                    <View className="contact_container" style={styles.contact_container}>
+                                                        <View className="email_address_container" style={styles.email_address_container}>
+                                                            <View className="email_address_icon" style={styles.email_address_icon}>
+                                                                <Icon icon_name="envelope" />
                                                             </View>
 
-                                                            <View className="last_name_container" style={styles.last_name_container}>
-                                                                <View className="last_name_icon" style={styles.last_name_icon}>
-                                                                    <Icon icon_name="user" />
-                                                                </View>
-
-                                                                <TextInput
-                                                                    className="last_name"
-                                                                    keyboardType="default"
-                                                                    autoCapitalize="words"
-                                                                    textAlignVertical="top" 
-                                                                    placeholder="Zmeniť priezvisko" 
-                                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                    accessibilityLabel="Zmeniť priezvisko" 
-                                                                    value={last_name}
-                                                                    onChangeText={setLastName}
-                                                                    maxLength={50}
-
-                                                                    style={[
-                                                                        styles.last_name, 
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                />
-                                                            </View>
-                                                        </View>
-
-                                                        <View className="contact_container" style={styles.contact_container}>
-                                                            <View className="email_address_container" style={styles.email_address_container}>
-                                                                <View className="email_address_icon" style={styles.email_address_icon}>
-                                                                    <Icon icon_name="envelope" />
-                                                                </View>
-
-                                                                <TextInput
-                                                                    className="email_address"
-                                                                    keyboardType="default"
-                                                                    textAlignVertical="top" 
-                                                                    placeholder="Zmeniť e-mail" 
-                                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                    accessibilityLabel="Zmeniť e-mail" 
-                                                                    value={email_address}
-                                                                    onChangeText={setEmailAddress}
-                                                                    maxLength={50}
-
-                                                                    style={[
-                                                                        styles.email_address, 
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                />
-                                                            </View>
-
-                                                            <View className="phone_number_container" style={styles.phone_number_container}>
-                                                                <View className="phone_number_icon" style={styles.phone_number_icon}>
-                                                                    <Icon icon_name="phone" />
-                                                                </View>
-
-                                                                <TextInput
-                                                                    className="phone_number"
-                                                                    keyboardType="phone-pad"
-                                                                    textAlignVertical="top" 
-                                                                    placeholder="Zmeniť telefónne číslo" 
-                                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                    accessibilityLabel="Zmeniť telefónne číslo" 
-                                                                    value={phone_number}
-                                                                    onChangeText={handlePhoneNumberChange}
-                                                                    maxLength={25}
-
-                                                                    style={[
-                                                                        styles.phone_number, 
-                                                                        phone_number.trim().length > 0 ? { borderBottomColor: is_phone_number_valid ? "#52cf20" : "#df3535" } : {},
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                />
-
-                                                                {flag && (
-                                                                    <Image
-                                                                        source={{ uri:flag }}
-                                                                        style={styles.flag}
-                                                                    />
-                                                                )}
-                                                            </View>
-                                                        </View>
-                                                    </View>
-
-                                                    <Text 
-                                                        className="form_report" 
-
-                                                        style={[
-                                                            styles.form_report, 
-                                                            form_report_appearance === "success" ? { color: GREEN_COLOR } : { color: RED_COLOR }
-                                                        ]}
-                                                    >
-                                                        {form_report}
-                                                    </Text>
-
-                                                    <Pressable 
-                                                        className="edit_account_form_submit"
-                                                        onPress={handleEditAccount}
-                                                        disabled={is_loading}
-                                                        accessibilityLabel="Uložiť zmeny"
-
-                                                        style={[
-                                                            styles.edit_account_form_submit, 
-                                                            { outlineStyle: "none" } as any
-                                                        ]}
-                                                    >
-                                                        <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uložiť zmeny</Text>
-                                                    </Pressable>
-
-                                                    <View className="form_questions" style={styles.form_questions}>
-                                                        <View 
-                                                            style={{ 
-                                                                flexDirection: "row",
-                                                                justifyContent: "center",
-                                                            }}
-                                                        >
-                                                            <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
-                                                            <Pressable
-                                                                // onPress={handleGoToPasswordReset}
-                                                                accessibilityRole="button"
-                                                                accessibilityLabel="Zmeniť heslo" 
-                                                            >
-                                                                {({ pressed }) => (
-                                                                    <Text 
-                                                                        style={[
-                                                                            { color: SECONDARY_COLOR, fontStyle: "italic" },
-                                                                            pressed && { textDecorationLine: "underline" } 
-                                                                        ]}
-                                                                    >
-                                                                        Zmeniť heslo
-                                                                    </Text>
-                                                                )}
-                                                            </Pressable>
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            )}
-
-                                            {active_section === "profile" && profile && (
-                                                <View className="profile" style={styles.profile}>
-                                                    <View className="header" style={styles.profile_header}>
-                                                        <View className="top" style={styles.top}>
-                                                            <View className="info" style={styles.profile_info}>
-                                                                <View 
-                                                                    className="profile_picture_container"
-                                                                    style={styles.profile_picture_container}
-                                                                >
-                                                                    <Image 
-                                                                        className={`profile_picture ${
-                                                                            profile.subscription && profile.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                                                        }`}
-
-                                                                        source={
-                                                                            profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                        }
-
-                                                                        style={[
-                                                                            styles.profile_picture,
-                                                                            profile.subscription && profile.subscription.is_active && styles.subscriber_profile_picture,
-                                                                            // { transform: [{ scale: animated_scale }] }
-                                                                        ]}
-                                                                    />
-                                                                </View>
-
-                                                                <View className="name" style={styles.name}>
-                                                                    <Text className="username" style={styles.profile_username}>{profile.username}</Text>
-
-                                                                    {profile.first_name && profile.last_name && (
-                                                                        <Text className="full_name" style={styles.full_name}>{`${profile.first_name} ${profile.last_name}`}</Text>
-                                                                    )}
-                                                                </View>
-                                                            </View>
-
-                                                            <View 
-                                                                className={profile.has_already_increased_activity_streak ? "streak increased" : "streak"}
+                                                            <TextInput
+                                                                className="email_address"
+                                                                keyboardType="default"
+                                                                textAlignVertical="top" 
+                                                                placeholder="Zmeniť e-mail" 
+                                                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                                accessibilityLabel="Zmeniť e-mail" 
+                                                                value={email_address}
+                                                                onChangeText={setEmailAddress}
+                                                                maxLength={50}
 
                                                                 style={[
-                                                                    styles.streak,
-                                                                    profile.has_already_increased_activity_streak ? styles.increased_streak : {}
+                                                                    styles.email_address, 
+                                                                    { outlineStyle: "none" } as any
                                                                 ]}
-                                                            >
-                                                                <FontAwesome6
-                                                                    name="fire"
-                                                                    size={20}
-                                                                    color={BLUE_COLOR}
-                                                                />
-
-                                                                <Text style={styles.streak_text}>{profile.activity_streak || 0}</Text>
-                                                            </View>
+                                                            />
                                                         </View>
 
-                                                        <View className="bottom">
-                                                            {profile.bio && (
-                                                                <View className="bio_container" style={styles.profile_bio_container}>
-                                                                    <Text className="bio" style={styles.profile_bio}>{profile.bio}</Text>
+                                                        <View className="phone_number_container" style={styles.phone_number_container}>
+                                                            <View className="phone_number_icon" style={styles.phone_number_icon}>
+                                                                <Icon icon_name="phone" />
+                                                            </View>
 
-                                                                    <View className="links" style={styles.links}>
-                                                                        {profile.bio_links.map((one_link:BioLink, index:number) => (
-                                                                            <Pressable 
-                                                                                key={one_link.id || index}
-                                                                                // onPress={}
-                                                                                accessibilityLabel="Otvoriť odkaz"
+                                                            <TextInput
+                                                                className="phone_number"
+                                                                keyboardType="phone-pad"
+                                                                textAlignVertical="top" 
+                                                                placeholder="Zmeniť telefónne číslo" 
+                                                                placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                                accessibilityLabel="Zmeniť telefónne číslo" 
+                                                                value={phone_number}
+                                                                onChangeText={handlePhoneNumberChange}
+                                                                maxLength={25}
 
-                                                                                style={[
-                                                                                    styles.profile_link_anchor, 
-                                                                                    { outlineStyle: "none" } as any
-                                                                                ]}
-                                                                            >
-                                                                                {one_link.url.includes("instagram.com") && (
-                                                                                    <Icon
-                                                                                        icon_name="instagram"
-                                                                                        // onPress={}
-                                                                                    />
-                                                                                )}
+                                                                style={[
+                                                                    styles.phone_number, 
+                                                                    phone_number.trim().length > 0 ? { borderBottomColor: is_phone_number_valid ? "#52cf20" : "#df3535" } : {},
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
+                                                            />
 
-                                                                                {one_link.url.includes("facebook.com") && (
-                                                                                    <Icon
-                                                                                        icon_name="facebook"
-                                                                                        // onPress={}
-                                                                                    />
-                                                                                )}
-
-                                                                                {one_link.url.includes("youtube.com") && (
-                                                                                    <Icon
-                                                                                        icon_name="youtube"
-                                                                                        // onPress={}
-                                                                                    />
-                                                                                )}
-
-                                                                                {!one_link.url.includes("instagram.com") && !one_link.url.includes("facebook.com") && !one_link.url.includes("youtube.com") && (
-                                                                                    <Icon
-                                                                                        icon_name="link"
-                                                                                        // onPress={}
-                                                                                    />
-                                                                                )}
-                                                                            </Pressable>
-                                                                        ))}
-                                                                    </View>
-                                                                </View>
+                                                            {flag && (
+                                                                <Image
+                                                                    source={{ uri:flag }}
+                                                                    style={styles.flag}
+                                                                />
                                                             )}
                                                         </View>
-                                                    </View>
-
-                                                    <View className="middle">
-                                                        <View className="follow_container" style={styles.follow_container}>
-                                                            <View className="statistics" style={styles.statistics}>
-                                                                <View className="followers" style={styles.followers}>
-                                                                    <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
-                                                                    <Text className="label" style={styles.followers_label}>sledujú</Text>
-                                                                </View>
-
-                                                                {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
-                                                                    <dialog class="followers_dialog">
-                                                                        <div class="all_followers">
-                                                                            <h2>{% translate "Sledovatelia" %} (<span class="followers_amount">{{ followers.count|default:0 }}</span>)</h2>
-
-                                                                            <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
-                                                                            
-                                                                            <p 
-                                                                                class="
-                                                                                    no_followers
-
-                                                                                    {% if followers.count > 0 %}
-                                                                                        hidden
-
-                                                                                    {% endif %}
-                                                                                "
-                                                                            >
-                                                                                {% translate "Žiadny sledovatelia." %}
-                                                                            </p>
-
-                                                                            {% for one_follower in followers %}
-                                                                                <div class="one_follower" data-id="{{ one_follower.id }}">
-                                                                                    <a href="{% url 'profile_url' one_follower.from_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
-                                                                                        <img 
-                                                                                            class="profile_picture skeleton_loading" 
-                                                                                            src="
-                                                                                                {% if one_follower.from_user.profile_picture_name %}
-                                                                                                    /../media/images/{{ one_follower.from_user.id }}/{{ one_follower.from_user.profile_picture_name }}
-                                                        
-                                                                                                {% else %}
-                                                                                                    {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
-                                                                                                
-                                                                                                {% endif %}
-                                                                                            "
-                                                                                            alt=""
-                                                                                        >
-                                                                                    </a>
-                                        
-                                                                                    <p class="username">{{ one_follower.from_user.username }}</p>
-
-                                                                                    <button 
-                                                                                        class="remove_follower"
-                                                                                        data-id="{{ one_follower.from_user.id }}"
-                                                                                    >
-                                                                                        {% translate "Odstrániť" %}
-                                                                                    </button>
-                                                                                </div>
-                                                                            
-                                                                            {% endfor %}
-                                                                        </div>
-                                                                    </dialog>
-
-                                                                {% endif %} */}
-
-                                                                <View className="following" style={styles.following}>
-                                                                    <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
-                                                                    <Text className="label" style={styles.following_label}>sleduje</Text>
-                                                                </View>
-
-                                                                {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
-                                                                    <dialog class="following_dialog">
-                                                                        <div class="all_followings">
-                                                                            <h2>{% translate "Sleduješ" %} (<span class="followings_amount">{{ following.count|default:0 }}</span>)</h2>
-
-                                                                            <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
-
-                                                                            <p 
-                                                                                class="
-                                                                                    no_followings
-
-                                                                                    {% if following.count > 0 %}
-                                                                                        hidden
-
-                                                                                    {% endif %}
-                                                                                "
-                                                                            >
-                                                                                {% translate "Nikoho nesleduješ." %}
-                                                                            </p>
-
-                                                                            {% for one_following in following %}
-                                                                                <div class="one_following" data-id="{{ one_following.id }}">
-                                                                                    <a href="{% url 'profile_url' one_following.to_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
-                                                                                        <img 
-                                                                                            class="profile_picture skeleton_loading" 
-                                                                                            src="
-                                                                                                {% if one_following.to_user.profile_picture_name %}
-                                                                                                    /../media/images/{{ one_following.to_user.id }}/{{ one_following.to_user.profile_picture_name }}
-                                                        
-                                                                                                {% else %}
-                                                                                                    {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
-                                                                                                
-                                                                                                {% endif %}
-                                                                                            "
-                                                                                            alt=""
-                                                                                        >
-                                                                                    </a>
-                                        
-                                                                                    <p class="username">{{ one_following.to_user.username }}</p>
-
-                                                                                    <button 
-                                                                                        class="follow_button"
-                                                                                        data-id="{{ one_following.to_user.id }}"
-                                                                                        data-action="unfollow"
-                                                                                    >
-                                                                                        {% translate "Prestať sledovať" %}
-                                                                                    </button>
-                                                                                </div>
-                                                                            
-                                                                            {% endfor %}
-                                                                        </div>
-                                                                    </dialog>
-                                                                
-                                                                {% endif %} */}
-
-                                                                <View className="posts">
-                                                                    <Text className="amount" style={styles.posts_amount}>{profile.posts.length || 0}</Text>
-                                                                    <Text className="label" style={styles.posts_label}>príspevky</Text>
-                                                                </View>
-                                                            </View>
-
-                                                            {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && (
-                                                                <View className="show_follow_requests" style={styles.show_follow_requests}>
-                                                                    <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
-
-                                                                    <Icon
-                                                                        icon_name="bell"
-                                                                        // onPress={}
-                                                                        size={25}
-                                                                        is_regular={true}
-                                                                    />
-                                                                </View>
-
-                                                                // <dialog class="follow_requests_dialog">
-                                                                //     <div class="all_follow_requests">
-                                                                //         <h2>{% translate "Žiadosti o sledovanie" %} (<span class="follow_requests_amount">{{ logged_in_user.follow_requests.count|default:0 }}</span>)</h2>
-
-                                                                //         <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
-
-                                                                //         <p 
-                                                                //             class="
-                                                                //                 no_follow_requests
-
-                                                                //                 {% if logged_in_user.follow_requests.count > 0 %}
-                                                                //                     hidden
-
-                                                                //                 {% endif %}
-                                                                //             "
-                                                                //         >
-                                                                //             {% translate "Žiadne žiadosti o sledovanie." %}
-                                                                //         </p>
-
-                                                                //         {% for one_follow_request in logged_in_user.follow_requests %}
-                                                                //             <div class="one_follow_request" data-id="{{ one_follow_request.id }}">
-                                                                //                 <a href="{% url 'profile_url' one_follow_request.from_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
-                                                                //                     <img 
-                                                                //                         class="profile_picture skeleton_loading" 
-                                                                //                         src="
-                                                                //                             {% if one_follow_request.from_user.profile_picture_name %}
-                                                                //                                 /../media/images/{{ one_follow_request.from_user.id }}/{{ one_follow_request.from_user.profile_picture_name }}
-
-                                                                //                             {% else %}
-                                                                //                                 {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
-                                                                                            
-                                                                //                             {% endif %}
-                                                                //                         "
-                                                                //                         alt=""
-                                                                //                     >
-                                                                //                 </a>
-
-                                                                //                 <p class="username">{{ one_follow_request.from_user.username }}</p>
-
-                                                                //                 <button class="approve" title="{% translate 'Schváliť' %}" aria-label="{% translate 'Schváliť' %}">
-                                                                //                     <i class="fa-solid fa-check"></i> <!-- https://fontawesome.com/icons/check -->
-                                                                //                 </button>
-                                                                                
-                                                                //                 <button class="reject" title="{% translate 'Zamietnuť' %}" aria-label="{% translate 'Zamietnuť' %}">
-                                                                //                     <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                                                                //                 </button>
-                                                                //             </div>
-                                                                        
-                                                                //         {% endfor %}
-                                                                //     </div>
-                                                                // </dialog>
-                                                            )}
-
-                                                            {logged_in_user && logged_in_user.id !== profile.id && (
-                                                                <Pressable
-                                                                    className="follow_button" 
-                                                                    onPress={() => toggleFollow(profile.id, getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).action)}
-
-                                                                    style={[
-                                                                        styles.follow_button, 
-                                                                        { outlineStyle: "none" } as any
-                                                                    ]}
-                                                                >
-                                                                    <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).text}</Text>
-                                                                </Pressable>
-                                                            )}
-                                                        </View>
-
-                                                        {profile.has_follow && (
-                                                            <View className="message_container" style={styles.message_container}>
-                                                                <Text className="unread_messages" style={styles.unread_messages}>{profile.unread_messages_amount}</Text>
-
-                                                                <Icon 
-                                                                    icon_name="comment-dots"
-                                                                    // onPress={}
-                                                                    is_regular={true}
-                                                                />
-                                                            </View>
-                                                        )}
-
-                                                        <View className="badges_container" style={styles.badges_container}>
-                                                            <ScrollView 
-                                                                className="badges" 
-                                                                horizontal={true}
-                                                                showsHorizontalScrollIndicator={true}
-                                                                style={styles.badges}
-                                                                contentContainerStyle={styles.badges_content}
-                                                            >
-                                                                {profile.role === "developer" && (
-                                                                    <View 
-                                                                        className="badge developer" 
-                                                                        accessibilityLabel="Vývojár"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            styles.badge_developer,
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="code"
-                                                                            size={20}
-                                                                            color={RED_RARITY}
-                                                                            style={styles.badge_icon}
-                                                                        />
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.subscription && profile.subscription.is_active && (
-                                                                    <View 
-                                                                        className="badge subscriber" 
-                                                                        accessibilityLabel={profile.subscription.plan === "premium" ? "Prémiový predplatiteľ" : "Základný predplatiteľ"}
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            styles.badge_subscriber,
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="crown"
-                                                                            size={20}
-                                                                            color={YELLOW_RARITY}
-                                                                            style={styles.badge_icon}
-                                                                        />
-                                                                    </View>
-                                                                )}
-                                                                
-                                                                {profile.total_transactions_amount !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "donations",
-                                                                            profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && "blue",
-                                                                            profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 && "green",
-                                                                            profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 && "yellow",
-                                                                            profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 && "orange",
-                                                                            profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 && "red",
-                                                                            profile.total_transactions_amount >= 100 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Prispievateľ"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? styles.badge_blue_rarity : {},
-                                                                            profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? styles.badge_green_rarity : {},
-                                                                            profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? styles.badge_yellow_rarity : {},
-                                                                            profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? styles.badge_red_rarity : {},
-                                                                            profile.total_transactions_amount >= 100 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="dollar-sign"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? BLUE_RARITY :
-                                                                                profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? GREEN_RARITY : 
-                                                                                profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? YELLOW_RARITY : 
-                                                                                profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? ORANGE_RARITY : 
-                                                                                profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? { color: BLUE_RARITY } : {},
-                                                                                profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? { color: GREEN_RARITY } : {},
-                                                                                profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? { color: RED_RARITY } : {},
-                                                                                profile.total_transactions_amount >= 100 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && ("1€")}
-                                                                            {profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 && ("2€")}
-                                                                            {profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 && ("5€")}
-                                                                            {profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 && ("10€")}
-                                                                            {profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 && ("50€")}
-                                                                            {profile.total_transactions_amount >= 100 && ("100+€")}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                <View 
-                                                                    className={[
-                                                                        "badge", 
-                                                                        "level",
-                                                                        profile.level >= 1 && profile.level <= 10 && "blue",
-                                                                        profile.level > 10 && profile.level <= 25 && "green",
-                                                                        profile.level > 25 && profile.level <= 50 && "yellow",
-                                                                        profile.level > 50 && profile.level <= 75 && "orange",
-                                                                        profile.level > 75 && profile.level <= 100 && "red",
-                                                                        profile.level > 100 && "purple"
-                                                                    ].filter(Boolean).join(" ")}
-                                                                    
-                                                                    accessibilityLabel="Level"
-
-                                                                    style={[
-                                                                        styles.badge,
-                                                                        profile.level >= 1 && profile.level <= 10 ? styles.badge_blue_rarity : {},
-                                                                        profile.level > 10 && profile.level <= 25 ? styles.badge_green_rarity : {},
-                                                                        profile.level > 25 && profile.level <= 50 ? styles.badge_yellow_rarity : {},
-                                                                        profile.level > 50 && profile.level <= 75 ? styles.badge_orange_rarity : {},
-                                                                        profile.level > 75 && profile.level <= 100 ? styles.badge_red_rarity : {},
-                                                                        profile.level > 100 ? styles.badge_purple_rarity : {},
-                                                                    ]}
-                                                                >
-                                                                    <FontAwesome6
-                                                                        name="arrow-trend-up"
-                                                                        size={30}
-
-                                                                        color={
-                                                                            profile.level >= 1 && profile.level <= 10 ? BLUE_RARITY :
-                                                                            profile.level > 10 && profile.level <= 25 ? GREEN_RARITY : 
-                                                                            profile.level > 25 && profile.level <= 50 ? YELLOW_RARITY : 
-                                                                            profile.level > 50 && profile.level <= 75 ? ORANGE_RARITY : 
-                                                                            profile.level > 75 && profile.level <= 100 ? RED_RARITY : 
-                                                                            PURPLE_RARITY
-                                                                        }
-
-                                                                        style={styles.badge_icon}
-                                                                    />
-
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.badge_text,
-                                                                            profile.level >= 1 && profile.level <= 10 ? { color: BLUE_RARITY } : {},
-                                                                            profile.level > 10 && profile.level <= 25 ? { color: GREEN_RARITY } : {},
-                                                                            profile.level > 25 && profile.level <= 50 ? { color: YELLOW_RARITY } : {},
-                                                                            profile.level > 50 && profile.level <= 75 ? { color: ORANGE_RARITY } : {},
-                                                                            profile.level > 75 && profile.level <= 100 ? { color: RED_RARITY } : {},
-                                                                            profile.level > 100 ? { color: PURPLE_RARITY } : {},
-                                                                        ]}
-                                                                    >
-                                                                        {profile.level}
-                                                                    </Text>
-                                                                </View>
-
-                                                                {profile.xp !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "xp",
-                                                                            profile.xp < 1000 && "blue",
-                                                                            profile.xp >= 1000 && profile.xp <= 5000 && "green",
-                                                                            profile.xp > 5000 && profile.xp <= 10000 && "yellow",
-                                                                            profile.xp > 10000 && profile.xp <= 50000 && "orange",
-                                                                            profile.xp > 50000 && profile.xp <= 100000 && "red",
-                                                                            profile.xp > 100000 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Získané XP"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.xp < 1000 ? styles.badge_blue_rarity : {},
-                                                                            profile.xp >= 1000 && profile.xp <= 5000 ? styles.badge_green_rarity : {},
-                                                                            profile.xp > 5000 && profile.xp <= 10000 ? styles.badge_yellow_rarity : {},
-                                                                            profile.xp > 10000 && profile.xp <= 50000 ? styles.badge_orange_rarity : {},
-                                                                            profile.xp > 50000 && profile.xp <= 100000 ? styles.badge_red_rarity : {},
-                                                                            profile.xp > 100000 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="bolt"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.xp < 1000 ? BLUE_RARITY :
-                                                                                profile.xp >= 1000 && profile.xp <= 5000 ? GREEN_RARITY : 
-                                                                                profile.xp > 5000 && profile.xp <= 10000 ? YELLOW_RARITY : 
-                                                                                profile.xp > 10000 && profile.xp <= 50000 ? ORANGE_RARITY : 
-                                                                                profile.xp > 50000 && profile.xp <= 100000 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <View 
-                                                                            style={[
-                                                                                {
-                                                                                    position: "absolute",
-                                                                                    top: 0, 
-                                                                                    bottom: 0,
-                                                                                    left: 0,
-                                                                                    right: 0,
-                                                                                },
-                                                                               
-                                                                                styles.badge_xp_text,
-                                                                            ]}
-                                                                        >
-                                                                            <Text 
-                                                                                style={[
-                                                                                    { 
-                                                                                        textAlign: "center",
-                                                                                        lineHeight: 22,
-                                                                                        fontSize: 22,
-                                                                                        fontWeight: "bold", 
-                                                                                    },
-
-                                                                                    profile.xp < 1000 ? { color: BLUE_RARITY } : {},
-                                                                                    profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
-                                                                                    profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
-                                                                                    profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
-                                                                                    profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
-                                                                                    profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
-                                                                                ]}
-                                                                            >
-                                                                                {profile.xp < 1000 && "<1000"}
-                                                                                {profile.xp >= 1000 && profile.xp <= 5000 && "1K"}
-                                                                                {profile.xp > 5000 && profile.xp <= 10000 && "5K"}
-                                                                                {profile.xp > 10000 && profile.xp <= 50000 && "10K"}
-                                                                                {profile.xp > 50000 && profile.xp <= 100000 && "50K"}
-                                                                                {profile.xp > 100000 && "100K+"}
-                                                                            </Text>
-
-                                                                            <Text 
-                                                                                style={[
-                                                                                    { textAlign: "center" },
-                                                                                    profile.xp < 1000 ? { color: BLUE_RARITY } : {},
-                                                                                    profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
-                                                                                    profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
-                                                                                    profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
-                                                                                    profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
-                                                                                    profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
-                                                                                ]}
-                                                                            >
-                                                                                XP
-                                                                            </Text>
-                                                                        </View>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.max_activity_streak !== 0 && (
-                                                                    <View 
-                                                                        className="badge max_activity_streak" 
-                                                                        accessibilityLabel="Najdlhšia rada aktivity"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            styles.badge_max_activity_streak,
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="fire"
-                                                                            size={20}
-                                                                            color={YELLOW_RARITY}
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                { color: YELLOW_RARITY }
-                                                                            ]}
-                                                                        >
-                                                                            {profile.max_activity_streak}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.years_since_registration !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "years_since_registration",
-                                                                            profile.years_since_registration === 1 && "blue",
-                                                                            profile.years_since_registration === 2 && "green",
-                                                                            profile.years_since_registration === 3 && "yellow",
-                                                                            profile.years_since_registration === 4 && "orange",
-                                                                            profile.years_since_registration === 5 && "red",
-                                                                            profile.years_since_registration > 5 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Roky od registrácie"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.years_since_registration === 1 ? styles.badge_blue_rarity : {},
-                                                                            profile.years_since_registration === 2 ? styles.badge_green_rarity : {},
-                                                                            profile.years_since_registration === 3 ? styles.badge_yellow_rarity : {},
-                                                                            profile.years_since_registration === 4 ? styles.badge_orange_rarity : {},
-                                                                            profile.years_since_registration === 5 ? styles.badge_red_rarity : {},
-                                                                            profile.years_since_registration > 5 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="cake-candles"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.years_since_registration === 1 ? BLUE_RARITY :
-                                                                                profile.years_since_registration === 2 ? GREEN_RARITY : 
-                                                                                profile.years_since_registration === 3 ? YELLOW_RARITY : 
-                                                                                profile.years_since_registration === 4 ? ORANGE_RARITY : 
-                                                                                profile.years_since_registration === 5 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.years_since_registration === 1 ? { color: BLUE_RARITY } : {},
-                                                                                profile.years_since_registration === 2 ? { color: GREEN_RARITY } : {},
-                                                                                profile.years_since_registration === 3 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.years_since_registration === 4 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.years_since_registration === 5 ? { color: RED_RARITY } : {},
-                                                                                profile.years_since_registration > 5 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.years_since_registration}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.total_activities !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "total_activities",
-                                                                            profile.total_activities < 10 && "blue",
-                                                                            profile.total_activities <= 50 && "green",
-                                                                            profile.total_activities <= 100 && "yellow",
-                                                                            profile.total_activities <= 250 && "orange",
-                                                                            profile.total_activities <= 500 && "red",
-                                                                            profile.total_activities > 500 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Zaznamenané aktivity"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.total_activities >= 1 && profile.total_activities < 10 ? styles.badge_blue_rarity : {},
-                                                                            profile.total_activities >= 10 && profile.total_activities <= 50 ? styles.badge_green_rarity : {},
-                                                                            profile.total_activities > 50 && profile.total_activities <= 100 ? styles.badge_yellow_rarity : {},
-                                                                            profile.total_activities > 100 && profile.total_activities <= 250 ? styles.badge_orange_rarity : {},
-                                                                            profile.total_activities > 250 && profile.total_activities <= 500 ? styles.badge_red_rarity : {},
-                                                                            profile.total_activities > 500 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="dumbbell"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.total_activities >= 1 && profile.total_activities < 10 ? BLUE_RARITY :
-                                                                                profile.total_activities >= 10 && profile.total_activities <= 50 ? GREEN_RARITY : 
-                                                                                profile.total_activities > 50 && profile.total_activities <= 100 ? YELLOW_RARITY : 
-                                                                                profile.total_activities > 100 && profile.total_activities <= 250 ? ORANGE_RARITY : 
-                                                                                profile.total_activities > 250 && profile.total_activities <= 500 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.total_activities >= 1 && profile.total_activities < 10 ? { color: BLUE_RARITY } : {},
-                                                                                profile.total_activities >= 10 && profile.total_activities <= 50 ? { color: GREEN_RARITY } : {},
-                                                                                profile.total_activities > 50 && profile.total_activities <= 100 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.total_activities > 100 && profile.total_activities <= 250 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.total_activities > 250 && profile.total_activities <= 500 ? { color: RED_RARITY } : {},
-                                                                                profile.total_activities > 500 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.total_activities < 10 && "1"}
-                                                                            {profile.total_activities >= 10 && profile.total_activities <= 50 && "10"}
-                                                                            {profile.total_activities > 50 && profile.total_activities <= 100 && "50"}
-                                                                            {profile.total_activities > 100 && profile.total_activities <= 250 && "100"}
-                                                                            {profile.total_activities > 250 && profile.total_activities <= 500 && "250"}
-                                                                            {profile.total_activities > 500 && "500+"}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.followers.length !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "followers",
-                                                                            profile.followers.length >= 1 && profile.followers.length < 5 && "blue",
-                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 && "green",
-                                                                            profile.followers.length > 10 && profile.followers.length <= 25 && "yellow",
-                                                                            profile.followers.length > 25 && profile.followers.length <= 50 && "orange",
-                                                                            profile.followers.length > 50 && profile.followers.length <= 100 && "red",
-                                                                            profile.followers.length > 100 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Počet sledovateľov"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.followers.length >= 1 && profile.followers.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.followers.length > 10 && profile.followers.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.followers.length > 25 && profile.followers.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.followers.length > 50 && profile.followers.length <= 100 ? styles.badge_red_rarity : {},
-                                                                            profile.followers.length > 100 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="bluesky"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.followers.length >= 1 && profile.followers.length < 5 ? BLUE_RARITY :
-                                                                                profile.followers.length >= 5 && profile.followers.length <= 10 ? GREEN_RARITY : 
-                                                                                profile.followers.length > 10 && profile.followers.length <= 25 ? YELLOW_RARITY : 
-                                                                                profile.followers.length > 25 && profile.followers.length <= 50 ? ORANGE_RARITY : 
-                                                                                profile.followers.length > 50 && profile.followers.length <= 100 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.followers.length >= 1 && profile.followers.length < 5 ? { color: BLUE_RARITY } : {},
-                                                                                profile.followers.length >= 5 && profile.followers.length <= 10 ? { color: GREEN_RARITY } : {},
-                                                                                profile.followers.length > 10 && profile.followers.length <= 25 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.followers.length > 25 && profile.followers.length <= 50 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.followers.length > 50 && profile.followers.length <= 100 ? { color: RED_RARITY } : {},
-                                                                                profile.followers.length > 100 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.followers.length < 5 && "1"}
-                                                                            {profile.followers.length >= 5 && profile.followers.length <= 10 && "5"}
-                                                                            {profile.followers.length > 10 && profile.followers.length <= 25 && "10"}
-                                                                            {profile.followers.length > 25 && profile.followers.length <= 50 && "25"}
-                                                                            {profile.followers.length > 50 && profile.followers.length <= 100 && "50"}
-                                                                            {profile.followers.length > 100 && "100+"}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.posts.length !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "posts",
-                                                                            profile.posts.length >= 1 && profile.posts.length < 5 && "blue",
-                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 && "green",
-                                                                            profile.posts.length > 10 && profile.posts.length <= 25 && "yellow",
-                                                                            profile.posts.length > 25 && profile.posts.length <= 50 && "orange",
-                                                                            profile.posts.length > 50 && profile.posts.length <= 100 && "red",
-                                                                            profile.posts.length > 100 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Počet príspevkov"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.posts.length >= 1 && profile.posts.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.posts.length > 10 && profile.posts.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.posts.length > 25 && profile.posts.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.posts.length > 50 && profile.posts.length <= 100 ? styles.badge_red_rarity : {},
-                                                                            profile.posts.length > 100 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="bluesky"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.posts.length >= 1 && profile.posts.length < 5 ? BLUE_RARITY :
-                                                                                profile.posts.length >= 5 && profile.posts.length <= 10 ? GREEN_RARITY : 
-                                                                                profile.posts.length > 10 && profile.posts.length <= 25 ? YELLOW_RARITY : 
-                                                                                profile.posts.length > 25 && profile.posts.length <= 50 ? ORANGE_RARITY : 
-                                                                                profile.posts.length > 50 && profile.posts.length <= 100 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.posts.length >= 1 && profile.posts.length < 5 ? { color: BLUE_RARITY } : {},
-                                                                                profile.posts.length >= 5 && profile.posts.length <= 10 ? { color: GREEN_RARITY } : {},
-                                                                                profile.posts.length > 10 && profile.posts.length <= 25 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.posts.length > 25 && profile.posts.length <= 50 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.posts.length > 50 && profile.posts.length <= 100 ? { color: RED_RARITY } : {},
-                                                                                profile.posts.length > 100 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.posts.length >= 1 && profile.posts.length < 5 && "1"}
-                                                                            {profile.posts.length >= 5 && profile.posts.length <= 10 && "5"}
-                                                                            {profile.posts.length > 10 && profile.posts.length <= 25 && "10"}
-                                                                            {profile.posts.length > 25 && profile.posts.length <= 50 && "25"}
-                                                                            {profile.posts.length > 50 && profile.posts.length <= 100 && "50"}
-                                                                            {profile.posts.length > 100 && "100+"}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.total_received_likes !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "received_likes",
-                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "blue",
-                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "green",
-                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "yellow",
-                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "orange",
-                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "red",
-                                                                            profile.total_received_likes > 100 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Získané lajky"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? styles.badge_red_rarity : {},
-                                                                            profile.total_received_likes > 100 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="heart"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? BLUE_RARITY :
-                                                                                profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? GREEN_RARITY : 
-                                                                                profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? YELLOW_RARITY : 
-                                                                                profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? ORANGE_RARITY : 
-                                                                                profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? { color: BLUE_RARITY } : {},
-                                                                                profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? { color: GREEN_RARITY } : {},
-                                                                                profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? { color: RED_RARITY } : {},
-                                                                                profile.total_received_likes > 100 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "1"}
-                                                                            {profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "5"}
-                                                                            {profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "10"}
-                                                                            {profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "25"}
-                                                                            {profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "50"}
-                                                                            {profile.total_received_likes > 100 && "100+"}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.post_comments.length !== 0 && (
-                                                                    <View 
-                                                                        className={[
-                                                                            "badge", 
-                                                                            "written_comments",
-                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "blue",
-                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "green",
-                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "yellow",
-                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "orange",
-                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "red",
-                                                                            profile.post_comments.length > 100 && "purple"
-                                                                        ].filter(Boolean).join(" ")}
-                                                                        
-                                                                        accessibilityLabel="Získané lajky"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? styles.badge_blue_rarity : {},
-                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? styles.badge_green_rarity : {},
-                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? styles.badge_yellow_rarity : {},
-                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? styles.badge_orange_rarity : {},
-                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? styles.badge_red_rarity : {},
-                                                                            profile.post_comments.length > 100 ? styles.badge_purple_rarity : {},
-                                                                        ]}
-                                                                    >
-                                                                        <FontAwesome6
-                                                                            name="heart"
-                                                                            size={30}
-
-                                                                            color={
-                                                                                profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? BLUE_RARITY :
-                                                                                profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? GREEN_RARITY : 
-                                                                                profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? YELLOW_RARITY : 
-                                                                                profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? ORANGE_RARITY : 
-                                                                                profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? RED_RARITY : 
-                                                                                PURPLE_RARITY
-                                                                            }
-
-                                                                            style={styles.badge_icon}
-                                                                        />
-
-                                                                        <Text 
-                                                                            style={[
-                                                                                styles.badge_text,
-                                                                                profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? { color: BLUE_RARITY } : {},
-                                                                                profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? { color: GREEN_RARITY } : {},
-                                                                                profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? { color: YELLOW_RARITY } : {},
-                                                                                profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? { color: ORANGE_RARITY } : {},
-                                                                                profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? { color: RED_RARITY } : {},
-                                                                                profile.post_comments.length > 100 ? { color: PURPLE_RARITY } : {},
-                                                                            ]}
-                                                                        >
-                                                                            {profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "1"}
-                                                                            {profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "5"}
-                                                                            {profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "10"}
-                                                                            {profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "25"}
-                                                                            {profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "50"}
-                                                                            {profile.post_comments.length > 100 && "100+"}
-                                                                        </Text>
-                                                                    </View>
-                                                                )}
-
-                                                                {profile.badges.map((one_badge:{ title:string, data:string }, index:number) => (
-                                                                    <View 
-                                                                        key={index} 
-                                                                        className="badge"
-
-                                                                        style={[
-                                                                            styles.badge,
-                                                                            one_badge.data === "no_day_off_week" ? styles.badge_no_day_off_week : {},
-                                                                            one_badge.data === "xmas_activity" ? styles.badge_xmas_activity : {},
-                                                                            one_badge.data === "new_year_new_goals" ? styles.badge_new_year_new_goals : {},
-                                                                        ]}
-                                                                    >
-                                                                        {one_badge.data === "no_day_off_week" && (
-                                                                            <>
-                                                                                <FontAwesome6
-                                                                                    name="calendar-check"
-                                                                                    size={30}
-                                                                                    color={YELLOW_RARITY}
-                                                                                    style={styles.badge_icon}
-                                                                                />
-
-                                                                                <Text 
-                                                                                    style={[
-                                                                                        styles.badge_text,
-                                                                                        { color: YELLOW_RARITY },
-                                                                                    ]}
-                                                                                >
-                                                                                    7
-                                                                                </Text>
-                                                                            </>
-                                                                        )}
-
-                                                                        {one_badge.data === "xmas_activity" && (
-                                                                            <>
-                                                                                <FontAwesome6
-                                                                                    name="gift"
-                                                                                    size={20}
-                                                                                    color={"#dc2626"}
-                                                                                    style={styles.badge_icon}
-                                                                                />
-                                                                            </>
-                                                                        )}
-
-                                                                        {one_badge.data === "new_year_new_goals" && (
-                                                                            <>
-                                                                                <FontAwesome6
-                                                                                    name="champagne-glasses"
-                                                                                    size={20}
-                                                                                    color={"#a57e05"}
-                                                                                    style={styles.badge_icon}
-                                                                                />
-                                                                            </>
-                                                                        )}
-                                                                    </View>
-                                                                ))}
-                                                            </ScrollView>
-                                                        </View>
-                                                    </View>
-
-                                                    <View className="bottom" style={styles.bottom}>
-                                                        {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                            <View className="grid_select" style={styles.grid_select}>
-                                                                <Pressable
-                                                                    className="all_posts_icon active"
-                                                                    // onPress={}
-
-                                                                    style={[
-                                                                        styles.all_posts_icon,
-                                                                        grid_select_active_menu === "posts" ? {backgroundColor: transparentize(BLUE_COLOR, 0.8)} : {}
-                                                                    ]}
-                                                                >
-                                                                    <FontAwesome6
-                                                                        name="buffer"
-                                                                        size={25}
-                                                                        color={grid_select_active_menu === "posts" ? BLUE_COLOR : DARK_BLUE_COLOR}
-                                                                        style={grid_select_active_menu === "posts" ? {transform: [{ scale: 1.1 }]} : {}}
-                                                                    />
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    className="saved_posts_icon"
-                                                                    // onPress={}
-                                                                    style={styles.saved_posts_icon}
-                                                                >
-                                                                    <FontAwesome6
-                                                                        name="bookmark"
-                                                                        size={25}
-                                                                        solid={false}
-                                                                        color={DARK_BLUE_COLOR}
-                                                                    />
-                                                                </Pressable>
-                                                            </View>
-                                                        )}
-
-                                                        {profile && profile.private_account && logged_in_user?.id !== profile.id && !profile.has_follow ? (
-                                                            <View className="private_account_notice" style={styles.private_account_notice}>
-                                                                <FontAwesome6
-                                                                    name="lock"
-                                                                    size={40}
-                                                                    color={BLUE_COLOR}
-                                                                />
-
-                                                                <Text style={styles.private_account_notice_text}>Tento účet je súkromný.</Text>
-                                                            </View>
-                                                        ) : (
-                                                            <>
-                                                                <View className="posts_container" style={styles.posts_container}>
-                                                                    {profile.posts.length > 0 && (
-                                                                        <View className="posts" style={styles.posts}>
-                                                                            {profile.posts.map((one_post, index:number) => (
-                                                                                !one_post.public_visibility && logged_in_user?.id !== profile.id && !profile.has_follow ? (
-                                                                                    <View key={index} className="private_post_notice" style={styles.private_post_notice}>
-                                                                                        <FontAwesome6
-                                                                                            name="lock"
-                                                                                            size={30}
-                                                                                            color={transparentize(BLUE_COLOR, 0.25)}
-                                                                                        />
-                                                                                    </View>
-                                                                                ) : (
-                                                                                    <Pressable
-                                                                                        key={one_post.media[0].id || index}
-                                                                                        // onPress={}
-                                                                                        accessibilityLabel="Zobraziť príspevok"
-                                                                                        style={styles.post_link}
-                                                                                    >
-                                                                                        {one_post.media[0].is_video ? (
-                                                                                            <View 
-                                                                                                className="thumbnail"
-                                                                                                accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
-
-                                                                                                style={{ 
-                                                                                                    width: "100%", 
-                                                                                                    height: "100%",
-                                                                                                    aspectRatio: 1 / 1,
-                                                                                                }}
-                                                                                            >
-                                                                                                <Image
-                                                                                                    source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
-
-                                                                                                    style={{ 
-                                                                                                        width: "100%", 
-                                                                                                        height: "100%",
-                                                                                                        aspectRatio: 1 / 1,
-                                                                                                        resizeMode: "cover"
-                                                                                                    }}
-                                                                                                />
-                                                                                            </View>
-                                                                                        ) : (
-                                                                                            <View 
-                                                                                                className="image"
-                                                                                                accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
-
-                                                                                                style={{ 
-                                                                                                    width: "100%", 
-                                                                                                    height: "100%",
-                                                                                                    aspectRatio: 1 / 1,
-                                                                                                }}
-                                                                                            >
-                                                                                                    <Image
-                                                                                                        source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
-
-                                                                                                        style={{ 
-                                                                                                            width: "100%", 
-                                                                                                            height: "100%",
-                                                                                                            aspectRatio: 1 / 1,
-                                                                                                            resizeMode: "cover"
-                                                                                                        }}
-                                                                                                    />
-                                                                                            </View>
-                                                                                        )}
-
-                                                                                        <View className="post_info" style={styles.post_info}>
-                                                                                            {!one_post.public_visibility || !one_post.allow_comments || one_post.hide_likes && (
-                                                                                                <View className="settings" style={styles.settings}>
-                                                                                                    {!one_post.public_visibility && (
-                                                                                                        <FontAwesome6
-                                                                                                            name="eye-low-vision"
-                                                                                                            size={15}
-                                                                                                            color={BLUE_COLOR}
-                                                                                                        />
-                                                                                                    )}
-
-                                                                                                    {!one_post.allow_comments && (
-                                                                                                        <FontAwesome6
-                                                                                                            name="comment-slash"
-                                                                                                            size={15}
-                                                                                                            color={BLUE_COLOR}
-                                                                                                        />
-                                                                                                    )}
-
-                                                                                                    {one_post.hide_likes && (
-                                                                                                        <FontAwesome6
-                                                                                                            name="heart"
-                                                                                                            size={15}
-                                                                                                            solid={false}
-                                                                                                            color={BLUE_COLOR}
-                                                                                                        />
-                                                                                                    )}
-                                                                                                </View>
-                                                                                            )}
-
-                                                                                            {one_post.media.length > 1 && (
-                                                                                                <View className="multiple_posts" style={styles.multiple_posts}>
-                                                                                                    <Text style={styles.multiple_posts_text}>{one_post.media.length}</Text>
-
-                                                                                                    <FontAwesome6
-                                                                                                        name="buffer"
-                                                                                                        size={15}
-                                                                                                        color={BLUE_COLOR}
-                                                                                                    />
-                                                                                                </View>
-                                                                                            )}
-                                                                                        </View>
-                                                                                    </Pressable>
-                                                                                )
-                                                                            ))}
-                                                                        </View>
-                                                                    )}
-
-                                                                    {profile.posts.length === 0 && (
-                                                                        <Text 
-                                                                            className="no_posts"
-
-                                                                            style={[
-                                                                                styles.no_posts,
-                                                                                logged_in_user?.id !== profile.id ? {marginTop: 0} : {}
-                                                                            ]}
-                                                                        >
-                                                                            Zatiaľ žiadne príspevky.
-                                                                        </Text>
-                                                                    )}
-                                                                </View>
-
-                                                                <View className="saved_posts_container hidden" style={styles.posts_container}>
-                                                                    {logged_in_user && profile.saved_posts && profile.saved_posts.length > 0 && logged_in_user.id === profile.id && (
-                                                                        <View className="saved_posts" style={styles.posts}>
-                                                                            {profile.saved_posts.map((one_post, index:number) => (
-                                                                                <Pressable
-                                                                                    key={one_post.media[0].id || index}
-                                                                                    // onPress={}
-                                                                                    accessibilityLabel="Zobraziť príspevok"
-                                                                                >
-                                                                                    {one_post.media[0].is_video ? (
-                                                                                        <View 
-                                                                                            className="thumbnail"
-                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
-                                                                                            style={{ width: 150, height: 150 }}
-                                                                                        >
-                                                                                            <Image
-                                                                                                source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
-
-                                                                                                style={{ 
-                                                                                                    width: 150, 
-                                                                                                    height: 150,
-                                                                                                    aspectRatio: 1 / 1,
-                                                                                                    resizeMode: "cover"
-                                                                                                }}
-                                                                                            />
-                                                                                        </View>
-                                                                                    ) : (
-                                                                                        <View 
-                                                                                            className="image"
-                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
-                                                                                            style={{ width: 150, height: 150 }}
-                                                                                        >
-                                                                                            <Image
-                                                                                                source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
-
-                                                                                                style={{ 
-                                                                                                    width: 150, 
-                                                                                                    height: 150,
-                                                                                                    aspectRatio: 1 / 1,
-                                                                                                    resizeMode: "cover"
-                                                                                                }}
-                                                                                            />
-                                                                                        </View>
-                                                                                    )}
-
-                                                                                    {one_post.media.length > 1 && (
-                                                                                        <View className="post_info" style={styles.post_info}>
-                                                                                            <View className="multiple_posts" style={styles.multiple_posts}>
-                                                                                                <Text style={styles.multiple_posts_text}>{one_post.media.length}</Text>
-
-                                                                                                <FontAwesome6
-                                                                                                    name="buffer"
-                                                                                                    size={15}
-                                                                                                    color={BLUE_COLOR}
-                                                                                                />
-                                                                                            </View>
-                                                                                        </View>
-                                                                                    )}
-                                                                                </Pressable>
-                                                                            ))}
-                                                                        </View>
-                                                                    )}
-
-                                                                    {profile.saved_posts?.length === 0 && logged_in_user && logged_in_user.id === profile.id && (
-                                                                        <Text className="no_saved_posts" style={styles.no_saved_posts}>Žiadne uložené príspevky.</Text>
-                                                                    )}
-                                                                </View>
-                                                            </>
-
-                                                            
-                                                        )}
                                                     </View>
                                                 </View>
-                                            )}
 
-                                            {profile && (
-                                                <BottomSheetModal
-                                                    ref={account_properties}
-                                                    snapPoints={snap_points}
-                                                    enablePanDownToClose={true}
-                                                    onChange={handleAccountPropertiesChanges}
-                                                    containerStyle={{ zIndex: 9999 }}
+                                                <Text 
+                                                    className="form_report" 
+
+                                                    style={[
+                                                        styles.form_report, 
+                                                        form_report_appearance === "success" ? { color: GREEN_COLOR } : { color: RED_COLOR }
+                                                    ]}
                                                 >
-                                                    <BottomSheetView style={{ padding: 20 }}>
-                                                        <View className="account_properties">
-                                                            {account_properties_sheet === "main" && (
-                                                                <View style={styles.sheet_container}>
-                                                                    {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                                        <Pressable
-                                                                            className="show_account_settings_button"
-                                                                            onPress={() => setAccountPropertiesSheet("account_settings")}
-                                                                            accessibilityRole="button"
+                                                    {form_report}
+                                                </Text>
 
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="gear"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
+                                                <Pressable 
+                                                    className="edit_account_form_submit"
+                                                    onPress={handleEditAccount}
+                                                    disabled={is_loading}
+                                                    accessibilityLabel="Uložiť zmeny"
 
-                                                                            <Text style={styles.sheet_text}>Nastavenia</Text>
-                                                                        </Pressable>
-                                                                    )}
+                                                    style={[
+                                                        styles.edit_account_form_submit, 
+                                                        { outlineStyle: "none" } as any
+                                                    ]}
+                                                >
+                                                    <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uložiť zmeny</Text>
+                                                </Pressable>
 
-                                                                    {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
-                                                                    {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && logged_in_user.id !== profile.id && (
-                                                                        <Pressable
-                                                                            className="show_suspend_account_button red"
-                                                                            onPress={() => setAccountPropertiesSheet("suspend")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="flag"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text 
-                                                                                style={[
-                                                                                    styles.sheet_text,
-                                                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                                                    { color: logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
-                                                                                ]}
-                                                                            >
-                                                                                Obmedziť
-                                                                            </Text>
-                                                                        </Pressable>
-                                                                    )}
-
-                                                                    {logged_in_user && logged_in_user.id !== profile.id && (
-                                                                        <Pressable
-                                                                            className="show_report_profile_button"
-                                                                            onPress={() => setAccountPropertiesSheet("report")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="flag"
-                                                                                    size={20}
-                                                                                    solid={false}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>Nahlásiť</Text>
-                                                                        </Pressable>
-                                                                    )}
-
-                                                                    <Pressable
-                                                                        className="hide_account_properties_button"
-                                                                        onPress={hideAccountProperties}
-                                                                        accessibilityRole="button"
-
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="xmark"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                                                    </Pressable>
-                                                                </View>
+                                                <View className="form_questions" style={styles.form_questions}>
+                                                    <View 
+                                                        style={{ 
+                                                            flexDirection: "row",
+                                                            justifyContent: "center",
+                                                        }}
+                                                    >
+                                                        <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
+                                                        <Pressable
+                                                            // onPress={handleGoToPasswordReset}
+                                                            accessibilityRole="button"
+                                                            accessibilityLabel="Zmeniť heslo" 
+                                                        >
+                                                            {({ pressed }) => (
+                                                                <Text 
+                                                                    style={[
+                                                                        { color: SECONDARY_COLOR, fontStyle: "italic" },
+                                                                        pressed && { textDecorationLine: "underline" } 
+                                                                    ]}
+                                                                >
+                                                                    Zmeniť heslo
+                                                                </Text>
                                                             )}
-
-                                                            {account_properties_sheet === "suspend" && (
-                                                                <View className="suspend_account" style={styles.sheet_container}>
-                                                                    <Text 
-                                                                        style={[
-                                                                            styles.sheet_text, 
-                                                                            { textAlign: "center" }
-                                                                        ]}
-                                                                    >
-                                                                        Naozaj chcete obmedziť tento účet?
-                                                                    </Text>
-
-                                                                    <Pressable
-                                                                        onPress={() => suspendUser(profile.id)}
-                                                                        accessibilityRole="button"
-
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="eraser"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Text style={styles.sheet_text}>Obmedziť</Text>
-                                                                    </Pressable>
-
-                                                                    <Pressable
-                                                                        className="back_suspend_account_button"
-                                                                        onPress={() => setAccountPropertiesSheet("main")}
-                                                                        accessibilityRole="button"
-
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="xmark"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                                                    </Pressable>
-                                                                </View>
-                                                            )}
-
-                                                            {account_properties_sheet === "report" && (
-                                                                <View className="report report_profile" style={styles.sheet_container}>
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "spam")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Spam</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "harassment")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Obťažovanie</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "hate_speech")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "misinformation")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Dezinformácie</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "explicit_content")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Explicitný obsah</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        onPress={() => reportUser(profile.id, "other")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="list"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Iné</Text>
-                                                                    </Pressable>
-                            
-                                                                    <Pressable
-                                                                        className="back_report_profile_button"
-                                                                        onPress={() => setAccountPropertiesSheet("main")}
-                                                                        accessibilityRole="button"
-                            
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="xmark"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-                            
-                                                                        <Text style={styles.sheet_text}>Späť</Text>
-                                                                    </Pressable>
-                                                                </View>
-                                                            )}
-
-                                                            {account_properties_sheet === "account_settings" && (
-                                                                <View className="account_settings" style={styles.sheet_container}>
-                                                                    <View 
-                                                                        className="data_saving_mode_container"
-
-                                                                        style={[
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border,
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="signal"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Switch 
-                                                                            value={data_saving_mode}
-                                                                            onValueChange={(new_value:boolean) => setDataSavingMode(new_value)}
-                                                                            
-                                                                            trackColor={{ 
-                                                                                false: transparentize(RED_COLOR, 0.8), 
-                                                                                true: transparentize(GREEN_COLOR, 0.8) 
-                                                                            }}
-                                                                            
-                                                                            thumbColor={data_saving_mode ? GREEN_COLOR : RED_COLOR}
-                                                                        />
-
-                                                                        <Text style={styles.sheet_text}>Šetrenie dát</Text>
-                                                                    </View>
-
-                                                                    <View 
-                                                                        className="private_account_container"
-
-                                                                        style={[
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border,
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name={!private_account ? "lock-open" : "lock"}
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Switch 
-                                                                            value={private_account}
-                                                                            onValueChange={(new_value:boolean) => setPrivateAccount(new_value)}
-                                                                            
-                                                                            trackColor={{ 
-                                                                                false: transparentize(RED_COLOR, 0.8), 
-                                                                                true: transparentize(GREEN_COLOR, 0.8) 
-                                                                            }}
-                                                                            
-                                                                            thumbColor={private_account ? GREEN_COLOR : RED_COLOR}
-                                                                        />
-
-                                                                        <Text style={styles.sheet_text}>Súkromný účet</Text>
-                                                                    </View>
-
-                                                                    <View 
-                                                                        className="delete_profile_picture_container"
-
-                                                                        style={[
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border,
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="trash-can"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Switch 
-                                                                            value={delete_profile_picture}
-                                                                            onValueChange={(new_value:boolean) => setDeleteProfilePicture(new_value)}
-                                                                            
-                                                                            trackColor={{ 
-                                                                                false: transparentize(RED_COLOR, 0.8), 
-                                                                                true: transparentize(GREEN_COLOR, 0.8) 
-                                                                            }}
-                                                                            
-                                                                            thumbColor={delete_profile_picture ? GREEN_COLOR : RED_COLOR}
-                                                                        />
-
-                                                                        <Text style={styles.sheet_text}>Odstrániť profilový obrázok</Text>
-                                                                    </View>
-
-                                                                    <View 
-                                                                        className="delete_account_container"
-
-                                                                        style={[
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border,
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="user-minus"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Switch 
-                                                                            value={delete_account}
-                                                                            onValueChange={(new_value:boolean) => setDeleteAccount(new_value)}
-                                                                            
-                                                                            trackColor={{ 
-                                                                                false: transparentize(RED_COLOR, 0.8), 
-                                                                                true: transparentize(GREEN_COLOR, 0.8) 
-                                                                            }}
-                                                                            
-                                                                            thumbColor={delete_account ? GREEN_COLOR : RED_COLOR}
-                                                                        />
-
-                                                                        <Text style={styles.sheet_text}>Odstrániť účet</Text>
-                                                                    </View>
-
-                                                                    <Pressable
-                                                                        className="back_account_settings_button"
-                                                                        onPress={() => setAccountPropertiesSheet("main")}
-                                                                        accessibilityRole="button"
-
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="xmark"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
-
-                                                                        <Text style={styles.sheet_text}>Zavrieť</Text>
-                                                                    </Pressable>
-                                                                </View>
-                                                            )}
-                                                        </View>
-                                                    </BottomSheetView>
-                                                </BottomSheetModal>
-                                            )}
-                                        </View>
-                                    </View>
-                                </View>
-                            ) : (
-                                <View className="profile_page not_found" style={styles.profile_page}>
-                                    <View className="profile_container" style={styles.profile_container}>
-                                        <View className="options_container" style={styles.options_container}>
-                                            <View className="back" accessibilityLabel="Späť na úvodnú stránku">
-                                                <Icon
-                                                    icon_name="chevron-left"
-                                                    // onPress={}
-                                                    size={30}
-                                                    pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                                />
+                                                        </Pressable>
+                                                    </View>
+                                                </View>
                                             </View>
-                                        </View>
+                                        )}
 
-                                        <View className="profile_content" style={styles.profile_content}>
+                                        {active_section === "profile" && profile && (
                                             <View className="profile" style={styles.profile}>
                                                 <View className="header" style={styles.profile_header}>
                                                     <View className="top" style={styles.top}>
@@ -2782,26 +1002,98 @@ export default function ProfileScreen() {
                                                                 style={styles.profile_picture_container}
                                                             >
                                                                 <Image 
-                                                                    className="profile_picture"
-                                                                    source={{ uri: `${DOMAIN}/static/images/profile_picture.png`}} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                                                    style={styles.profile_picture}
+                                                                    className={`profile_picture ${
+                                                                        profile.subscription && profile.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
+                                                                    }`}
+
+                                                                    source={
+                                                                        profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                                    }
+
+                                                                    style={[
+                                                                        styles.profile_picture,
+                                                                        profile.subscription && profile.subscription.is_active && styles.subscriber_profile_picture,
+                                                                        // { transform: [{ scale: animated_scale }] }
+                                                                    ]}
                                                                 />
                                                             </View>
 
                                                             <View className="name" style={styles.name}>
-                                                                <Text className="username" style={styles.profile_username}>Neexistujúci účet</Text>
+                                                                <Text className="username" style={styles.profile_username}>{profile.username}</Text>
+
+                                                                {profile.first_name && profile.last_name && (
+                                                                    <Text className="full_name" style={styles.full_name}>{`${profile.first_name} ${profile.last_name}`}</Text>
+                                                                )}
                                                             </View>
                                                         </View>
 
-                                                        <View className="streak" style={styles.streak}>
+                                                        <View 
+                                                            className={profile.has_already_increased_activity_streak ? "streak increased" : "streak"}
+
+                                                            style={[
+                                                                styles.streak,
+                                                                profile.has_already_increased_activity_streak ? styles.increased_streak : {}
+                                                            ]}
+                                                        >
                                                             <FontAwesome6
                                                                 name="fire"
                                                                 size={20}
                                                                 color={BLUE_COLOR}
                                                             />
 
-                                                            <Text style={styles.streak_text}>0</Text>
+                                                            <Text style={styles.streak_text}>{profile.activity_streak || 0}</Text>
                                                         </View>
+                                                    </View>
+
+                                                    <View className="bottom">
+                                                        {profile.bio && (
+                                                            <View className="bio_container" style={styles.profile_bio_container}>
+                                                                <Text className="bio" style={styles.profile_bio}>{profile.bio}</Text>
+
+                                                                <View className="links" style={styles.links}>
+                                                                    {profile.bio_links.map((one_link:BioLink, index:number) => (
+                                                                        <Pressable 
+                                                                            key={one_link.id || index}
+                                                                            // onPress={}
+                                                                            accessibilityLabel="Otvoriť odkaz"
+
+                                                                            style={[
+                                                                                styles.profile_link_anchor, 
+                                                                                { outlineStyle: "none" } as any
+                                                                            ]}
+                                                                        >
+                                                                            {one_link.url.includes("instagram.com") && (
+                                                                                <Icon
+                                                                                    icon_name="instagram"
+                                                                                    // onPress={}
+                                                                                />
+                                                                            )}
+
+                                                                            {one_link.url.includes("facebook.com") && (
+                                                                                <Icon
+                                                                                    icon_name="facebook"
+                                                                                    // onPress={}
+                                                                                />
+                                                                            )}
+
+                                                                            {one_link.url.includes("youtube.com") && (
+                                                                                <Icon
+                                                                                    icon_name="youtube"
+                                                                                    // onPress={}
+                                                                                />
+                                                                            )}
+
+                                                                            {!one_link.url.includes("instagram.com") && !one_link.url.includes("facebook.com") && !one_link.url.includes("youtube.com") && (
+                                                                                <Icon
+                                                                                    icon_name="link"
+                                                                                    // onPress={}
+                                                                                />
+                                                                            )}
+                                                                        </Pressable>
+                                                                    ))}
+                                                                </View>
+                                                            </View>
+                                                        )}
                                                     </View>
                                                 </View>
 
@@ -2809,38 +1101,971 @@ export default function ProfileScreen() {
                                                     <View className="follow_container" style={styles.follow_container}>
                                                         <View className="statistics" style={styles.statistics}>
                                                             <View className="followers" style={styles.followers}>
-                                                                <Text className="amount" style={styles.followers_amount}>0</Text>
+                                                                <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
                                                                 <Text className="label" style={styles.followers_label}>sledujú</Text>
                                                             </View>
 
+                                                            {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
+                                                                <dialog class="followers_dialog">
+                                                                    <div class="all_followers">
+                                                                        <h2>{% translate "Sledovatelia" %} (<span class="followers_amount">{{ followers.count|default:0 }}</span>)</h2>
+
+                                                                        <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
+                                                                        
+                                                                        <p 
+                                                                            class="
+                                                                                no_followers
+
+                                                                                {% if followers.count > 0 %}
+                                                                                    hidden
+
+                                                                                {% endif %}
+                                                                            "
+                                                                        >
+                                                                            {% translate "Žiadny sledovatelia." %}
+                                                                        </p>
+
+                                                                        {% for one_follower in followers %}
+                                                                            <div class="one_follower" data-id="{{ one_follower.id }}">
+                                                                                <a href="{% url 'profile_url' one_follower.from_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
+                                                                                    <img 
+                                                                                        class="profile_picture skeleton_loading" 
+                                                                                        src="
+                                                                                            {% if one_follower.from_user.profile_picture_name %}
+                                                                                                /../media/images/{{ one_follower.from_user.id }}/{{ one_follower.from_user.profile_picture_name }}
+                                                    
+                                                                                            {% else %}
+                                                                                                {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
+                                                                                            
+                                                                                            {% endif %}
+                                                                                        "
+                                                                                        alt=""
+                                                                                    >
+                                                                                </a>
+                                    
+                                                                                <p class="username">{{ one_follower.from_user.username }}</p>
+
+                                                                                <button 
+                                                                                    class="remove_follower"
+                                                                                    data-id="{{ one_follower.from_user.id }}"
+                                                                                >
+                                                                                    {% translate "Odstrániť" %}
+                                                                                </button>
+                                                                            </div>
+                                                                        
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </dialog>
+
+                                                            {% endif %} */}
+
                                                             <View className="following" style={styles.following}>
-                                                                <Text className="amount" style={styles.following_amount}>0</Text>
+                                                                <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
                                                                 <Text className="label" style={styles.following_label}>sleduje</Text>
                                                             </View>
+
+                                                            {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
+                                                                <dialog class="following_dialog">
+                                                                    <div class="all_followings">
+                                                                        <h2>{% translate "Sleduješ" %} (<span class="followings_amount">{{ following.count|default:0 }}</span>)</h2>
+
+                                                                        <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
+
+                                                                        <p 
+                                                                            class="
+                                                                                no_followings
+
+                                                                                {% if following.count > 0 %}
+                                                                                    hidden
+
+                                                                                {% endif %}
+                                                                            "
+                                                                        >
+                                                                            {% translate "Nikoho nesleduješ." %}
+                                                                        </p>
+
+                                                                        {% for one_following in following %}
+                                                                            <div class="one_following" data-id="{{ one_following.id }}">
+                                                                                <a href="{% url 'profile_url' one_following.to_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
+                                                                                    <img 
+                                                                                        class="profile_picture skeleton_loading" 
+                                                                                        src="
+                                                                                            {% if one_following.to_user.profile_picture_name %}
+                                                                                                /../media/images/{{ one_following.to_user.id }}/{{ one_following.to_user.profile_picture_name }}
+                                                    
+                                                                                            {% else %}
+                                                                                                {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
+                                                                                            
+                                                                                            {% endif %}
+                                                                                        "
+                                                                                        alt=""
+                                                                                    >
+                                                                                </a>
+                                    
+                                                                                <p class="username">{{ one_following.to_user.username }}</p>
+
+                                                                                <button 
+                                                                                    class="follow_button"
+                                                                                    data-id="{{ one_following.to_user.id }}"
+                                                                                    data-action="unfollow"
+                                                                                >
+                                                                                    {% translate "Prestať sledovať" %}
+                                                                                </button>
+                                                                            </div>
+                                                                        
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                </dialog>
+                                                            
+                                                            {% endif %} */}
+
+                                                            <View className="posts">
+                                                                <Text className="amount" style={styles.posts_amount}>{profile.posts.length || 0}</Text>
+                                                                <Text className="label" style={styles.posts_label}>príspevky</Text>
+                                                            </View>
                                                         </View>
+
+                                                        {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && (
+                                                            <View className="show_follow_requests" style={styles.show_follow_requests}>
+                                                                <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
+
+                                                                <Icon
+                                                                    icon_name="bell"
+                                                                    // onPress={}
+                                                                    size={25}
+                                                                    is_regular={true}
+                                                                />
+                                                            </View>
+
+                                                            // <dialog class="follow_requests_dialog">
+                                                            //     <div class="all_follow_requests">
+                                                            //         <h2>{% translate "Žiadosti o sledovanie" %} (<span class="follow_requests_amount">{{ logged_in_user.follow_requests.count|default:0 }}</span>)</h2>
+
+                                                            //         <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
+
+                                                            //         <p 
+                                                            //             class="
+                                                            //                 no_follow_requests
+
+                                                            //                 {% if logged_in_user.follow_requests.count > 0 %}
+                                                            //                     hidden
+
+                                                            //                 {% endif %}
+                                                            //             "
+                                                            //         >
+                                                            //             {% translate "Žiadne žiadosti o sledovanie." %}
+                                                            //         </p>
+
+                                                            //         {% for one_follow_request in logged_in_user.follow_requests %}
+                                                            //             <div class="one_follow_request" data-id="{{ one_follow_request.id }}">
+                                                            //                 <a href="{% url 'profile_url' one_follow_request.from_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
+                                                            //                     <img 
+                                                            //                         class="profile_picture skeleton_loading" 
+                                                            //                         src="
+                                                            //                             {% if one_follow_request.from_user.profile_picture_name %}
+                                                            //                                 /../media/images/{{ one_follow_request.from_user.id }}/{{ one_follow_request.from_user.profile_picture_name }}
+
+                                                            //                             {% else %}
+                                                            //                                 {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
+                                                                                        
+                                                            //                             {% endif %}
+                                                            //                         "
+                                                            //                         alt=""
+                                                            //                     >
+                                                            //                 </a>
+
+                                                            //                 <p class="username">{{ one_follow_request.from_user.username }}</p>
+
+                                                            //                 <button class="approve" title="{% translate 'Schváliť' %}" aria-label="{% translate 'Schváliť' %}">
+                                                            //                     <i class="fa-solid fa-check"></i> <!-- https://fontawesome.com/icons/check -->
+                                                            //                 </button>
+                                                                            
+                                                            //                 <button class="reject" title="{% translate 'Zamietnuť' %}" aria-label="{% translate 'Zamietnuť' %}">
+                                                            //                     <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
+                                                            //                 </button>
+                                                            //             </div>
+                                                                    
+                                                            //         {% endfor %}
+                                                            //     </div>
+                                                            // </dialog>
+                                                        )}
+
+                                                        {logged_in_user && logged_in_user.id !== profile.id && (
+                                                            <Pressable
+                                                                className="follow_button" 
+                                                                onPress={() => toggleFollow(profile.id, getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).action)}
+
+                                                                style={[
+                                                                    styles.follow_button, 
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
+                                                            >
+                                                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).text}</Text>
+                                                            </Pressable>
+                                                        )}
                                                     </View>
 
+                                                    {profile.has_follow && (
+                                                        <View className="message_container" style={styles.message_container}>
+                                                            <Text className="unread_messages" style={styles.unread_messages}>{profile.unread_messages_amount}</Text>
+
+                                                            <Icon 
+                                                                icon_name="comment-dots"
+                                                                // onPress={}
+                                                                is_regular={true}
+                                                            />
+                                                        </View>
+                                                    )}
+
                                                     <View className="badges_container" style={styles.badges_container}>
-                                                        <View className="badges" style={styles.badges}>
+                                                        <ScrollView 
+                                                            className="badges" 
+                                                            horizontal={true}
+                                                            showsHorizontalScrollIndicator={true}
+                                                            style={styles.badges}
+                                                            contentContainerStyle={styles.badges_content}
+                                                        >
+                                                            {profile.role === "developer" && (
+                                                                <View 
+                                                                    className="badge developer" 
+                                                                    accessibilityLabel="Vývojár"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        styles.badge_developer,
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="code"
+                                                                        size={20}
+                                                                        color={RED_RARITY}
+                                                                        style={styles.badge_icon}
+                                                                    />
+                                                                </View>
+                                                            )}
+
+                                                            {profile.subscription && profile.subscription.is_active && (
+                                                                <View 
+                                                                    className="badge subscriber" 
+                                                                    accessibilityLabel={profile.subscription.plan === "premium" ? "Prémiový predplatiteľ" : "Základný predplatiteľ"}
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        styles.badge_subscriber,
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="crown"
+                                                                        size={20}
+                                                                        color={YELLOW_RARITY}
+                                                                        style={styles.badge_icon}
+                                                                    />
+                                                                </View>
+                                                            )}
+                                                            
+                                                            {profile.total_transactions_amount !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "donations",
+                                                                        profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && "blue",
+                                                                        profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 && "green",
+                                                                        profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 && "yellow",
+                                                                        profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 && "orange",
+                                                                        profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 && "red",
+                                                                        profile.total_transactions_amount >= 100 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Prispievateľ"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? styles.badge_blue_rarity : {},
+                                                                        profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? styles.badge_green_rarity : {},
+                                                                        profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? styles.badge_yellow_rarity : {},
+                                                                        profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? styles.badge_orange_rarity : {},
+                                                                        profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? styles.badge_red_rarity : {},
+                                                                        profile.total_transactions_amount >= 100 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="dollar-sign"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? BLUE_RARITY :
+                                                                            profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? GREEN_RARITY : 
+                                                                            profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? YELLOW_RARITY : 
+                                                                            profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? ORANGE_RARITY : 
+                                                                            profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? { color: BLUE_RARITY } : {},
+                                                                            profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? { color: GREEN_RARITY } : {},
+                                                                            profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 ? { color: RED_RARITY } : {},
+                                                                            profile.total_transactions_amount >= 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && ("1€")}
+                                                                        {profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 && ("2€")}
+                                                                        {profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 && ("5€")}
+                                                                        {profile.total_transactions_amount >= 10 && profile.total_transactions_amount < 50 && ("10€")}
+                                                                        {profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 && ("50€")}
+                                                                        {profile.total_transactions_amount >= 100 && ("100+€")}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
                                                             <View 
-                                                                className="badge level blue" 
-                                                                accessibilityLabel="Level" 
-                                                                style={styles.badge}
+                                                                className={[
+                                                                    "badge", 
+                                                                    "level",
+                                                                    profile.level >= 1 && profile.level <= 10 && "blue",
+                                                                    profile.level > 10 && profile.level <= 25 && "green",
+                                                                    profile.level > 25 && profile.level <= 50 && "yellow",
+                                                                    profile.level > 50 && profile.level <= 75 && "orange",
+                                                                    profile.level > 75 && profile.level <= 100 && "red",
+                                                                    profile.level > 100 && "purple"
+                                                                ].filter(Boolean).join(" ")}
+                                                                
+                                                                accessibilityLabel="Level"
+
+                                                                style={[
+                                                                    styles.badge,
+                                                                    profile.level >= 1 && profile.level <= 10 ? styles.badge_blue_rarity : {},
+                                                                    profile.level > 10 && profile.level <= 25 ? styles.badge_green_rarity : {},
+                                                                    profile.level > 25 && profile.level <= 50 ? styles.badge_yellow_rarity : {},
+                                                                    profile.level > 50 && profile.level <= 75 ? styles.badge_orange_rarity : {},
+                                                                    profile.level > 75 && profile.level <= 100 ? styles.badge_red_rarity : {},
+                                                                    profile.level > 100 ? styles.badge_purple_rarity : {},
+                                                                ]}
                                                             >
                                                                 <FontAwesome6
                                                                     name="arrow-trend-up"
-                                                                    size={20}
-                                                                    color={BLUE_COLOR}
+                                                                    size={30}
+
+                                                                    color={
+                                                                        profile.level >= 1 && profile.level <= 10 ? BLUE_RARITY :
+                                                                        profile.level > 10 && profile.level <= 25 ? GREEN_RARITY : 
+                                                                        profile.level > 25 && profile.level <= 50 ? YELLOW_RARITY : 
+                                                                        profile.level > 50 && profile.level <= 75 ? ORANGE_RARITY : 
+                                                                        profile.level > 75 && profile.level <= 100 ? RED_RARITY : 
+                                                                        PURPLE_RARITY
+                                                                    }
+
+                                                                    style={styles.badge_icon}
                                                                 />
 
-                                                                <Text>1</Text>
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.badge_text,
+                                                                        profile.level >= 1 && profile.level <= 10 ? { color: BLUE_RARITY } : {},
+                                                                        profile.level > 10 && profile.level <= 25 ? { color: GREEN_RARITY } : {},
+                                                                        profile.level > 25 && profile.level <= 50 ? { color: YELLOW_RARITY } : {},
+                                                                        profile.level > 50 && profile.level <= 75 ? { color: ORANGE_RARITY } : {},
+                                                                        profile.level > 75 && profile.level <= 100 ? { color: RED_RARITY } : {},
+                                                                        profile.level > 100 ? { color: PURPLE_RARITY } : {},
+                                                                    ]}
+                                                                >
+                                                                    {profile.level}
+                                                                </Text>
                                                             </View>
-                                                        </View>
+
+                                                            {profile.xp !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "xp",
+                                                                        profile.xp < 1000 && "blue",
+                                                                        profile.xp >= 1000 && profile.xp <= 5000 && "green",
+                                                                        profile.xp > 5000 && profile.xp <= 10000 && "yellow",
+                                                                        profile.xp > 10000 && profile.xp <= 50000 && "orange",
+                                                                        profile.xp > 50000 && profile.xp <= 100000 && "red",
+                                                                        profile.xp > 100000 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Získané XP"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.xp < 1000 ? styles.badge_blue_rarity : {},
+                                                                        profile.xp >= 1000 && profile.xp <= 5000 ? styles.badge_green_rarity : {},
+                                                                        profile.xp > 5000 && profile.xp <= 10000 ? styles.badge_yellow_rarity : {},
+                                                                        profile.xp > 10000 && profile.xp <= 50000 ? styles.badge_orange_rarity : {},
+                                                                        profile.xp > 50000 && profile.xp <= 100000 ? styles.badge_red_rarity : {},
+                                                                        profile.xp > 100000 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="bolt"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.xp < 1000 ? BLUE_RARITY :
+                                                                            profile.xp >= 1000 && profile.xp <= 5000 ? GREEN_RARITY : 
+                                                                            profile.xp > 5000 && profile.xp <= 10000 ? YELLOW_RARITY : 
+                                                                            profile.xp > 10000 && profile.xp <= 50000 ? ORANGE_RARITY : 
+                                                                            profile.xp > 50000 && profile.xp <= 100000 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <View 
+                                                                        style={[
+                                                                            {
+                                                                                position: "absolute",
+                                                                                top: 0, 
+                                                                                bottom: 0,
+                                                                                left: 0,
+                                                                                right: 0,
+                                                                            },
+                                                                            
+                                                                            styles.badge_xp_text,
+                                                                        ]}
+                                                                    >
+                                                                        <Text 
+                                                                            style={[
+                                                                                { 
+                                                                                    textAlign: "center",
+                                                                                    lineHeight: 22,
+                                                                                    fontSize: 22,
+                                                                                    fontWeight: "bold", 
+                                                                                },
+
+                                                                                profile.xp < 1000 ? { color: BLUE_RARITY } : {},
+                                                                                profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
+                                                                                profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
+                                                                                profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            {profile.xp < 1000 && "<1000"}
+                                                                            {profile.xp >= 1000 && profile.xp <= 5000 && "1K"}
+                                                                            {profile.xp > 5000 && profile.xp <= 10000 && "5K"}
+                                                                            {profile.xp > 10000 && profile.xp <= 50000 && "10K"}
+                                                                            {profile.xp > 50000 && profile.xp <= 100000 && "50K"}
+                                                                            {profile.xp > 100000 && "100K+"}
+                                                                        </Text>
+
+                                                                        <Text 
+                                                                            style={[
+                                                                                { textAlign: "center" },
+                                                                                profile.xp < 1000 ? { color: BLUE_RARITY } : {},
+                                                                                profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
+                                                                                profile.xp > 5000 && profile.xp <= 10000 ? { color: YELLOW_RARITY } : {},
+                                                                                profile.xp > 10000 && profile.xp <= 50000 ? { color: ORANGE_RARITY } : {},
+                                                                                profile.xp > 50000 && profile.xp <= 100000 ? { color: RED_RARITY } : {},
+                                                                                profile.xp > 100000 ? { color: PURPLE_RARITY } : {},
+                                                                            ]}
+                                                                        >
+                                                                            XP
+                                                                        </Text>
+                                                                    </View>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.max_activity_streak !== 0 && (
+                                                                <View 
+                                                                    className="badge max_activity_streak" 
+                                                                    accessibilityLabel="Najdlhšia rada aktivity"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        styles.badge_max_activity_streak,
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="fire"
+                                                                        size={20}
+                                                                        color={YELLOW_RARITY}
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            { color: YELLOW_RARITY }
+                                                                        ]}
+                                                                    >
+                                                                        {profile.max_activity_streak}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.years_since_registration !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "years_since_registration",
+                                                                        profile.years_since_registration === 1 && "blue",
+                                                                        profile.years_since_registration === 2 && "green",
+                                                                        profile.years_since_registration === 3 && "yellow",
+                                                                        profile.years_since_registration === 4 && "orange",
+                                                                        profile.years_since_registration === 5 && "red",
+                                                                        profile.years_since_registration > 5 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Roky od registrácie"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.years_since_registration === 1 ? styles.badge_blue_rarity : {},
+                                                                        profile.years_since_registration === 2 ? styles.badge_green_rarity : {},
+                                                                        profile.years_since_registration === 3 ? styles.badge_yellow_rarity : {},
+                                                                        profile.years_since_registration === 4 ? styles.badge_orange_rarity : {},
+                                                                        profile.years_since_registration === 5 ? styles.badge_red_rarity : {},
+                                                                        profile.years_since_registration > 5 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="cake-candles"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.years_since_registration === 1 ? BLUE_RARITY :
+                                                                            profile.years_since_registration === 2 ? GREEN_RARITY : 
+                                                                            profile.years_since_registration === 3 ? YELLOW_RARITY : 
+                                                                            profile.years_since_registration === 4 ? ORANGE_RARITY : 
+                                                                            profile.years_since_registration === 5 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.years_since_registration === 1 ? { color: BLUE_RARITY } : {},
+                                                                            profile.years_since_registration === 2 ? { color: GREEN_RARITY } : {},
+                                                                            profile.years_since_registration === 3 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.years_since_registration === 4 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.years_since_registration === 5 ? { color: RED_RARITY } : {},
+                                                                            profile.years_since_registration > 5 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.years_since_registration}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.total_activities !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "total_activities",
+                                                                        profile.total_activities < 10 && "blue",
+                                                                        profile.total_activities <= 50 && "green",
+                                                                        profile.total_activities <= 100 && "yellow",
+                                                                        profile.total_activities <= 250 && "orange",
+                                                                        profile.total_activities <= 500 && "red",
+                                                                        profile.total_activities > 500 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Zaznamenané aktivity"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.total_activities >= 1 && profile.total_activities < 10 ? styles.badge_blue_rarity : {},
+                                                                        profile.total_activities >= 10 && profile.total_activities <= 50 ? styles.badge_green_rarity : {},
+                                                                        profile.total_activities > 50 && profile.total_activities <= 100 ? styles.badge_yellow_rarity : {},
+                                                                        profile.total_activities > 100 && profile.total_activities <= 250 ? styles.badge_orange_rarity : {},
+                                                                        profile.total_activities > 250 && profile.total_activities <= 500 ? styles.badge_red_rarity : {},
+                                                                        profile.total_activities > 500 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="dumbbell"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.total_activities >= 1 && profile.total_activities < 10 ? BLUE_RARITY :
+                                                                            profile.total_activities >= 10 && profile.total_activities <= 50 ? GREEN_RARITY : 
+                                                                            profile.total_activities > 50 && profile.total_activities <= 100 ? YELLOW_RARITY : 
+                                                                            profile.total_activities > 100 && profile.total_activities <= 250 ? ORANGE_RARITY : 
+                                                                            profile.total_activities > 250 && profile.total_activities <= 500 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.total_activities >= 1 && profile.total_activities < 10 ? { color: BLUE_RARITY } : {},
+                                                                            profile.total_activities >= 10 && profile.total_activities <= 50 ? { color: GREEN_RARITY } : {},
+                                                                            profile.total_activities > 50 && profile.total_activities <= 100 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.total_activities > 100 && profile.total_activities <= 250 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.total_activities > 250 && profile.total_activities <= 500 ? { color: RED_RARITY } : {},
+                                                                            profile.total_activities > 500 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.total_activities < 10 && "1"}
+                                                                        {profile.total_activities >= 10 && profile.total_activities <= 50 && "10"}
+                                                                        {profile.total_activities > 50 && profile.total_activities <= 100 && "50"}
+                                                                        {profile.total_activities > 100 && profile.total_activities <= 250 && "100"}
+                                                                        {profile.total_activities > 250 && profile.total_activities <= 500 && "250"}
+                                                                        {profile.total_activities > 500 && "500+"}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.followers.length !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "followers",
+                                                                        profile.followers.length >= 1 && profile.followers.length < 5 && "blue",
+                                                                        profile.followers.length >= 5 && profile.followers.length <= 10 && "green",
+                                                                        profile.followers.length > 10 && profile.followers.length <= 25 && "yellow",
+                                                                        profile.followers.length > 25 && profile.followers.length <= 50 && "orange",
+                                                                        profile.followers.length > 50 && profile.followers.length <= 100 && "red",
+                                                                        profile.followers.length > 100 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Počet sledovateľov"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.followers.length >= 1 && profile.followers.length < 5 ? styles.badge_blue_rarity : {},
+                                                                        profile.followers.length >= 5 && profile.followers.length <= 10 ? styles.badge_green_rarity : {},
+                                                                        profile.followers.length > 10 && profile.followers.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                        profile.followers.length > 25 && profile.followers.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                        profile.followers.length > 50 && profile.followers.length <= 100 ? styles.badge_red_rarity : {},
+                                                                        profile.followers.length > 100 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="bluesky"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.followers.length >= 1 && profile.followers.length < 5 ? BLUE_RARITY :
+                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 ? GREEN_RARITY : 
+                                                                            profile.followers.length > 10 && profile.followers.length <= 25 ? YELLOW_RARITY : 
+                                                                            profile.followers.length > 25 && profile.followers.length <= 50 ? ORANGE_RARITY : 
+                                                                            profile.followers.length > 50 && profile.followers.length <= 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.followers.length >= 1 && profile.followers.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                            profile.followers.length >= 5 && profile.followers.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                            profile.followers.length > 10 && profile.followers.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.followers.length > 25 && profile.followers.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.followers.length > 50 && profile.followers.length <= 100 ? { color: RED_RARITY } : {},
+                                                                            profile.followers.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.followers.length < 5 && "1"}
+                                                                        {profile.followers.length >= 5 && profile.followers.length <= 10 && "5"}
+                                                                        {profile.followers.length > 10 && profile.followers.length <= 25 && "10"}
+                                                                        {profile.followers.length > 25 && profile.followers.length <= 50 && "25"}
+                                                                        {profile.followers.length > 50 && profile.followers.length <= 100 && "50"}
+                                                                        {profile.followers.length > 100 && "100+"}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.posts.length !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "posts",
+                                                                        profile.posts.length >= 1 && profile.posts.length < 5 && "blue",
+                                                                        profile.posts.length >= 5 && profile.posts.length <= 10 && "green",
+                                                                        profile.posts.length > 10 && profile.posts.length <= 25 && "yellow",
+                                                                        profile.posts.length > 25 && profile.posts.length <= 50 && "orange",
+                                                                        profile.posts.length > 50 && profile.posts.length <= 100 && "red",
+                                                                        profile.posts.length > 100 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Počet príspevkov"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.posts.length >= 1 && profile.posts.length < 5 ? styles.badge_blue_rarity : {},
+                                                                        profile.posts.length >= 5 && profile.posts.length <= 10 ? styles.badge_green_rarity : {},
+                                                                        profile.posts.length > 10 && profile.posts.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                        profile.posts.length > 25 && profile.posts.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                        profile.posts.length > 50 && profile.posts.length <= 100 ? styles.badge_red_rarity : {},
+                                                                        profile.posts.length > 100 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="bluesky"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.posts.length >= 1 && profile.posts.length < 5 ? BLUE_RARITY :
+                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 ? GREEN_RARITY : 
+                                                                            profile.posts.length > 10 && profile.posts.length <= 25 ? YELLOW_RARITY : 
+                                                                            profile.posts.length > 25 && profile.posts.length <= 50 ? ORANGE_RARITY : 
+                                                                            profile.posts.length > 50 && profile.posts.length <= 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.posts.length >= 1 && profile.posts.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                            profile.posts.length >= 5 && profile.posts.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                            profile.posts.length > 10 && profile.posts.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.posts.length > 25 && profile.posts.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.posts.length > 50 && profile.posts.length <= 100 ? { color: RED_RARITY } : {},
+                                                                            profile.posts.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.posts.length >= 1 && profile.posts.length < 5 && "1"}
+                                                                        {profile.posts.length >= 5 && profile.posts.length <= 10 && "5"}
+                                                                        {profile.posts.length > 10 && profile.posts.length <= 25 && "10"}
+                                                                        {profile.posts.length > 25 && profile.posts.length <= 50 && "25"}
+                                                                        {profile.posts.length > 50 && profile.posts.length <= 100 && "50"}
+                                                                        {profile.posts.length > 100 && "100+"}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.total_received_likes !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "received_likes",
+                                                                        profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "blue",
+                                                                        profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "green",
+                                                                        profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "yellow",
+                                                                        profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "orange",
+                                                                        profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "red",
+                                                                        profile.total_received_likes > 100 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Získané lajky"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? styles.badge_blue_rarity : {},
+                                                                        profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? styles.badge_green_rarity : {},
+                                                                        profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? styles.badge_yellow_rarity : {},
+                                                                        profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? styles.badge_orange_rarity : {},
+                                                                        profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? styles.badge_red_rarity : {},
+                                                                        profile.total_received_likes > 100 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="heart"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? BLUE_RARITY :
+                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? GREEN_RARITY : 
+                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? YELLOW_RARITY : 
+                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? ORANGE_RARITY : 
+                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? { color: BLUE_RARITY } : {},
+                                                                            profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? { color: GREEN_RARITY } : {},
+                                                                            profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.total_received_likes > 25 && profile.total_received_likes <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.total_received_likes > 50 && profile.total_received_likes <= 100 ? { color: RED_RARITY } : {},
+                                                                            profile.total_received_likes > 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "1"}
+                                                                        {profile.total_received_likes >= 5 && profile.total_received_likes <= 10 && "5"}
+                                                                        {profile.total_received_likes > 10 && profile.total_received_likes <= 25 && "10"}
+                                                                        {profile.total_received_likes > 25 && profile.total_received_likes <= 50 && "25"}
+                                                                        {profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "50"}
+                                                                        {profile.total_received_likes > 100 && "100+"}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.post_comments.length !== 0 && (
+                                                                <View 
+                                                                    className={[
+                                                                        "badge", 
+                                                                        "written_comments",
+                                                                        profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "blue",
+                                                                        profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "green",
+                                                                        profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "yellow",
+                                                                        profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "orange",
+                                                                        profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "red",
+                                                                        profile.post_comments.length > 100 && "purple"
+                                                                    ].filter(Boolean).join(" ")}
+                                                                    
+                                                                    accessibilityLabel="Získané lajky"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? styles.badge_blue_rarity : {},
+                                                                        profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? styles.badge_green_rarity : {},
+                                                                        profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? styles.badge_yellow_rarity : {},
+                                                                        profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? styles.badge_orange_rarity : {},
+                                                                        profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? styles.badge_red_rarity : {},
+                                                                        profile.post_comments.length > 100 ? styles.badge_purple_rarity : {},
+                                                                    ]}
+                                                                >
+                                                                    <FontAwesome6
+                                                                        name="heart"
+                                                                        size={30}
+
+                                                                        color={
+                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? BLUE_RARITY :
+                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? GREEN_RARITY : 
+                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? YELLOW_RARITY : 
+                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? ORANGE_RARITY : 
+                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? RED_RARITY : 
+                                                                            PURPLE_RARITY
+                                                                        }
+
+                                                                        style={styles.badge_icon}
+                                                                    />
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.badge_text,
+                                                                            profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? { color: BLUE_RARITY } : {},
+                                                                            profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? { color: GREEN_RARITY } : {},
+                                                                            profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? { color: YELLOW_RARITY } : {},
+                                                                            profile.post_comments.length > 25 && profile.post_comments.length <= 50 ? { color: ORANGE_RARITY } : {},
+                                                                            profile.post_comments.length > 50 && profile.post_comments.length <= 100 ? { color: RED_RARITY } : {},
+                                                                            profile.post_comments.length > 100 ? { color: PURPLE_RARITY } : {},
+                                                                        ]}
+                                                                    >
+                                                                        {profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "1"}
+                                                                        {profile.post_comments.length >= 5 && profile.post_comments.length <= 10 && "5"}
+                                                                        {profile.post_comments.length > 10 && profile.post_comments.length <= 25 && "10"}
+                                                                        {profile.post_comments.length > 25 && profile.post_comments.length <= 50 && "25"}
+                                                                        {profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "50"}
+                                                                        {profile.post_comments.length > 100 && "100+"}
+                                                                    </Text>
+                                                                </View>
+                                                            )}
+
+                                                            {profile.badges.map((one_badge:{ title:string, data:string }, index:number) => (
+                                                                <View 
+                                                                    key={index} 
+                                                                    className="badge"
+
+                                                                    style={[
+                                                                        styles.badge,
+                                                                        one_badge.data === "no_day_off_week" ? styles.badge_no_day_off_week : {},
+                                                                        one_badge.data === "xmas_activity" ? styles.badge_xmas_activity : {},
+                                                                        one_badge.data === "new_year_new_goals" ? styles.badge_new_year_new_goals : {},
+                                                                    ]}
+                                                                >
+                                                                    {one_badge.data === "no_day_off_week" && (
+                                                                        <>
+                                                                            <FontAwesome6
+                                                                                name="calendar-check"
+                                                                                size={30}
+                                                                                color={YELLOW_RARITY}
+                                                                                style={styles.badge_icon}
+                                                                            />
+
+                                                                            <Text 
+                                                                                style={[
+                                                                                    styles.badge_text,
+                                                                                    { color: YELLOW_RARITY },
+                                                                                ]}
+                                                                            >
+                                                                                7
+                                                                            </Text>
+                                                                        </>
+                                                                    )}
+
+                                                                    {one_badge.data === "xmas_activity" && (
+                                                                        <>
+                                                                            <FontAwesome6
+                                                                                name="gift"
+                                                                                size={20}
+                                                                                color={"#dc2626"}
+                                                                                style={styles.badge_icon}
+                                                                            />
+                                                                        </>
+                                                                    )}
+
+                                                                    {one_badge.data === "new_year_new_goals" && (
+                                                                        <>
+                                                                            <FontAwesome6
+                                                                                name="champagne-glasses"
+                                                                                size={20}
+                                                                                color={"#a57e05"}
+                                                                                style={styles.badge_icon}
+                                                                            />
+                                                                        </>
+                                                                    )}
+                                                                </View>
+                                                            ))}
+                                                        </ScrollView>
                                                     </View>
                                                 </View>
 
                                                 <View className="bottom" style={styles.bottom}>
-                                                    {profile && profile.private_account && logged_in_user && logged_in_user.id !== profile.id && !profile.has_follow ? (
+                                                    {logged_in_user && profile && logged_in_user.id === profile.id && (
+                                                        <View className="grid_select" style={styles.grid_select}>
+                                                            <Pressable
+                                                                className="all_posts_icon active"
+                                                                // onPress={}
+
+                                                                style={[
+                                                                    styles.all_posts_icon,
+                                                                    grid_select_active_menu === "posts" ? {backgroundColor: transparentize(BLUE_COLOR, 0.8)} : {}
+                                                                ]}
+                                                            >
+                                                                <FontAwesome6
+                                                                    name="buffer"
+                                                                    size={25}
+                                                                    color={grid_select_active_menu === "posts" ? BLUE_COLOR : DARK_BLUE_COLOR}
+                                                                    style={grid_select_active_menu === "posts" ? {transform: [{ scale: 1.1 }]} : {}}
+                                                                />
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                className="saved_posts_icon"
+                                                                // onPress={}
+                                                                style={styles.saved_posts_icon}
+                                                            >
+                                                                <FontAwesome6
+                                                                    name="bookmark"
+                                                                    size={25}
+                                                                    solid={false}
+                                                                    color={DARK_BLUE_COLOR}
+                                                                />
+                                                            </Pressable>
+                                                        </View>
+                                                    )}
+
+                                                    {profile && profile.private_account && logged_in_user?.id !== profile.id && !profile.has_follow ? (
                                                         <View className="private_account_notice" style={styles.private_account_notice}>
                                                             <FontAwesome6
                                                                 name="lock"
@@ -2851,21 +2076,794 @@ export default function ProfileScreen() {
                                                             <Text style={styles.private_account_notice_text}>Tento účet je súkromný.</Text>
                                                         </View>
                                                     ) : (
-                                                        <View className="posts_container" style={styles.posts_container}>
-                                                            <Text className="no_posts" style={styles.no_posts}>Zatiaľ žiadne príspevky.</Text>
-                                                        </View>
+                                                        <>
+                                                            <View className="posts_container" style={styles.posts_container}>
+                                                                {profile.posts.length > 0 && (
+                                                                    <View className="posts" style={styles.posts}>
+                                                                        {profile.posts.map((one_post, index:number) => (
+                                                                            !one_post.public_visibility && logged_in_user?.id !== profile.id && !profile.has_follow ? (
+                                                                                <View key={index} className="private_post_notice" style={styles.private_post_notice}>
+                                                                                    <FontAwesome6
+                                                                                        name="lock"
+                                                                                        size={30}
+                                                                                        color={transparentize(BLUE_COLOR, 0.25)}
+                                                                                    />
+                                                                                </View>
+                                                                            ) : (
+                                                                                <Pressable
+                                                                                    key={one_post.media[0].id || index}
+                                                                                    // onPress={}
+                                                                                    accessibilityLabel="Zobraziť príspevok"
+                                                                                    style={styles.post_link}
+                                                                                >
+                                                                                    {one_post.media[0].is_video ? (
+                                                                                        <View 
+                                                                                            className="thumbnail"
+                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+
+                                                                                            style={{ 
+                                                                                                width: "100%", 
+                                                                                                height: "100%",
+                                                                                                aspectRatio: 1 / 1,
+                                                                                            }}
+                                                                                        >
+                                                                                            <Image
+                                                                                                source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
+
+                                                                                                style={{ 
+                                                                                                    width: "100%", 
+                                                                                                    height: "100%",
+                                                                                                    aspectRatio: 1 / 1,
+                                                                                                    resizeMode: "cover"
+                                                                                                }}
+                                                                                            />
+                                                                                        </View>
+                                                                                    ) : (
+                                                                                        <View 
+                                                                                            className="image"
+                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+
+                                                                                            style={{ 
+                                                                                                width: "100%", 
+                                                                                                height: "100%",
+                                                                                                aspectRatio: 1 / 1,
+                                                                                            }}
+                                                                                        >
+                                                                                                <Image
+                                                                                                    source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
+
+                                                                                                    style={{ 
+                                                                                                        width: "100%", 
+                                                                                                        height: "100%",
+                                                                                                        aspectRatio: 1 / 1,
+                                                                                                        resizeMode: "cover"
+                                                                                                    }}
+                                                                                                />
+                                                                                        </View>
+                                                                                    )}
+
+                                                                                    <View className="post_info" style={styles.post_info}>
+                                                                                        {!one_post.public_visibility || !one_post.allow_comments || one_post.hide_likes && (
+                                                                                            <View className="settings" style={styles.settings}>
+                                                                                                {!one_post.public_visibility && (
+                                                                                                    <FontAwesome6
+                                                                                                        name="eye-low-vision"
+                                                                                                        size={15}
+                                                                                                        color={BLUE_COLOR}
+                                                                                                    />
+                                                                                                )}
+
+                                                                                                {!one_post.allow_comments && (
+                                                                                                    <FontAwesome6
+                                                                                                        name="comment-slash"
+                                                                                                        size={15}
+                                                                                                        color={BLUE_COLOR}
+                                                                                                    />
+                                                                                                )}
+
+                                                                                                {one_post.hide_likes && (
+                                                                                                    <FontAwesome6
+                                                                                                        name="heart"
+                                                                                                        size={15}
+                                                                                                        solid={false}
+                                                                                                        color={BLUE_COLOR}
+                                                                                                    />
+                                                                                                )}
+                                                                                            </View>
+                                                                                        )}
+
+                                                                                        {one_post.media.length > 1 && (
+                                                                                            <View className="multiple_posts" style={styles.multiple_posts}>
+                                                                                                <Text style={styles.multiple_posts_text}>{one_post.media.length}</Text>
+
+                                                                                                <FontAwesome6
+                                                                                                    name="buffer"
+                                                                                                    size={15}
+                                                                                                    color={BLUE_COLOR}
+                                                                                                />
+                                                                                            </View>
+                                                                                        )}
+                                                                                    </View>
+                                                                                </Pressable>
+                                                                            )
+                                                                        ))}
+                                                                    </View>
+                                                                )}
+
+                                                                {profile.posts.length === 0 && (
+                                                                    <Text 
+                                                                        className="no_posts"
+
+                                                                        style={[
+                                                                            styles.no_posts,
+                                                                            logged_in_user?.id !== profile.id ? {marginTop: 0} : {}
+                                                                        ]}
+                                                                    >
+                                                                        Zatiaľ žiadne príspevky.
+                                                                    </Text>
+                                                                )}
+                                                            </View>
+
+                                                            <View className="saved_posts_container hidden" style={styles.posts_container}>
+                                                                {logged_in_user && profile.saved_posts && profile.saved_posts.length > 0 && logged_in_user.id === profile.id && (
+                                                                    <View className="saved_posts" style={styles.posts}>
+                                                                        {profile.saved_posts.map((one_post, index:number) => (
+                                                                            <Pressable
+                                                                                key={one_post.media[0].id || index}
+                                                                                // onPress={}
+                                                                                accessibilityLabel="Zobraziť príspevok"
+                                                                            >
+                                                                                {one_post.media[0].is_video ? (
+                                                                                    <View 
+                                                                                        className="thumbnail"
+                                                                                        accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                        style={{ width: 150, height: 150 }}
+                                                                                    >
+                                                                                        <Image
+                                                                                            source={{ uri: `${DOMAIN}/media/${one_post.media[0].thumbnail}` }}
+
+                                                                                            style={{ 
+                                                                                                width: 150, 
+                                                                                                height: 150,
+                                                                                                aspectRatio: 1 / 1,
+                                                                                                resizeMode: "cover"
+                                                                                            }}
+                                                                                        />
+                                                                                    </View>
+                                                                                ) : (
+                                                                                    <View 
+                                                                                        className="image"
+                                                                                        accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                        style={{ width: 150, height: 150 }}
+                                                                                    >
+                                                                                        <Image
+                                                                                            source={{ uri: `${DOMAIN}/media/${one_post.media[0].file}` }}
+
+                                                                                            style={{ 
+                                                                                                width: 150, 
+                                                                                                height: 150,
+                                                                                                aspectRatio: 1 / 1,
+                                                                                                resizeMode: "cover"
+                                                                                            }}
+                                                                                        />
+                                                                                    </View>
+                                                                                )}
+
+                                                                                {one_post.media.length > 1 && (
+                                                                                    <View className="post_info" style={styles.post_info}>
+                                                                                        <View className="multiple_posts" style={styles.multiple_posts}>
+                                                                                            <Text style={styles.multiple_posts_text}>{one_post.media.length}</Text>
+
+                                                                                            <FontAwesome6
+                                                                                                name="buffer"
+                                                                                                size={15}
+                                                                                                color={BLUE_COLOR}
+                                                                                            />
+                                                                                        </View>
+                                                                                    </View>
+                                                                                )}
+                                                                            </Pressable>
+                                                                        ))}
+                                                                    </View>
+                                                                )}
+
+                                                                {profile.saved_posts?.length === 0 && logged_in_user && logged_in_user.id === profile.id && (
+                                                                    <Text className="no_saved_posts" style={styles.no_saved_posts}>Žiadne uložené príspevky.</Text>
+                                                                )}
+                                                            </View>
+                                                        </>
+
+                                                        
                                                     )}
                                                 </View>
+                                            </View>
+                                        )}
+
+                                        {profile && (
+                                            <BottomSheetModal
+                                                ref={account_properties}
+                                                snapPoints={snap_points}
+                                                enablePanDownToClose={true}
+                                                onChange={handleAccountPropertiesChanges}
+                                                containerStyle={{ zIndex: 9999 }}
+                                            >
+                                                <BottomSheetView style={{ padding: 20 }}>
+                                                    <View className="account_properties">
+                                                        {account_properties_sheet === "main" && (
+                                                            <View style={styles.sheet_container}>
+                                                                {logged_in_user && profile && logged_in_user.id === profile.id && (
+                                                                    <Pressable
+                                                                        className="show_account_settings_button"
+                                                                        onPress={() => setAccountPropertiesSheet("account_settings")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="gear"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Nastavenia</Text>
+                                                                    </Pressable>
+                                                                )}
+
+                                                                {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
+                                                                {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && logged_in_user.id !== profile.id && (
+                                                                    <Pressable
+                                                                        className="show_suspend_account_button red"
+                                                                        onPress={() => setAccountPropertiesSheet("suspend")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="flag"
+                                                                                size={20}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text 
+                                                                            style={[
+                                                                                styles.sheet_text,
+                                                                                // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                                                { color: logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                                            ]}
+                                                                        >
+                                                                            Obmedziť
+                                                                        </Text>
+                                                                    </Pressable>
+                                                                )}
+
+                                                                {logged_in_user && logged_in_user.id !== profile.id && (
+                                                                    <Pressable
+                                                                        className="show_report_profile_button"
+                                                                        onPress={() => setAccountPropertiesSheet("report")}
+                                                                        accessibilityRole="button"
+
+                                                                        style={({ pressed }) => [
+                                                                            styles.sheet_item, 
+                                                                            styles.sheet_item_border, 
+                                                                            pressed && styles.sheet_item_pressed
+                                                                        ]}
+                                                                    >
+                                                                        <View style={styles.sheet_icon}>
+                                                                            <FontAwesome6
+                                                                                name="flag"
+                                                                                size={20}
+                                                                                solid={false}
+                                                                                color={BLUE_COLOR}
+                                                                            />
+                                                                        </View>
+
+                                                                        <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                                    </Pressable>
+                                                                )}
+
+                                                                <Pressable
+                                                                    className="hide_account_properties_button"
+                                                                    onPress={hideAccountProperties}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="xmark"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        )}
+
+                                                        {account_properties_sheet === "suspend" && (
+                                                            <View className="suspend_account" style={styles.sheet_container}>
+                                                                <Text 
+                                                                    style={[
+                                                                        styles.sheet_text, 
+                                                                        { textAlign: "center" }
+                                                                    ]}
+                                                                >
+                                                                    Naozaj chcete obmedziť tento účet?
+                                                                </Text>
+
+                                                                <Pressable
+                                                                    onPress={() => suspendUser(profile.id)}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="eraser"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>Obmedziť</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    className="back_suspend_account_button"
+                                                                    onPress={() => setAccountPropertiesSheet("main")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="xmark"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        )}
+
+                                                        {account_properties_sheet === "report" && (
+                                                            <View className="report report_profile" style={styles.sheet_container}>
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "spam")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Spam</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "harassment")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "hate_speech")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "misinformation")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "explicit_content")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    onPress={() => reportUser(profile.id, "other")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="list"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Iné</Text>
+                                                                </Pressable>
+                        
+                                                                <Pressable
+                                                                    className="back_report_profile_button"
+                                                                    onPress={() => setAccountPropertiesSheet("main")}
+                                                                    accessibilityRole="button"
+                        
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="xmark"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+                        
+                                                                    <Text style={styles.sheet_text}>Späť</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        )}
+
+                                                        {account_properties_sheet === "account_settings" && (
+                                                            <View className="account_settings" style={styles.sheet_container}>
+                                                                <View 
+                                                                    className="data_saving_mode_container"
+
+                                                                    style={[
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border,
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="signal"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Switch 
+                                                                        value={data_saving_mode}
+                                                                        onValueChange={(new_value:boolean) => setDataSavingMode(new_value)}
+                                                                        
+                                                                        trackColor={{ 
+                                                                            false: transparentize(RED_COLOR, 0.8), 
+                                                                            true: transparentize(GREEN_COLOR, 0.8) 
+                                                                        }}
+                                                                        
+                                                                        thumbColor={data_saving_mode ? GREEN_COLOR : RED_COLOR}
+                                                                    />
+
+                                                                    <Text style={styles.sheet_text}>Šetrenie dát</Text>
+                                                                </View>
+
+                                                                <View 
+                                                                    className="private_account_container"
+
+                                                                    style={[
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border,
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name={!private_account ? "lock-open" : "lock"}
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Switch 
+                                                                        value={private_account}
+                                                                        onValueChange={(new_value:boolean) => setPrivateAccount(new_value)}
+                                                                        
+                                                                        trackColor={{ 
+                                                                            false: transparentize(RED_COLOR, 0.8), 
+                                                                            true: transparentize(GREEN_COLOR, 0.8) 
+                                                                        }}
+                                                                        
+                                                                        thumbColor={private_account ? GREEN_COLOR : RED_COLOR}
+                                                                    />
+
+                                                                    <Text style={styles.sheet_text}>Súkromný účet</Text>
+                                                                </View>
+
+                                                                <View 
+                                                                    className="delete_profile_picture_container"
+
+                                                                    style={[
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border,
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="trash-can"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Switch 
+                                                                        value={delete_profile_picture}
+                                                                        onValueChange={(new_value:boolean) => setDeleteProfilePicture(new_value)}
+                                                                        
+                                                                        trackColor={{ 
+                                                                            false: transparentize(RED_COLOR, 0.8), 
+                                                                            true: transparentize(GREEN_COLOR, 0.8) 
+                                                                        }}
+                                                                        
+                                                                        thumbColor={delete_profile_picture ? GREEN_COLOR : RED_COLOR}
+                                                                    />
+
+                                                                    <Text style={styles.sheet_text}>Odstrániť profilový obrázok</Text>
+                                                                </View>
+
+                                                                <View 
+                                                                    className="delete_account_container"
+
+                                                                    style={[
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border,
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="user-minus"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Switch 
+                                                                        value={delete_account}
+                                                                        onValueChange={(new_value:boolean) => setDeleteAccount(new_value)}
+                                                                        
+                                                                        trackColor={{ 
+                                                                            false: transparentize(RED_COLOR, 0.8), 
+                                                                            true: transparentize(GREEN_COLOR, 0.8) 
+                                                                        }}
+                                                                        
+                                                                        thumbColor={delete_account ? GREEN_COLOR : RED_COLOR}
+                                                                    />
+
+                                                                    <Text style={styles.sheet_text}>Odstrániť účet</Text>
+                                                                </View>
+
+                                                                <Pressable
+                                                                    className="back_account_settings_button"
+                                                                    onPress={() => setAccountPropertiesSheet("main")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="xmark"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        )}
+                                                    </View>
+                                                </BottomSheetView>
+                                            </BottomSheetModal>
+                                        )}
+                                    </View>
+                                </View>
+                            </View>
+                        ) : (
+                            <View className="profile_page not_found" style={styles.profile_page}>
+                                <View className="profile_container" style={styles.profile_container}>
+                                    <View className="options_container" style={styles.options_container}>
+                                        <View className="back" accessibilityLabel="Späť na úvodnú stránku">
+                                            <Icon
+                                                icon_name="chevron-left"
+                                                // onPress={}
+                                                size={30}
+                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                            />
+                                        </View>
+                                    </View>
+
+                                    <View className="profile_content" style={styles.profile_content}>
+                                        <View className="profile" style={styles.profile}>
+                                            <View className="header" style={styles.profile_header}>
+                                                <View className="top" style={styles.top}>
+                                                    <View className="info" style={styles.profile_info}>
+                                                        <View 
+                                                            className="profile_picture_container"
+                                                            style={styles.profile_picture_container}
+                                                        >
+                                                            <Image 
+                                                                className="profile_picture"
+                                                                source={{ uri: `${DOMAIN}/static/images/profile_picture.png`}} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                                                style={styles.profile_picture}
+                                                            />
+                                                        </View>
+
+                                                        <View className="name" style={styles.name}>
+                                                            <Text className="username" style={styles.profile_username}>Neexistujúci účet</Text>
+                                                        </View>
+                                                    </View>
+
+                                                    <View className="streak" style={styles.streak}>
+                                                        <FontAwesome6
+                                                            name="fire"
+                                                            size={20}
+                                                            color={BLUE_COLOR}
+                                                        />
+
+                                                        <Text style={styles.streak_text}>0</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            <View className="middle">
+                                                <View className="follow_container" style={styles.follow_container}>
+                                                    <View className="statistics" style={styles.statistics}>
+                                                        <View className="followers" style={styles.followers}>
+                                                            <Text className="amount" style={styles.followers_amount}>0</Text>
+                                                            <Text className="label" style={styles.followers_label}>sledujú</Text>
+                                                        </View>
+
+                                                        <View className="following" style={styles.following}>
+                                                            <Text className="amount" style={styles.following_amount}>0</Text>
+                                                            <Text className="label" style={styles.following_label}>sleduje</Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+
+                                                <View className="badges_container" style={styles.badges_container}>
+                                                    <View className="badges" style={styles.badges}>
+                                                        <View 
+                                                            className="badge level blue" 
+                                                            accessibilityLabel="Level" 
+                                                            style={styles.badge}
+                                                        >
+                                                            <FontAwesome6
+                                                                name="arrow-trend-up"
+                                                                size={20}
+                                                                color={BLUE_COLOR}
+                                                            />
+
+                                                            <Text>1</Text>
+                                                        </View>
+                                                    </View>
+                                                </View>
+                                            </View>
+
+                                            <View className="bottom" style={styles.bottom}>
+                                                {profile && profile.private_account && logged_in_user && logged_in_user.id !== profile.id && !profile.has_follow ? (
+                                                    <View className="private_account_notice" style={styles.private_account_notice}>
+                                                        <FontAwesome6
+                                                            name="lock"
+                                                            size={40}
+                                                            color={BLUE_COLOR}
+                                                        />
+
+                                                        <Text style={styles.private_account_notice_text}>Tento účet je súkromný.</Text>
+                                                    </View>
+                                                ) : (
+                                                    <View className="posts_container" style={styles.posts_container}>
+                                                        <Text className="no_posts" style={styles.no_posts}>Zatiaľ žiadne príspevky.</Text>
+                                                    </View>
+                                                )}
                                             </View>
                                         </View>
                                     </View>
                                 </View>
-                            )}
-                        </BottomSheetModalProvider>
-                    </ScrollView>
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+                            </View>
+                        )}
+                    </BottomSheetModalProvider>
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
     )
 }
 
