@@ -7,7 +7,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getElapsedSeconds, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
+import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
@@ -23,14 +23,21 @@ import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activ
 
 type TrainingPlanSlide = "drop_zone"|"exercise" // Types The Training Plan Slide
 
-export default function EditTrainingPlan() {
+interface EditTrainingPlanProps {
+    onTrainingPlansExercisesUpdate:(training_plans_exercises:TrainingPlanExercise[]) => void,
+    training_plans_exercises:TrainingPlanExercise[],
+    onSetDropZone:(layout:{ x:number, y:number, width:number, height:number }) => void,
+    onSetActiveTrainingPlanDay:(day:number|null) => void,
+    onActiveExerciseIndexUpdate:(active_exercise_index:number) => void,
+    active_exercise_index:number
+}
+
+export default function EditTrainingPlan({ onTrainingPlansExercisesUpdate, training_plans_exercises, onSetDropZone, onSetActiveTrainingPlanDay, onActiveExerciseIndexUpdate, active_exercise_index }:EditTrainingPlanProps) {
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
-    const [active_exercise_index, setActiveExerciseIndex] = useState<number>(0) // Stores The Active Exercise Index
-    const [training_plans_exercises, setTrainingPlansExercises] = useState<TrainingPlanExercise[]>([]) // Stores The Training Plans Exercises
     const [are_training_plans_loading, setAreTrainingPlansLoading] = useState(false) // Stores The Information If Training Plans Are Loading
     const [training_plan_slide, setTrainingPlanSlide] = useState<TrainingPlanSlide>("drop_zone") // Stores The Training Plan Slide
 
@@ -60,7 +67,10 @@ export default function EditTrainingPlan() {
     const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
     const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
 
-    const { width: SCREEN_WIDTH } = Dimensions.get("window") // Gets The Screen Width
+    // Initializes The Active Training Plan Day
+    useEffect(() => {
+        onSetActiveTrainingPlanDay(selected_day) // Sets The Active Training Plan Day
+    }, [selected_day])
     
     const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
 
@@ -202,7 +212,7 @@ export default function EditTrainingPlan() {
             }
             
             else {
-                setTrainingPlansExercises(loaded_training_plans_data.training_plans) // Sets The Training Plans Exercises
+                onTrainingPlansExercisesUpdate(loaded_training_plans_data.training_plans) // Sets The Training Plans Exercises
             }
         } 
         
@@ -225,7 +235,11 @@ export default function EditTrainingPlan() {
         return (
             <>
                 <GestureDetector gesture={swipe_gesture}>
-                    <View className="training_plan" style={styles.training_plan}>
+                    <View 
+                        className="training_plan" 
+                        onLayout={(event) => {onSetDropZone(event.nativeEvent.layout)}}
+                        style={styles.training_plan}
+                    >
                         <Animated.View 
                             style={{ 
                                 transform: [{ translateX }],
@@ -260,7 +274,10 @@ export default function EditTrainingPlan() {
 
                                             <View className="timer_container" style={styles.timer_container}>
                                                 <View className="subtract_time">
-                                                    <IconButton icon_name="minus" />
+                                                    <IconButton 
+                                                        icon_name="minus" 
+                                                        onPress={() => changeWarmUpTime(active_exercise, "subtract")}
+                                                    />
                                                 </View>
 
                                                 <View className="timer" style={styles.warm_up_timer}>
@@ -279,7 +296,10 @@ export default function EditTrainingPlan() {
                                                 </View>
 
                                                 <View className="add_time">
-                                                    <IconButton icon_name="plus" />
+                                                    <IconButton 
+                                                        icon_name="plus" 
+                                                        onPress={() => changeWarmUpTime(active_exercise, "add")}
+                                                    />
                                                 </View>
                                             </View>
                                         </View>
@@ -396,7 +416,7 @@ export default function EditTrainingPlan() {
                                         order: index + 1
                                     }))
                                 
-                                    setTrainingPlansExercises(updated_exercises) // Sets The Training Plan Exercises
+                                    onTrainingPlansExercisesUpdate(updated_exercises) // Sets The Training Plan Exercises
                                 }}
                             />
                         </View>
@@ -618,52 +638,6 @@ export default function EditTrainingPlan() {
         )
     }
 
-    // // Function For Change Exercises In The Training Plan
-    // export function changeExercises(exercise_index:number, training_plan:HTMLDivElement, state:{active_exercise_index:number}):void {
-    //     const exercises:NodeListOf<HTMLDivElement> = training_plan.querySelectorAll<HTMLDivElement>(".exercise"); // Gets All Training Plan Exercises
-
-    //     (exercises[state.active_exercise_index] as HTMLDivElement).classList.remove("active"); // Hides Previous Active Exercise
-    //     (exercises[state.active_exercise_index] as HTMLDivElement).inert = true // Disables Focus
-
-    //     if(exercise_index < 0) state.active_exercise_index = exercises.length - 1 // Shows The Last Exercise
-    //     else if(exercise_index > exercises.length - 1) state.active_exercise_index = 0 // Shows The First Exercise
-    //     else state.active_exercise_index = exercise_index; // Updates Index Of Active Exercise
-        
-    //     (exercises[state.active_exercise_index] as HTMLDivElement).classList.add("active"); // Shows New Active Exercise
-    //     (exercises[state.active_exercise_index] as HTMLDivElement).inert = false // Enables Focus
-
-    //     // Creates And Renders Bars
-    //     const bar_container:HTMLDivElement = createBars(exercises.length, state)
-    //     renderBars(training_plan, bar_container)
-    // }
-
-    // // Function For Change Exercises Order In The Training Plan With Bars
-    // export function changeExercisePosition(dropped_bar_index:number, dragged_bar:HTMLDivElement, training_plan:HTMLDivElement, state:{active_exercise_index:number}):void {
-    //     // Executes Only If The Dragged Element Is Dragged Bar
-    //     if(dragged_bar) {
-    //         const dragged_bar_index:number = [...dragged_bar.parentNode!.querySelectorAll<HTMLDivElement>(".bar")].indexOf(dragged_bar) // Gets Index Of The Dragged Bar In The Training Plan
-    //         const exercises:NodeListOf<HTMLDivElement> = training_plan.querySelectorAll<HTMLDivElement>(".exercise") // Gets All Training Plan Exercises
-
-    //         const active_exercise:HTMLDivElement = exercises[state.active_exercise_index] as HTMLDivElement // Gets The Active Exercise
-    //         const dragged_exercise:HTMLDivElement = exercises[dragged_bar_index] as HTMLDivElement // Gets The Dragged Exercise
-    //         const dropped_exercise:HTMLDivElement = exercises[dropped_bar_index] as HTMLDivElement // Gets The Dropped Exercise
-
-    //         if((dragged_exercise.querySelector(".title") as HTMLHeadingElement).textContent === "Warm Up" || (dropped_exercise.querySelector(".title") as HTMLHeadingElement).textContent === "Warm Up") return // Do Nothing If Exercise Of Dropped Bar Index Or Dragged Bar Index Is Warm Up
-
-    //         dragged_bar_index < dropped_bar_index ? training_plan.insertBefore(dragged_exercise, dropped_exercise.nextSibling) : training_plan.insertBefore(dragged_exercise, dropped_exercise); // Changes DOM Position Of Exercises
-
-    //         active_exercise.classList.remove("active") // Hides Previous Active Exercise
-    //         dragged_exercise.classList.remove("active") // Hides Previous Active Exercise
-    //         dropped_exercise.classList.remove("active") // Hides Previous Active Exercise
-
-    //         active_exercise.inert = true // Disables Focus
-    //         dragged_exercise.inert = true // Disables Focus
-    //         dropped_exercise.inert = true // Disables Focus
-            
-    //         changeExercises(dropped_bar_index, training_plan, state) // Shows The Exercise Of Dropped Bar Index
-    //     }
-    // }
-
     // Function For Creating Bar Container With Amount Of Bars By Training Plans Amount
     const createTrainingPlanBars = (amount:number) => {
         return (
@@ -696,7 +670,7 @@ export default function EditTrainingPlan() {
 
     // Function For Change Training Plans
     const changeTrainingPlans = (new_index:number, max_index?:number):void => {
-        setActiveExerciseIndex(0) // Sets The Active Exercise Index
+        onActiveExerciseIndexUpdate(0) // Sets The Active Exercise Index
         setActiveTrainingPlanIndex(new_index) // Sets The Active Training Plan Index
     }
 
@@ -704,13 +678,13 @@ export default function EditTrainingPlan() {
     const changeExercises = (new_index:number, max_index?:number):void => {
         // Swipe
         if(max_index !== undefined) {
-            if(new_index >= 0 && new_index <= max_index) setActiveExerciseIndex(new_index) // Sets The Active Exercise Index
-            else if(new_index > max_index) setActiveExerciseIndex(0) // Sets The Active Exercise Index
-            else if(new_index < 0) setActiveExerciseIndex(max_index) // Sets The Active Exercise Index
+            if(new_index >= 0 && new_index <= max_index) onActiveExerciseIndexUpdate(new_index) // Sets The Active Exercise Index
+            else if(new_index > max_index) onActiveExerciseIndexUpdate(0) // Sets The Active Exercise Index
+            else if(new_index < 0) onActiveExerciseIndexUpdate(max_index) // Sets The Active Exercise Index
         } 
     
         // Click
-        else setActiveExerciseIndex(new_index) // Sets The Active Exercise Index
+        else onActiveExerciseIndexUpdate(new_index) // Sets The Active Exercise Index
     }
 
     // Creates The Swipe Gesture
@@ -725,12 +699,36 @@ export default function EditTrainingPlan() {
             })
     }, [active_exercise_index, active_training_plan_exercises.length])
 
+    // Function For Handle The Title Change
+    const handleTitleChange = (new_title:string):void => {
+        setTrainingPlanTitle(new_title) // Sets The Training Plan Title
+
+        // Gets The Active Training Plan IDs
+        const active_ids:Set<number> = new Set(
+            active_training_plan_exercises.map((active_exercise:TrainingPlanExercise) => active_exercise.id)
+        )
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(active_ids.has(one_exercise.id)) {
+                return {
+                    ...one_exercise,
+                    type: new_title // Updates The Title
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
+    }
+
     // Function For Change The Exercise Title
     const changeExerciseTitle = (exercise:TrainingPlanExercise, new_title:string):void => {
         if(new_title.length > 50) return // Do Nothing
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 return {
                     ...one_exercise,
@@ -739,13 +737,15 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function Add Period To The Exercise
     const addPeriod = (exercise:TrainingPlanExercise):void => {
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 return {
                     ...one_exercise,
@@ -754,7 +754,9 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Change The Reps Value
@@ -772,8 +774,8 @@ export default function EditTrainingPlan() {
             if(exercise.unit === "steps" && reps_number > 1000) return // Do Nothing
         }
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
 
@@ -797,7 +799,9 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Change The Reps Value Via Text Input
@@ -807,8 +811,8 @@ export default function EditTrainingPlan() {
 
         if(reps_number > 100) return // Do Nothing
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
 
@@ -832,7 +836,9 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Change The Sets Value
@@ -846,8 +852,8 @@ export default function EditTrainingPlan() {
         if(sets_number < 0 || sets_number > 100) return // Do Nothing
         if(sets_number === 0 && exercise.periods.length === 1) return // Do Nothing
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
 
@@ -870,7 +876,9 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Change The Sets Value Via Text Input
@@ -880,8 +888,8 @@ export default function EditTrainingPlan() {
 
         if(sets_number < 1 || sets_number > 100) return // Do Nothing
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === exercise.id) {
                 const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
                 const reps_number:number = compressConsecutiveNumbers(one_exercise.periods)[period_index] // Gets Current Reps Amount
@@ -910,12 +918,14 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Changing Warm Up Time
     const changeWarmUpTime = (warm_up:TrainingPlanExercise, operation:"subtract"|"add"):void => {
-        let elapsed_seconds:number = getElapsedSeconds(String(warm_up.periods[0])) // Gets Elapsed Seconds From Timer Value
+        let elapsed_seconds:number = warm_up.periods[0] // Gets Elapsed Seconds From Timer Value
 
         if(elapsed_seconds <= 30 && operation === "subtract") return // Stop Subtracting When On Timer Is 30 Seconds
         if(elapsed_seconds === 3600 && operation === "add") return // Stop Adding When On Timer Is 1 Hour
@@ -923,8 +933,8 @@ export default function EditTrainingPlan() {
         if(operation === "subtract") elapsed_seconds -= 30 // Subtracts 30 Seconds
         if(operation === "add") elapsed_seconds += 30 // Adds 30 Seconds
 
-        // Sets The Training Plans Exercises
-        setTrainingPlansExercises(previous_exercises => previous_exercises.map((one_exercise:TrainingPlanExercise) => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
             if(one_exercise.id === warm_up.id) {
                 return {
                     ...one_exercise,
@@ -933,7 +943,9 @@ export default function EditTrainingPlan() {
             }
 
             return one_exercise // Returns The Unchanged Exercise
-        }))
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
     // Function For Save The Training Plan
@@ -975,7 +987,9 @@ export default function EditTrainingPlan() {
                 exercise:string,
                 periods:number[],
                 unit:string,
-                order:number
+                order:number,
+                is_warm_up:boolean,
+                is_custom_exercise:boolean
             }[] = []
 
             const existing_exercise:TrainingPlanExercise|null = training_plans_exercises.find(one_exercise => one_exercise.training_plan_key) || null // Gets The Existing Exercise
@@ -995,7 +1009,9 @@ export default function EditTrainingPlan() {
                     exercise:string,
                     periods:number[],
                     unit:string,
-                    order:number
+                    order:number,
+                    is_warm_up:boolean,
+                    is_custom_exercise:boolean
                 } = {
                     previous_training_plan_key,
                     training_plan_key: current_training_plan_key,
@@ -1005,7 +1021,9 @@ export default function EditTrainingPlan() {
                     exercise: one_exercise.exercise,
                     periods: one_exercise.periods,
                     unit: one_exercise.unit,
-                    order: index + 1
+                    order: index + 1,
+                    is_warm_up: one_exercise.is_warm_up,
+                    is_custom_exercise: one_exercise.is_custom_exercise
                 }
 
                 training_plan_data.push(training_plan_object) // Fills Training Plan Data Array With Objects Of Exercises
@@ -1118,15 +1136,19 @@ export default function EditTrainingPlan() {
                 return
             }
 
-            setActiveExerciseIndex(0) // Sets The Active Exercise Index
+            onActiveExerciseIndexUpdate(0) // Sets The Active Exercise Index
             setActiveTrainingPlanIndex(0) // Sets The Active Training Plan Index
 
-            // Sets The Training Plans Exercises
-            setTrainingPlansExercises((previous_exercises:TrainingPlanExercise[]) => {
-                const training_plan_key:string = training_plan_data[0].training_plan_key // Gets The Training Plan Key
-                return previous_exercises.filter((one_exercise:TrainingPlanExercise) => one_exercise.training_plan_key !== training_plan_key) // Removes Deleted Exercises
-            })
+            // Removes Deleted Exercises
+            const training_plan_key:string = training_plan_data[0].training_plan_key // Gets The Training Plan Key
 
+            // Stores The New State Of Updated Training Plans Exercises
+            const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.filter(
+                (one_exercise:TrainingPlanExercise) => one_exercise.training_plan_key !== training_plan_key
+            )
+
+            onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
+            
             scheduleNotification(10) // Schedules The Notification (After 10 Seconds)
         }
 
@@ -1150,7 +1172,7 @@ export default function EditTrainingPlan() {
                             placeholderTextColor={LIGHT_BLUE_COLOR}
                             accessibilityLabel="Názov" 
                             value={training_plan_title}
-                            onChangeText={setTrainingPlanTitle}
+                            onChangeText={handleTitleChange}
                             maxLength={50}
         
                             style={[

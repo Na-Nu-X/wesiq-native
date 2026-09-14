@@ -22,7 +22,7 @@ import type { OfficialTask } from "./TasksSection"
 export interface TrainingPlanExercise {
     id:number,
     training_plan_key:string,
-    day:number,
+    day:number|null,
     type:string,
     exercise:string,
     periods:number[],

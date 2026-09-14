@@ -13,9 +13,9 @@ import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
 import Icon from "@/components/Icon"
 import { opacity } from "react-native-reanimated/lib/typescript/Colors"
+import { ExerciseItem } from "./ExerciseItem"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import { ExerciseItem } from "./ExerciseItem"
 
 interface LoadedExercisesResponse {
     success:boolean, 
@@ -30,12 +30,19 @@ export interface Exercise {
     categories:string[]
     requires_weight:boolean,
     image_filename?:string,
+    
     is_hidden:boolean,
     weight:number|null,
     is_weight_selection_active:boolean|null
 }
 
-export default function ExerciseSelection() {
+type ExerciseSelectionProps = {
+    onDragStart:(exercise:Exercise, x:number, y:number) => void,
+    onDragMove:(x:number, y:number) => void,
+    checkDropLocation:(x:number, y:number, exercise:Exercise) => void
+}
+
+export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLocation }:ExerciseSelectionProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [exercises, setExercises] = useState<Exercise[]>([]) // Stores The Exercises
@@ -287,8 +294,11 @@ export default function ExerciseSelection() {
                 {exercises.map((one_exercise:Exercise, index:number) => (
                     !one_exercise.is_hidden && (
                         <ExerciseItem
-                            key={one_exercise.id || index}
+                            key={one_exercise.id}
                             one_exercise={one_exercise}
+                            onDragStart={onDragStart}
+                            onDragMove={onDragMove}
+                            checkDropLocation={checkDropLocation}
                             onSwipeUp={() => changeWeight(one_exercise, "increase")} // Increases The Weight
                             onSwipeDown={() => changeWeight(one_exercise, "decrease")} // Decreases The Weight
                         />

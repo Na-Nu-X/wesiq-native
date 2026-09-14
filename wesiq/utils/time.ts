@@ -57,14 +57,6 @@ export function getMinimalistFormattedTime(elapsed_time:number):string {
     )
 }
 
-// Function For Convert Time String To Elapsed Seconds (For Example: From 5:00 To 300)
-export function getElapsedSeconds(string:string):number {
-    const minutes:number = Number(string.split(":")[0]) // Gets Minutes From The Timer
-    const seconds:number = Number(string.split(":")[1]) // Gets Seconds From The Timer
-
-    return minutes * 60 + seconds // Returns Elapsed Seconds
-}
-
 // Function For Get Day Name From Weekday Index In User's Country's Language (Sunday - 0, Monday - 1, Tuesday - 2, Wednesday - 3, Thursday - 4, Friday - 5, Saturday - 6)
 export function getDayName(day_index:number, format:"long"|"short"|"narrow"="short"):string {
     const locale:string = navigator.languages?.[0] || navigator.language || "en-US"
