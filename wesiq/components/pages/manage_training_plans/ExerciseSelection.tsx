@@ -1,18 +1,12 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Image, ScrollView } from "react-native"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { View, StyleSheet, Alert, TextInput, ScrollView } from "react-native"
+import { useEffect, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import IconButton from "@/components/IconButton"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL, DOMAIN } from "@/constants/general"
+import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import { randomColor } from "@/utils/randomColor"
-import { BasicResponse } from "@/components/Feed"
+import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
-import { opacity } from "react-native-reanimated/lib/typescript/Colors"
 import { ExerciseItem } from "./ExerciseItem"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
@@ -37,7 +31,7 @@ export interface Exercise {
 }
 
 type ExerciseSelectionProps = {
-    onDragStart:(exercise:Exercise, x:number, y:number) => void,
+    onDragStart:(x:number, y:number, exercise:Exercise) => void,
     onDragMove:(x:number, y:number) => void,
     checkDropLocation:(x:number, y:number, exercise:Exercise) => void
 }

@@ -11,7 +11,7 @@ import type { Exercise } from "./ExerciseSelection"
 
 interface ExerciseItemProps {
     one_exercise:Exercise,
-    onDragStart:(exercise:Exercise, x:number, y:number) => void,
+    onDragStart:(x:number, y:number, exercise:Exercise) => void,
     onDragMove:(x:number, y:number) => void,
     checkDropLocation:(x:number, y:number, exercise:Exercise) => void,
     onSwipeUp:() => void,
@@ -42,7 +42,7 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
         .activateAfterLongPress(250)
         .onStart((event) => {
             scale.value = withSpring(1.05) // Scales The Item
-            runOnJS(onDragStart)(one_exercise, event.absoluteX, event.absoluteY)
+            runOnJS(onDragStart)(event.absoluteX, event.absoluteY, one_exercise)
         })
         .onChange((event) => {
             runOnJS(onDragMove)(event.absoluteX, event.absoluteY);

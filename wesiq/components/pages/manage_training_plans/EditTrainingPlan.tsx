@@ -8,7 +8,7 @@ import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
 import * as Notifications from "expo-notifications"
@@ -17,6 +17,7 @@ import { generateKey } from "@/utils/generateKey"
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist"
 import { TouchableOpacity } from "react-native-gesture-handler"
 import Svg, { Circle } from "react-native-svg"
+import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
@@ -29,10 +30,23 @@ interface EditTrainingPlanProps {
     onSetDropZone:(layout:{ x:number, y:number, width:number, height:number }) => void,
     onSetActiveTrainingPlanDay:(day:number|null) => void,
     onActiveExerciseIndexUpdate:(active_exercise_index:number) => void,
-    active_exercise_index:number
+    active_exercise_index:number,
+    onDragStart:(x:number, y:number, exercise:TrainingPlanExercise) => void,
+    onDragMove:(x:number, y:number) => void,
+    checkDropLocation:(x:number, y:number, exercise:TrainingPlanExercise) => void
 }
 
-export default function EditTrainingPlan({ onTrainingPlansExercisesUpdate, training_plans_exercises, onSetDropZone, onSetActiveTrainingPlanDay, onActiveExerciseIndexUpdate, active_exercise_index }:EditTrainingPlanProps) {
+export default function EditTrainingPlan({ 
+    onTrainingPlansExercisesUpdate, 
+    training_plans_exercises, 
+    onSetDropZone, 
+    onSetActiveTrainingPlanDay, 
+    onActiveExerciseIndexUpdate, 
+    active_exercise_index,
+    onDragStart, 
+    onDragMove, 
+    checkDropLocation
+}:EditTrainingPlanProps) {
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -98,6 +112,49 @@ export default function EditTrainingPlan({ onTrainingPlansExercisesUpdate, train
     useEffect(() => {
         setTrainingPlanTitle(active_exercise ? active_exercise.type : "") // Sets The Training Plan Title
     }, [active_exercise])
+
+    const exercise_translateX = useSharedValue(0) // Stores The X Transform
+    const exercise_translateY = useSharedValue(0) // Stores The Y Transform
+    const exercise_scale = useSharedValue(1) // Stores The Scale
+
+    // Function For Initialize The Drag Gesture
+    const initializeDragGesture = (exercise:TrainingPlanExercise) => {
+        // Creates The Drag Gesture (Starts After 250MS Hold)
+        const drag = Gesture.Pan()
+            .activateAfterLongPress(250)
+            .onStart((event) => {
+                exercise_scale.value = withSpring(0.95) // Shrinks The Item
+                runOnJS(onDragStart)(event.absoluteX, event.absoluteY, exercise)
+            })
+            .onChange((event) => {
+                runOnJS(onDragMove)(event.absoluteX, event.absoluteY);
+            })
+            .onFinalize((event) => {
+                exercise_scale.value = withSpring(1) // Scales The Item
+                runOnJS(checkDropLocation)(event.absoluteX, event.absoluteY, exercise)
+                exercise_translateX.value = withSpring(0)
+                exercise_translateY.value = withSpring(0)
+            })
+
+        return drag
+    }
+
+    // Animates The Exercise
+    const animated_exercise = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: exercise_translateX.value },
+            { translateY: exercise_translateY.value },
+            { scale: exercise_scale.value },
+        ],
+
+        zIndex: exercise_scale.value > 1 ? 100 : 1, 
+
+        shadowColor: BLUE_COLOR,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: exercise_scale.value > 1 ? 0.2 : 0,
+        shadowRadius: 30,
+        elevation: exercise_scale.value > 1 ? 10 : 0,
+    }))
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -307,68 +364,77 @@ export default function EditTrainingPlan({ onTrainingPlansExercisesUpdate, train
 
                                     {/* Creates Exercise */}
                                     {!active_exercise.is_warm_up && (
-                                        <View className="exercise" style={styles.exercise}>
-                                            {active_exercise.is_custom_exercise ? (
-                                                // Sets Exercise Title
-                                                <TextInput 
-                                                    className="title" 
-                                                    keyboardType="default"
-                                                    textAlignVertical="top"
-                                                    value={active_exercise.exercise}
-                                                    onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
-                                                    maxLength={50}
+                                        <GestureDetector gesture={initializeDragGesture(active_exercise)}>
+                                            <ReAnimated.View 
+                                                className="exercise" 
 
-                                                    style={[{
-                                                        maxWidth: 350,
-                                                        textAlign: "center",
-                                                        color: SECONDARY_COLOR,
-                                                        outlineStyle: "none" as any
-                                                    }]}
-                                                /> 
-                                            ) : (
-                                                // Sets Exercise Title
-                                                <Text 
-                                                    className="title" 
-
-                                                    style={{
-                                                        maxWidth: 350,
-                                                        textAlign: "center",
-                                                        color: SECONDARY_COLOR,
-                                                        fontSize: 30,
-                                                    }}
-                                                >
-                                                    {active_exercise.exercise}
-                                                </Text> 
-                                            )}
-
-                                            <View className="labels" style={styles.labels}>
-                                                <Text className="unit_amount" style={styles.label}>
-                                                    {active_exercise.unit === "reps" && ("Počet opakovaní")}
-                                                    {active_exercise.unit === "seconds" && ("Počet sekúnd")}
-                                                    {active_exercise.unit === "steps" && ("Počet krokov")}
-                                                </Text>
-
-                                                <Text style={styles.label}>Série</Text>
-                                            </View>
-
-                                            <Pressable 
-                                                className="add_period"
-                                                onPress={() => addPeriod(active_exercise)}
-                                                accessibilityLabel="Pridať sériu"
-                                                style={styles.add_period}
+                                                style={[
+                                                    animated_exercise,
+                                                    styles.exercise,
+                                                ]}
                                             >
-                                                <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>
-                                            </Pressable>
+                                                {active_exercise.is_custom_exercise ? (
+                                                    // Sets Exercise Title
+                                                    <TextInput 
+                                                        className="title" 
+                                                        keyboardType="default"
+                                                        textAlignVertical="top"
+                                                        value={active_exercise.exercise}
+                                                        onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
+                                                        maxLength={50}
 
-                                            <View className="periods_container" style={styles.periods_container}>
-                                                {/* Generates Exact Amount Of Period Selections For Exercise */}
-                                                {generatePeriodSelections(
-                                                    active_exercise.periods,
-                                                    getConsecutiveNumbersCount(active_exercise.periods),
-                                                    active_exercise.unit
+                                                        style={[{
+                                                            maxWidth: 350,
+                                                            textAlign: "center",
+                                                            color: SECONDARY_COLOR,
+                                                            outlineStyle: "none" as any
+                                                        }]}
+                                                    /> 
+                                                ) : (
+                                                    // Sets Exercise Title
+                                                    <Text 
+                                                        className="title" 
+
+                                                        style={{
+                                                            maxWidth: 350,
+                                                            textAlign: "center",
+                                                            color: SECONDARY_COLOR,
+                                                            fontSize: 30,
+                                                        }}
+                                                    >
+                                                        {active_exercise.exercise}
+                                                    </Text> 
                                                 )}
-                                            </View>
-                                        </View>
+
+                                                <View className="labels" style={styles.labels}>
+                                                    <Text className="unit_amount" style={styles.label}>
+                                                        {active_exercise.unit === "reps" && ("Počet opakovaní")}
+                                                        {active_exercise.unit === "seconds" && ("Počet sekúnd")}
+                                                        {active_exercise.unit === "steps" && ("Počet krokov")}
+                                                    </Text>
+
+                                                    <Text style={styles.label}>Série</Text>
+                                                </View>
+
+                                                <Pressable 
+                                                    className="add_period"
+                                                    onPress={() => addPeriod(active_exercise)}
+                                                    accessibilityLabel="Pridať sériu"
+                                                    style={styles.add_period}
+                                                >
+                                                    <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>
+                                                </Pressable>
+
+                                                <View className="periods_container" style={styles.periods_container}>
+                                                    {/* Generates Exact Amount Of Period Selections For Exercise */}
+                                                    {generatePeriodSelections(
+                                                        active_exercise.periods,
+                                                        getConsecutiveNumbersCount(active_exercise.periods),
+                                                        active_exercise.unit
+                                                    )}
+                                                </View>
+                                            </ReAnimated.View>
+                                        </GestureDetector>
                                     )}
                                 </>
                             )}
