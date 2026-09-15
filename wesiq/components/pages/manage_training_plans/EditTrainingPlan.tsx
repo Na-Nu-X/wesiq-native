@@ -381,6 +381,9 @@ export default function EditTrainingPlan({
                                                         className="title" 
                                                         keyboardType="default"
                                                         textAlignVertical="top"
+                                                        placeholder="Názov cviku" 
+                                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                        accessibilityLabel="Názov cviku" 
                                                         value={active_exercise.exercise}
                                                         onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
                                                         maxLength={50}
@@ -389,6 +392,7 @@ export default function EditTrainingPlan({
                                                             maxWidth: 350,
                                                             textAlign: "center",
                                                             color: SECONDARY_COLOR,
+                                                            fontSize: 30,
                                                             outlineStyle: "none" as any
                                                         }]}
                                                     /> 

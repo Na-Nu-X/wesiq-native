@@ -78,7 +78,7 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
     if(one_exercise.is_hidden) return null
 
     return (
-        <GestureDetector gesture={composed_gestures}>
+        <GestureDetector gesture={one_exercise.requires_weight ? composed_gestures : drag}>
             <Animated.View 
                 key={one_exercise.id}
                 className="exercise"

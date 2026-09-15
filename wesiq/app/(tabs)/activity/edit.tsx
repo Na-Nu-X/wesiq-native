@@ -19,13 +19,14 @@ import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
 import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
+import { FontAwesome6 } from "@expo/vector-icons"
 
 export default function EditTrainingPlanScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
   const [drop_zone, setDropZone] = useState({ x: 0, y: 0, width: 0, height: 0 })
-  const [exercise_selection_dragged_exercise, setExerciseSelectionDraggedExercise] = useState<Exercise|null>(null) // Stores The Dragged Exercise From The Exercise Selection
+  const [exercise_selection_dragged_exercise, setExerciseSelectionDraggedExercise] = useState<Exercise|"custom_exercise"|"warm_up"|null>(null) // Stores The Dragged Exercise From The Exercise Selection
   const [training_plan_dragged_exercise, setTrainingPlanDraggedExercise] = useState<TrainingPlanExercise|null>(null) // Stores The Dragged Exercise From The Training Plan
   const drag_x:SharedValue<number> = useSharedValue(0)
   const drag_y:SharedValue<number> = useSharedValue(0)
@@ -40,35 +41,94 @@ export default function EditTrainingPlanScreen() {
   }, [training_plans_exercises, active_training_plan_day])
 
   // Function To Handle Start Of The Exercise Drag From The Exercise Selection
-  const handleDragStart = (x:number, y:number, exercise:Exercise|TrainingPlanExercise) => {
+  const handleDragStart = (x:number, y:number, dragged_exercise:Exercise|TrainingPlanExercise|"custom_exercise"|"warm_up"):void => {
     drag_x.value = x
     drag_y.value = y
 
+    // Exercise Selection Custom Exercise Drag & Drop
+    if(dragged_exercise === "custom_exercise") {
+      setExerciseSelectionDraggedExercise("custom_exercise") // Sets The Dragged Exercise From The Exercise Selection
+      return
+    }
+
+    // Exercise Selection Warm Up Drag & Drop
+    if(dragged_exercise === "warm_up") {
+      setExerciseSelectionDraggedExercise("warm_up") // Sets The Dragged Exercise From The Exercise Selection
+      return
+    }
+
     // Training Plan Drag & Drop
-    if("training_plan_key" in exercise) {
-      setTrainingPlanDraggedExercise(exercise) // Sets The Dragged Exercise From The Training Plan
+    if("training_plan_key" in dragged_exercise) {
+      setTrainingPlanDraggedExercise(dragged_exercise) // Sets The Dragged Exercise From The Training Plan
     }
 
     // Exercise Selection Drag & Drop
     else {
-      setExerciseSelectionDraggedExercise(exercise) // Sets The Dragged Exercise From The Exercise Selection
+      setExerciseSelectionDraggedExercise(dragged_exercise) // Sets The Dragged Exercise From The Exercise Selection
     }
   }
 
   // Function To Handle Move Of The Dragged Exercise From The Exercise Selection
-  const handleDragMove = (x:number, y:number) => {
+  const handleDragMove = (x:number, y:number):void => {
     drag_x.value = x
     drag_y.value = y
   }
 
   // Function To Handle The Exercise Drop From The Exercise Selection
-  const handleDrop = (x:number, y:number, dragged_exercise:Exercise|TrainingPlanExercise) => {
+  const handleDrop = (x:number, y:number, dragged_exercise:Exercise|TrainingPlanExercise|"custom_exercise"|"warm_up"):void => {
     // Checks If The Dropped Exercise Is Inside The Drop Zone (Training Plan)
     const is_inside_drop_zone:boolean = 
       x >= drop_zone.x &&
       x <= drop_zone.x + drop_zone.width &&
       y >= drop_zone.y &&
       y <= drop_zone.y + drop_zone.height
+
+    // Exercise Selection Custom Exercise Drag & Drop
+    if(dragged_exercise === "custom_exercise") {
+      // Creates The New Exercise
+      const new_exercise:TrainingPlanExercise = {
+        id: -1,
+        training_plan_key: active_training_plan_exercises[0].training_plan_key,
+        day: active_training_plan_day,
+        type: active_training_plan_exercises[0].type,
+        exercise: "",
+        periods: [0],
+        unit: "reps",
+        // order: active_training_plan_exercises.length,
+        order: training_plans_exercises.length,
+        is_warm_up: false,
+        is_custom_exercise: true
+      }
+
+      setTrainingPlansExercises([...training_plans_exercises, new_exercise]) // Sets The Training Plans Exercises
+      setActiveExerciseIndex(active_training_plan_exercises.length) // Sets The Active Exercise Index
+      setExerciseSelectionDraggedExercise(null) // Sets The Dragged Exercise From The Exercise Selection
+
+      return
+    }
+
+    // Exercise Selection Warm Up Drag & Drop
+    if(dragged_exercise === "warm_up") {
+      // Creates The New Exercise
+      const new_exercise:TrainingPlanExercise = {
+        id: -1,
+        training_plan_key: active_training_plan_exercises[0].training_plan_key,
+        day: active_training_plan_day,
+        type: active_training_plan_exercises[0].type,
+        exercise: "Warm Up",
+        periods: [300], // 5 Minutes
+        unit: "seconds",
+        order: 1,
+        is_warm_up: true,
+        is_custom_exercise: false
+      }
+
+      setTrainingPlansExercises([new_exercise, ...training_plans_exercises]) // Sets The Training Plans Exercises
+      setActiveExerciseIndex(0) // Sets The Active Exercise Index
+      setExerciseSelectionDraggedExercise(null) // Sets The Dragged Exercise From The Exercise Selection
+
+      return
+    }
 
     // Training Plan Drag & Drop
     if("training_plan_key" in dragged_exercise) {
@@ -82,9 +142,11 @@ export default function EditTrainingPlanScreen() {
 
     // Exercise Selection Drag & Drop
     else {
+      console.log("EXERCISE SELECTION")
       if(is_inside_drop_zone) {
         // If The Exercise Is Already In The Active Training Plan
         if(active_training_plan_exercises.some((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id)) {
+          console.log("EXISTING")
           const existing_exercise_index:number|null = active_training_plan_exercises.findIndex((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id) || null // Gets The Existing Exercise
           if(existing_exercise_index) setActiveExerciseIndex(existing_exercise_index) // Sets The Active Exercise Index
         }
@@ -99,9 +161,10 @@ export default function EditTrainingPlanScreen() {
             exercise: dragged_exercise.exercise,
             periods: [0],
             unit: dragged_exercise.unit,
+            // order: active_training_plan_exercises.length,
             order: training_plans_exercises.length,
-            is_warm_up: false, //
-            is_custom_exercise: false //
+            is_warm_up: false,
+            is_custom_exercise: false
           }
   
           setTrainingPlansExercises([...training_plans_exercises, new_exercise]) // Sets The Training Plans Exercises
@@ -302,42 +365,83 @@ export default function EditTrainingPlanScreen() {
           />
 
           {exercise_selection_dragged_exercise && (
-            <Animated.View 
-              key={exercise_selection_dragged_exercise.id}
-              className="exercise"
-              pointerEvents="none"
-
-              style={[
-                styles.exercise_selection_exercise,
-                styles.floating_exercise,
-                overlay_style,
-              ]}
-            >
-              {exercise_selection_dragged_exercise.image_filename && (
-                <Image 
-                  source={{ uri: `${DOMAIN}/static/images/exercises/${exercise_selection_dragged_exercise.image_filename}`}}
-                  resizeMode="cover"
+            <>
+              {exercise_selection_dragged_exercise === "custom_exercise" && (
+                <Animated.View 
+                  className="custom_exercise exercise"
+                  pointerEvents="none"
 
                   style={[
-                    StyleSheet.absoluteFill,
-                    { opacity: 0.2 },
+                    styles.exercise_selection_exercise,
+                    styles.floating_exercise,
+                    overlay_style,
                   ]}
-                />
+                >
+                  <FontAwesome6
+                    name="plus"
+                    size={40}
+                    color={BLUE_COLOR}
+                  />
+                </Animated.View>
               )}
 
-              <Text 
-                className="name" 
+              {exercise_selection_dragged_exercise === "warm_up" && (
+                <Animated.View 
+                  className="warm_up exercise"
+                  pointerEvents="none"
 
-                style={[{
-                  textAlign: "center", 
-                  color: SECONDARY_COLOR,
-                  pointerEvents: "none",
-                  userSelect: "none",
-                }]}
-              >
-                {exercise_selection_dragged_exercise.exercise}
-              </Text>
-            </Animated.View>
+                  style={[
+                    styles.exercise_selection_exercise,
+                    styles.floating_exercise,
+                    overlay_style,
+                  ]}
+                >
+                  <FontAwesome6
+                    name="dumbbell"
+                    size={40}
+                    color={BLUE_COLOR}
+                  />
+                </Animated.View>
+              )}
+
+              {exercise_selection_dragged_exercise !== "custom_exercise" && exercise_selection_dragged_exercise !== "warm_up" && (
+                <Animated.View 
+                  className="exercise"
+                  pointerEvents="none"
+
+                  style={[
+                    styles.exercise_selection_exercise,
+                    styles.floating_exercise,
+                    overlay_style,
+                  ]}
+                >
+                  {exercise_selection_dragged_exercise.image_filename && (
+                    <Image 
+                      source={{ uri: `${DOMAIN}/static/images/exercises/${exercise_selection_dragged_exercise.image_filename}`}}
+                      resizeMode="cover"
+
+                      style={[
+                        StyleSheet.absoluteFill,
+                        { opacity: 0.2 },
+                      ]}
+                    />
+                  )}
+
+                  <Text 
+                    className="name" 
+
+                    style={[{
+                      textAlign: "center", 
+                      color: SECONDARY_COLOR,
+                      pointerEvents: "none",
+                      userSelect: "none",
+                    }]}
+                  >
+                    {exercise_selection_dragged_exercise.exercise}
+                  </Text>
+                </Animated.View>
+              )}
+            </>
           )}
 
           {training_plan_dragged_exercise && (

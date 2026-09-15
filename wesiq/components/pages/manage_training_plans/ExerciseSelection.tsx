@@ -8,6 +8,8 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { ExerciseItem } from "./ExerciseItem"
+import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -31,9 +33,9 @@ export interface Exercise {
 }
 
 type ExerciseSelectionProps = {
-    onDragStart:(x:number, y:number, exercise:Exercise) => void,
+    onDragStart:(x:number, y:number, exercise:Exercise|"custom_exercise"|"warm_up") => void,
     onDragMove:(x:number, y:number) => void,
-    checkDropLocation:(x:number, y:number, exercise:Exercise) => void
+    checkDropLocation:(x:number, y:number, exercise:Exercise|"custom_exercise"|"warm_up") => void
 }
 
 export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLocation }:ExerciseSelectionProps) {
@@ -43,6 +45,65 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
     const [are_exercises, setAreExercisesLoading] = useState<boolean>(false) // Stores The Information If Exercises Are Loading
 
     const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
+
+    const translateX = useSharedValue(0) // Stores The X Transform
+    const translateY = useSharedValue(0) // Stores The Y Transform
+    const scale = useSharedValue(1) // Stores The Scale
+
+    // Creates The Warm Up Drag Gesture (Starts After 250MS Hold)
+    const warm_up_drag = Gesture.Pan()
+        .activateAfterLongPress(250)
+        .onStart((event) => {
+            scale.value = withSpring(1.05) // Scales The Item
+            runOnJS(onDragStart)(event.absoluteX, event.absoluteY, "warm_up")
+        })
+        .onChange((event) => {
+            runOnJS(onDragMove)(event.absoluteX, event.absoluteY);
+            // translateX.value = event.translationX
+            // translateY.value = event.translationY
+        })
+        .onFinalize((event) => {
+            scale.value = withSpring(1) // Shrinks The Item
+            runOnJS(checkDropLocation)(event.absoluteX, event.absoluteY, "warm_up")
+            translateX.value = withSpring(0)
+            translateY.value = withSpring(0)
+        })
+
+    // Creates The Custom Exercise Drag Gesture (Starts After 250MS Hold)
+    const custom_exercise_drag = Gesture.Pan()
+        .activateAfterLongPress(250)
+        .onStart((event) => {
+            scale.value = withSpring(1.05) // Scales The Item
+            runOnJS(onDragStart)(event.absoluteX, event.absoluteY, "custom_exercise")
+        })
+        .onChange((event) => {
+            runOnJS(onDragMove)(event.absoluteX, event.absoluteY);
+            // translateX.value = event.translationX
+            // translateY.value = event.translationY
+        })
+        .onFinalize((event) => {
+            scale.value = withSpring(1) // Shrinks The Item
+            runOnJS(checkDropLocation)(event.absoluteX, event.absoluteY, "custom_exercise")
+            translateX.value = withSpring(0)
+            translateY.value = withSpring(0)
+        })
+
+    // Animates The Exercise
+    const animated_exercise = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: translateX.value },
+            { translateY: translateY.value },
+            { scale: scale.value },
+        ],
+
+        zIndex: scale.value > 1 ? 100 : 1, 
+
+        shadowColor: BLUE_COLOR,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: scale.value > 1 ? 0.2 : 0,
+        shadowRadius: 30,
+        elevation: scale.value > 1 ? 10 : 0,
+    }))
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -117,8 +178,6 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
             }
             
             else {
-                console.log(loaded_exercises_data)
-
                 // Sets The Exercises
                 setExercises(
                     loaded_exercises_data.exercises.map((one_exercise:Exercise) => ({
@@ -181,8 +240,6 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                 }
             })
         )
-
-        console.log(filtered_selection_exercises)
     }
 
     // Function For Delete Search Bar
@@ -257,35 +314,42 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                 style={styles.exercises} 
                 contentContainerStyle={styles.exercises}
             >
-                <View 
-                    className="custom_exercise exercise"
-                    // draggable="true"
-                    style={styles.exercise}
-                >
-                    <FontAwesome6
-                        name="plus"
-                        size={40}
-                        color={BLUE_COLOR}
-                    />
+                <GestureDetector gesture={custom_exercise_drag}>
+                    <Animated.View 
+                        className="custom_exercise exercise"
+                        // draggable="true"
+                        style={styles.exercise}
+                    >
+                        <FontAwesome6
+                            name="plus"
+                            size={40}
+                            color={BLUE_COLOR}
+                        />
 
-                    {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Vlastný cvik</Text> */}
-                </View>
+                        {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Vlastný cvik</Text> */}
+                    </Animated.View>
+                </GestureDetector>
 
-                <View 
-                    className="warm_up exercise"
-                    // draggable="true"
-                    style={styles.exercise}
-                >
-                    <FontAwesome6
-                        name="dumbbell"
-                        size={40}
-                        color={BLUE_COLOR}
-                    />
+                <GestureDetector gesture={warm_up_drag}>
+                    <Animated.View 
+                        className="warm_up exercise"
 
-                    {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Rozcvička</Text> */}
-                </View>
+                        style={[
+                            animated_exercise,
+                            styles.exercise,
+                        ]}
+                    >
+                        <FontAwesome6
+                            name="dumbbell"
+                            size={40}
+                            color={BLUE_COLOR}
+                        />
 
-                {exercises.map((one_exercise:Exercise, index:number) => (
+                        {/* <Text className="name" style={{ color: SECONDARY_COLOR }}>Rozcvička</Text> */}
+                    </Animated.View>
+                </GestureDetector>
+
+                {exercises.map((one_exercise:Exercise) => (
                     !one_exercise.is_hidden && (
                         <ExerciseItem
                             key={one_exercise.id}
