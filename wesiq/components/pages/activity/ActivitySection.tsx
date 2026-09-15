@@ -18,11 +18,12 @@ import { BasicResponse } from "@/components/Feed"
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
+import type { Day } from "../manage_training_plans/DaySelectMenu"
 
 export interface TrainingPlanExercise {
     id:number,
     training_plan_key:string,
-    day:number|null,
+    day:Day|null,
     type:string,
     exercise:string,
     periods:number[],

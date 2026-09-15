@@ -18,6 +18,7 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
+import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
 
 export default function EditTrainingPlanScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -30,7 +31,7 @@ export default function EditTrainingPlanScreen() {
   const drag_y:SharedValue<number> = useSharedValue(0)
 
   const [training_plans_exercises, setTrainingPlansExercises] = useState<TrainingPlanExercise[]>([]) // Stores The Training Plans Exercises
-  const [active_training_plan_day, setActiveTrainingPlanDay] = useState<number|null>(null) // Stores The Active Training Plan Day
+  const [active_training_plan_day, setActiveTrainingPlanDay] = useState<Day|null>(null) // Stores The Active Training Plan Day
   const [active_exercise_index, setActiveExerciseIndex] = useState<number>(0) // Stores The Active Exercise Index
 
   // Gets The Active Training Plan Exercises
@@ -61,7 +62,7 @@ export default function EditTrainingPlanScreen() {
   }
 
   // Function To Handle The Exercise Drop From The Exercise Selection
-  const handleDrop = (x:number, y:number, exercise:Exercise|TrainingPlanExercise) => {
+  const handleDrop = (x:number, y:number, dragged_exercise:Exercise|TrainingPlanExercise) => {
     // Checks If The Dropped Exercise Is Inside The Drop Zone (Training Plan)
     const is_inside_drop_zone:boolean = 
       x >= drop_zone.x &&
@@ -70,9 +71,9 @@ export default function EditTrainingPlanScreen() {
       y <= drop_zone.y + drop_zone.height
 
     // Training Plan Drag & Drop
-    if("training_plan_key" in exercise) {
+    if("training_plan_key" in dragged_exercise) {
       if(!is_inside_drop_zone) {
-        setTrainingPlansExercises(previous_exercises => previous_exercises.filter((one_exercise:TrainingPlanExercise) => one_exercise.id !== exercise.id)) // Sets The Training Plans Exercises
+        setTrainingPlansExercises(previous_exercises => previous_exercises.filter((one_exercise:TrainingPlanExercise) => one_exercise.id !== dragged_exercise.id)) // Sets The Training Plans Exercises
         setActiveExerciseIndex(0) // Sets The Active Exercise Index
       }
 
@@ -82,22 +83,30 @@ export default function EditTrainingPlanScreen() {
     // Exercise Selection Drag & Drop
     else {
       if(is_inside_drop_zone) {
-        // Creates The New Exercise
-        const new_exercise:TrainingPlanExercise = {
-          id: exercise.id,
-          training_plan_key: active_training_plan_exercises[0].training_plan_key,
-          day: active_training_plan_day,
-          type: active_training_plan_exercises[0].type,
-          exercise: exercise.exercise,
-          periods: [0],
-          unit: exercise.unit,
-          order: training_plans_exercises.length,
-          is_warm_up: false, //
-          is_custom_exercise: false //
+        // If The Exercise Is Already In The Active Training Plan
+        if(active_training_plan_exercises.some((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id)) {
+          const existing_exercise_index:number|null = active_training_plan_exercises.findIndex((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id) || null // Gets The Existing Exercise
+          if(existing_exercise_index) setActiveExerciseIndex(existing_exercise_index) // Sets The Active Exercise Index
         }
 
-        setTrainingPlansExercises([...training_plans_exercises, new_exercise]) // Sets The Training Plans Exercises
-        setActiveExerciseIndex(active_training_plan_exercises.length) // Sets The Active Exercise Index
+        else {
+          // Creates The New Exercise
+          const new_exercise:TrainingPlanExercise = {
+            id: dragged_exercise.id,
+            training_plan_key: active_training_plan_exercises[0].training_plan_key,
+            day: active_training_plan_day,
+            type: active_training_plan_exercises[0].type,
+            exercise: dragged_exercise.exercise,
+            periods: [0],
+            unit: dragged_exercise.unit,
+            order: training_plans_exercises.length,
+            is_warm_up: false, //
+            is_custom_exercise: false //
+          }
+  
+          setTrainingPlansExercises([...training_plans_exercises, new_exercise]) // Sets The Training Plans Exercises
+          setActiveExerciseIndex(active_training_plan_exercises.length) // Sets The Active Exercise Index
+        }
       }
 
       setExerciseSelectionDraggedExercise(null) // Sets The Dragged Exercise From The Exercise Selection
@@ -278,7 +287,7 @@ export default function EditTrainingPlanScreen() {
             onTrainingPlansExercisesUpdate={(training_plans_exercises:TrainingPlanExercise[]) => setTrainingPlansExercises(training_plans_exercises)}
             training_plans_exercises={training_plans_exercises}
             onSetDropZone={(layout) => setDropZone(layout)} 
-            onSetActiveTrainingPlanDay={(day:number|null) => setActiveTrainingPlanDay(day)}
+            onSetActiveTrainingPlanDay={(day:Day|null) => setActiveTrainingPlanDay(day)}
             onActiveExerciseIndexUpdate={(active_exercise_index:number) => setActiveExerciseIndex(active_exercise_index)}
             active_exercise_index={active_exercise_index}
             onDragStart={handleDragStart} 

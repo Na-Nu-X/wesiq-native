@@ -18,9 +18,11 @@ import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-nativ
 import { TouchableOpacity } from "react-native-gesture-handler"
 import Svg, { Circle } from "react-native-svg"
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
+import { DaySelectMenu } from "./DaySelectMenu"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
+import type { Day } from "./DaySelectMenu"
 
 type TrainingPlanSlide = "drop_zone"|"exercise" // Types The Training Plan Slide
 
@@ -28,7 +30,7 @@ interface EditTrainingPlanProps {
     onTrainingPlansExercisesUpdate:(training_plans_exercises:TrainingPlanExercise[]) => void,
     training_plans_exercises:TrainingPlanExercise[],
     onSetDropZone:(layout:{ x:number, y:number, width:number, height:number }) => void,
-    onSetActiveTrainingPlanDay:(day:number|null) => void,
+    onSetActiveTrainingPlanDay:(day:Day|null) => void,
     onActiveExerciseIndexUpdate:(active_exercise_index:number) => void,
     active_exercise_index:number,
     onDragStart:(x:number, y:number, exercise:TrainingPlanExercise) => void,
@@ -78,8 +80,8 @@ export default function EditTrainingPlan({
         requestNotificationPermissions() // Requests The Notification Permissions
     }, [])
 
-    const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
-    const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
+    const days:(Day|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day as Day : null))] // Gets Ordered Days From Available Training Plans
+    const selected_day:Day|null = days[active_training_plan_index] as Day || null // Selects Current Or Upcoming Day Of Training Plan
 
     // Initializes The Active Training Plan Day
     useEffect(() => {
@@ -789,6 +791,40 @@ export default function EditTrainingPlan({
         onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
     }
 
+    // Function For Change Training Plan Day
+    const changeTrainingPlanDay = (new_day:Day|null):void => {
+        if(active_training_plan_exercises.length === 0) return
+
+        const previous_day:Day|null = active_training_plan_exercises[0].day // Gets The Previous Day
+
+        // Gets The Active Training Plan IDs
+        const active_ids:Set<number> = new Set(
+            active_training_plan_exercises.map((active_exercise:TrainingPlanExercise) => active_exercise.id)
+        )
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plans_exercises:TrainingPlanExercise[] = training_plans_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(active_ids.has(one_exercise.id)) {
+                return {
+                    ...one_exercise,
+                    day: new_day // Updates The Day
+                }
+            }
+
+            // If The New Day Is Already Used
+            if(new_day !== null && one_exercise.day === new_day) {
+                return {
+                    ...one_exercise,
+                    day: previous_day // Swaps Days
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlansExercisesUpdate(updated_training_plans_exercises) // Sets The Training Plans Exercises
+    }
+
     // Function For Change The Exercise Title
     const changeExerciseTitle = (exercise:TrainingPlanExercise, new_title:string):void => {
         if(new_title.length > 50) return // Do Nothing
@@ -1247,139 +1283,11 @@ export default function EditTrainingPlan({
                             ]}
                         />
         
-                        <View className="day_select_menu" style={styles.day_select_menu}>
-                            <View className="select" style={styles.select}>
-                                <Text>Nepriradiť deň</Text>
-        
-                                <Icon
-                                    icon_name="angle-down"
-                                    // onPress={}
-                                    size={20}
-                                />
-                            </View>
-        
-                            <View className="options_list" style={styles.options_list}>
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay("not_selected"}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Nepriradiť deň</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(1}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="eye"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Pondelok</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(2}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Utorok</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(3}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Streda</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(4}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Štvrtok</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(5}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Piatok</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(6}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Sobota</Text>
-                                </Pressable>
-        
-                                <Pressable 
-                                    className="option"
-                                    // onPress={() => setDay(0}
-                                    style={styles.option}
-                                >
-                                    <FontAwesome6
-                                        name="list"
-                                        size={20}
-                                        color={LIGHT_BLUE_COLOR}
-                                        style={{marginRight: 8.5}}
-                                    />
-        
-                                    <Text style={{ color: SECONDARY_COLOR }}>Nedeľa</Text>
-                                </Pressable>
-                            </View>
-                        </View>
+                        <DaySelectMenu 
+                            used_days={days}
+                            onDayUpdate={(selected_day) => changeTrainingPlanDay(selected_day)} // Changes The Training Plan Day
+                            day={selected_day}
+                        />
                     </View>
 
                     {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (generateTrainingPlan())} {/* Generates The Training Plan */}
@@ -1451,79 +1359,6 @@ const styles = StyleSheet.create({
 
         // &.error_animation {
         //     animation: trainingTitleError 0.2s linear 3;
-        // }
-    },
-
-    day_select_menu: {
-        position: "relative",
-        cursor: "pointer",
-    },
-
-    select: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 5,
-        width: "100%",
-        height: 50,
-        paddingHorizontal: 8.5,
-        color: LIGHT_BLUE_COLOR,
-        borderBottomWidth: 1,
-        borderBottomColor: transparentize(BLUE_COLOR, 0.5),
-        // transition: border 0.3s ease, box-shadow 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &:has(.fa-angle-down:hover),
-        // &:has(.fa-angle-up:hover) {
-        //     border-color: $blue-color !important;
-        // }
-
-        // span {
-        //     @include crop_text;
-        // }
-    },
-
-    options_list: {
-        // @include scrollbar;
-        // interpolate-size: allow-keywords;
-        position: "absolute",
-        flex: 1,
-        width: "100%",
-        minWidth: 0,
-        height: 0,
-        marginTop: 10,
-        color: SECONDARY_COLOR,
-        backgroundColor: transparentize(MAIN_COLOR, 0.2),
-        borderRadius: SMALL_BORDER_RADIUS,
-        // overflow-y: $scrollbar;
-        // transition: height 0.3s ease;
-        zIndex: 500,
-
-        // &::-webkit-scrollbar {
-        //     width: 3px;
-        // }
-
-        // &.active {
-            // height: 33 * 4,
-        // }
-    },
-
-    option: {
-        // @include crop_text;
-        paddingVertical: 5,
-        paddingHorizontal: 8.5,
-        // transition: background-color 0.3s ease, color 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &.selected {
-        //     background-color: transparentize($blue-color, 0.9);
-        //     color: $light-blue-color;
-        // }
-
-        // &:focus-visible {
-        //     outline: none !important;
         // }
     },
 
