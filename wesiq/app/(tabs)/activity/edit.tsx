@@ -14,12 +14,12 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getMinimalistFormattedTime } from "@/utils/time"
 import { MAIN_WIDTH } from "@/constants/dimensions"
+import { FontAwesome6 } from "@expo/vector-icons"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
 import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
-import { FontAwesome6 } from "@expo/vector-icons"
 
 export default function EditTrainingPlanScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -142,11 +142,9 @@ export default function EditTrainingPlanScreen() {
 
     // Exercise Selection Drag & Drop
     else {
-      console.log("EXERCISE SELECTION")
       if(is_inside_drop_zone) {
         // If The Exercise Is Already In The Active Training Plan
         if(active_training_plan_exercises.some((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id)) {
-          console.log("EXISTING")
           const existing_exercise_index:number|null = active_training_plan_exercises.findIndex((one_exercise:TrainingPlanExercise) => one_exercise.id === dragged_exercise.id) || null // Gets The Existing Exercise
           if(existing_exercise_index) setActiveExerciseIndex(existing_exercise_index) // Sets The Active Exercise Index
         }

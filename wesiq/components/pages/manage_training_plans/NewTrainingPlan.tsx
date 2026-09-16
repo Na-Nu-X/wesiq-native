@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Platform } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -12,11 +12,119 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
 import Icon from "@/components/Icon"
+import * as Notifications from "expo-notifications"
+import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist"
+import { DaySelectMenu, type Day } from "./DaySelectMenu"
+import Svg, { Circle } from "react-native-svg"
+import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { TrainingPlanExercise } from "../activity/ActivitySection"
+import type { TrainingPlanSlide } from "./EditTrainingPlan"
+import { generateKey } from "@/utils/generateKey"
 
-export default function NewTrainingPlan() {
+interface NewTrainingPlanProps {
+    onTrainingPlanExercisesUpdate:(training_plan_exercises:TrainingPlanExercise[]) => void,
+    training_plan_exercises:TrainingPlanExercise[],
+    onSetDropZone:(layout:{ x:number, y:number, width:number, height:number }) => void,
+    onSetActiveTrainingPlanDay:(day:Day|null) => void,
+    active_training_plan_day:Day|null,
+    onActiveExerciseIndexUpdate:(active_exercise_index:number) => void,
+    active_exercise_index:number,
+    onDragStart:(x:number, y:number, exercise:TrainingPlanExercise) => void,
+    onDragMove:(x:number, y:number) => void,
+    checkDropLocation:(x:number, y:number, exercise:TrainingPlanExercise) => void,
+    onTrainingPlanSlideUpdate:(training_plan_slide:TrainingPlanSlide) => void,
+    training_plan_slide:TrainingPlanSlide
+}
+
+export default function NewTrainingPlan({ 
+    onTrainingPlanExercisesUpdate, 
+    training_plan_exercises, 
+    onSetDropZone, 
+    onSetActiveTrainingPlanDay, 
+    active_training_plan_day,
+    onActiveExerciseIndexUpdate, 
+    active_exercise_index,
+    onDragStart, 
+    onDragMove, 
+    checkDropLocation,
+    onTrainingPlanSlideUpdate,
+    training_plan_slide
+}:NewTrainingPlanProps) {
+    const notification_id = useRef<string|null>(null) // Stores The Notification ID
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+
+    const [training_plan_title, setTrainingPlanTitle] = useState<string>("") // Stores The Training Plan Slide
+
+    // Initializes The Notification Permission Request
+    useEffect(() => {
+        // Function For Request The Notification Permissions
+        const requestNotificationPermissions = async ():Promise<void> => {
+            if(Platform.OS === "android") {
+                await Notifications.setNotificationChannelAsync("break-alarm", {
+                    name: "Break alarm",
+                    importance: Notifications.AndroidImportance.MAX,
+                    sound: "default",
+                    vibrationPattern: [0, 250, 250, 250]
+                })
+            }
+    
+            const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
+    
+            if(status !== "granted") console.error("Notifikácie neboli povolené.")
+        }
+    
+        requestNotificationPermissions() // Requests The Notification Permissions
+    }, [])
+
+    const active_exercise:TrainingPlanExercise = training_plan_exercises[active_exercise_index] // Gets The Active Exercise
+
+    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+
+    const exercise_translateX = useSharedValue(0) // Stores The X Transform
+    const exercise_translateY = useSharedValue(0) // Stores The Y Transform
+    const exercise_scale = useSharedValue(1) // Stores The Scale
+
+    // Function For Initialize The Drag Gesture
+    const initializeDragGesture = (exercise:TrainingPlanExercise) => {
+        // Creates The Drag Gesture (Starts After 250MS Hold)
+        const drag = Gesture.Pan()
+            .activateAfterLongPress(250)
+            .onStart((event) => {
+                exercise_scale.value = withSpring(0.95) // Shrinks The Item
+                runOnJS(onDragStart)(event.absoluteX, event.absoluteY, exercise)
+            })
+            .onChange((event) => {
+                runOnJS(onDragMove)(event.absoluteX, event.absoluteY);
+            })
+            .onFinalize((event) => {
+                exercise_scale.value = withSpring(1) // Scales The Item
+                runOnJS(checkDropLocation)(event.absoluteX, event.absoluteY, exercise)
+                exercise_translateX.value = withSpring(0)
+                exercise_translateY.value = withSpring(0)
+            })
+
+        return drag
+    }
+
+    // Animates The Exercise
+    const animated_exercise = useAnimatedStyle(() => ({
+        transform: [
+            { translateX: exercise_translateX.value },
+            { translateY: exercise_translateY.value },
+            { scale: exercise_scale.value },
+        ],
+
+        zIndex: exercise_scale.value > 1 ? 100 : 1, 
+
+        shadowColor: BLUE_COLOR,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: exercise_scale.value > 1 ? 0.2 : 0,
+        shadowRadius: 30,
+        elevation: exercise_scale.value > 1 ? 10 : 0,
+    }))
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -61,6 +169,542 @@ export default function NewTrainingPlan() {
         getLoggedInUser() // Gets The Logged In User
     }, [])
 
+    // Function For Schedule The Notification
+    const scheduleNotification = async (seconds:number):Promise<void> => {
+        try {
+            if(notification_id.current) {
+                await Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification
+                notification_id.current = null // Removes The Notification ID
+            }
+    
+            if (seconds <= 0) return
+    
+            // Setup The Notification And Gets Its ID
+            const id:string = await Notifications.scheduleNotificationAsync({
+                content: {
+                    title: "Tréningový plán",
+                    body: `Tréningový plán bol úspešne upravený.`,
+                    sound: "default"
+                },
+
+                trigger: {
+                    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                    seconds: Math.ceil(seconds),
+                    repeats: false,
+
+                    ...(Platform.OS === "android" && {
+                        channelId: "break-alarm"
+                    })
+                }
+            })
+    
+            notification_id.current = id // Sets The Notification ID
+        } 
+        
+        catch {
+            console.error("Pri plánovaní notifikácie došlo k chybe.")
+        }
+    }
+
+    // Function For Count Consecutive Numbers In An Array (For Example From [1, 1, 2, 2, 3] To [2, 2, 1])
+    const getConsecutiveNumbersCount = (array:number[]):number[] => {
+        if(array.length === 0) return []
+
+        const result:number[] = []
+        let counter:number = 1
+
+        for(let i:number = 1; i <= array.length; i++) {
+            if(array[i] === array[i - 1]) counter += 1 // Increments The Counter
+
+            else {
+                result.push(counter) // Stores Previous Counter Value
+                counter = 1 // Resets The Counter
+            }
+        }
+
+        return result
+    }
+
+    // Function For Reduce An Array Of Repeating Numbers (For Example From [1, 1, 2, 2, 3] To [1, 2, 3])
+    const compressConsecutiveNumbers = (array:number[]):number[] => {
+        if(array.length === 0) return []
+
+        const result:number[] = [array[0] as number] // Stores The First Number
+
+        for(let i:number = 1; i < array.length; i++) {
+            if(array[i] !== array[i - 1]) {
+                result.push(array[i] as number) // Stores The Number
+            }
+        }
+
+        return result
+    }
+
+    const total_gaps:number = (training_plan_exercises.length - 1) * 10 // Defines The Total Gaps
+    const bar_width:number = (MAIN_WIDTH - 20 - total_gaps) / training_plan_exercises.length // Defines The Bar Width
+
+    const renderBar = ({ item, getIndex, drag, isActive }:RenderItemParams<TrainingPlanExercise>) => {
+        const index = getIndex()
+        
+        return (
+            <ScaleDecorator>
+                <Pressable
+                    className={index === active_exercise_index ? "bar active" : "bar"} // Adds Active Class For Bar Of Active Training Plan
+                    onLongPress={drag}
+                    onPress={() => changeExercises(index as number)} // Changes Training Plans
+                    disabled={isActive}
+
+                    hitSlop={{
+                        top: 20,
+                        right: 10,
+                        bottom: 20,
+                        left: 10,
+                    }}
+
+                    style={{
+                        justifyContent: "center",
+                        width: Math.max(bar_width, 10),
+                        paddingVertical: 15,
+                    }}
+                >
+                    <View
+                        style={[
+                            styles.bar,
+                            { width: "100%" },
+
+                            index === active_exercise_index ? { 
+                                backgroundColor: BLUE_COLOR,
+                                shadowColor: BLUE_COLOR,
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 1,
+                                shadowRadius: 10,
+                                elevation: 5,
+                            } : {}
+                        ]}
+                    />
+                </Pressable>
+            </ScaleDecorator>
+        )
+    }
+
+    // Function For Change Exercises In The Training Plan
+    const changeExercises = (new_index:number, max_index?:number):void => {
+        // Swipe
+        if(max_index !== undefined) {
+            if(new_index >= 0 && new_index <= max_index) onActiveExerciseIndexUpdate(new_index) // Sets The Active Exercise Index
+            else if(new_index > max_index) onActiveExerciseIndexUpdate(0) // Sets The Active Exercise Index
+            else if(new_index < 0) onActiveExerciseIndexUpdate(max_index) // Sets The Active Exercise Index
+        } 
+    
+        // Click
+        else onActiveExerciseIndexUpdate(new_index) // Sets The Active Exercise Index
+    }
+
+    // Creates The Swipe Gesture
+    const swipe_gesture = useMemo(() => {
+        const max_index:number = training_plan_exercises.length - 1 // Gets The Max Index
+
+        return Gesture.Pan()
+            .runOnJS(true)
+            .onEnd((event) => {
+                if(event.translationX < -50) changeExercises(active_exercise_index + 1, max_index) // Shows The Next Post Media
+                else if(event.translationX > 50) changeExercises(active_exercise_index - 1, max_index) // Shows The Previous Post Media
+            })
+    }, [active_exercise_index, training_plan_exercises.length])
+
+    // Function For Handle The Title Change
+    const handleTitleChange = (new_title:string):void => {
+        setTrainingPlanTitle(new_title) // Sets The Training Plan Title
+
+        // Gets The Active Training Plan IDs
+        const active_ids:Set<number> = new Set(
+            training_plan_exercises.map((active_exercise:TrainingPlanExercise) => active_exercise.id)
+        )
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(active_ids.has(one_exercise.id)) {
+                return {
+                    ...one_exercise,
+                    type: new_title // Updates The Title
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change Training Plan Day
+    const changeTrainingPlanDay = (new_day:Day|null):void => {
+        if(training_plan_exercises.length === 0) {
+            onSetActiveTrainingPlanDay(new_day) // Sets The Active Training Plan Day
+            return
+        }
+
+        // Gets The Active Training Plan IDs
+        const active_ids:Set<number> = new Set(
+            training_plan_exercises.map((active_exercise:TrainingPlanExercise) => active_exercise.id)
+        )
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(active_ids.has(one_exercise.id)) {
+                return {
+                    ...one_exercise,
+                    day: new_day // Updates The Day
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change The Exercise Title
+    const changeExerciseTitle = (exercise:TrainingPlanExercise, new_title:string):void => {
+        if(new_title.length > 50) return // Do Nothing
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                return {
+                    ...one_exercise,
+                    exercise: new_title
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function Add Period To The Exercise
+    const addPeriod = (exercise:TrainingPlanExercise):void => {
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                return {
+                    ...one_exercise,
+                    periods: [...one_exercise.periods, 0] // Adds New Period To The Exercise In The Training Plan
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change The Reps Value
+    const changeReps = (exercise:TrainingPlanExercise, period_index:number, operation:"decrease"|"increase"):void => {
+        let reps_number:number = compressConsecutiveNumbers(exercise.periods)[period_index] // Gets Current Reps Amount
+
+        if(operation === "decrease") reps_number -= 1 // Decreases Reps Amount By 1
+        if(operation === "increase") reps_number += 1 // Increases Reps Amount By 1
+
+        if(reps_number < 0) return // Do Nothing
+
+        else {
+            if(exercise.unit === "reps" && reps_number > 100) return // Do Nothing
+            if(exercise.unit === "seconds" && reps_number > 3600) return // Do Nothing
+            if(exercise.unit === "steps" && reps_number > 1000) return // Do Nothing
+        }
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+                
+                const end_index:number = start_index + counts[period_index] // Gets The Period End Index
+
+                return {
+                    ...one_exercise,
+
+                    // Updates Exercise Reps Amount
+                    periods: one_exercise.periods.map((one_period:number, index:number) => 
+                        (index >= start_index && index < end_index) ? reps_number : one_period
+                    )
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change The Reps Value Via Text Input
+    const changeRepsWithInput = (exercise:TrainingPlanExercise, period_index:number, new_value:string):void => {
+        const clean_value:string = new_value.replace(/[^0-9]/g, "") // Cleans The New Entered Value
+        const reps_number:number = clean_value === "" ? 0 : parseInt(clean_value, 10) // Gets Current Reps Amount
+
+        if(reps_number > 100) return // Do Nothing
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+                
+                const end_index:number = start_index + counts[period_index] // Gets The Period End Index
+
+                return {
+                    ...one_exercise,
+
+                    // Updates Exercise Reps Amount
+                    periods: one_exercise.periods.map((one_period:number, index:number) => 
+                        (index >= start_index && index < end_index) ? reps_number : one_period
+                    )
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change The Sets Value
+    const changeSets = (exercise: TrainingPlanExercise, period_index: number, operation: "decrease" | "increase"): void => {
+        let sets_number:number = getConsecutiveNumbersCount(exercise.periods)[period_index] // Gets Current Sets Amount
+        const reps_number:number = compressConsecutiveNumbers(exercise.periods)[period_index] // Gets Current Reps Amount
+
+        if(operation === "decrease") sets_number -= 1 // Decreases Sets Amount By 1
+        if(operation === "increase") sets_number += 1 // Increases Sets Amount By 1
+
+        if(sets_number < 0 || sets_number > 100) return // Do Nothing
+        if(sets_number === 0 && exercise.periods.length === 1) return // Do Nothing
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+
+                const updated_periods:number[] = [...one_exercise.periods] // Gets The Updated Periods
+
+                if(operation === "increase") updated_periods.splice(start_index, 0, reps_number) // Updates Exercise Sets Amount
+                else if(operation === "decrease") updated_periods.splice(start_index, 1) // Updates Exercise Sets Amount Or Deletes The Period
+
+                return {
+                    ...one_exercise,
+                    periods: updated_periods
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Change The Sets Value Via Text Input
+    const changeSetsWithInput = (exercise:TrainingPlanExercise, period_index:number, new_value:string):void => {
+        const clean_value:string = new_value.replace(/[^0-9]/g, "") // Cleans The New Entered Value
+        const sets_number:number = clean_value === "" ? 1 : parseInt(clean_value, 10) // Gets Current Sets Amount
+
+        if(sets_number < 1 || sets_number > 100) return // Do Nothing
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === exercise.id) {
+                const counts:number[] = getConsecutiveNumbersCount(one_exercise.periods) // Counts Consecutive Numbers
+                const reps_number:number = compressConsecutiveNumbers(one_exercise.periods)[period_index] // Gets Current Reps Amount
+
+                let start_index:number = 0 // Stores The Period Start Index
+
+                // Updates The Period Start Index
+                for(let i = 0; i < period_index; i++) {
+                    start_index += counts[i]
+                }
+                
+                const current_sets_amount: number = counts[period_index] // Gets The Current Sets Amount
+            
+                const updated_periods:number[] = [...one_exercise.periods] // Gets The Updated Periods
+
+                updated_periods.splice(
+                    start_index, 
+                    current_sets_amount, 
+                    ...Array(sets_number).fill(reps_number)
+                )
+
+                return {
+                    ...one_exercise,
+                    periods: updated_periods
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Changing Warm Up Time
+    const changeWarmUpTime = (warm_up:TrainingPlanExercise, operation:"subtract"|"add"):void => {
+        let elapsed_seconds:number = warm_up.periods[0] // Gets Elapsed Seconds From Timer Value
+
+        if(elapsed_seconds <= 30 && operation === "subtract") return // Stop Subtracting When On Timer Is 30 Seconds
+        if(elapsed_seconds === 3600 && operation === "add") return // Stop Adding When On Timer Is 1 Hour
+
+        if(operation === "subtract") elapsed_seconds -= 30 // Subtracts 30 Seconds
+        if(operation === "add") elapsed_seconds += 30 // Adds 30 Seconds
+
+        // Stores The New State Of Updated Training Plans Exercises
+        const updated_training_plan_exercises:TrainingPlanExercise[] = training_plan_exercises.map((one_exercise:TrainingPlanExercise) => {
+            if(one_exercise.id === warm_up.id) {
+                return {
+                    ...one_exercise,
+                    periods: warm_up.periods = [elapsed_seconds] // Sets New Timer Value
+                }
+            }
+
+            return one_exercise // Returns The Unchanged Exercise
+        })
+
+        onTrainingPlanExercisesUpdate(updated_training_plan_exercises) // Sets The Training Plans Exercises
+    }
+
+    // Function For Save The Training Plan
+    const saveTrainingPlan = async ():Promise<void> => {
+        if(!training_plan_title.trim()) {
+            Alert.alert("Chyba", "Pridajte názov pre tréningový plán.") // Shows The Alert
+            return
+        }
+
+        if(training_plan_exercises.length === 0) {
+            Alert.alert("Chyba", "Pridajte aspoň nejaký cvik pre tréningový plán.") // Shows The Alert
+            return
+        }
+
+        // Checks For Empty Exercise Title Inputs In Custom Exercises In The Training Plan
+        const custom_exercises_without_name:TrainingPlanExercise[] = [...training_plan_exercises].filter((one_exercise:TrainingPlanExercise) => one_exercise.exercise.trim() === "") // Gets The Custom Exercises Without Name
+
+        if(custom_exercises_without_name.length > 0) {
+            const first_custom_exercise_without_name_index:number = [...training_plan_exercises].indexOf(custom_exercises_without_name[0]) // Gets Index Of The First Custom Exercise Without Filled Title Input
+            changeExercises(first_custom_exercise_without_name_index) // Shows The Exercise Of The First Custom Exercise Without Filled Title Input Index
+        }
+
+        // Only Saves If Everything Required Is Filled
+        if(training_plan_title.trim() && training_plan_exercises.length > 0 && custom_exercises_without_name.length === 0) {
+            const training_plan_key:string = generateKey(50) // Gets Random 50 Characters Long Generated Key
+
+            // Stores All New Saved Training Plan Data
+            const training_plan_data:{
+                previous_training_plan_key:null,
+                training_plan_key:string,
+                action:string,
+                day:number|null,
+                type:string,
+                exercise:string,
+                periods:number[],
+                unit:string,
+                order:number,
+                is_warm_up:boolean,
+                is_custom_exercise:boolean
+            }[] = []
+
+            // Gets Info From Every Exercise
+            training_plan_exercises.forEach(function(one_exercise:TrainingPlanExercise, index:number) {
+                // Creates And Fills Data For Object Of One Exercise For Saved Training Plan
+                const training_plan_object:{
+                    previous_training_plan_key:null,
+                    training_plan_key:string,
+                    action:string,
+                    day:number|null,
+                    type:string,
+                    exercise:string,
+                    periods:number[],
+                    unit:string,
+                    order:number,
+                    is_warm_up:boolean,
+                    is_custom_exercise:boolean
+                } = {
+                    previous_training_plan_key: null,
+                    training_plan_key: training_plan_key,
+                    action: "new_training_plan",
+                    day: one_exercise.day === null ? active_training_plan_day : one_exercise.day,
+                    type: one_exercise.type,
+                    exercise: one_exercise.exercise,
+                    periods: one_exercise.periods,
+                    unit: one_exercise.unit,
+                    order: index + 1,
+                    is_warm_up: one_exercise.is_warm_up,
+                    is_custom_exercise: one_exercise.is_custom_exercise
+                }
+
+                training_plan_data.push(training_plan_object) // Fills Training Plan Data Array With Objects Of Exercises
+            })
+
+            try {
+                if(!logged_in_user) {
+                    Alert.alert("Chyba", "Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.") // Shows The Alert
+                    return
+                }
+
+                const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+                // Sends The POST Request To The Server
+                const manage_training_plan_response:Response = await fetch(`${API_URL}/manage-training-plan/`, {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json",
+                        "Authorization": `Bearer ${user_token}`
+                    },
+
+                    body: JSON.stringify(training_plan_data)
+                })
+
+                // If The Response Isn't Success
+                if(!manage_training_plan_response.ok) {
+                    Alert.alert("Chyba", "Pri vykonávaní zmien v tréningovom pláne došlo k chybe.") // Shows The Alert
+                    return
+                }
+
+                const manage_training_plan_data:BasicResponse = await manage_training_plan_response.json() // Gets The Loaded Training Plans Data
+
+                // If The Response Isn't Success
+                if(!manage_training_plan_data.success) {
+                    Alert.alert("Chyba", manage_training_plan_data.message) // Shows The Alert
+                    return
+                }
+
+                console.log(manage_training_plan_data)
+
+                scheduleNotification(10) // Schedules The Notification (After 10 Seconds)
+            }
+
+            catch {
+                Alert.alert("Chyba", "Pri vykonávaní zmien v tréningovom pláne došlo k chybe.") // Shows The Alert
+            }
+        }
+    }
+
     return (
         <View className="new_training_plan" style={styles.new_training_plan}>
             <View className="additional_info" style={styles.additional_info}>
@@ -73,8 +717,8 @@ export default function NewTrainingPlan() {
                     placeholder="Názov" 
                     placeholderTextColor={LIGHT_BLUE_COLOR}
                     accessibilityLabel="Názov" 
-                    // value={title}
-                    // onChangeText={setTitle}
+                    value={training_plan_title}
+                    onChangeText={handleTitleChange}
                     maxLength={50}
 
                     style={[
@@ -83,154 +727,311 @@ export default function NewTrainingPlan() {
                     ]}
                 />
 
-                <View className="day_select_menu" style={styles.day_select_menu}>
-                    <View className="select" style={styles.select}>
-                        <Text>Nepriradiť deň</Text>
+                <DaySelectMenu 
+                    used_days={[]}
+                    onDayUpdate={(selected_day) => changeTrainingPlanDay(selected_day)} // Changes The Training Plan Day
+                    day={training_plan_exercises.length > 0 ? training_plan_exercises[0].day : active_training_plan_day}
+                />
+            </View>
 
-                        <Icon
-                            icon_name="angle-down"
-                            // onPress={}
-                            size={20}
+            <GestureDetector gesture={swipe_gesture}>
+                <View 
+                    className="training_plan" 
+                    onLayout={(event) => {onSetDropZone(event.nativeEvent.layout)}}
+                    style={styles.training_plan}
+                >
+                    <Animated.View 
+                        style={{ 
+                            transform: [{ translateX }],
+                            flex: 1,
+                        }}
+                    >
+                        {training_plan_slide === "drop_zone" && (
+                            <View className="drop_zone active" style={styles.drop_zone}>
+                                <FontAwesome6
+                                    name="compress"
+                                    size={40}
+                                    color={BLUE_COLOR}
+                                />
+                            </View>
+                        )}
+
+                        {training_plan_slide === "exercise" && active_exercise && (
+                            <>
+                                {/* Creates Warm Up */}
+                                {active_exercise.is_warm_up && (
+                                    <View className="exercise warm_up" style={styles.warm_up}>
+                                        <Text 
+                                            className="title" 
+
+                                            style={{ 
+                                                color: SECONDARY_COLOR,
+                                                fontSize: 30,
+                                            }}
+                                        >
+                                            Warm Up
+                                        </Text>
+
+                                        <View className="timer_container" style={styles.timer_container}>
+                                            <View className="subtract_time">
+                                                <IconButton 
+                                                    icon_name="minus" 
+                                                    onPress={() => changeWarmUpTime(active_exercise, "subtract")}
+                                                />
+                                            </View>
+
+                                            <View className="timer" style={styles.warm_up_timer}>
+                                                <Svg width="100" height="100" viewBox="0 0 100 100">
+                                                    <Circle
+                                                        cx="50"
+                                                        cy="50"
+                                                        r={40}
+                                                        fill="transparent"
+                                                        stroke={BLUE_COLOR}
+                                                        strokeWidth="3"
+                                                    />
+                                                </Svg>
+
+                                                <Text className="countdown" style={styles.warm_up_timer_text}>{`${getFormattedTime("minutes", active_exercise.periods[0])}:${getFormattedTime("seconds", active_exercise.periods[0], true)}`}</Text> {/* Stores Timer Of Warm Up */}
+                                            </View>
+
+                                            <View className="add_time">
+                                                <IconButton 
+                                                    icon_name="plus" 
+                                                    onPress={() => changeWarmUpTime(active_exercise, "add")}
+                                                />
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Creates Exercise */}
+                                {!active_exercise.is_warm_up && (
+                                    <GestureDetector gesture={initializeDragGesture(active_exercise)}>
+                                        <ReAnimated.View 
+                                            className="exercise" 
+
+                                            style={[
+                                                animated_exercise,
+                                                styles.exercise,
+                                            ]}
+                                        >
+                                            {active_exercise.is_custom_exercise ? (
+                                                // Sets Exercise Title
+                                                <TextInput 
+                                                    className="title" 
+                                                    keyboardType="default"
+                                                    textAlignVertical="top"
+                                                    placeholder="Názov cviku" 
+                                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                                    accessibilityLabel="Názov cviku" 
+                                                    value={active_exercise.exercise}
+                                                    onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
+                                                    maxLength={50}
+
+                                                    style={[{
+                                                        maxWidth: 350,
+                                                        textAlign: "center",
+                                                        color: SECONDARY_COLOR,
+                                                        fontSize: 30,
+                                                        outlineStyle: "none" as any
+                                                    }]}
+                                                /> 
+                                            ) : (
+                                                // Sets Exercise Title
+                                                <Text 
+                                                    className="title" 
+
+                                                    style={{
+                                                        maxWidth: 350,
+                                                        textAlign: "center",
+                                                        color: SECONDARY_COLOR,
+                                                        fontSize: 30,
+                                                    }}
+                                                >
+                                                    {active_exercise.exercise}
+                                                </Text> 
+                                            )}
+
+                                            <View className="labels" style={styles.labels}>
+                                                <Text className="unit_amount" style={styles.label}>
+                                                    {active_exercise.unit === "reps" && ("Počet opakovaní")}
+                                                    {active_exercise.unit === "seconds" && ("Počet sekúnd")}
+                                                    {active_exercise.unit === "steps" && ("Počet krokov")}
+                                                </Text>
+
+                                                <Text style={styles.label}>Série</Text>
+                                            </View>
+
+                                            <Pressable 
+                                                className="add_period"
+                                                onPress={() => addPeriod(active_exercise)}
+                                                accessibilityLabel="Pridať sériu"
+                                                style={styles.add_period}
+                                            >
+                                                <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>
+                                            </Pressable>
+
+                                            <View className="periods_container" style={styles.periods_container}>
+                                                {getConsecutiveNumbersCount(active_exercise.periods).map((one_unit:number, index:number) => (
+                                                    <View className="period_selection" style={styles.period_selection}>
+                                                        <View className="reps_container" style={styles.reps_container}>
+                                                            <View className="decrease_reps">
+                                                                <Icon 
+                                                                    icon_name="minus"
+                                                                    onPress={() => changeReps(active_exercise, index, "decrease")}
+                                                                    size={20}
+                                                                />
+                                                            </View>
+
+                                                            {/* Shows To Failure Text */}
+                                                            {compressConsecutiveNumbers(active_exercise.periods)[index] === 0 ? (
+                                                                <Text 
+                                                                    className="to_failure" 
+
+                                                                    style={[
+                                                                        styles.to_failure,
+                                                                        { color: SECONDARY_COLOR }
+                                                                    ]}
+                                                                >
+                                                                    Do zlyhania
+                                                                </Text>
+                                                            ) : (
+                                                                <>
+                                                                    {/* Checks Exercise Unit Type */}
+                                                                    {(active_exercise.unit === "reps" || active_exercise.unit === "steps") && (
+                                                                        <TextInput
+                                                                            className="reps"
+                                                                            keyboardType="number-pad"
+                                                                            textAlignVertical="top" 
+                                                                            value={String(compressConsecutiveNumbers(active_exercise.periods)[index])}
+                                                                            onChangeText={(text:string) => changeRepsWithInput(active_exercise, index, text)}
+                                                                            maxLength={4}
+
+                                                                            style={[
+                                                                                styles.reps,
+                                                                                { outlineStyle: "none" } as any
+                                                                            ]}
+                                                                        />
+                                                                    )}
+
+                                                                    {active_exercise.unit === "seconds" && (
+                                                                        <Text 
+                                                                            className="time" 
+
+                                                                            style={[
+                                                                                styles.time,
+                                                                                { color: SECONDARY_COLOR }
+                                                                            ]}
+                                                                        >
+                                                                            {compressConsecutiveNumbers(active_exercise.periods)[index] ? getMinimalistFormattedTime(compressConsecutiveNumbers(active_exercise.periods)[index] as number).trim() : "0s"}
+                                                                        </Text>
+                                                                    )}
+                                                                </>
+                                                            )}
+
+                                                            <View className="increase_reps">
+                                                                <Icon 
+                                                                    icon_name="plus"
+                                                                    onPress={() => changeReps(active_exercise, index, "increase")}
+                                                                    size={20}
+                                                                />
+                                                            </View>
+                                                        </View>
+
+                                                        <View className="sets_container" style={styles.sets_container}>
+                                                            <View className="decrease_sets">
+                                                                <Icon 
+                                                                    icon_name="minus"
+                                                                    onPress={() => changeSets(active_exercise, index, "decrease")}
+                                                                    size={20}
+                                                                />
+                                                            </View>
+
+                                                            <TextInput
+                                                                className="sets"
+                                                                keyboardType="number-pad"
+                                                                textAlignVertical="top" 
+                                                                value={String(one_unit)}
+                                                                onChangeText={(text:string) => changeSetsWithInput(active_exercise, index, text)}
+                                                                maxLength={4}
+
+                                                                style={[
+                                                                    styles.sets,
+                                                                    { outlineStyle: "none" } as any
+                                                                ]}
+                                                            />
+
+                                                            <View className="increase_sets">
+                                                                <Icon 
+                                                                    icon_name="plus"
+                                                                    onPress={() => changeSets(active_exercise, index, "increase")}
+                                                                    size={20}
+                                                                />
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        </ReAnimated.View>
+                                    </GestureDetector>
+                                )}
+                            </>
+                        )}
+                    </Animated.View>
+
+                    <View className="bar_container" style={{ width: "100%" }}>
+                        <DraggableFlatList
+                            horizontal
+                            data={training_plan_exercises}
+                            keyExtractor={(one_exercise) => String(one_exercise.id)}
+                            renderItem={renderBar}
+                            activationDistance={5}
+
+                            contentContainerStyle={[
+                                styles.bar_container,
+
+                                {
+                                    justifyContent: "center",
+                                    flexGrow: 1,
+                                    gap: 10,
+                                },
+                            ]}
+
+                            onDragEnd={({ data, from, to }) => {
+                                if(from === to) return
+                            
+                                const dragged_exercise:TrainingPlanExercise = training_plan_exercises[from]
+                                const dropped_exercise:TrainingPlanExercise = training_plan_exercises[to]
+
+                                if (
+                                    dragged_exercise.exercise === "Warm Up" ||
+                                    dropped_exercise.exercise === "Warm Up"
+                                ) {
+                                    return
+                                }
+
+                                console.log(dragged_exercise)
+                                console.log(dropped_exercise)
+
+                                console.log(data)
+                            
+                                // Gets The Updated Exercises
+                                const updated_exercises:TrainingPlanExercise[] = data.map((one_exercise:TrainingPlanExercise, index:number) => ({
+                                    ...one_exercise,
+                                    order: index + 1
+                                }))
+                            
+                                onTrainingPlanExercisesUpdate(updated_exercises) // Sets The Training Plan Exercises
+                            }}
                         />
                     </View>
-
-                    <View className="options_list" style={styles.options_list}>
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay("not_selected"}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Nepriradiť deň</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(1}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="eye"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Pondelok</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(2}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Utorok</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(3}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Streda</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(4}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Štvrtok</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(5}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Piatok</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(6}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Sobota</Text>
-                        </Pressable>
-
-                        <Pressable 
-                            className="option"
-                            // onPress={() => setDay(0}
-                            style={styles.option}
-                        >
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={LIGHT_BLUE_COLOR}
-                                style={{marginRight: 8.5}}
-                            />
-
-                            <Text style={{ color: SECONDARY_COLOR }}>Nedeľa</Text>
-                        </Pressable>
-                    </View>
                 </View>
-            </View>
-
-            <View className="training_plan" style={styles.training_plan}>
-                <View className="drop_zone active" style={styles.drop_zone}>
-                    <FontAwesome6
-                        name="compress"
-                        size={40}
-                        color={BLUE_COLOR}
-                    />
-                </View>
-            </View>
+            </GestureDetector>
 
             <Pressable
                 className="save"
-                // onPress={}
+                onPress={saveTrainingPlan}
                 accessibilityLabel="Pridať tréningový plán"
                 style={styles.save}
             >
@@ -263,9 +1064,12 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        // width: "100%",
+        width: "100%",
         height: 50,
+        // flex: 1 1 0px; 
         flex: 1,
+        minWidth: 0,
+        maxWidth: "50%",
         // max-width: calc(50% - 10px);
         paddingHorizontal: 10,
         color: SECONDARY_COLOR,
@@ -282,92 +1086,19 @@ const styles = StyleSheet.create({
         // }
     },
 
-    day_select_menu: {
-        position: "relative",
-        cursor: "pointer",
-        flex: 1,
-    },
-
-    select: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 5,
-        width: "100%",
-        height: 50,
-        paddingHorizontal: 8.5,
-        color: LIGHT_BLUE_COLOR,
-        borderBottomWidth: 1,
-        borderBottomColor: transparentize(BLUE_COLOR, 0.5),
-        // transition: border 0.3s ease, box-shadow 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &:has(.fa-angle-down:hover),
-        // &:has(.fa-angle-up:hover) {
-        //     border-color: $blue-color !important;
-        // }
-
-        // span {
-        //     @include crop_text;
-        // }
-    },
-
-    options_list: {
-        // @include scrollbar;
-        // interpolate-size: allow-keywords;
-        position: "absolute",
-        flex: 1,
-        width: "100%",
-        minWidth: 0,
-        height: 0,
-        marginTop: 10,
-        color: SECONDARY_COLOR,
-        backgroundColor: transparentize(MAIN_COLOR, 0.2),
-        borderRadius: SMALL_BORDER_RADIUS,
-        // overflow-y: $scrollbar;
-        // transition: height 0.3s ease;
-        zIndex: 500,
-
-        // &::-webkit-scrollbar {
-        //     width: 3px;
-        // }
-
-        // &.active {
-            // height: 33 * 4,
-        // }
-    },
-
-    option: {
-        // @include crop_text;
-        paddingVertical: 5,
-        paddingHorizontal: 8.5,
-        // transition: background-color 0.3s ease, color 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &.selected {
-        //     background-color: transparentize($blue-color, 0.9);
-        //     color: $light-blue-color;
-        // }
-
-        // &:focus-visible {
-        //     outline: none !important;
-        // }
-    },
-
     training_plan: {
         // @include animated_border;
         position: "relative",
         width: "100%",
-        height: 350,
+        // height: 250,
+        height: 500,
         borderRadius: MEDIUM_BORDER_RADIUS,
-        shadowColor: BLUE_COLOR,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 10,
-        // overflow: hidden;
+        // shadowColor: BLUE_COLOR,
+        // shadowOffset: { width: 0, height: 10 },
+        // shadowOpacity: 0.2,
+        // shadowRadius: 30,
+        // elevation: 10,
+        overflow: "hidden",
 
         // &.animate {
         //     animation: trainingPlanDrag 1s infinite alternate;
@@ -406,21 +1137,12 @@ const styles = StyleSheet.create({
 
     exercise: {
         alignItems: "center",
-        justifyContent: "flex-start",
-        gap: 10,
+        justifyContent: "space-between",
         width: "100%",
         height: "100%",
-        paddingVertical: 20,
-        paddingHorizontal: 50,
-        cursor: "move",
+        paddingVertical: 50,
+        paddingHorizontal: 10,
         zIndex: 100,
-        // transition: transform 0.5s ease;
-
-        // &:not(.active) {
-        //     position: absolute;
-        //     top: 0px;
-        //     transform: translateX(100%);
-        // }
     },
 
     title_input: {
@@ -512,12 +1234,29 @@ const styles = StyleSheet.create({
         color: LIGHT_BLUE_COLOR,
     },
 
-    // .add_period {
-    //     @include blue_button($width: 100%);
-    //     height: 40px;
-    //     margin-bottom: 10px;
-    //     flex-shrink: 0;
-    // }
+    add_period: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: "90%",
+        height: 40,
+        marginBottom: 10,
+        paddingHorizontal: 10,
+        textAlign: "center",
+        color: SECONDARY_COLOR,
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: BIG_BORDER_RADIUS,
+        // transition: border-color 0.3s ease, transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+    
+        // &:hover,
+        // &:focus-visible {
+        //     border-color: $blue-color;
+        //     box-shadow: 0 6px 20px transparentize($blue-color, 0.65);
+        //     transform: scale(1.05);
+        //     letter-spacing: 0.5px;
+        //     cursor: pointer;
+        // }
+    },
 
     periods_container: {
         // @include scrollbar;
@@ -537,7 +1276,11 @@ const styles = StyleSheet.create({
     reps_container: {
         position: "relative",
         flexDirection: "row",
-        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        // width: "100%",
+        flex: 1,
+        paddingHorizontal: 10,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: BIG_BORDER_RADIUS,
@@ -551,7 +1294,11 @@ const styles = StyleSheet.create({
 
     sets_container: {
         flexDirection: "row",
-        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        // width: "100%",
+        flex: 1,
+        paddingHorizontal: 10,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: BIG_BORDER_RADIUS,
@@ -564,7 +1311,7 @@ const styles = StyleSheet.create({
     },
 
     reps: {
-        visibility: "hidden",
+        // visibility: "hidden",
         // width: calc(100% - 30px - 30px);
         width: "100%",
         height: 40,
@@ -581,42 +1328,54 @@ const styles = StyleSheet.create({
     },
 
     to_failure: {
-        position: "absolute",
-        top: 0,
-        left: 0,
-
-        transform: [
-            { translateX: "-100%" },
-            { translateY: "-50%" }
-        ],
-
-        // width: calc(100% - 30px - 30px);
         width: "100%",
-        height: "100%",
+        height: 40,
         lineHeight: 40,
         textAlign: "center",
-        // text-overflow: ellipsis;
-        // overflow: hidden;
+        color: SECONDARY_COLOR,
+
+        // position: "absolute",
+        // top: 0,
+        // left: 0,
+
+        // transform: [
+        //     { translateX: "-100%" },
+        //     { translateY: "-50%" }
+        // ],
+
+        // // width: calc(100% - 30px - 30px);
+        // width: "100%",
+        // height: "100%",
+        // lineHeight: 40,
+        // textAlign: "center",
+        // // text-overflow: ellipsis;
+        // // overflow: hidden;
     },
 
     time: {
-        visibility: "hidden",
-        position: "absolute",
-        top: 0,
-        left: 0,
-
-        transform: [
-            { translateX: "-100%" },
-            { translateY: "-50%" }
-        ],
-
-        // width: calc(100% - 30px - 30px);
         width: "100%",
-        height: "100%",
+        height: 40,
         lineHeight: 40,
         textAlign: "center",
-        // text-overflow: ellipsis;
-        // overflow: hidden;
+        color: SECONDARY_COLOR,
+        
+        // visibility: "hidden",
+        // position: "absolute",
+        // top: 0,
+        // left: 0,
+
+        // transform: [
+        //     { translateX: "-100%" },
+        //     { translateY: "-50%" }
+        // ],
+
+        // // width: calc(100% - 30px - 30px);
+        // width: "100%",
+        // height: "100%",
+        // lineHeight: 40,
+        // textAlign: "center",
+        // // text-overflow: ellipsis;
+        // // overflow: hidden;
     },
 
     timer_container: {
@@ -626,6 +1385,34 @@ const styles = StyleSheet.create({
         width: "100%",
         marginTop: 29,
         paddingHorizontal: 40,
+    },
+
+    warm_up: {
+        // flexDirection: "row",
+        alignItems: "center",
+        // justifyContent: "space-between",
+        justifyContent: "flex-start",
+        flex: 1,
+        // width: "100%",
+        height: 200,
+        paddingTop: 10,
+        paddingHorizontal: 50,
+        // transition: transform 0.5s ease;
+        zIndex: 100,
+
+        // &:not(.active) {
+        //     position: absolute;
+        //     top: 0px;
+        //     transform: translateX(100%);
+
+        //     .left {
+        //         opacity: 0;
+        //     }
+        // }
+
+        // .title {
+        //     width: 50px;
+        // }
     },
 
     warm_up_timer: {
@@ -693,7 +1480,7 @@ const styles = StyleSheet.create({
 
     bar: {
         position: "relative",
-        flex: 1,
+        // flex: 1,
         height: 10,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),

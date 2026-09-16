@@ -24,7 +24,7 @@ import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormD
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
 import type { Day } from "./DaySelectMenu"
 
-type TrainingPlanSlide = "drop_zone"|"exercise" // Types The Training Plan Slide
+export type TrainingPlanSlide = "drop_zone"|"exercise" // Types The Training Plan Slide
 
 interface EditTrainingPlanProps {
     onTrainingPlansExercisesUpdate:(training_plans_exercises:TrainingPlanExercise[]) => void,
@@ -309,7 +309,7 @@ export default function EditTrainingPlan({
                                 <View className="drop_zone" style={styles.drop_zone}>
                                     <FontAwesome6
                                         name="compress"
-                                        size={20}
+                                        size={40}
                                         color={BLUE_COLOR}
                                     />
                                 </View>
@@ -666,8 +666,8 @@ export default function EditTrainingPlan({
     const total_gaps:number = (active_training_plan_exercises.length - 1) * 10 // Defines The Total Gaps
     const bar_width:number = (MAIN_WIDTH - 20 - total_gaps) / active_training_plan_exercises.length // Defines The Bar Width
 
-    const renderBar = ({ item, getIndex, drag, isActive }: RenderItemParams<TrainingPlanExercise>) => {
-        const index = getIndex();
+    const renderBar = ({ item, getIndex, drag, isActive }:RenderItemParams<TrainingPlanExercise>) => {
+        const index = getIndex()
         
         return (
             <ScaleDecorator>
@@ -1066,18 +1066,13 @@ export default function EditTrainingPlan({
             return
         }
 
-        const custom_exercises_without_name:TrainingPlanExercise[] = [] // TEST
+        // Checks For Empty Exercise Title Inputs In Custom Exercises In The Training Plan
+        const custom_exercises_without_name:TrainingPlanExercise[] = [...active_training_plan_exercises].filter((one_exercise:TrainingPlanExercise) => one_exercise.exercise.trim() === "") // Gets The Custom Exercises Without Name
 
-        // // Checks For Empty Exercise Title Inputs In Custom Exercises In The Training Plan
-        // const custom_exercises_without_name:HTMLDivElement[] = [...exercises].filter(function(one_exercise) {
-        //     return (one_exercise?.querySelector(".title_input") as HTMLInputElement)?.value?.trim() === ""
-        // })
-
-        // if(custom_exercises_without_name.length > 0) {
-        //     const first_custom_exercise_without_name_index:number = [...exercises].indexOf(custom_exercises_without_name[0] as HTMLDivElement) // Gets Index Of The First Custom Exercise Without Filled Title Input
-
-        //     changeExercises(first_custom_exercise_without_name_index, training_plan, state) // Shows The Exercise Of The First Custom Exercise Without Filled Title Input Index
-        // }
+        if(custom_exercises_without_name.length > 0) {
+            const first_custom_exercise_without_name_index:number = [...active_training_plan_exercises].indexOf(custom_exercises_without_name[0]) // Gets Index Of The First Custom Exercise Without Filled Title Input
+            changeExercises(first_custom_exercise_without_name_index) // Shows The Exercise Of The First Custom Exercise Without Filled Title Input Index
+        }
 
         // Only Saves If Everything Required Is Filled
         if(training_plan_title.trim() && active_training_plan_exercises.length > 0 && custom_exercises_without_name.length === 0) {
