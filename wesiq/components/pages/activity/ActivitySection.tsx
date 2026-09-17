@@ -14,11 +14,13 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
+import Svg, { Circle } from "react-native-svg"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 import type { Day } from "../manage_training_plans/DaySelectMenu"
+import { WarmUp } from "./WarmUp"
 
 export interface TrainingPlanExercise {
     id:number,
@@ -475,54 +477,18 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
                                 <View className="finish_training_button">
                                     <IconButton 
-                                        icon_name="stop" 
+                                        icon_name="stop"
                                         onPress={stopTrainingPlanActivity}
                                     />
                                 </View>
                             </View>
                         )}
 
-                        {training_plan_slide === "break" && (
-                            <Break time={180} skipBreak={skipBreak} />
-                        )}
+                        {training_plan_slide === "break" && (<Break time={180} skipBreak={skipBreak} />)}
 
                         {training_plan_slide === "exercise" && active_exercise && (
                             <>
-                                {/* Creates Warm Up */}
-                                {active_exercise.is_warm_up && (
-                                    <View className="exercise warm_up" style={styles.warm_up}>
-                                        <Text className="title">Warm Up</Text>
-
-                                        <View className="warm_up_timer" style={styles.warm_up_timer}>
-                                            {/* <svg width="100" height="100" viewBox="0 0 100 100">
-                                                <circle
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="40"
-                                                    class="progress"
-                                                />
-                                            </svg>
-                                            
-                                            <svg width="100" height="100" viewBox="0 0 100 100">
-                                                <circle
-                                                    cx="50"
-                                                    cy="50"
-                                                    r="40"
-                                                    class="progress_background"
-                                                />
-                                            </svg> */}
-
-                                            <Text className="countdown" style={styles.warm_up_timer_text}>{`${getFormattedTime("minutes", active_exercise.periods[0])}:${getFormattedTime("seconds", active_exercise.periods[0], true)}`}</Text> {/* Stores Timer Of Warm Up */}
-                                        </View>
-
-                                        <View className="skip_warm_up_button">
-                                            <IconButton 
-                                                icon_name="angle-right" 
-                                                onPress={nextExercise}
-                                            />
-                                        </View>
-                                    </View>
-                                )}
+                                {active_exercise.is_warm_up && (<WarmUp time={active_exercise.periods[0]} skipWarmUp={nextExercise} />)} {/* Creates Warm Up */}
 
                                 {/* Creates Exercise */}
                                 {!active_exercise.is_warm_up && (
@@ -552,7 +518,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                                 {active_exercise.periods[current_set - 1] === 0 ? "Do zlyhania" : (
                                                     <>
                                                         {active_exercise.unit === "reps" && `${active_exercise.periods[current_set - 1]}x`}
-                                                        {active_exercise.unit === "seconds" && getMinimalistFormattedTime(active_exercise.periods[current_set - 1] || 0)}
+                                                        {active_exercise.unit === "seconds" && String(getMinimalistFormattedTime(active_exercise.periods[current_set - 1]).trim() || 0)}
                                                         {active_exercise.unit === "steps" && `${active_exercise.periods[current_set - 1]}`}
                                                     </>
                                                 )}
@@ -617,6 +583,17 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                 </View>
                             )
                         })}
+
+                        <Text style={styles.bar_label}>
+                            <FontAwesome6
+                                name="angles-right"
+                                size={15}
+                                color={transparentize(SECONDARY_COLOR, 0.5)}
+                            />
+
+                            {training_plan_slide === "start_training" && (` ${active_training_plan_exercises[0].exercise}`)}
+                            {(training_plan_slide === "exercise" || training_plan_slide === "break") && active_training_plan_exercises.length > active_exercise_index + 1 && (` ${active_training_plan_exercises[active_exercise_index + 1].exercise}`)}
+                        </Text>
                     </View>
 
                     <View className="current_activity_info" style={styles.current_activity_info}>
@@ -1035,7 +1012,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         }
 
         // Exercises Break Slide
-        if(current_set === sets_amount && active_exercise_index < active_training_plan_exercises.length - 1) {
+        if(current_set === sets_amount && active_exercise_index < active_training_plan_exercises.length - 1 && !active_exercise.is_warm_up) {
             animateSlideTransition("break", active_exercise_index) // Animates The Slide Transition To The Next Exercise
         }
 
@@ -1556,10 +1533,12 @@ const styles = StyleSheet.create({
     },
 
     warm_up: {
-        flexDirection: "row",
+        // flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        width: "100%",
+        // justifyContent: "space-between",
+        justifyContent: "flex-start",
+        flex: 1,
+        // width: "100%",
         height: 200,
         paddingTop: 10,
         paddingHorizontal: 50,
@@ -1654,7 +1633,7 @@ const styles = StyleSheet.create({
         pointerEvents: "none",
         position: "absolute",
         bottom: 15,
-        left: "50%",
+        width: "100%",
         textAlign: "center",
         fontSize: 15,
         lineHeight: 15,

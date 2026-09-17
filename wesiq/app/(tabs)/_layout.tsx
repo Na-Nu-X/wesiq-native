@@ -98,13 +98,13 @@ export default function RootLayout() {
         }}
       />
 
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="activity/edit"
 
         options={{
           href: null
         }}
-      /> */}
+      />
 
       <Tabs.Screen
         name="blog"

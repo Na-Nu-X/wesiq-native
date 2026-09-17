@@ -17,10 +17,11 @@ interface DynamicVideoProps {
     playing_video:number|null,
     setPlayingVideo:(id:number|null) => void,
     data_saving_mode:boolean,
-    is_volume_slider_sliding:RefObject<boolean>
+    is_volume_slider_sliding:RefObject<boolean>,
+    onVideoDurationLoad:(video_duration:number) => void
 }
 
-export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode, is_volume_slider_sliding }:DynamicVideoProps) => {
+export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayingVideo, data_saving_mode, is_volume_slider_sliding, onVideoDurationLoad }:DynamicVideoProps) => {
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
 
@@ -284,7 +285,12 @@ export const DynamicVideo = ({ one_post, one_post_media, playing_video, setPlayi
                             if(status.isLoaded) {
                                 setElapsedTime(status.positionMillis) // Sets The Elapsed Time
                                 setVolume(status.volume) // Sets The Volume
-                                if(status.durationMillis) setDuration(status.durationMillis) // Sets The Duration
+
+                                if(status.durationMillis) {
+                                    setDuration(status.durationMillis) // Sets The Duration
+                                    onVideoDurationLoad(status.durationMillis) // Sets The Duration
+                                }
+
                                 if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
                             }
                         }}
