@@ -405,8 +405,8 @@ export default function SearchUsers() {
             <View className="search_result_container" style={styles.search_result_container}>
                 {is_loading && (
                     <View className="loading" style={styles.loading}>
-                        <ActivityIndicator size="small" color={BLUE_COLOR} />
-                        <Text>Načítavam...</Text>
+                        <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                        {/* <Text>Načítavam...</Text> */}
                     </View>
                 )}
 

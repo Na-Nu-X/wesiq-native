@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch, ScrollView } from "react-native"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -22,6 +22,7 @@ import { DynamicVideo } from "./DynamicVideo"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { VideoMetrics } from "./VideoMetrics"
+import { BlurView } from "expo-blur"
 
 import type { Post, Media, comment } from "./Feed"
 import type { LoggedInUser } from "./LoginFormDialog"
@@ -71,14 +72,26 @@ interface PostContainerProps {
     posts:Post[],
     onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
     onShowPostProperties:(post:Post) => void,
-    onShowPostCommentProperties:(comment:comment) => void
+    onShowPostCommentProperties:(comment:comment) => void,
+    are_posts_loading:boolean
 }
 
-export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onShowPostProperties, onShowPostCommentProperties, onLoggedInUserUpdate }:PostContainerProps) => {
-    const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
-    const [post_comments_page, setPostCommentsPage] = useState(1) // Stores The Current Post Comments Page Number
-    const [has_next_post_comments, setHasNextPostComments] = useState(true) // Stores The Information If There Are More Post Comments Available
-    const [are_post_comments_loading, setArePostCommentsLoading] = useState(false) // Stores The Information If Post Comments Are Loading
+export const PostContainer = ({ 
+    post, 
+    logged_in_user, 
+    onPostsUpdate, 
+    posts, 
+    onShowPostProperties, 
+    onShowPostCommentProperties, 
+    onLoggedInUserUpdate, 
+    are_posts_loading 
+}:PostContainerProps) => {
+    // const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
+    const [post_comments_page, setPostCommentsPage] = useState<number>(1) // Stores The Current Post Comments Page Number
+    const [has_next_post_comments, setHasNextPostComments] = useState<boolean>(true) // Stores The Information If There Are More Post Comments Available
+    const [are_post_comments_loading, setArePostCommentsLoading] = useState<boolean>(false) // Stores The Information If Post Comments Are Loading
+    const [is_comment_forum_open, setIsCommentForumOpen] = useState<boolean>(false) // Stores The Information If The Comment Forum Is Open
+
     const [comment, setComment] = useState<string>("") // Stores The Written Comment
     const MAX_COMMENT_LENGTH:number = 100 // Sets The Maximum Comment Length
 
@@ -86,7 +99,7 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
     const [playing_video, setPlayingVideo] = useState<number|null>(null) // Stores The Current Playing Video ID
     const is_volume_slider_sliding = useRef<boolean>(false) // Stores The Information If The Volume Slider Is Sliding
 
-    const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
+    const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState<boolean>(false) // Stores The Information If The Emoji Picker Is Open
 
     const [particles, setParticles] = useState<Particle[]>([]) // Stores The Like Particles
 
@@ -102,7 +115,7 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The POST Request To The Server
-            const loaded_post_comments_response:Response = await fetch(`${API_URL}/get-post-comments/?post_id=${post_id}&page=${page}}`, {
+            const loaded_post_comments_response:Response = await fetch(`${API_URL}/get-post-comments/?post_id=${post_id}&page=${page}`, {
                 method: "GET",
 
                 headers: {
@@ -126,16 +139,41 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                 return
             }
 
-            if(is_refresh) setPostComments(loaded_post_comments_data.visible_comments || []) // Sets The Post Comments
+            if(is_refresh) {
+                // Stores The New State Of Updated Posts
+                const updated_posts:Post[] = posts.map((one_post:Post) => {
+                    if(one_post.id === post.id) {
+                        return {
+                            ...one_post,
+                            comments: loaded_post_comments_data.visible_comments || [] // Sets The Post Comments
+                        }
+                    }
+
+                    return one_post // Returns The Unchanged Post
+                })
+
+                onPostsUpdate(updated_posts) // Sets The Posts
+            }
             
             else {
-                // Sets The Post Comments
-                setPostComments(previous_post_comments => {
-                    const existing_posts_ids:Set<number> = new Set(previous_post_comments.map(post => post.id)) // Gets The Existing Post Comments IDs
-                    const new_post_comments:comment[] = (loaded_post_comments_data.visible_comments as comment[]).filter(post => !existing_posts_ids.has(post.id)) // Gets The New Unique Post Comments
-                
-                    return [...previous_post_comments, ...new_post_comments] // Returns The Combined Post Comments
+                // Stores The New State Of Updated Posts
+                const updated_posts:Post[] = posts.map((one_post:Post) => {
+                    if(one_post.id === post.id) {
+                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                        const incoming_post_comments:comment[] = (loaded_post_comments_data.visible_comments as comment[]) || [] // Gets The Incoming Post Comments
+                        const existing_post_comments_ids:Set<number> = new Set(previous_post_comments.map((one_comment:comment) => one_comment.id)) // Gets The Existing Post Comments IDs
+                        const new_post_comments:comment[] = incoming_post_comments.filter((one_comment:comment) => !existing_post_comments_ids.has(one_comment.id)) // Gets The New Unique Post Comments
+
+                        return {
+                            ...one_post,
+                            comments: is_refresh ? incoming_post_comments : [...previous_post_comments, ...new_post_comments] // Returns The Combined Post Comments
+                        }
+                    }
+
+                    return one_post // Returns The Unchanged Post
                 })
+
+                onPostsUpdate(updated_posts) // Sets The Posts
             }
     
             setHasNextPostComments(loaded_post_comments_data.has_next || false) // Sets The Has Next Post Comments
@@ -330,119 +368,6 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                 } */}
             </View>
         ))
-
-        //     const post_id:number = Number(post_container.dataset["post_id"]) // Gets The Post ID
-        //     const page:number = Number(all_comments.dataset["page"]) || 1 // Gets The Current Page Number
-        //     const show_more:HTMLButtonElement = all_comments.querySelector(".show_more") as HTMLButtonElement // Gets The Show More Button
-
-        //     try {
-        //         const params:URLSearchParams = new URLSearchParams({
-        //             page: String(page)
-        //         })
-
-        //         // Gets Full Loaded Posts Response
-        //         const full_loaded_post_comments_response:Response = await fetch(`/api/load-post-comments/${post_id}?${params.toString()}`, {
-        //             method: "GET",
-
-        //             headers: {
-        //                 "X-Requested-With": "XMLHttpRequest",
-        //             }
-        //         })
-
-        //         // If The Response Isn't Success
-        //         if(!full_loaded_post_comments_response.ok) {
-        //             displayMessage("Pri hľadaní komentárov došlo k chybe.", "error") // Displays The Error Message
-        //             return
-        //         }
-
-        //         const loaded_post_comments_response:loadedPostCommentsResponse = await full_loaded_post_comments_response.json() // Gets Loaded Posts Response
-
-        //         // If The Response Isn't Success
-        //         if(!loaded_post_comments_response.success) {
-        //             displayMessage(loaded_post_comments_response.message, "error") // Displays The Error Message
-        //             return
-        //         }
-
-        //         const all_comment_containers:NodeListOf<HTMLDivElement> = all_comments.querySelectorAll<HTMLDivElement>(".one_comment") // Gets All Post Containers
-
-        //         // Gets Only The Posts Data Of Posts Which Aren't Already Rendered
-        //         const no_already_rendered_post_comments_data:comment[] = loaded_post_comments_response.visible_comments.filter(function(one_loaded_post_comment:comment):boolean {
-        //             return (
-        //                 ![...all_comment_containers].some(function(one_comment_container:HTMLDivElement):boolean {
-        //                     return one_loaded_post_comment.id === Number(one_comment_container.dataset["comment_id"]) // If The Post ID Is Equal To Data In The Rendered Post In The DOM
-        //                 })
-        //             )
-        //         })
-
-        //         no_already_rendered_post_comments_data.forEach(function(one_comment:comment):void {
-        //             const data_saving_mode:boolean = post_container.dataset["data_saving_mode"] === "True" ? true : false // Gets The Value If The User Has Data Saving Mode Enabled
-        //             const MAX_LOADED_COMMENTS:number = data_saving_mode ? 3 : 10 // Gets The Maximum Amount Of Loaded Comments
-
-        //             if(all_comment_containers.length >= MAX_LOADED_COMMENTS && !show_more.classList.contains("hidden")) all_comments.insertBefore(createCommentHTML(feed, all_comments, one_comment, post_container, logged_in_user_id, logged_in_user_role), show_more) // Appends The Comment To The All Comments Container To The Bottom Position
-        //             else all_comments.prepend(createCommentHTML(feed, all_comments, one_comment, post_container, logged_in_user_id, logged_in_user_role)) // Appends The Comment To The All Comments Container To The Top Position
-        //         })
-
-        //         all_comments.dataset["has_next"] = String(loaded_post_comments_response.has_next || false) // Sets The Has More Comments
-
-        //         if(loaded_post_comments_response.has_next) {
-        //             show_more.classList.remove("hidden") // Shows The Show More Button
-        //             all_comments.dataset["page"] = String(Number(all_comments.dataset["page"]) + 1) // Increases And Updates The Stored Page
-        //         }
-
-        //         else show_more.classList.add("hidden") // Hides The Show More Button
-
-        //         // Comment Preview
-        //         const root_comments:comment[] = loaded_post_comments_response.visible_comments.filter(one_comment => one_comment.level === 1) // Gets Only Root Comments
-
-        //         if(root_comments.length > 0) {
-        //             const media:HTMLDivElement = post_container.querySelector(".media") as HTMLDivElement // Gets The Media Container
-        //             const random_comment:comment = root_comments[Math.floor(Math.random() * root_comments.length)] as comment // Gets The Random Comment
-
-        //             // Comment Preview
-        //             const comment_preview:HTMLDivElement = document.createElement("div") // Creates The Comment Preview Container
-        //             comment_preview.classList.add("comment_preview") // Adds The Comment Preview Class
-        //             media.appendChild(comment_preview) // Appends The Comment Preview To The Media Container
-
-        //             // Profile Picture
-        //             const profile_picture:HTMLImageElement = document.createElement("img") // Creates The Profile Picture Image
-        //             profile_picture.classList.add("profile_picture") // Adds The Profile Picture Class
-        //             profile_picture.src = random_comment.user.profile_picture_name ? `/../media/images/${random_comment.user.id}/${random_comment.user.profile_picture_name}` : "/../static/images/profile_picture.png" // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-        //             profile_picture.alt = ""
-        //             comment_preview.appendChild(profile_picture) // Appends The Profile Picture To The Comment Preview
-
-        //             // Username
-        //             const username:HTMLParagraphElement = document.createElement("p") // Creates The Username Paragraph
-        //             username.classList.add("username") // Adds The Username Class
-        //             username.textContent = random_comment.user.username // Adds The Username
-        //             comment_preview.appendChild(username) // Appends The Username To The Comment Preview
-
-        //             // Comment
-        //             const comment:HTMLParagraphElement = document.createElement("p") // Creates The Comment Paragraph
-        //             comment.classList.add("comment") // Adds The Username Class
-        //             comment.textContent = random_comment.comment // Adds The Comment
-        //             comment_preview.appendChild(comment) // Appends The Comment To The Comment Preview
-
-        //             // Likes
-        //             const likes:HTMLDivElement = document.createElement("div") // Creates The Likes Container
-        //             likes.classList.add("likes") // Adds The Likes Class
-        //             comment_preview.appendChild(likes) // Appends The Likes Container To The Comment Preview
-
-        //             // Like Icon
-        //             const like_icon:HTMLElement = document.createElement("i") // Creates The Like Icon
-        //             like_icon.classList.add("fa-heart")
-        //             logged_in_user_id && random_comment.likes_from_users.includes(logged_in_user_id) ? like_icon.classList.add("fa-solid") : like_icon.classList.add("fa-regular") // Shows The Empty Or Filled Heart Icon - https://fontawesome.com/icons/heart
-        //             likes.appendChild(like_icon) // Appends The Like Icon To The Likes
-
-        //             // Likes Counter
-        //             const likes_counter:HTMLParagraphElement = document.createElement("p") // Creates The Likes Counter
-        //             likes_counter.textContent = String(random_comment.likes) // Sets The Likes Counter
-        //             likes.appendChild(likes_counter) // Appends The Likes Counter To The Likes
-        //         }
-        //     }
-            
-        //     catch {
-        //         displayMessage("Pri hľadaní komentárov došlo k chybe.", "error") // Displays The Error Message
-        //     }
     }
 
     // Function For Toggle Post Like
@@ -538,16 +463,13 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
     }
 
     // Function For Toggle Show Comments
-    const toggleShowComments = (one_post:Post) => {
-        if(post_comments.length === 0) {
-            getPostComments(post_comments_page, false, one_post.id) // Gets The Post Comments
-            console.log("ZOBRAZ")
+    const toggleShowComments = (post:Post) => {
+        if(!is_comment_forum_open) {
+            setIsCommentForumOpen(true) // Sets The Information That The Comment Forum Is Open
+            getPostComments(post_comments_page, false, post.id) // Gets The Post Comments
         }
 
-        else {
-            setPostComments([]) // Sets The Post Comments
-            console.log("SKRY")
-        }
+        else setIsCommentForumOpen(false) // Sets The Information That The Comment Forum Isn't Open
     }
 
     // Function For Share The Post
@@ -678,23 +600,38 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
             }
             
             else {
-                // Sets The Post Comments
-                setPostComments(previous_post_comments => previous_post_comments.map((one_post_comment:comment) => {
-                    if(one_post_comment.id === comment_id) {
-                        const has_like:boolean = one_post_comment.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
-                        
-                        // Updates The Post Likes Amount And Stored Likes From Users
+                // Stores The New State Of Updated Posts
+                const updated_posts:Post[] = posts.map((one_post:Post) => {
+                    if(one_post.id === post.id) {
+                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+
                         return {
-                            ...one_post_comment,
-                            likes: has_like ? one_post_comment.likes - 1 : one_post_comment.likes + 1,
-                            likes_from_users: has_like 
-                                ? one_post_comment.likes_from_users.filter(id => id !== logged_in_user.id) 
-                                : [...one_post_comment.likes_from_users, logged_in_user.id]
+                            ...one_post,
+
+                            comments: previous_post_comments.map((one_post_comment:comment) => {
+                                if(one_post_comment.id === comment_id) {
+                                    const has_like:boolean = one_post_comment.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
+                                    
+                                    // Updates The Post Comment Likes Amount And Stored Likes From Users
+                                    return {
+                                        ...one_post_comment,
+
+                                        likes: has_like ? one_post_comment.likes - 1 : one_post_comment.likes + 1,
+                                        likes_from_users: has_like 
+                                            ? one_post_comment.likes_from_users.filter(id => id !== logged_in_user.id) 
+                                            : [...one_post_comment.likes_from_users, logged_in_user.id]
+                                    }
+                                }
+
+                                return one_post_comment // Returns The Unchanged Post Comment
+                            })
                         }
                     }
-                
-                    return one_post_comment // Returns The Unchanged Post Comment
-                }))
+
+                    return one_post // Returns The Unchanged Post
+                })
+
+                onPostsUpdate(updated_posts) // Sets The Posts
             }
         } 
         
@@ -769,11 +706,22 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                     level: added_post_comment_data.comment.level
                 }
 
-                // Sets The Post Comments
-                setPostComments(previous_post_comments => {
-                    return [...previous_post_comments, new_comment] // Returns The Combined Post Comments
+                // Stores The New State Of Updated Posts
+                const updated_posts:Post[] = posts.map((one_post:Post) => {
+                    if(one_post.id === post_id) {
+                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+
+                        return {
+                            ...one_post,
+                            comments: [...previous_post_comments, new_comment], // Returns The Combined Post Comments
+                            comments_amount: (one_post.comments_amount || 0) + 1 // Increases The Comments Amount
+                        }
+                    }
+
+                    return one_post // Returns The Unchanged Post
                 })
 
+                onPostsUpdate(updated_posts) // Sets The Posts
                 setComment("") // Sets The Comment
             }
         }
@@ -903,6 +851,37 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
             if(event.translationX < -50) changePostMedia(post.id, active_post_media_index + 1, max_active_post_media_index) // Shows The Next Post Media
             else if (event.translationX > 50) changePostMedia(post.id, active_post_media_index - 1, max_active_post_media_index) // Shows The Previous Post Media
         })
+
+    // Function For Handle Open Maps
+    const handleOpenMaps = async () => {
+        if(!post.coordinates?.latitude || !post.coordinates?.longitude) {
+            Alert.alert("Upozornenie", "Presné súradnice tohto miesta nie sú k dispozícii.");
+            return
+        }
+    
+        const { latitude, longitude } = post.coordinates // Gets The Latitude And Longitude
+        const query:string = `${latitude},${longitude}` // Sets The Query
+        
+
+        const url:string = Platform.select({
+            ios: `maps:0,0?q=${query}`, // iOS
+            android: `geo:0,0?q=${query}`, // Android
+            default: `https://www.google.com/maps/search/?api=1&query=${query}` // Web
+        })
+    
+        try {
+            if(url) {
+                const supported:boolean = await Linking.canOpenURL(url)
+                
+                if(supported) await Linking.openURL(url) // Opens The Maps
+                else await Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${query}`) // Opens The Browser
+            }
+        } 
+        
+        catch {
+            console.error("Nepodarilo sa otvoriť mapy.")
+        }
+    }
     
     return (
         <View className="post_container" key={post.id} style={styles.post_container}>
@@ -947,7 +926,7 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                             post.coordinates ? (
                                 <Pressable
                                     className="location"
-                                    // onPress={handleOpenMaps}
+                                    onPress={handleOpenMaps}
                                     accessibilityRole="button"
                                     accessibilityLabel="Otvoriť mapy" 
                                     style={styles.location}
@@ -986,10 +965,12 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                                 { display: index === active_post_media_index ? "flex" : "none" }
                             ]}
                         >
-                            <View className="loading hidden">
-                            {/* <View className="loading hidden" style={styles.loading}> */}
-                                <Text>Načítavam...</Text>
-                            </View>
+                            {are_posts_loading && (
+                                <BlurView intensity={40} tint="dark" style={styles.loading}>
+                                    <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                    {/* <Text style={{ marginTop: 10, color: SECONDARY_COLOR }}>Načítavam...</Text> */}
+                                </BlurView>
+                            )}
 
                             {!one_post_media.is_video && (
                                 <View className="image">
@@ -1184,7 +1165,7 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                 )
             })()}
 
-            {post.allow_comments && post_comments.length > 0 && (
+            {post.allow_comments && post.comments && is_comment_forum_open && (
                 <View className="comment_forum" style={styles.comment_forum}>
                     <ScrollView 
                         className="all_comments" 
@@ -1193,7 +1174,7 @@ export const PostContainer = ({ post, logged_in_user, onPostsUpdate, posts, onSh
                         style={styles.all_comments}
                     >
                         {/* Loads The Comments */}
-                        {post.comments_amount > 0 && loadComments(post_comments)}
+                        {post.comments.length > 0 && loadComments(post.comments)}
 
                         {has_next_post_comments && (
                             <Pressable 
@@ -1455,28 +1436,10 @@ const styles = StyleSheet.create({
     },
 
     loading: {
-        position: "absolute",
-        top: "50%",
-        left: "50%",
-
-        transform: [
-            { translateX: "-50%" },
-            { translateY: "-50%" }
-        ],
-
+        ...StyleSheet.absoluteFill,
         alignItems: "center",
         justifyContent: "center",
-        width: "100%",
-        height: "100%",
-        // backdrop-filter: blur(5px);
-        opacity: 1,
-        // transition: opacity 0.3s ease, display 0.3s ease allow-discrete;
         zIndex: 50,
-
-        // &.hidden {
-        //     opacity: 0;
-        //     display: none;
-        // }
     },
 
     comment_preview: {

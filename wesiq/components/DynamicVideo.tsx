@@ -944,7 +944,7 @@ const styles = StyleSheet.create({
     },
 
     volume: {
-        direction: "rtl",
+        // direction: "rtl",
         position: "relative",
         height: 5,
         borderRadius: 5 / 2,

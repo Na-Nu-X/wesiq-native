@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Switch } from "react-native"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Switch, FlatList, ActivityIndicator } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -56,6 +56,7 @@ export interface Post {
     media:Media[],
     views:number,
     comments_amount:number,
+    comments:comment[]|null
 }
 
 export interface User {
@@ -572,7 +573,25 @@ export default function Feed() {
             else {
                 Alert.alert("Úspech", deleted_post_comment_data.message) // Shows The Alert
 
-                // setPostComments(previous_post_comments => previous_post_comments.filter((one_post_comment:comment) => one_post_comment.id !== comment_id)) // Sets The Post Comments
+                // Sets The Posts
+                if(selected_post_comment) {
+                    setPosts(previous_posts => previous_posts.map((one_post:Post) => {
+                        const has_comment:boolean = one_post.comments?.some(one_post_comment => one_post_comment.id === selected_post_comment.id) || false // Checks If The Post Has The Selected Comment
+                
+                        if(has_comment) {
+                            const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                
+                            return {
+                                ...one_post,
+                                comments: previous_post_comments.filter((one_post_comment:comment) => one_post_comment.id !== selected_post_comment.id), // Filters Out Deleted Comment
+                                comments_amount: (one_post.comments_amount || 0) - 1 // Decreases The Comments Amount
+                            }
+                        }
+                
+                        return one_post // Returns The Unchanged Post
+                    }))
+                }
+
                 setSelectedPostComment(null) // Sets The Selected Post Comment
                 hidePostCommentProperties() // Closes The Post Comment Properties
                 // if(reply_container && reply_container.children.length === 0) deleteShowRepliesIcon(reply_container) // Deletes The Show Replies Icon From The Comment If There Aren't Any Replies Left
@@ -603,8 +622,8 @@ export default function Feed() {
                             placeholder="Nájsť príspevky" 
                             placeholderTextColor={LIGHT_BLUE_COLOR}
                             accessibilityLabel="Nájsť príspevky" 
-                            // value={}
-                            // onChangeText={}
+                            value={search_text}
+                            onChangeText={(text:string) => setSearchText(text)}
 
                             style={[
                                 styles.search_bar, 
@@ -670,19 +689,47 @@ export default function Feed() {
                 )}
 
                 {posts.length > 0 && (
-                    posts.map((one_post:Post) => {
-                        return (
+                    <FlatList
+                        data={posts}
+                        keyExtractor={(one_post:Post) => one_post.id.toString()}
+
+                        renderItem={({ item }) => (
                             <PostContainer
-                                post={one_post}
+                                post={item}
                                 logged_in_user={logged_in_user}
                                 onPostsUpdate={(posts:Post[]) => setPosts(posts)}
                                 posts={posts}
                                 onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                 onShowPostProperties={(posts:Post) => showPostProperties(posts)}
                                 onShowPostCommentProperties={(comment:comment) => showPostCommentProperties(comment)}
+                                are_posts_loading={are_posts_loading}
                             />
-                        )
-                    })
+                        )}
+
+                        onEndReached={loadMorePosts}
+                        onEndReachedThreshold={0.5}
+
+                        ListFooterComponent={
+                            are_posts_loading ? (
+                                <View style={{ padding: 20, alignItems: "center" }}>
+                                    <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                </View>
+                            ) : null
+                        }
+
+                        showsVerticalScrollIndicator={false}
+
+                        style={{
+                            alignSelf: "center",
+                            maxWidth: MAIN_WIDTH,
+                            width: "100%",
+                        }}
+
+                        contentContainerStyle={{
+                            gap: 25,
+                            width: "100%",
+                        }}
+                    />
                 )}
 
                 <BottomSheetModal
