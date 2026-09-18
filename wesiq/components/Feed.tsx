@@ -57,7 +57,7 @@ export interface Post {
     media:Media[],
     views:number,
     comments_amount:number,
-    comments:comment[]|null
+    comments:Comment[]|null
 }
 
 export interface User {
@@ -91,7 +91,7 @@ export interface Media {
     vtt_file:string|null
 }
 
-export interface comment {
+export interface Comment {
     id:number,
 
     user:{
@@ -184,7 +184,7 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
 
     const post_comment_properties = useRef<BottomSheetModal>(null) // Stores The Post Comment Properties
     const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
-    const [selected_post_comment, setSelectedPostComment] = useState<comment|null>(null) // Stores The Selected Post Comment
+    const [selected_post_comment, setSelectedPostComment] = useState<Comment|null>(null) // Stores The Selected Post Comment
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -350,7 +350,7 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
     }
 
     // Function For Show The Post Comment Properties
-    const showPostCommentProperties = (comment:comment):void => {
+    const showPostCommentProperties = (comment:Comment):void => {
         setSelectedPostComment(comment) // Sets The Selected Post Comment
         post_comment_properties.current?.present() // Shows The Post Comment Properties
     }
@@ -643,11 +643,11 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
                         const has_comment:boolean = one_post.comments?.some(one_post_comment => one_post_comment.id === selected_post_comment.id) || false // Checks If The Post Has The Selected Comment
                 
                         if(has_comment) {
-                            const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                            const previous_post_comments:Comment[] = one_post.comments || [] // Gets The Previous Post Comments
                 
                             return {
                                 ...one_post,
-                                comments: previous_post_comments.filter((one_post_comment:comment) => one_post_comment.id !== selected_post_comment.id), // Filters Out Deleted Comment
+                                comments: previous_post_comments.filter((one_post_comment:Comment) => one_post_comment.id !== selected_post_comment.id), // Filters Out Deleted Comment
                                 comments_amount: (one_post.comments_amount || 0) - 1 // Decreases The Comments Amount
                             }
                         }
@@ -743,7 +743,7 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
                                     posts={posts}
                                     onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                     onShowPostProperties={(posts:Post) => showPostProperties(posts)}
-                                    onShowPostCommentProperties={(comment:comment) => showPostCommentProperties(comment)}
+                                    onShowPostCommentProperties={(comment:Comment) => showPostCommentProperties(comment)}
                                     are_posts_loading={are_posts_loading}
                                 />
                             )}

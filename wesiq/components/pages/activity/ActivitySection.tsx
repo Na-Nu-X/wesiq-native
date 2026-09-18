@@ -15,12 +15,12 @@ import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
 import Svg, { Circle } from "react-native-svg"
+import { WarmUp } from "./WarmUp"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 import type { Day } from "../manage_training_plans/DaySelectMenu"
-import { WarmUp } from "./WarmUp"
 
 export interface TrainingPlanExercise {
     id:number,
@@ -117,14 +117,20 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
     const accumulated_time = useRef<number>(0) // Stores The Accumulated Time
     const interval = useRef<ReturnType<typeof setInterval>|null>(null) // Stores The Interval
 
-    const days:(number|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day : null))] // Gets Ordered Days From Available Training Plans
-    const selected_day:number|null = days[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
+    // Gets The Grouped Training Plans Exercises
+    const grouped_training_plans_exercises:(Day|string)[] = [...new Set(
+        training_plans_exercises.map((one_exercise:TrainingPlanExercise) => 
+            one_exercise.day !== null ? one_exercise.day : one_exercise.training_plan_key
+        )
+    )]
+
+    const selected_day_or_training_plan_key:Day|string|null = grouped_training_plans_exercises[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
 
     const { width: SCREEN_WIDTH } = Dimensions.get("window") // Gets The Screen Width
     
     const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
 
-    // Orders Exercises From All Turaining Plans By Their Order Value
+    // Orders Exercises From All Training Plans By Their Order Value
     const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
         return [...training_plans_exercises].sort(
             (a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)
@@ -133,8 +139,12 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
     // Gets The Active Training Plan Exercises
     const active_training_plan_exercises:TrainingPlanExercise[] = useMemo(() => {
-        return ordered_exercises.filter(one_exercise => one_exercise.day === selected_day)
-    }, [ordered_exercises, selected_day])
+        return ordered_exercises.filter(one_exercise => 
+            typeof selected_day_or_training_plan_key === "number" 
+                ? one_exercise.day === selected_day_or_training_plan_key // If The Day Is Selected
+                : one_exercise.training_plan_key === selected_day_or_training_plan_key // If The Day Isn't Selected
+        )
+    }, [ordered_exercises, selected_day_or_training_plan_key])
 
     const active_exercise:TrainingPlanExercise = active_training_plan_exercises[active_exercise_index] // Gets The Active Exercise
 
@@ -454,7 +464,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                     <Text style={styles.text}>Tréningový plán</Text>
                                     <Text style={styles.text}>Začať tréning</Text>
 
-                                    <Text className="title" style={styles.title}>{selected_day ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day)}` : ordered_exercises[active_exercise_index].type || "Tréning"}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
+                                    <Text className="title" style={styles.title}>{selected_day_or_training_plan_key && typeof selected_day_or_training_plan_key === "number" ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day_or_training_plan_key)}` : ordered_exercises[active_exercise_index].type || "Tréning"}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
                                 </View>
 
                                 <View className="start_training_button">
@@ -634,7 +644,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                     </View>
                 </View>
 
-                {days.length > 1 && !is_activity_started && (createTrainingPlanBars(days.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
+                {grouped_training_plans_exercises.length > 1 && !is_activity_started && (createTrainingPlanBars(grouped_training_plans_exercises.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
             </>
         )
     }
@@ -687,8 +697,8 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         .runOnJS(true)
 
         .onEnd((event) => {
-            if(event.translationX < -50) changeTrainingPlans(active_training_plan_index + 1, days.length - 1) // Shows The Next Post Media
-            else if (event.translationX > 50) changeTrainingPlans(active_training_plan_index - 1, days.length - 1) // Shows The Previous Post Media
+            if(event.translationX < -50) changeTrainingPlans(active_training_plan_index + 1, grouped_training_plans_exercises.length - 1) // Shows The Next Post Media
+            else if (event.translationX > 50) changeTrainingPlans(active_training_plan_index - 1, grouped_training_plans_exercises.length - 1) // Shows The Previous Post Media
         })
 
     // Function For Update The Tick
@@ -771,7 +781,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                 elapsed_time, // Stores Formatted Elapsed Time
                 gained_xp: gained_xp, // Stores Gained XP
                 type: ordered_exercises[active_exercise_index].type || "Tréning", // Stores Training Plan Title
-                day: selected_day, // Stores Training Plan Day
+                day: typeof selected_day_or_training_plan_key === "number" ? selected_day_or_training_plan_key : null, // Stores Training Plan Day
                 training_plan_summary: null // Stores The Training Plan Summary
             }
 

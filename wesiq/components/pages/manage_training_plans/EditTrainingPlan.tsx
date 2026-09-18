@@ -80,17 +80,23 @@ export default function EditTrainingPlan({
         requestNotificationPermissions() // Requests The Notification Permissions
     }, [])
 
-    const days:(Day|null)[] = [...new Set(training_plans_exercises.map((one_exercise:TrainingPlanExercise) => one_exercise.day ? one_exercise.day as Day : null))] // Gets Ordered Days From Available Training Plans
-    const selected_day:Day|null = days[active_training_plan_index] as Day || null // Selects Current Or Upcoming Day Of Training Plan
+    // Gets The Grouped Training Plans Exercises
+    const grouped_training_plans_exercises:(Day|string)[] = [...new Set(
+        training_plans_exercises.map((one_exercise:TrainingPlanExercise) => 
+            one_exercise.day !== null ? one_exercise.day : one_exercise.training_plan_key
+        )
+    )]
+
+    const selected_day_or_training_plan_key:Day|string|null = grouped_training_plans_exercises[active_training_plan_index] || null // Selects Current Or Upcoming Day Of Training Plan
 
     // Initializes The Active Training Plan Day
     useEffect(() => {
-        onSetActiveTrainingPlanDay(selected_day) // Sets The Active Training Plan Day
-    }, [selected_day])
+        if(typeof selected_day_or_training_plan_key === "number") onSetActiveTrainingPlanDay(selected_day_or_training_plan_key) // Sets The Active Training Plan Day
+    }, [selected_day_or_training_plan_key])
     
     const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
 
-    // Orders Exercises From All Turaining Plans By Their Order Value
+    // Orders Exercises From All Training Plans By Their Order Value
     const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
         return [...training_plans_exercises].sort(
             (a:TrainingPlanExercise, b:TrainingPlanExercise) => Number(a.order) - Number(b.order)
@@ -99,8 +105,12 @@ export default function EditTrainingPlan({
 
     // Gets The Active Training Plan Exercises
     const active_training_plan_exercises:TrainingPlanExercise[] = useMemo(() => {
-        return ordered_exercises.filter(one_exercise => one_exercise.day === selected_day)
-    }, [ordered_exercises, selected_day])
+        return ordered_exercises.filter(one_exercise => 
+            typeof selected_day_or_training_plan_key === "number" 
+                ? one_exercise.day === selected_day_or_training_plan_key // If The Day Is Selected
+                : one_exercise.training_plan_key === selected_day_or_training_plan_key // If The Day Isn't Selected
+        )
+    }, [ordered_exercises, selected_day_or_training_plan_key])
 
     // Initializes The Training Plan Slide
     useEffect(() => {
@@ -519,7 +529,7 @@ export default function EditTrainingPlan({
                     </View>
                 </GestureDetector>
 
-                {days.length > 1 && (createTrainingPlanBars(days.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
+                {grouped_training_plans_exercises.length > 1 && (createTrainingPlanBars(grouped_training_plans_exercises.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
             </>
         )
     }
@@ -1117,7 +1127,7 @@ export default function EditTrainingPlan({
                     previous_training_plan_key,
                     training_plan_key: current_training_plan_key,
                     action: existing_exercise ? "edited_training_plan" : "new_training_plan",
-                    day: previous_training_plan_key && one_exercise.day !== undefined ? one_exercise.day : selected_day,
+                    day: previous_training_plan_key && one_exercise.day !== undefined ? one_exercise.day : typeof selected_day_or_training_plan_key === "number" ? selected_day_or_training_plan_key : null, // Stores Training Plan Day
                     type: previous_training_plan_key && one_exercise.type ? one_exercise.type : training_plan_title,
                     exercise: one_exercise.exercise,
                     periods: one_exercise.periods,
@@ -1283,9 +1293,9 @@ export default function EditTrainingPlan({
                         />
         
                         <DaySelectMenu 
-                            used_days={days}
+                            used_days={typeof grouped_training_plans_exercises === "number" ? grouped_training_plans_exercises : []}
                             onDayUpdate={(selected_day) => changeTrainingPlanDay(selected_day)} // Changes The Training Plan Day
-                            day={selected_day}
+                            day={typeof selected_day_or_training_plan_key === "number" ? selected_day_or_training_plan_key : null}
                         />
                     </View>
 

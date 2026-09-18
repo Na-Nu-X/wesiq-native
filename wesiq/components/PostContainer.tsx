@@ -24,14 +24,14 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
 
-import type { Post, Media, comment } from "./Feed"
+import type { Post, Media, Comment } from "./Feed"
 import type { LoggedInUser } from "./LoginFormDialog"
 import type { BasicResponse } from "./Feed"
 
 interface loadedPostCommentsResponse {
     success:boolean,
     has_next:boolean,
-    visible_comments?:comment[],
+    visible_comments?:Comment[],
     message:string
 }
 
@@ -72,7 +72,7 @@ interface PostContainerProps {
     posts:Post[],
     onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
     onShowPostProperties:(post:Post) => void,
-    onShowPostCommentProperties:(comment:comment) => void,
+    onShowPostCommentProperties:(comment:Comment) => void,
     are_posts_loading:boolean
 }
 
@@ -159,10 +159,10 @@ export const PostContainer = ({
                 // Stores The New State Of Updated Posts
                 const updated_posts:Post[] = posts.map((one_post:Post) => {
                     if(one_post.id === post.id) {
-                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
-                        const incoming_post_comments:comment[] = (loaded_post_comments_data.visible_comments as comment[]) || [] // Gets The Incoming Post Comments
-                        const existing_post_comments_ids:Set<number> = new Set(previous_post_comments.map((one_comment:comment) => one_comment.id)) // Gets The Existing Post Comments IDs
-                        const new_post_comments:comment[] = incoming_post_comments.filter((one_comment:comment) => !existing_post_comments_ids.has(one_comment.id)) // Gets The New Unique Post Comments
+                        const previous_post_comments:Comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                        const incoming_post_comments:Comment[] = (loaded_post_comments_data.visible_comments as Comment[]) || [] // Gets The Incoming Post Comments
+                        const existing_post_comments_ids:Set<number> = new Set(previous_post_comments.map((one_comment:Comment) => one_comment.id)) // Gets The Existing Post Comments IDs
+                        const new_post_comments:Comment[] = incoming_post_comments.filter((one_comment:Comment) => !existing_post_comments_ids.has(one_comment.id)) // Gets The New Unique Post Comments
 
                         return {
                             ...one_post,
@@ -238,8 +238,8 @@ export const PostContainer = ({
     }
 
     // Function For Load Comments
-    const loadComments = (post_comments:comment[]) => {
-        return post_comments.map((one_post_comment:comment, index:number) => (
+    const loadComments = (post_comments:Comment[]) => {
+        return post_comments.map((one_post_comment:Comment, index:number) => (
             <View 
                 key={one_post_comment.id || index}
                 className="one_comment" 
@@ -603,12 +603,12 @@ export const PostContainer = ({
                 // Stores The New State Of Updated Posts
                 const updated_posts:Post[] = posts.map((one_post:Post) => {
                     if(one_post.id === post.id) {
-                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                        const previous_post_comments:Comment[] = one_post.comments || [] // Gets The Previous Post Comments
 
                         return {
                             ...one_post,
 
-                            comments: previous_post_comments.map((one_post_comment:comment) => {
+                            comments: previous_post_comments.map((one_post_comment:Comment) => {
                                 if(one_post_comment.id === comment_id) {
                                     const has_like:boolean = one_post_comment.likes_from_users.includes(logged_in_user.id) // Checks If The User Had Already Liked The Post
                                     
@@ -685,7 +685,7 @@ export const PostContainer = ({
                 Alert.alert("Úspech", added_post_comment_data.message) // Shows The Alert
 
                 // Stores The New Comment Data
-                const new_comment:comment = {
+                const new_comment:Comment = {
                     id: added_post_comment_data.comment.id,
 
                     user:{
@@ -709,7 +709,7 @@ export const PostContainer = ({
                 // Stores The New State Of Updated Posts
                 const updated_posts:Post[] = posts.map((one_post:Post) => {
                     if(one_post.id === post_id) {
-                        const previous_post_comments:comment[] = one_post.comments || [] // Gets The Previous Post Comments
+                        const previous_post_comments:Comment[] = one_post.comments || [] // Gets The Previous Post Comments
 
                         return {
                             ...one_post,
