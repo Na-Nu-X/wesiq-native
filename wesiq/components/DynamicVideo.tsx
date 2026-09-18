@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
     scrubber_thumb: {
         position: "absolute",
         top: "50%",
-        transform: [{ translateY: "50%" }],
+        transform: [{ translateY: "-50%" }],
         width: 10,
         height: 10,
         marginLeft: 0,

@@ -887,7 +887,14 @@ export const PostContainer = ({
         <View className="post_container" key={post.id} style={styles.post_container}>
             <View className="header" style={styles.header}>
                 <View className="left">
-                    <ProfilePictureLink user_id={post.user.id} user_profile_picture_name={post.user.profile_picture_name || null} user_subscription={post.user.subscription?.is_active || false} label="Zobraziť užívateľa" width={45} height={45} />
+                    <ProfilePictureLink 
+                        user_id={post.user.id} 
+                        user_profile_picture_name={post.user.profile_picture_name || null} 
+                        user_subscription={post.user.subscription?.is_active || false} 
+                        label="Zobraziť užívateľa" 
+                        width={45} 
+                        height={45} 
+                    />
                 </View>
 
                 <View className="right" style={styles.right}>
@@ -995,9 +1002,7 @@ export const PostContainer = ({
                         </View>
                     ))}
 
-                    <View className="particles" style={styles.particles}>
-
-                    </View>
+                    <View className="particles" style={styles.particles}></View>
 
                     <View 
                         className="post_bars"

@@ -4,15 +4,16 @@ import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR,
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import ProfilePictureLink from "./ProfilePictureLink"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useMemo } from "react"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { PostContainer } from "./PostContainer"
+import { ProcessingPostContainer } from "./ProcessingPostContainer"
 
 import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
+import type { TrackedTask } from "@/app/(tabs)"
 
 export interface BasicResponse {
     success:boolean,
@@ -87,15 +88,7 @@ export interface Media {
     video_views:number|null,
     video_duration:number|null,
     sprite_sheet:string|null,
-    vtt_file:string|null,
-
-    // Processing Posts
-    original_filename?:string,
-    original_size?:string,
-
-    post?:{ 
-        id:number 
-    }
+    vtt_file:string|null
 }
 
 export interface comment {
@@ -122,21 +115,72 @@ export interface comment {
     level:number
 }
 
-export default function Feed() {
+export interface LoadedProcessingPostsResponse {
+    success:boolean,
+    processing_posts?:ProcessingPost[],
+    message:string
+}
+
+export interface ProcessingPost {
+    user:User,
+
+    id:number,
+    description:string|null,
+
+    tagged_users:{
+        id:number,
+        first_name:string,
+        last_name:string,
+        username:string
+    }[]|[],
+
+    added_hashtags:string[]|[],
+    location:string|null,
+
+    coordinates:{
+        latitude:string
+        longitude:string
+    }|null,
+
+    public_visibility:boolean,
+    allow_comments:boolean,
+    hide_likes:boolean,
+    created_at:string,
+    media:ProcessingMedia[]
+}
+
+export interface ProcessingMedia {
+    id:number,
+    file:string,
+    thumbnail:string,
+    is_video:boolean,
+    original_filename:string,
+    original_size:number,
+}
+
+interface FeedProps {
+    tracked_tasks:TrackedTask[],
+    processing_posts:ProcessingPost[]
+}
+
+export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
-    
-    const [processing_posts, setProcessingPosts] = useState<Post[]>([]) // Stores The Processing Posts
-    const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
 
     const [posts, setPosts] = useState<Post[]>([]) // Stores The Posts
     const [page, setPage] = useState(1) // Stores The Current Page Number
-    const [has_next, setHasNext] = useState(true) // Stores The Information If There Are More Posts Available
+    const [has_next, setHasNext] = useState<boolean>(true) // Stores The Information If There Are More Posts Available
     const [are_posts_loading, setArePostsLoading] = useState(false) // Stores The Information If Posts Are Loading
+    const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
     const [search_text, setSearchText] = useState("") // Stores The Search Text
+
     const post_properties = useRef<BottomSheetModal>(null) // Stores The Post Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [post_properties_sheet, setPostPropertiesSheet] = useState<"main"|"report"|"settings"|"delete">("main") // Stores The Active Post Properties Sheet
     const [selected_post, setSelectedPost] = useState<Post|null>(null) // Stores The Selected Post
+
+    const processing_post_properties = useRef<BottomSheetModal>(null) // Stores The Processing Post Properties
+    const [processing_post_properties_sheet, setProcessingPostPropertiesSheet] = useState<"main"|"report"|"settings"|"delete">("main") // Stores The Active Processing Post Properties Sheet
+    const [selected_processing_post, setSelectedProcessingPost] = useState<ProcessingPost|null>(null) // Stores The Selected Processing Post
 
     const post_comment_properties = useRef<BottomSheetModal>(null) // Stores The Post Comment Properties
     const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
@@ -206,6 +250,7 @@ export default function Feed() {
 
             // If The Response Isn't Success
             if(!loaded_posts_response.ok) {
+                setIsError(true) // Sets The Information That There Is An Error
                 Alert.alert("Chyba", "Pri hľadaní príspevkov došlo k chybe.") // Shows The Alert
                 return
             }
@@ -234,6 +279,7 @@ export default function Feed() {
         } 
         
         catch {
+            setIsError(true) // Sets The Information That There Is An Error
             Alert.alert("Chyba", "Pri hľadaní príspevkov došlo k chybe.") // Shows The Alert
         } 
         
@@ -258,7 +304,7 @@ export default function Feed() {
         }
     }
 
-    // Initializes The Posts Loading
+    // Initializes The Load Of Posts
     useEffect(() => {
         loadPosts(1, true) // Loads Posts
     }, [search_text])
@@ -283,6 +329,24 @@ export default function Feed() {
     // Function For Handle Post Properties Sheet Switching
     const handlePostPropertiesChanges = (index:number) => {
         if(index === -1) setPostPropertiesSheet("main") // Sets The Post Properties Sheet To Default
+    }
+
+    // Function For Show The Processing Post Properties
+    const showProcessingPostProperties = (processing_post:ProcessingPost):void => {
+        console.log(processing_post)
+        // setSelectedProcessingPost(processing_post) // Sets The Selected Processing Post
+        // post_properties.current?.present() // Shows The Processing Post Properties
+    }
+
+    // Function For Close The Processing Post Properties
+    const hideProcessingPostProperties = ():void => {
+        // setSelectedProcessingPost(null) // Sets The Selected Processing Post
+        // post_properties.current?.dismiss() // Hides The Processing Post Properties
+    }
+
+    // Function For Handle Processing Post Properties Sheet Switching
+    const handleProcessingPostPropertiesChanges = (index:number) => {
+        // if(index === -1) setProcessingPostPropertiesSheet("main") // Sets The Processing Post Properties Sheet To Default
     }
 
     // Function For Show The Post Comment Properties
@@ -636,86 +700,19 @@ export default function Feed() {
                 </View>
 
                 {processing_posts.length > 0 && logged_in_user && (
-                    processing_posts.map(one_processing_post => (
-                        <View className="processing_post_container" key={one_processing_post.id}>
-                            <Text className="processing_post_report">{processing_post_report}</Text>
-
-                            <View className="processing_media_info_container">
-                                <Text className="processing_media_info">
-                                    Súbory:{" "}
-                                    
-                                    {one_processing_post.media.map((one_post_media:Media, index) => {
-                                        if(one_post_media.post && one_processing_post.id === one_post_media.post.id) {
-                                            return (
-                                                <Text key={index}>
-                                                    <Text className="original_filename">{one_post_media.original_filename}</Text>
-                                                    
-                                                    <Text className="original_size">
-                                                        {" "}({one_post_media.original_size})
-                                                        {index < one_processing_post.media.length - 1 && ", "}
-                                                    </Text>
-                                                </Text>
-                                            )
-                                        }
-
-                                        return null
-                                    })}
-                                </Text>
-                            </View>
-
-                            <View className="header">
-                                <View className="left">
-                                    <ProfilePictureLink 
-                                        user_id={one_processing_post.user.id} 
-                                        user_profile_picture_name={one_processing_post.user.profile_picture_name || null} 
-                                        user_subscription={one_processing_post.user.subscription?.is_active || false} 
-                                        label="Zobraziť užívateľa" 
-                                    />
-                                </View>
-
-                                <View className="right">
-                                    <View className="top">
-                                        <Text className="username">{one_processing_post.user.username}</Text>
-
-                                        <View className="followers_container">
-                                            <Text className="followers">{one_processing_post.user.followers.length}</Text>
-                                            <Icon icon_name="user" />
-                                        </View>
-                                    </View>
-                                </View>
-                            </View>
-                        </View>
-                    ))
-                )}
-
-                {posts.length > 0 && (
                     <FlatList
-                        data={posts}
-                        keyExtractor={(one_post:Post) => one_post.id.toString()}
+                        data={processing_posts}
+                        extraData={tracked_tasks}
+                        keyExtractor={(one_processing_post:ProcessingPost) => one_processing_post.id.toString()}
 
                         renderItem={({ item }) => (
-                            <PostContainer
-                                post={item}
+                            <ProcessingPostContainer 
+                                processing_post={item} 
+                                tracked_tasks={tracked_tasks}
+                                onShowProcessingPostProperties={(processing_posts:ProcessingPost) => showProcessingPostProperties(processing_posts)}
                                 logged_in_user={logged_in_user}
-                                onPostsUpdate={(posts:Post[]) => setPosts(posts)}
-                                posts={posts}
-                                onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
-                                onShowPostProperties={(posts:Post) => showPostProperties(posts)}
-                                onShowPostCommentProperties={(comment:comment) => showPostCommentProperties(comment)}
-                                are_posts_loading={are_posts_loading}
                             />
                         )}
-
-                        onEndReached={loadMorePosts}
-                        onEndReachedThreshold={0.5}
-
-                        ListFooterComponent={
-                            are_posts_loading ? (
-                                <View style={{ padding: 20, alignItems: "center" }}>
-                                    <ActivityIndicator size="small" color={SECONDARY_COLOR} />
-                                </View>
-                            ) : null
-                        }
 
                         showsVerticalScrollIndicator={false}
 
@@ -731,6 +728,61 @@ export default function Feed() {
                         }}
                     />
                 )}
+
+                {posts.length > 0 && (
+                    <>
+                        <FlatList
+                            data={posts}
+                            keyExtractor={(one_post:Post) => one_post.id.toString()}
+
+                            renderItem={({ item }) => (
+                                <PostContainer
+                                    post={item}
+                                    logged_in_user={logged_in_user}
+                                    onPostsUpdate={(posts:Post[]) => setPosts(posts)}
+                                    posts={posts}
+                                    onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
+                                    onShowPostProperties={(posts:Post) => showPostProperties(posts)}
+                                    onShowPostCommentProperties={(comment:comment) => showPostCommentProperties(comment)}
+                                    are_posts_loading={are_posts_loading}
+                                />
+                            )}
+
+                            onEndReached={loadMorePosts}
+                            onEndReachedThreshold={0.5}
+
+                            ListFooterComponent={
+                                are_posts_loading ? (
+                                    <View style={{ padding: 20, alignItems: "center" }}>
+                                        <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                    </View>
+                                ) : null
+                            }
+
+                            showsVerticalScrollIndicator={false}
+
+                            style={{
+                                alignSelf: "center",
+                                maxWidth: MAIN_WIDTH,
+                                width: "100%",
+                            }}
+
+                            contentContainerStyle={{
+                                gap: 25,
+                                width: "100%",
+                            }}
+                        />
+
+                        {(are_posts_loading || !has_next) && !is_error && (
+                            <Text className="feed_report" style={styles.feed_report}>
+                                {are_posts_loading ? "Načítavam..." : "Videli ste všetky príspevky."}
+                            </Text>
+                        )}
+                    </>
+                )}
+
+                {posts.length === 0 && !is_error && (<Text className="feed_report" style={styles.feed_report}>Nenašli sa žiadne príspevky.</Text>)}
+                {is_error && (<Text className="feed_report" style={styles.feed_report}>Pri hľadaní príspevkov došlo k chybe.</Text>)}
 
                 <BottomSheetModal
                     ref={post_properties}
@@ -1620,7 +1672,7 @@ const styles = StyleSheet.create({
     },
 
     feed_report: {
-        display: "none",
+        // display: "none",
         maxWidth: MAIN_WIDTH,
         width: "100%",
         padding: 20,

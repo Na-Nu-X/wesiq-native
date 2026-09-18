@@ -13,18 +13,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import type { LoggedInUser, LoggedInUserResponse } from "./LoginFormDialog"
 
-type UploadPostFormDialogProps = {
-    visible:boolean
-    onClose:() => void
-}
-
 export interface UploadPostResponse {
     success:boolean,
-    compress_tasks?:compressTask[],
+    compress_tasks?:CompressTask[],
     message:string
 }
 
-export interface compressTask {
+export interface CompressTask {
     task_id:string,
     post_media_id:number,
     post_id:number
@@ -67,7 +62,14 @@ export interface UploadProgressResponse {
     message:string
 }
 
-export default function UploadPostFormDialog({ visible, onClose }:UploadPostFormDialogProps) {
+type UploadPostFormDialogProps = {
+    visible:boolean,
+    onClose:() => void,
+    // onUploadProgressUpdate:(upload_progress:number) => void,
+    onCompressTasksLoad:(compress_tasks:CompressTask[]) => void
+}
+
+export default function UploadPostFormDialog({ visible, onClose, onCompressTasksLoad }:UploadPostFormDialogProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [selected_files, setSelectedFiles] = useState<ImagePicker.ImagePickerAsset[]>([]) // Stores The Selected Files
     const [description, setDescription] = useState<string>("") // Stores The Description
@@ -84,7 +86,6 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
 
     const [button_text, setButtonText] = useState<string>("Uverejniť príspevok") // Stores The Button Text
     const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Post Is Uploading
-    const [upload_progress, setUploadProgress] = useState<number>(0) // Stores The Upload Progress
 
     const MAX_DESCRIPTION_LENGTH:number = 500 // Defines The Maximum Description Length
 
@@ -353,70 +354,79 @@ export default function UploadPostFormDialog({ visible, onClose }:UploadPostForm
             })
     
             const upload_post_data:UploadPostResponse = await upload_post_response.json() // Gets The Upload Post Data
-    
+
             if(upload_post_response.ok && upload_post_data.success) {
                 if(upload_post_data.compress_tasks && upload_post_data.compress_tasks.length > 0) {
-                    const existing_tasks:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Existing Tasks Of The Processing Posts From The Async Storage
-                    let processing_posts:compressTask[] = existing_tasks ? JSON.parse(existing_tasks) : [] // Gets The Processing Posts
-
-                    processing_posts.push(...upload_post_data.compress_tasks) // Adds The New Tasks Of Processing Posts
-                    await AsyncStorage.setItem("processing_posts", JSON.stringify(processing_posts)) // Saves Updated Processing Posts To The Async Storage
-
-                    const all_task_ids:string[] = upload_post_data.compress_tasks.map(one_task => one_task.task_id) // Stores All UUIDs Of Tasks (Uploaded Files)
-                    
-                    setUploadProgress(0) // Sets The Upload Progress To 0
-                    setButtonText("Spracuváva sa...") // Sets The Button Text
-
-                    // Checks The Progress Of Uploaded Posts
-                    const check_upload_progress_interval = setInterval(async () => {
-                        try {
-                            const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {
-                                
-                                const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
-                                    headers: { "Authorization": `Bearer ${user_token}` }
-                                })
-                                
-                                if(!upload_progress_response.ok) throw new Error("Chyba servera")
-                                return upload_progress_response.json() as Promise<UploadProgressResponse>
-                            })
-                            const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
-
-                            const all_tasks_finished:boolean = tasks_results.every(one_task => one_task.upload_progress.state.toUpperCase() === "SUCCESS") // If Every Tasks Has Been Succeeded
-                            const any_task_failed:boolean = tasks_results.some(one_task => one_task.upload_progress.state.toUpperCase() === "FAILURE") // If Any Task Has Failed
-
-                            let total_progress:number = 0 // Stores The Total Progress
-
-                            tasks_results.forEach(one_task => {
-                                if(one_task.upload_progress) {
-                                    if(one_task.upload_progress.state.toUpperCase() === "SUCCESS") total_progress += 100
-                                    else if(one_task.upload_progress.progress !== undefined) total_progress += one_task.upload_progress.progress
-                                }
-                            })
-
-                            const overall_progress_percentage:number = Math.round(total_progress / all_task_ids.length) // Gets The Overall Progress Percentage
-                            setUploadProgress(overall_progress_percentage) // Sets The Upload Progress
-                            onClose() // Closes The Upload Post Form
-
-                            if(all_tasks_finished) {
-                                clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-                            }
-
-                            else if(any_task_failed) {
-                                clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-                                setButtonText("Chyba pri spracovaní") // Sets The Button Text
-                            }
-                        } 
-                        
-                        catch {
-                            setButtonText("Chyba spojenia") // Sets The Button Text
-                        }
-                    }, 1500)
-                }
-                
-                else {
-                    setButtonText("Skúste znovu") // Sets The Button Text
+                    onCompressTasksLoad(upload_post_data.compress_tasks) // Sets The Currently Being Compressed Tasks
                 }
             }
+    
+            // if(upload_post_response.ok && upload_post_data.success) {
+            //     if(upload_post_data.compress_tasks && upload_post_data.compress_tasks.length > 0) {
+            //         onCompressTasksLoad(upload_post_data.compress_tasks) // Sets The Currently Being Compressed Tasks
+
+            //         const existing_tasks:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Existing Tasks Of The Processing Posts From The Async Storage
+            //         let processing_posts:CompressTask[] = existing_tasks ? JSON.parse(existing_tasks) : [] // Gets The Processing Posts
+
+            //         processing_posts.push(...upload_post_data.compress_tasks) // Adds The New Tasks Of Processing Posts
+            //         await AsyncStorage.setItem("processing_posts", JSON.stringify(processing_posts)) // Saves Updated Processing Posts To The Async Storage
+
+            //         const all_task_ids:string[] = upload_post_data.compress_tasks.map((one_task:CompressTask) => one_task.task_id) // Stores All UUIDs Of Tasks (Uploaded Files)
+                    
+            //         onUploadProgressUpdate(0) // Sets The Upload Progress To 0
+            //         setButtonText("Spracuváva sa...") // Sets The Button Text
+
+            //         // Checks The Progress Of Uploaded Posts
+            //         const check_upload_progress_interval = setInterval(async () => {
+            //             try {
+            //                 const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {
+                                
+            //                     const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
+            //                         headers: { "Authorization": `Bearer ${user_token}` }
+            //                     })
+                                
+            //                     if(!upload_progress_response.ok) throw new Error("Chyba servera")
+            //                     return upload_progress_response.json() as Promise<UploadProgressResponse>
+            //                 })
+
+            //                 const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
+
+            //                 const all_tasks_finished:boolean = tasks_results.every(one_task => one_task.upload_progress.state.toUpperCase() === "SUCCESS") // If Every Tasks Has Been Succeeded
+            //                 const any_task_failed:boolean = tasks_results.some(one_task => one_task.upload_progress.state.toUpperCase() === "FAILURE") // If Any Task Has Failed
+
+            //                 let total_progress:number = 0 // Stores The Total Progress
+
+            //                 tasks_results.forEach(one_task => {
+            //                     if(one_task.upload_progress) {
+            //                         if(one_task.upload_progress.state.toUpperCase() === "SUCCESS") total_progress += 100
+            //                         else if(one_task.upload_progress.progress !== undefined) total_progress += one_task.upload_progress.progress
+            //                     }
+            //                 })
+
+            //                 const overall_progress_percentage:number = Math.round(total_progress / all_task_ids.length) // Gets The Overall Progress Percentage
+            //                 onUploadProgressUpdate(overall_progress_percentage) // Sets The Upload Progress
+            //                 onClose() // Closes The Upload Post Form
+
+            //                 if(all_tasks_finished) {
+            //                     clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
+            //                 }
+
+            //                 else if(any_task_failed) {
+            //                     clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
+            //                     setButtonText("Chyba pri spracovaní") // Sets The Button Text
+            //                 }
+            //             } 
+                        
+            //             catch {
+            //                 setButtonText("Chyba spojenia") // Sets The Button Text
+            //             }
+            //         }, 1500)
+            //     }
+                
+            //     else {
+            //         setButtonText("Skúste znovu") // Sets The Button Text
+            //     }
+            // }
              
             else {
                 setButtonText("Skúste znovu") // Sets The Button Text
