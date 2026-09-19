@@ -214,68 +214,60 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
 
                         return (
                             <View 
+                                className="one_post" 
                                 key={one_post_media.id || index} 
-
-                                style={{
-                                    width: "100%",
-                                    height: "100%",
-                                }}
+    
+                                style={[
+                                    styles.one_processing_post, 
+                                    { display: index === active_post_media_index ? "flex" : "none" }
+                                ]}
                             >
-                                <View 
-                                    className="one_post" 
+                                <AnimatedProgressBar progress={current_progress} />
 
-                                    style={[
-                                        styles.one_processing_post, 
-                                        { display: index === active_post_media_index ? "flex" : "none" }
-                                    ]}
-                                >
-                                    <AnimatedProgressBar progress={current_progress} />
+                                {!one_post_media.is_video && (
+                                    <View className="image">
+                                        <DynamicImage 
+                                            key={one_post_media.id || index}
+                                            uri={`${DOMAIN}/media/${one_post_media.file}`} 
+                                        />
+                                    </View>
+                                )}
 
-                                    {!one_post_media.is_video && (
-                                        <View className="image">
-                                            <DynamicImage 
-                                                key={one_post_media.id || index}
-                                                uri={`${DOMAIN}/media/${one_post_media.file}`} 
-                                            />
-                                        </View>
-                                    )}
-
-                                    {one_post_media.is_video && (
-                                        <View className="thumbnail">
-                                            <DynamicImage 
-                                                key={one_post_media.id || index}
-                                                uri={`${DOMAIN}/media/${one_post_media.thumbnail}`} 
-                                            />
-                                        </View>
-                                    )}
-                                </View>
-
-                                <View 
-                                    className="post_bars"
-
-                                    style={[
-                                        styles.post_bars,
-                                        processing_post.media.length === 0 && { display: "none" }
-                                    ]}
-                                >
-                                    {processing_post.media.length > 1 && (
-                                        processing_post.media.map((one_post_media:ProcessingMedia, index:number) => (
-                                            <Pressable 
-                                                key={index} 
-                                                className="bar" 
-                                                onPress={() => changePostMedia(processing_post.id, index, max_active_post_media_index)}
-
-                                                style={[
-                                                    styles.bar, 
-                                                    { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
-                                                ]}
-                                            />
-                                        ))
-                                    )}
-                                </View>
+                                {one_post_media.is_video && (
+                                    <View className="thumbnail">
+                                        <DynamicImage 
+                                            key={one_post_media.id || index}
+                                            uri={`${DOMAIN}/media/${one_post_media.thumbnail}`} 
+                                        />
+                                    </View>
+                                )}
                             </View>
                         )
                     })}
+
+                    <View 
+                        className="post_bars"
+
+                        style={[
+                            styles.post_bars,
+                            processing_post.media.length === 0 && { display: "none" }
+                        ]}
+                    >
+                        {processing_post.media.length > 1 && (
+                            processing_post.media.map((one_post_media:ProcessingMedia, index:number) => (
+                                <Pressable 
+                                    key={index} 
+                                    className="bar" 
+                                    onPress={() => changePostMedia(processing_post.id, index, max_active_post_media_index)}
+
+                                    style={[
+                                        styles.bar, 
+                                        { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                    ]}
+                                />
+                            ))
+                        )}
+                    </View>
                 </View>
             </GestureDetector>
 

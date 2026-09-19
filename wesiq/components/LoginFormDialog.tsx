@@ -37,7 +37,8 @@ export interface LoggedInUser {
     followers_amount:number,
 
     subscription:{
-        is_active:boolean
+        is_active:boolean,
+        plan:"free"|"basic"|"premium"
     },
 
     data_saving_mode:boolean
@@ -221,7 +222,15 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.backdrop}>
+            <Pressable 
+                onPress={onClose}
+
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                }} 
+            >
                 <BlurView intensity={25} style={StyleSheet.absoluteFill} />
 
                 <View
@@ -231,239 +240,248 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                     ]}
                 />
 
-                <KeyboardAvoidingView 
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={{ width: "100%", alignItems: "center" }}
+                <Pressable 
+                    onPress={(event) => event.stopPropagation()}
+
+                    style={{
+                        maxWidth: MAIN_WIDTH,
+                        width: "100%",
+                    }}
                 >
-                    <View className="login_form" style={styles.login_form}>
-                        <View style={styles.circle_decoration_before} />
-                        <View style={styles.circle_decoration_after} />
+                    <KeyboardAvoidingView 
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{ width: "100%", alignItems: "center" }}
+                    >
+                        <View className="login_form" style={styles.login_form}>
+                            <View style={styles.circle_decoration_before} />
+                            <View style={styles.circle_decoration_after} />
 
-                        <View style={styles.top}>
-                            <View className="back" accessibilityLabel="Zavrieť">
-                                <Icon
-                                    icon_name="chevron-left"
-                                    onPress={onClose}
-                                    size={30}
-                                    pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                />
-                            </View>
-
-                            <Text className="heading" style={styles.heading}>Prihlásenie</Text>
-                        </View>
-
-                        <View className="identifier_container" style={styles.identifier_container}>
-                            <View className="identifier_icon" style={styles.identifier_icon}>
-                                <Icon icon_name="envelope" />
-                            </View>
-
-                            <TextInput
-                                className="identifier"
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                                textAlignVertical="top" 
-                                placeholder="Používateľské meno alebo e-mail" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Používateľské meno alebo e-mail" 
-                                value={identifier}
-                                onChangeText={setIdentifier}
-                                maxLength={50}
-
-                                style={[
-                                    styles.identifier, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-                        </View>
-
-                        <View className="password_container" style={styles.password_container}>
-                            <View className="password_icon" style={styles.password_icon}>
-                                <Icon icon_name="lock" />
-                            </View>
-
-                            <TextInput
-                                className="password"
-                                autoCapitalize="none"
-                                secureTextEntry={is_password_hidden ? true : false}
-                                textAlignVertical="top" 
-                                placeholder="Zadajte vaše heslo" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Zadajte vaše heslo" 
-                                value={password}
-                                onChangeText={setPassword}
-                                maxLength={50}
-
-                                style={[
-                                    styles.password, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-
-                            <View 
-                                className="show_hide_password" 
-                                accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
-                                style={styles.show_hide_password}
-                            >
-                                <Icon
-                                    icon_name={is_password_hidden ? "eye-slash" : "eye"}
-                                    onPress={() => setIsPasswordHidden(previous => !previous)} // Toggles The Value
-                                />
-                            </View>
-                        </View>
-
-                        <Text className="form_report" style={styles.form_report}></Text>
-
-                        <Pressable 
-                            className="login_form_submit"
-                            onPress={handleLogin}
-                            disabled={is_loading}
-                            accessibilityLabel="Prihlásiť sa"
-
-                            style={[
-                                styles.login_form_submit, 
-                                { outlineStyle: "none" } as any
-                            ]}
-                        >
-                            <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Prihlásiť sa</Text>
-                        </Pressable>
-
-                        <View className="login_methods">
-                            <View
-                                style={{ 
-                                    display: "flex",
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    gap: 10,
-                                }}
-                            >
-                                <View
-                                    style={{ 
-                                        flex: 1,
-                                        height: 1,
-                                        backgroundColor: LIGHT_BLUE_COLOR,
-                                    }}
-                                />
-
-                                <Text style={{ color: LIGHT_BLUE_COLOR }}>alebo</Text>
-
-                                <View
-                                    style={{ 
-                                        flex: 1,
-                                        height: 1,
-                                        backgroundColor: LIGHT_BLUE_COLOR,
-                                    }}
-                                />
-                            </View>
-
-                            <View style={styles.glow_container}>
-                                <Animated.View
-                                    style={[
-                                        styles.gradient_container,
-                                        { transform: [{ rotate: spin_animation }] }
-                                    ]}
-                                >
-                                    <LinearGradient
-                                        colors={[
-                                            "red",
-                                            "yellow",
-                                            "green",
-                                            "blue",
-                                            "red"
-                                        ]}
-
-                                        locations={[0, 0.25, 0.5, 0.75, 1]}
-                                        start={{ x: 0, y: 0 }}
-                                        end={{ x: 1, y: 1 }}
-                                        style={StyleSheet.absoluteFill}
+                            <View style={styles.top}>
+                                <View className="back" accessibilityLabel="Zavrieť">
+                                    <Icon
+                                        icon_name="chevron-left"
+                                        onPress={onClose}
+                                        size={30}
+                                        pressed_style={{ transform: [{ scale: 1.1 }] }}
                                     />
-                                </Animated.View>
+                                </View>
 
-                                <View style={styles.inner_glow_container}>
+                                <Text className="heading" style={styles.heading}>Prihlásenie</Text>
+                            </View>
+
+                            <View className="identifier_container" style={styles.identifier_container}>
+                                <View className="identifier_icon" style={styles.identifier_icon}>
+                                    <Icon icon_name="envelope" />
+                                </View>
+
+                                <TextInput
+                                    className="identifier"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                    textAlignVertical="top" 
+                                    placeholder="Používateľské meno alebo e-mail" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Používateľské meno alebo e-mail" 
+                                    value={identifier}
+                                    onChangeText={setIdentifier}
+                                    maxLength={50}
+
+                                    style={[
+                                        styles.identifier, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+                            </View>
+
+                            <View className="password_container" style={styles.password_container}>
+                                <View className="password_icon" style={styles.password_icon}>
+                                    <Icon icon_name="lock" />
+                                </View>
+
+                                <TextInput
+                                    className="password"
+                                    autoCapitalize="none"
+                                    secureTextEntry={is_password_hidden ? true : false}
+                                    textAlignVertical="top" 
+                                    placeholder="Zadajte vaše heslo" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Zadajte vaše heslo" 
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    maxLength={50}
+
+                                    style={[
+                                        styles.password, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+
+                                <View 
+                                    className="show_hide_password" 
+                                    accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
+                                    style={styles.show_hide_password}
+                                >
+                                    <Icon
+                                        icon_name={is_password_hidden ? "eye-slash" : "eye"}
+                                        onPress={() => setIsPasswordHidden(previous => !previous)} // Toggles The Value
+                                    />
+                                </View>
+                            </View>
+
+                            <Text className="form_report" style={styles.form_report}></Text>
+
+                            <Pressable 
+                                className="login_form_submit"
+                                onPress={handleLogin}
+                                disabled={is_loading}
+                                accessibilityLabel="Prihlásiť sa"
+
+                                style={[
+                                    styles.login_form_submit, 
+                                    { outlineStyle: "none" } as any
+                                ]}
+                            >
+                                <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Prihlásiť sa</Text>
+                            </Pressable>
+
+                            <View className="login_methods">
+                                <View
+                                    style={{ 
+                                        display: "flex",
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        gap: 10,
+                                    }}
+                                >
+                                    <View
+                                        style={{ 
+                                            flex: 1,
+                                            height: 1,
+                                            backgroundColor: LIGHT_BLUE_COLOR,
+                                        }}
+                                    />
+
+                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>alebo</Text>
+
+                                    <View
+                                        style={{ 
+                                            flex: 1,
+                                            height: 1,
+                                            backgroundColor: LIGHT_BLUE_COLOR,
+                                        }}
+                                    />
+                                </View>
+
+                                <View style={styles.glow_container}>
+                                    <Animated.View
+                                        style={[
+                                            styles.gradient_container,
+                                            { transform: [{ rotate: spin_animation }] }
+                                        ]}
+                                    >
+                                        <LinearGradient
+                                            colors={[
+                                                "red",
+                                                "yellow",
+                                                "green",
+                                                "blue",
+                                                "red"
+                                            ]}
+
+                                            locations={[0, 0.25, 0.5, 0.75, 1]}
+                                            start={{ x: 0, y: 0 }}
+                                            end={{ x: 1, y: 1 }}
+                                            style={StyleSheet.absoluteFill}
+                                        />
+                                    </Animated.View>
+
+                                    <View style={styles.inner_glow_container}>
+                                        <Pressable
+                                            // onPress={handleGoToGoogleLogin}
+                                            accessibilityRole="button"
+                                            accessibilityLabel="Google"
+                                            style={{ height: "100%", width: "100%" }}
+                                        >
+                                            {({ pressed }) => (
+                                                <View style={styles.google_content}>
+                                                    <View className="google_icon" style={styles.google_icon}>
+                                                        <FontAwesome6
+                                                            name="google"
+                                                            size={20}
+                                                            color={LIGHT_BLUE_COLOR}
+                                                        />
+                                                    </View>
+
+                                                    <Text
+                                                        style={[
+                                                            { color: LIGHT_BLUE_COLOR, fontStyle: "italic" },
+                                                        ]}
+                                                    >
+                                                        Google
+                                                    </Text>
+                                                </View>
+                                            )}
+                                        </Pressable>
+                                    </View>
+                                </View>
+                            </View>
+
+                            <View className="form_questions" style={styles.form_questions}>
+                                <View 
+                                    style={{ 
+                                        flexDirection: "row",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
                                     <Pressable
-                                        // onPress={handleGoToGoogleLogin}
+                                        // onPress={handleGoToPasswordReset}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Google"
-                                        style={{ height: "100%", width: "100%" }}
+                                        accessibilityLabel="Zmeniť heslo" 
                                     >
                                         {({ pressed }) => (
-                                            <View style={styles.google_content}>
-                                                <View className="google_icon" style={styles.google_icon}>
-                                                    <FontAwesome6
-                                                        name="google"
-                                                        size={20}
-                                                        color={LIGHT_BLUE_COLOR}
-                                                    />
-                                                </View>
+                                            <Text 
+                                                style={[
+                                                    { color: SECONDARY_COLOR, fontStyle: "italic" },
+                                                    pressed && { textDecorationLine: "underline" } 
+                                                ]}
+                                            >
+                                                Zmeniť heslo
+                                            </Text>
+                                        )}
+                                    </Pressable>
+                                </View>
 
-                                                <Text
-                                                    style={[
-                                                        { color: LIGHT_BLUE_COLOR, fontStyle: "italic" },
-                                                    ]}
-                                                >
-                                                    Google
-                                                </Text>
-                                            </View>
+                                <View 
+                                    style={{ 
+                                        flexDirection: "row",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Text style={{ color: SECONDARY_COLOR }}>Ešte nemáte účet? </Text>
+                                    <Pressable
+                                        onPress={onChangeActiveForm}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Vytvoriť účet" 
+                                    >
+                                        {({ pressed }) => (
+                                            <Text
+                                                style={[
+                                                    { color: SECONDARY_COLOR, fontStyle: "italic" },
+                                                    pressed && { textDecorationLine: "underline" } 
+                                                ]}
+                                            >
+                                                Vytvoriť účet
+                                            </Text>
                                         )}
                                     </Pressable>
                                 </View>
                             </View>
                         </View>
-
-                        <View className="form_questions" style={styles.form_questions}>
-                            <View 
-                                style={{ 
-                                    flexDirection: "row",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
-                                <Pressable
-                                    // onPress={handleGoToPasswordReset}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Zmeniť heslo" 
-                                >
-                                    {({ pressed }) => (
-                                        <Text 
-                                            style={[
-                                                { color: SECONDARY_COLOR, fontStyle: "italic" },
-                                                pressed && { textDecorationLine: "underline" } 
-                                            ]}
-                                        >
-                                            Zmeniť heslo
-                                        </Text>
-                                    )}
-                                </Pressable>
-                            </View>
-
-                            <View 
-                                style={{ 
-                                    flexDirection: "row",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: SECONDARY_COLOR }}>Ešte nemáte účet? </Text>
-                                <Pressable
-                                    onPress={onChangeActiveForm}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Vytvoriť účet" 
-                                >
-                                    {({ pressed }) => (
-                                        <Text
-                                            style={[
-                                                { color: SECONDARY_COLOR, fontStyle: "italic" },
-                                                pressed && { textDecorationLine: "underline" } 
-                                            ]}
-                                        >
-                                            Vytvoriť účet
-                                        </Text>
-                                    )}
-                                </Pressable>
-                            </View>
-                        </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </View>
+                    </KeyboardAvoidingView>
+                </Pressable>
+            </Pressable>
         </Modal>
     )
 }

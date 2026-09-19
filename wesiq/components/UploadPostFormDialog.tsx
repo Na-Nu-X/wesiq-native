@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert } from "react-native"
+import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert, ActivityIndicator } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import SelectPosts from "@/components/SelectPosts"
@@ -12,6 +12,8 @@ import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import type { LoggedInUser, LoggedInUserResponse } from "./LoginFormDialog"
+import { AVPlaybackStatus, ResizeMode, Video } from "expo-av"
+import { FontAwesome6 } from "@expo/vector-icons"
 
 export interface UploadPostResponse {
     success:boolean,
@@ -89,6 +91,8 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
 
     const MAX_DESCRIPTION_LENGTH:number = 500 // Defines The Maximum Description Length
 
+    const [post_preview_progress, setPostPreviewProgress] = useState<Record<string, number>>({}) // Stores The Post Preview Progress
+
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
         try {
@@ -134,19 +138,257 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
 
     // Function For Handle The Media Selection
     const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]):void => {
-        setSelectedFiles((previous_selected_files) => [...previous_selected_files, ...new_selected_files]) // Sets The Selected Files
+        setSelectedFiles((previous_selected_files:ImagePicker.ImagePickerAsset[]) => {
+            const combined_selected_files:ImagePicker.ImagePickerAsset[] = [...previous_selected_files, ...new_selected_files] // Gets The Combined Selected Files
+            return combined_selected_files.slice(0, 5) // Removes Unnecessary Files
+        })
     }
+
+    // Function For Handle Selected File Loading Progress
+    const handleSelectedFileLoadingProgress = (file:ImagePicker.ImagePickerAsset, onProgress:(progress:number) => void):void => {
+        // Accepts Only 5 Files And Only The Image And Video Formats
+        if(selected_files.length <= 5 && (file.type === "image" || file.type === "video")) {
+            // Web
+            if(Platform.OS === "web" && file.file) {
+                const file_reader:FileReader = new FileReader() // Reads The Content of The File
+        
+                file_reader.onprogress = (event:ProgressEvent<FileReader>):void => {
+                    if(event.lengthComputable) {
+                        const progress_percentage:number = Math.round((event.loaded / event.total) * 100) // Calculates The Loading Progress Percentage
+                        onProgress(progress_percentage) // Displays The Loading Progress Percentage
+                    }
+                }
+        
+                file_reader.onloadend = () => {
+                    onProgress(100) // Displays The Loading Progress Percentage
+                }
+        
+                file_reader.readAsDataURL(file.file) // Renders The Preview
+            } 
+            
+            // iOS / Android
+            else {
+                onProgress(100) // Displays The Loading Progress Percentage
+            }
+        }
+    }
+
+    // Initializes The Loading Progress Of New Selected Files
+    useEffect(() => {
+        selected_files.forEach((one_media) => {
+            if(post_preview_progress[one_media.uri] === undefined) {
+                setPostPreviewProgress(previous_progress => ({ ...previous_progress, [one_media.uri]: 0 })) // Sets The Initial Progress (0%)
+                
+                handleSelectedFileLoadingProgress(one_media, (progress:number) => {
+                    setPostPreviewProgress(previous_progress => ({ 
+                        ...previous_progress, 
+                        [one_media.uri]: progress 
+                    }))
+                })
+            }
+        })
+    }, [selected_files])
 
     // Function For Render Post Preview
     const renderPostPreview = () => {
-        return selected_files.map((one_media:ImagePicker.ImagePickerAsset, index:number) => (
-            <View key={one_media.assetId || index} style={styles.post}>
-                <Image 
-                    source={{ uri: one_media.uri }} 
-                    style={{ width: "100%", height: "100%" }}
-                />
-            </View>
-        ))
+        const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
+
+        const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
+        const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
+        const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
+        const MIN_VIDEO_DURATION:number = 1 // 1 Second
+
+        return selected_files.map((one_media:ImagePicker.ImagePickerAsset, index:number) => {
+            console.log(selected_files)
+
+            // Accepts Only 5 Files And Only The Image And Video Formats
+            if(index < 5 && (one_media.type === "image" || one_media.type === "video")) {
+                const is_video:boolean = one_media.type === "video" // Gets The Information If The File Is Video
+                const current_progress:number = post_preview_progress[one_media.uri] || 0 // Gets The Current Progress
+        
+                return (
+                    <View key={one_media.assetId || index} style={styles.post}>
+                        {current_progress < 100 && (
+                            <View style={styles.loadingOverlay}>
+                                <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                <Text className="loading_progress" style={styles.loading_progress}>{current_progress}%</Text>
+                            </View>
+                        )}
+
+                        <View 
+                            className="post"
+                            // draggable = true
+                        >
+                            <View className="loading"></View>
+                            <Text className="loading_progress">0%</Text>
+
+                            <View className="remove_post" accessibilityLabel="Odstrániť...">
+                                <Icon
+                                    icon_name="xmark"
+                                    // onPress={}
+                                    // removeFile(index, select_posts, posts_preview) // Removes The File
+                                />
+                            </View>
+
+                            {is_video ? (
+                                <>
+                                    {/* Video */}
+                                    <Video
+                                        source={{ uri: one_media.uri }} // Sets The Source
+                                        useNativeControls={false} // Disables The Controls
+                                        resizeMode={ResizeMode.COVER}
+                                        isLooping={false}
+                                        isMuted={true} // Mutes The Video
+                                        style={{ width: "100%", height: "100%" }}
+                                    />
+
+                                    {/* Checks The Video Size */}
+                                    {one_media.fileSize || 0 > MAX_VIDEO_SIZE && (
+                                        <>
+                                            <View className="tooltip">
+                                                <Text>Video je príliš veľké</Text>
+                                            </View>
+
+                                            <FontAwesome6
+                                                name="triangle-exclamation"
+                                                color={BLUE_COLOR}
+                                            />
+                                        </>
+                                    )}
+
+                                    {/* Checks The Video Duration */}
+                                    {one_media.duration || 0 > MAX_VIDEO_DURATION && (
+                                        <>
+                                            <View className="tooltip">
+                                                <Text>Video je príliš dlhé</Text>
+                                            </View>
+
+                                            <FontAwesome6
+                                                name="triangle-exclamation"
+                                                color={BLUE_COLOR}
+                                            />
+                                        </>
+                                    )}
+
+                                    {/* Checks The Video Duration */}
+                                    {one_media.duration || 0 < MIN_VIDEO_DURATION && (
+                                        <>
+                                            <View className="tooltip">
+                                                <Text>Video je príliš krátke</Text>
+                                            </View>
+
+                                            <FontAwesome6
+                                                name="triangle-exclamation"
+                                                color={BLUE_COLOR}
+                                            />
+                                        </>
+                                    )}
+
+                                    <View className="video_settings">
+                                        <View className="toggle_mute" accessibilityLabel="Vypnúť zvuk">
+                                            <Icon
+                                                icon_name="volume-high"
+                                                // onPress={}
+                                                // toggleMuteVideo(post, this, toggle_mute_label.querySelector("i") as HTMLElement) // Toggles Mute / Unmute Of Video
+                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                            />
+                                        </View>
+
+                                        <View className="select_thumbnail" accessibilityLabel="Vybrať náhľad">
+                                            <Icon
+                                                icon_name="image"
+                                                // onPress={}
+                                                // toggleMuteVideo(post, this, toggle_mute_label.querySelector("i") as HTMLElement) // Toggles Mute / Unmute Of Video
+                                                is_regular={true}
+                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                            />
+
+                                            {/* // Select Thumbnail Input Change Functionality
+                                            select_thumbnail_input.addEventListener("change", function():void {
+                                                const thumbnail_file:File|null = this.files?.[0] || null // Gets The Thumbnail File
+
+                                                if(!thumbnail_file) return
+
+                                                const thumbnail_file_reader:FileReader = new FileReader() // Reads The Content of The File
+
+                                                thumbnail_file_reader.addEventListener("load", function():void {
+                                                    const file_data:string = thumbnail_file_reader.result as string // Gets The File Data
+
+                                                    if(!file_data) return
+
+                                                    if(element) {
+                                                        (element as HTMLVideoElement).poster = file_data // Sets The Video Poster Image
+                                                    }
+
+                                                    post.dataset["thumbnail_filename"] = thumbnail_file.name // Stores The Thumbnail's Filename
+                                                })
+
+                                                thumbnail_file_reader.readAsDataURL(thumbnail_file) // Renders The Preview
+                                            }) */}
+                                        </View>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    {/* Image */}
+                                    <Image
+                                        source={{ uri: one_media.uri }}
+                                        style={{ width: "100%", height: "100%" }}
+                                    />
+
+                                    {/* Checks The Image Size */}
+                                    {one_media.fileSize || 0 > MAX_IMAGE_SIZE && (
+                                        <>
+                                            <View className="tooltip">
+                                                <Text>Obrázok je príliš veľký</Text>
+                                            </View>
+
+                                            <FontAwesome6
+                                                name="triangle-exclamation"
+                                                color={BLUE_COLOR}
+                                            />
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </View>
+
+                        {/* // Post Drag & Drop Functionalities (Change The Order of The Posts)
+                        post.addEventListener("dragstart", function(event:DragEvent):void {
+                            event.dataTransfer?.setData("sourceIndex", index.toString())
+
+                            post.style.opacity = "0.5" // Adds Transparency To The Dragged Post
+                            post.style.transform = "scale(1)" // Adds Normal Scale To The Dragged Post
+
+                            posts_preview.querySelectorAll<HTMLDivElement>(".post").forEach(function(one_post:HTMLDivElement):void {
+                                if(one_post !== post) one_post.classList.add("drag_active") // Adds Drag Active Class To All Posts Except The One That Was Dragged
+                            })
+                        })
+
+                        post.addEventListener("dragend", function():void {
+                            post.style.opacity = "1" // Removes Transparency From The Dragged Post
+                            post.removeAttribute("style") // Removes Hardcoded Style (style="transform: scale(1)) From The Dragged Post
+
+                            posts_preview.querySelectorAll<HTMLDivElement>(".post").forEach(one_post => one_post.classList.remove("drag_active")) // Removes Drag Active Class From All Posts
+                        })
+
+                        post.addEventListener("dragover", (event:DragEvent) => event.preventDefault())
+
+                        post.addEventListener("drop", function(event:DragEvent):void {
+                            event.preventDefault()
+                            event.stopPropagation()
+
+                            posts_preview.classList.remove("drag_active") // Removes Drag Animation From The Post Preview
+
+                            const from_index = parseInt(event.dataTransfer?.getData("sourceIndex") || "-1")
+                            const to_index = index
+
+                            if(from_index !== -1 && from_index !== to_index) changePostOrder(from_index, to_index, select_posts, posts_preview) // Changes Post Order
+                        }) */}
+                    </View>
+                )
+            }
+        })
     }
 
     // Function For Handle The Emoji Select
@@ -229,6 +471,8 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
 
     // Function For Handle Upload Post Form Submission
     const handleUploadPostSubmission = ():void => {
+        Keyboard.dismiss() // Hides The Keyboard
+        
         if(selected_files.length === 0) {
             Alert.alert("Chyba", "Vyberte aspoň jednu fotku alebo video.") // Shows The Alert
             return
@@ -298,6 +542,34 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         }
     }
 
+    // Function For Upload The Post With Progress
+    const uploadPostWithProgress = (url:string, headers:Record<string, string>, form_data:FormData, onProgress:(progress: number) => void):Promise<Response> => {
+        return new Promise((resolve, reject) => {
+            const xhr:XMLHttpRequest = new XMLHttpRequest()
+
+            // Checks The Server Upload Process
+            xhr.upload.onprogress = (event) => {
+                if(event.lengthComputable) {
+                    const progress_percentage:number = Math.round((event.loaded / event.total) * 100) // Calculates The Loading Progress Percentage
+                    onProgress(progress_percentage) // Displays The Loading Progress Percentage
+                }
+            }
+    
+            xhr.onload = () => {
+                resolve({
+                    ok: xhr.status >= 200 && xhr.status < 300,
+                    status: xhr.status,
+                    json: async () => JSON.parse(xhr.responseText)
+                } as Response)
+            }
+    
+            xhr.onerror = (error) => reject(error)
+            xhr.open("POST", url)
+            Object.keys(headers).forEach(key => {xhr.setRequestHeader(key, headers[key])}) // Adds The Request Headers
+            xhr.send(form_data) // Sends The POST Request To The Server
+        })
+    }
+
     // Function For Upload The Post
     const uploadPost = async (selected_files:RNMediaAsset[], thumbnail_files:RNMediaAsset[], post_details:PostDetails):Promise<void> => {
         setIsUploading(true) // Sets The Information That The Post Is Uploading
@@ -339,19 +611,21 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
             }
     
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The POST Request To The Server
-            const upload_post_response:Response = await fetch(`${API_URL}/upload-post/`, {
-                method: "POST",
 
-                headers: {
-                    // "Content-Type": "multipart/form-data",
+            setButtonText("Nahráva sa... 0%") // Sets The Button Text
+
+            // Uploads The Post With Progress
+            const upload_post_response: Response = await uploadPostWithProgress(
+                `${API_URL}/upload-post/`,
+
+                {
                     "Accept": "application/json",
                     "Authorization": `Bearer ${user_token}`
                 },
 
-                body: form_data,
-            })
+                form_data,
+                (progress) => {setButtonText(`Nahráva sa... ${progress}%`)} // Sets The Button Text
+            )
     
             const upload_post_data:UploadPostResponse = await upload_post_response.json() // Gets The Upload Post Data
 
@@ -360,77 +634,8 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
                     onCompressTasksLoad(upload_post_data.compress_tasks) // Sets The Currently Being Compressed Tasks
                 }
             }
-    
-            // if(upload_post_response.ok && upload_post_data.success) {
-            //     if(upload_post_data.compress_tasks && upload_post_data.compress_tasks.length > 0) {
-            //         onCompressTasksLoad(upload_post_data.compress_tasks) // Sets The Currently Being Compressed Tasks
-
-            //         const existing_tasks:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Existing Tasks Of The Processing Posts From The Async Storage
-            //         let processing_posts:CompressTask[] = existing_tasks ? JSON.parse(existing_tasks) : [] // Gets The Processing Posts
-
-            //         processing_posts.push(...upload_post_data.compress_tasks) // Adds The New Tasks Of Processing Posts
-            //         await AsyncStorage.setItem("processing_posts", JSON.stringify(processing_posts)) // Saves Updated Processing Posts To The Async Storage
-
-            //         const all_task_ids:string[] = upload_post_data.compress_tasks.map((one_task:CompressTask) => one_task.task_id) // Stores All UUIDs Of Tasks (Uploaded Files)
-                    
-            //         onUploadProgressUpdate(0) // Sets The Upload Progress To 0
-            //         setButtonText("Spracuváva sa...") // Sets The Button Text
-
-            //         // Checks The Progress Of Uploaded Posts
-            //         const check_upload_progress_interval = setInterval(async () => {
-            //             try {
-            //                 const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {
-                                
-            //                     const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
-            //                         headers: { "Authorization": `Bearer ${user_token}` }
-            //                     })
-                                
-            //                     if(!upload_progress_response.ok) throw new Error("Chyba servera")
-            //                     return upload_progress_response.json() as Promise<UploadProgressResponse>
-            //                 })
-
-            //                 const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
-
-            //                 const all_tasks_finished:boolean = tasks_results.every(one_task => one_task.upload_progress.state.toUpperCase() === "SUCCESS") // If Every Tasks Has Been Succeeded
-            //                 const any_task_failed:boolean = tasks_results.some(one_task => one_task.upload_progress.state.toUpperCase() === "FAILURE") // If Any Task Has Failed
-
-            //                 let total_progress:number = 0 // Stores The Total Progress
-
-            //                 tasks_results.forEach(one_task => {
-            //                     if(one_task.upload_progress) {
-            //                         if(one_task.upload_progress.state.toUpperCase() === "SUCCESS") total_progress += 100
-            //                         else if(one_task.upload_progress.progress !== undefined) total_progress += one_task.upload_progress.progress
-            //                     }
-            //                 })
-
-            //                 const overall_progress_percentage:number = Math.round(total_progress / all_task_ids.length) // Gets The Overall Progress Percentage
-            //                 onUploadProgressUpdate(overall_progress_percentage) // Sets The Upload Progress
-            //                 onClose() // Closes The Upload Post Form
-
-            //                 if(all_tasks_finished) {
-            //                     clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-            //                 }
-
-            //                 else if(any_task_failed) {
-            //                     clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-            //                     setButtonText("Chyba pri spracovaní") // Sets The Button Text
-            //                 }
-            //             } 
-                        
-            //             catch {
-            //                 setButtonText("Chyba spojenia") // Sets The Button Text
-            //             }
-            //         }, 1500)
-            //     }
-                
-            //     else {
-            //         setButtonText("Skúste znovu") // Sets The Button Text
-            //     }
-            // }
              
-            else {
-                setButtonText("Skúste znovu") // Sets The Button Text
-            }
+            else setButtonText("Skúste znovu") // Sets The Button Text
         }
         
         catch {
@@ -451,17 +656,32 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
             animationType="fade"
             onRequestClose={onClose}
         >
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <View style={styles.backdrop}>
-                    <BlurView intensity={25} style={StyleSheet.absoluteFill} />
+            <Pressable 
+                onPress={onClose}
 
-                    <View
-                        style={[
-                            StyleSheet.absoluteFill,
-                            { backgroundColor: transparentize(MAIN_COLOR, 0.5) },
-                        ]}
-                    />
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                }} 
+            >
+                <BlurView intensity={25} style={StyleSheet.absoluteFill} />
 
+                <View
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { backgroundColor: transparentize(MAIN_COLOR, 0.5) },
+                    ]}
+                />
+
+                <Pressable 
+                    onPress={(event) => event.stopPropagation()}
+
+                    style={{
+                        maxWidth: MAIN_WIDTH,
+                        width: "100%",
+                    }}
+                >
                     <KeyboardAvoidingView 
                         behavior={Platform.OS === "ios" ? "padding" : "height"}
                         style={{ width: "100%", alignItems: "center" }}
@@ -485,16 +705,15 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
 
                             <View className="posts_preview" style={styles.posts_preview}>
                                 <SelectPosts onMediaSelection={handleMediaSelection} />
-
-                                {selected_files.length > 0 && (
-                                    renderPostPreview() // Renders Post Preview
-                                )}
+                                {selected_files.length > 0 && (renderPostPreview())} {/* Renders Post Preview */}
                             </View>
 
                             <View className="post_info_container" style={styles.post_info_container}>
                                 <TextInput
                                     className="description"
                                     multiline={true} 
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
                                     textAlignVertical="top" 
                                     placeholder="Popis príspevku" 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
@@ -643,8 +862,8 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
                             </Pressable>
                         </View>
                     </KeyboardAvoidingView>
-                </View>
-            </TouchableWithoutFeedback>
+                </Pressable>
+            </Pressable>
         </Modal>
     )
 }
@@ -726,6 +945,21 @@ const styles = StyleSheet.create({
         height: 100,
         borderRadius: SMALL_BORDER_RADIUS,
         overflow: "hidden",
+    },
+
+    loadingOverlay: {
+        ...StyleSheet.absoluteFill,
+        backgroundColor: "rgba(0, 0, 0, 0.6)", // Tmavé polopriehľadné pozadie
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 10, // Zabezpečí, že indikátor je nad obrázkom/videom
+    },
+
+    loading_progress: {
+        fontSize: 15,
+        color: "#cccccc",
+        zIndex: 50,
+        // transition: opacity 1s ease, visibility 1s ease;
     },
 
     drag_active: {

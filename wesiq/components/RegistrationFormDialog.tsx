@@ -277,7 +277,15 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
             animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.backdrop}>
+            <Pressable 
+                onPress={onClose}
+
+                style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                }} 
+            >
                 <BlurView intensity={25} style={StyleSheet.absoluteFill} />
 
                 <View
@@ -287,299 +295,308 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                     ]}
                 />
 
-                <KeyboardAvoidingView 
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={{ width: "100%", alignItems: "center" }}
-                >
-                    <View className="registration_form" style={styles.registration_form}>
-                        <View style={styles.circle_decoration_before} />
-                        <View style={styles.circle_decoration_after} />
+                <Pressable 
+                    onPress={(event) => event.stopPropagation()}
 
-                        <View style={styles.top}>
-                            <View className="back" accessibilityLabel="Zavrieť">
-                                <Icon
-                                    icon_name="chevron-left"
-                                    onPress={onClose}
-                                    size={30}
-                                    pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                />
+                    style={{
+                        maxWidth: MAIN_WIDTH,
+                        width: "100%",
+                    }}
+                >
+                    <KeyboardAvoidingView 
+                        behavior={Platform.OS === "ios" ? "padding" : "height"}
+                        style={{ width: "100%", alignItems: "center" }}
+                    >
+                        <View className="registration_form" style={styles.registration_form}>
+                            <View style={styles.circle_decoration_before} />
+                            <View style={styles.circle_decoration_after} />
+
+                            <View style={styles.top}>
+                                <View className="back" accessibilityLabel="Zavrieť">
+                                    <Icon
+                                        icon_name="chevron-left"
+                                        onPress={onClose}
+                                        size={30}
+                                        pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                    />
+                                </View>
+
+                                <Text className="heading" style={styles.heading}>Registrácia</Text>
                             </View>
 
-                            <Text className="heading" style={styles.heading}>Registrácia</Text>
-                        </View>
+                            <View className="name_container" style={styles.name_container}>
+                                <View className="first_name_container" style={styles.first_name_container}>
+                                    <View className="first_name_icon" style={styles.first_name_icon}>
+                                        <Icon icon_name="user" />
+                                    </View>
 
-                        <View className="name_container" style={styles.name_container}>
-                            <View className="first_name_container" style={styles.first_name_container}>
-                                <View className="first_name_icon" style={styles.first_name_icon}>
-                                    <Icon icon_name="user" />
+                                    <TextInput
+                                        className="first_name"
+                                        keyboardType="default"
+                                        autoCapitalize="words"
+                                        textAlignVertical="top" 
+                                        placeholder="Meno" 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel="Meno" 
+                                        value={first_name}
+                                        onChangeText={setFirstName}
+                                        maxLength={20}
+
+                                        style={[
+                                            styles.first_name, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
+                                    />
+                                </View>
+
+                                <View className="last_name_container" style={styles.last_name_container}>
+                                    <View className="last_name_icon" style={styles.last_name_icon}>
+                                        <Icon icon_name="user" />
+                                    </View>
+
+                                    <TextInput
+                                        className="last_name"
+                                        keyboardType="default"
+                                        autoCapitalize="words"
+                                        textAlignVertical="top" 
+                                        placeholder="Priezvisko" 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel="Priezvisko" 
+                                        value={last_name}
+                                        onChangeText={setLastName}
+                                        maxLength={50}
+
+                                        style={[
+                                            styles.last_name, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
+                                    />
+                                </View>
+                            </View>
+
+                            <View className="contact_container" style={styles.contact_container}>
+                                <View className="email_address_container" style={styles.email_address_container}>
+                                    <View className="email_address_icon" style={styles.email_address_icon}>
+                                        <Icon icon_name="envelope" />
+                                    </View>
+
+                                    <TextInput
+                                        className="email_address"
+                                        keyboardType="default"
+                                        textAlignVertical="top" 
+                                        placeholder="E-mail" 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel="E-mail" 
+                                        value={email_address}
+                                        onChangeText={setEmailAddress}
+                                        maxLength={50}
+
+                                        style={[
+                                            styles.email_address, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
+                                    />
+                                </View>
+
+                                <View className="phone_number_container" style={styles.phone_number_container}>
+                                    <View className="phone_number_icon" style={styles.phone_number_icon}>
+                                        <Icon icon_name="phone" />
+                                    </View>
+
+                                    <TextInput
+                                        className="phone_number"
+                                        keyboardType="phone-pad"
+                                        textAlignVertical="top" 
+                                        placeholder="Telefónne číslo" 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel="Telefónne číslo" 
+                                        value={phone_number}
+                                        onChangeText={handlePhoneNumberChange}
+                                        maxLength={25}
+
+                                        style={[
+                                            styles.phone_number, 
+                                            phone_number.trim().length > 0 ? { borderBottomColor: is_phone_number_valid ? "#52cf20" : "#df3535" } : {},
+                                            { outlineStyle: "none" } as any
+                                        ]}
+                                    />
+
+                                    {flag && (
+                                        <Image
+                                            source={{ uri:flag }}
+                                            style={styles.flag}
+                                        />
+                                    )}
+                                </View>
+                            </View>
+
+                            <View className="username_container" style={styles.username_container}>
+                                <View className="username_icon" style={styles.username_icon}>
+                                    <Icon icon_name="at" />
                                 </View>
 
                                 <TextInput
-                                    className="first_name"
+                                    className="username"
                                     keyboardType="default"
-                                    autoCapitalize="words"
                                     textAlignVertical="top" 
-                                    placeholder="Meno" 
+                                    placeholder="Používateľské meno" 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Meno" 
-                                    value={first_name}
-                                    onChangeText={setFirstName}
+                                    accessibilityLabel="Používateľské meno" 
+                                    value={username}
+                                    onChangeText={setUsername}
                                     maxLength={20}
 
                                     style={[
-                                        styles.first_name, 
+                                        styles.username, 
                                         { outlineStyle: "none" } as any
                                     ]}
                                 />
                             </View>
 
-                            <View className="last_name_container" style={styles.last_name_container}>
-                                <View className="last_name_icon" style={styles.last_name_icon}>
-                                    <Icon icon_name="user" />
-                                </View>
-
-                                <TextInput
-                                    className="last_name"
-                                    keyboardType="default"
-                                    autoCapitalize="words"
-                                    textAlignVertical="top" 
-                                    placeholder="Priezvisko" 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Priezvisko" 
-                                    value={last_name}
-                                    onChangeText={setLastName}
-                                    maxLength={50}
-
-                                    style={[
-                                        styles.last_name, 
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
-                            </View>
-                        </View>
-
-                        <View className="contact_container" style={styles.contact_container}>
-                            <View className="email_address_container" style={styles.email_address_container}>
-                                <View className="email_address_icon" style={styles.email_address_icon}>
-                                    <Icon icon_name="envelope" />
-                                </View>
-
-                                <TextInput
-                                    className="email_address"
-                                    keyboardType="default"
-                                    textAlignVertical="top" 
-                                    placeholder="E-mail" 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="E-mail" 
-                                    value={email_address}
-                                    onChangeText={setEmailAddress}
-                                    maxLength={50}
-
-                                    style={[
-                                        styles.email_address, 
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
-                            </View>
-
-                            <View className="phone_number_container" style={styles.phone_number_container}>
-                                <View className="phone_number_icon" style={styles.phone_number_icon}>
-                                    <Icon icon_name="phone" />
-                                </View>
-
-                                <TextInput
-                                    className="phone_number"
-                                    keyboardType="phone-pad"
-                                    textAlignVertical="top" 
-                                    placeholder="Telefónne číslo" 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Telefónne číslo" 
-                                    value={phone_number}
-                                    onChangeText={handlePhoneNumberChange}
-                                    maxLength={25}
-
-                                    style={[
-                                        styles.phone_number, 
-                                        phone_number.trim().length > 0 ? { borderBottomColor: is_phone_number_valid ? "#52cf20" : "#df3535" } : {},
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
-
-                                {flag && (
-                                    <Image
-                                        source={{ uri:flag }}
-                                        style={styles.flag}
-                                    />
-                                )}
-                            </View>
-                        </View>
-
-                        <View className="username_container" style={styles.username_container}>
-                            <View className="username_icon" style={styles.username_icon}>
-                                <Icon icon_name="at" />
-                            </View>
-
-                            <TextInput
-                                className="username"
-                                keyboardType="default"
-                                textAlignVertical="top" 
-                                placeholder="Používateľské meno" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Používateľské meno" 
-                                value={username}
-                                onChangeText={setUsername}
-                                maxLength={20}
-
-                                style={[
-                                    styles.username, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-                        </View>
-
-                        <View className="password_container" style={styles.password_container}>
-                            <View 
-                                className="generate_password" 
-                                accessibilityLabel="Navrhnúť heslo"
-                                style={styles.generate_password}
-                            >
-                                <Icon
-                                    icon_name="key"
-                                    onPress={generatePassword}
-                                />
-                            </View>
-
-                            <TextInput
-                                className="password"
-                                autoCapitalize="none"
-                                secureTextEntry={is_password_hidden ? true : false}
-                                textAlignVertical="top" 
-                                placeholder="Vytvorte heslo" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Vytvorte heslo" 
-                                value={password}
-                                onChangeText={handlePasswordChange}
-                                maxLength={50}
-
-                                style={[
-                                    styles.password, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-
-                            <View 
-                                className="show_hide_password" 
-                                accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
-                                style={styles.show_hide_password}
-                            >
-                                <Icon
-                                    icon_name={is_password_hidden ? "eye-slash" : "eye"}
-                                    onPress={() => setIsPasswordHidden(previous => !previous)} // Toggles The Value
-                                />
-                            </View>
-
-                            <View 
-                                className="copy_password" 
-                                accessibilityLabel="Skopírovať"
-                                style={styles.copy_password}
-                            >
-                                <Icon
-                                    icon_name="copy"
-                                    onPress={copyPassword}
-                                />
-                            </View>
-                        </View>
-
-                        <View className="password_check_container" style={styles.password_container}>
-                            <View className="password_check_icon" style={styles.password_check_icon}>
-                                <Icon icon_name="lock" />
-                            </View>
-
-                            <TextInput
-                                className="password_check"
-                                autoCapitalize="none"
-                                secureTextEntry={true}
-                                textAlignVertical="top" 
-                                placeholder="Overte heslo" 
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Overte heslo" 
-                                value={password_check}
-                                onChangeText={handlePasswordCheckChange}
-                                maxLength={50}
-
-                                style={[
-                                    styles.password, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-
-                            <View 
-                                className="paste_password" 
-                                accessibilityLabel="Prilepiť"
-                                style={styles.paste_password}
-                            >
-                                <Icon
-                                    icon_name="copy"
-                                    onPress={pastePassword}
-                                    is_regular={true}
-                                />
-                            </View>
-                        </View>
-
-                        <Text 
-                            className="form_report" 
-
-                            style={[
-                                styles.form_report, 
-                                form_report_appearance === "success" ? { color: GREEN_COLOR } : { color: RED_COLOR }
-                            ]}
-                        >
-                            {form_report}
-                        </Text>
-
-                        <Pressable 
-                            className="registration_form_submit"
-                            onPress={handleRegistration}
-                            disabled={is_loading}
-                            accessibilityLabel="Vytvoriť účet"
-
-                            style={[
-                                styles.registration_form_submit, 
-                                { outlineStyle: "none" } as any
-                            ]}
-                        >
-                            <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Vytvoriť účet</Text>
-                        </Pressable>
-
-                        <View className="form_questions" style={styles.form_questions}>
-                            <View 
-                                style={{ 
-                                    flexDirection: "row",
-                                    justifyContent: "center",
-                                }}
-                            >
-                                <Text style={{ color: SECONDARY_COLOR }}>Už máte účet? </Text>
-                                <Pressable
-                                    onPress={onChangeActiveForm}
-                                    accessibilityRole="button"
-                                    accessibilityLabel="Prihlásiť sa" 
+                            <View className="password_container" style={styles.password_container}>
+                                <View 
+                                    className="generate_password" 
+                                    accessibilityLabel="Navrhnúť heslo"
+                                    style={styles.generate_password}
                                 >
-                                    {({ pressed }) => (
-                                        <Text 
-                                            style={[
-                                                { color: SECONDARY_COLOR, fontStyle: "italic" },
-                                                pressed && { textDecorationLine: "underline" } 
-                                            ]}
-                                        >
-                                            Prihlásiť sa
-                                        </Text>
-                                    )}
-                                </Pressable>
+                                    <Icon
+                                        icon_name="key"
+                                        onPress={generatePassword}
+                                    />
+                                </View>
+
+                                <TextInput
+                                    className="password"
+                                    autoCapitalize="none"
+                                    secureTextEntry={is_password_hidden ? true : false}
+                                    textAlignVertical="top" 
+                                    placeholder="Vytvorte heslo" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Vytvorte heslo" 
+                                    value={password}
+                                    onChangeText={handlePasswordChange}
+                                    maxLength={50}
+
+                                    style={[
+                                        styles.password, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+
+                                <View 
+                                    className="show_hide_password" 
+                                    accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
+                                    style={styles.show_hide_password}
+                                >
+                                    <Icon
+                                        icon_name={is_password_hidden ? "eye-slash" : "eye"}
+                                        onPress={() => setIsPasswordHidden(previous => !previous)} // Toggles The Value
+                                    />
+                                </View>
+
+                                <View 
+                                    className="copy_password" 
+                                    accessibilityLabel="Skopírovať"
+                                    style={styles.copy_password}
+                                >
+                                    <Icon
+                                        icon_name="copy"
+                                        onPress={copyPassword}
+                                    />
+                                </View>
+                            </View>
+
+                            <View className="password_check_container" style={styles.password_container}>
+                                <View className="password_check_icon" style={styles.password_check_icon}>
+                                    <Icon icon_name="lock" />
+                                </View>
+
+                                <TextInput
+                                    className="password_check"
+                                    autoCapitalize="none"
+                                    secureTextEntry={true}
+                                    textAlignVertical="top" 
+                                    placeholder="Overte heslo" 
+                                    placeholderTextColor={LIGHT_BLUE_COLOR}
+                                    accessibilityLabel="Overte heslo" 
+                                    value={password_check}
+                                    onChangeText={handlePasswordCheckChange}
+                                    maxLength={50}
+
+                                    style={[
+                                        styles.password, 
+                                        { outlineStyle: "none" } as any
+                                    ]}
+                                />
+
+                                <View 
+                                    className="paste_password" 
+                                    accessibilityLabel="Prilepiť"
+                                    style={styles.paste_password}
+                                >
+                                    <Icon
+                                        icon_name="copy"
+                                        onPress={pastePassword}
+                                        is_regular={true}
+                                    />
+                                </View>
+                            </View>
+
+                            <Text 
+                                className="form_report" 
+
+                                style={[
+                                    styles.form_report, 
+                                    form_report_appearance === "success" ? { color: GREEN_COLOR } : { color: RED_COLOR }
+                                ]}
+                            >
+                                {form_report}
+                            </Text>
+
+                            <Pressable 
+                                className="registration_form_submit"
+                                onPress={handleRegistration}
+                                disabled={is_loading}
+                                accessibilityLabel="Vytvoriť účet"
+
+                                style={[
+                                    styles.registration_form_submit, 
+                                    { outlineStyle: "none" } as any
+                                ]}
+                            >
+                                <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Vytvoriť účet</Text>
+                            </Pressable>
+
+                            <View className="form_questions" style={styles.form_questions}>
+                                <View 
+                                    style={{ 
+                                        flexDirection: "row",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <Text style={{ color: SECONDARY_COLOR }}>Už máte účet? </Text>
+                                    <Pressable
+                                        onPress={onChangeActiveForm}
+                                        accessibilityRole="button"
+                                        accessibilityLabel="Prihlásiť sa" 
+                                    >
+                                        {({ pressed }) => (
+                                            <Text 
+                                                style={[
+                                                    { color: SECONDARY_COLOR, fontStyle: "italic" },
+                                                    pressed && { textDecorationLine: "underline" } 
+                                                ]}
+                                            >
+                                                Prihlásiť sa
+                                            </Text>
+                                        )}
+                                    </Pressable>
+                                </View>
                             </View>
                         </View>
-                    </View>
-                </KeyboardAvoidingView>
-            </View>
+                    </KeyboardAvoidingView>
+                </Pressable>
+            </Pressable>
         </Modal>
     )
 }
