@@ -107,6 +107,14 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
+        name="activity/copy"
+
+        options={{
+          href: null
+        }}
+      />
+
+      <Tabs.Screen
         name="blog"
 
         options={{

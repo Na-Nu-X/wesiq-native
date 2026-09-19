@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { useState, useEffect } from "react"
+import { View, StyleSheet, Text, Alert, Pressable, Linking, Platform } from "react-native"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import ProfilePictureLink from "./ProfilePictureLink"
-import { API_URL, DOMAIN } from "@/constants/general"
+import { DOMAIN } from "@/constants/general"
 import { getTimeAgo } from "@/utils/time"
 import { DynamicImage } from "./DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AnimatedProgressBar } from "./pages/community/AnimatedProgressBar"
 
 import type { ProcessingPost, ProcessingMedia } from "./Feed"
 import type { LoggedInUser } from "./LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
-import { AnimatedProgressBar } from "./pages/community/AnimatedProgressBar"
 
 interface ProcessingPostContainerProps {
     processing_post:ProcessingPost,
     tracked_tasks:TrackedTask[]
     onShowProcessingPostProperties:(processing_post:ProcessingPost) => void,
-    logged_in_user:LoggedInUser|null,
+    logged_in_user:LoggedInUser|null
 }
 
 export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShowProcessingPostProperties, logged_in_user }:ProcessingPostContainerProps) => {
@@ -28,16 +27,6 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
     const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
 
     useEffect(() => {
-        // [
-        //     {
-        //         "task_id": "f0375576-a1cf-419f-9adf-b857e109c140",
-        //         "post_id": 221,
-        //         "post_media_id": 258,
-        //         "progress": 24,
-        //         "state": "PROGRESS"
-        //     }
-        // ]
-
         console.log(tracked_tasks) // Gets The Upload Progress For Each Post Media
     }, [tracked_tasks])
 
@@ -76,31 +65,6 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
         }
     
         return text // Returns The Text
-    }
-
-    // Function For Share The Post
-    const sharePost = async (post_id:number, username:string):Promise<void> => {
-        // const link:string = interpolate(gettext("/sk/prispevok/%s"), [post_id]) // Sets The Link To The Post
-        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
-    
-        try {
-            const result = await Share.share({
-                message: `Wesiq - Príspevok užívateľa ${username}\n${link}`,
-                url: link, // Only IOS
-                title: `Wesiq - Príspevok užívateľa ${username}`
-            })
-    
-            if(result.action === Share.sharedAction) {
-                if(result.activityType) console.log("Zdieľané cez: ", result.activityType) // Only IOS
-                else console.log("Úspešne zdieľané")
-            } 
-            
-            else if(result.action === Share.dismissedAction) console.log("Zdieľanie zrušené") // Only IOS
-        } 
-
-        catch(error:any) {
-            Alert.alert("Chyba", "Nepodarilo sa otvoriť menu na zdieľanie.")
-        }
     }
 
     // Function For Change The Active Post Media
@@ -249,10 +213,16 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                         )?.progress ?? 0;
 
                         return (
-                            <>
+                            <View 
+                                key={one_post_media.id || index} 
+
+                                style={{
+                                    width: "100%",
+                                    height: "100%",
+                                }}
+                            >
                                 <View 
                                     className="one_post" 
-                                    key={one_post_media.id || index} 
 
                                     style={[
                                         styles.one_processing_post, 
@@ -303,11 +273,88 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                                         ))
                                     )}
                                 </View>
-                            </>
+                            </View>
                         )
                     })}
                 </View>
             </GestureDetector>
+
+            <View className="society" style={styles.society}>
+                <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
+                    <View 
+                        style={{ 
+                            position: "relative", 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                        }}
+                    >
+                        <Icon
+                            icon_name="heart"
+                            size={25}
+                            is_regular={true}
+                            color={BLUE_COLOR}
+                            pressed_color={RED_COLOR}
+                        />
+                    </View>
+
+                    <Text className="likes_counter" style={styles.society_likes_counter}>0</Text>
+                </View>
+
+                <View 
+                    className="comments" 
+                    accessibilityLabel="Komentáre..."
+                    style={styles.comments}
+                >
+                    <Icon
+                        icon_name="comment"
+                        size={25}
+                        is_regular={true}
+                    />
+
+                    {processing_post.allow_comments 
+                    ? (<Text className="comments_counter" style={styles.comments_counter}>0</Text>)
+                    : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>Vypnuté</Text>)}
+                </View>
+
+                <View className="share" accessibilityLabel="Zdielať...">
+                    <Icon
+                        icon_name="share-nodes"
+                        size={25}
+                    />
+                </View>
+
+                <View 
+                    className="views" 
+                    accessibilityLabel="Počet videní..."
+                    style={styles.views}
+                >
+                    <Icon
+                        icon_name="eye"
+                        size={25}
+                        is_regular={true}
+                    />
+
+                    <Text className="views_counter" style={styles.views_counter}>0</Text>
+                </View>
+
+                <View className={"save"} accessibilityLabel="Uložiť...">
+                    <View className="save" accessibilityLabel="Uložiť...">
+                        <Icon
+                            icon_name="bookmark"
+                            size={25}
+                            is_regular={true}
+                        />
+                    </View>
+                </View>
+            </View>
+
+            {processing_post.description && (
+                <Text className="description" style={styles.description}>
+                {processing_post.tagged_users.map(one_tagged_user => one_tagged_user.username).length > 0 || processing_post.added_hashtags.length > 0 
+                ? (generateStyledDescription(processing_post.description, JSON.stringify(processing_post.tagged_users.map(one_tagged_user => one_tagged_user.username)), JSON.stringify(processing_post.added_hashtags))) // Generates The Styled Description
+                : (processing_post.description)}
+                </Text>
+            )}
         </View>
     )
 }
@@ -481,6 +528,63 @@ const styles = StyleSheet.create({
         //     cursor: pointer;
         //     background-color: $dark-blue-color;
         // }
+    },
+
+    society: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 20,
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: "#cccccc",
+    },
+
+    society_likes: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        height: 20,
+    },
+
+    society_likes_counter: {
+        color: BLUE_COLOR,
+        fontSize: 22,
+    },
+
+    comments: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+    },
+
+    comments_counter: {
+        color: BLUE_COLOR,
+        fontSize: 22,
+    },
+
+    hidden_comments_counter: {
+        color: BLUE_COLOR,
+        fontSize: 15,
+    },
+
+    views: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        height: 20,
+        marginLeft: "auto",
+    },
+
+    views_counter: {
+        color: BLUE_COLOR,
+        fontSize: 22,
+    },
+
+    description: {
+        marginTop: 5,
+        lineHeight: 1.5,
+        color: transparentize(SECONDARY_COLOR, 0.08),
     },
 
     tag: {

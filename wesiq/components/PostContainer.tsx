@@ -1129,13 +1129,13 @@ export const PostContainer = ({
                     )
                 })()}
 
-                <View className={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? "save active" : ""} accessibilityLabel="Uložiť...">
+                <View className={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? "save active" : "save"} accessibilityLabel="Uložiť...">
                     <View className="save" accessibilityLabel="Uložiť...">
                         <Icon
                             icon_name="bookmark"
                             onPress={() => togglePostSave(post.id)}
                             size={25}
-                            is_regular={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? false : true} // Shows The Empty Or Filled Heart Icon
+                            is_regular={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? false : true} // Shows The Empty Or Filled Bookmark Icon
                             color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : BLUE_COLOR}
                             pressed_color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
                         />

@@ -160,10 +160,11 @@ export interface ProcessingMedia {
 
 interface FeedProps {
     tracked_tasks:TrackedTask[],
-    processing_posts:ProcessingPost[]
+    processing_posts:ProcessingPost[],
+    onProcessingPostsUpdate:(processing_posts:ProcessingPost[]) => void
 }
 
-export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
+export default function Feed({ tracked_tasks, processing_posts, onProcessingPostsUpdate }:FeedProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [posts, setPosts] = useState<Post[]>([]) // Stores The Posts
@@ -334,19 +335,19 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
     // Function For Show The Processing Post Properties
     const showProcessingPostProperties = (processing_post:ProcessingPost):void => {
         console.log(processing_post)
-        // setSelectedProcessingPost(processing_post) // Sets The Selected Processing Post
-        // post_properties.current?.present() // Shows The Processing Post Properties
+        setSelectedProcessingPost(processing_post) // Sets The Selected Processing Post
+        processing_post_properties.current?.present() // Shows The Processing Post Properties
     }
 
     // Function For Close The Processing Post Properties
     const hideProcessingPostProperties = ():void => {
-        // setSelectedProcessingPost(null) // Sets The Selected Processing Post
-        // post_properties.current?.dismiss() // Hides The Processing Post Properties
+        setSelectedProcessingPost(null) // Sets The Selected Processing Post
+        processing_post_properties.current?.dismiss() // Hides The Processing Post Properties
     }
 
     // Function For Handle Processing Post Properties Sheet Switching
     const handleProcessingPostPropertiesChanges = (index:number) => {
-        // if(index === -1) setProcessingPostPropertiesSheet("main") // Sets The Processing Post Properties Sheet To Default
+        if(index === -1) setProcessingPostPropertiesSheet("main") // Sets The Processing Post Properties Sheet To Default
     }
 
     // Function For Show The Post Comment Properties
@@ -470,6 +471,15 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
 
                 setSelectedPost(previous_selected_post => previous_selected_post ? { ...previous_selected_post, [setting]: action } : null) // Sets The Selected Post
 
+                // Stores The New State Of Updated Processing Posts
+                const updated_processing_posts = processing_posts.map(one_processing_post => one_processing_post.id === post_id
+                    ? { ...one_processing_post, [setting]: action } 
+                    : one_processing_post
+                )
+
+                onProcessingPostsUpdate(updated_processing_posts) // Sets The Processing Posts
+                setSelectedProcessingPost(previous_selected_processing_post => previous_selected_processing_post ? { ...previous_selected_processing_post, [setting]: action } : null) // Sets The Selected Post
+
                 return
             }
         }
@@ -534,6 +544,12 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
                 setPosts(previous_posts => previous_posts.filter((one_post:Post) => one_post.id !== post_id)) // Sets The Posts
                 setSelectedPost(null) // Sets The Selected Post
                 hidePostProperties() // Closes The Post Properties
+
+                const updated_processing_posts = processing_posts.filter((one_processing_post:ProcessingPost) => one_processing_post.id !== post_id) // Stores The New State Of Updated Processing Posts
+                onProcessingPostsUpdate(updated_processing_posts) // Sets The Processing Posts
+                setSelectedProcessingPost(null) // Sets The Selected Processing Post
+                hideProcessingPostProperties() // Closes The Processing Post Properties
+
                 return
             }
         }
@@ -1199,6 +1215,268 @@ export default function Feed({ tracked_tasks, processing_posts }:FeedProps) {
 
                                         <Pressable 
                                             onPress={() => setPostPropertiesSheet("main")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="xmark"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Zrušiť</Text>
+                                        </Pressable>
+                                    </View>
+                                )}
+                            </View>
+                        ) : null}
+                    </BottomSheetView>
+                </BottomSheetModal>
+
+                <BottomSheetModal
+                    ref={processing_post_properties}
+                    snapPoints={snap_points}
+                    enablePanDownToClose={true}
+                    onChange={handleProcessingPostPropertiesChanges}
+                    containerStyle={{ zIndex: 9999 }}
+                >
+                    <BottomSheetView style={{ padding: 20 }}>
+                        {selected_processing_post ? (
+                            <View className="processing_post_properties">
+                                {processing_post_properties_sheet === "main" && (
+                                    <View style={styles.sheet_container}>
+                                        {/* If The Processing Post Belongs To The Logged In User The Settings Option Will Be Shown */}
+                                        {logged_in_user && selected_processing_post.user.id === logged_in_user.id && (
+                                            <Pressable
+                                                className="show_processing_post_settings_button"
+                                                onPress={() => setProcessingPostPropertiesSheet("settings")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="pen"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text style={styles.sheet_text}>Upraviť</Text>
+                                            </Pressable>
+                                        )}
+
+                                        {/* If The Processing Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                        {logged_in_user && (selected_processing_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                            <Pressable
+                                                className="delete_processing_post_button"
+                                                onPress={() => setProcessingPostPropertiesSheet("delete")}
+                                                accessibilityRole="button"
+
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name="eraser"
+                                                        size={20}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
+
+                                                <Text 
+                                                    style={[
+                                                        styles.sheet_text,
+                                                        // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                        { color: selected_processing_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                    ]}
+                                                >
+                                                    Vymazať
+                                                </Text>
+                                            </Pressable>
+                                        )}
+
+                                        <Pressable
+                                            className="hide_processing_post_properties_button"
+                                            onPress={hideProcessingPostProperties}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="xmark"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                        </Pressable>
+                                    </View>
+                                )}
+
+                                {processing_post_properties_sheet === "settings" && (
+                                    <View className="processing_post_settings" style={styles.sheet_container}>
+                                        <View 
+                                            className="public_visibility_container"
+
+                                            style={[
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border,
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name={!selected_processing_post.user.private_account && selected_processing_post.public_visibility ? "eye" : "eye-low-vision"}
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Switch 
+                                                className={selected_processing_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
+                                                disabled={selected_processing_post.user.private_account} // Disables The Checkbox
+                                                value={selected_processing_post.user.private_account ? false : selected_processing_post.public_visibility} // Checks The Public Visibility Checkbox
+                                                onValueChange={(new_value:boolean) => editPostSettings(selected_processing_post.id, "public_visibility", new_value)}
+                                                
+                                                trackColor={{ 
+                                                    false: selected_processing_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
+                                                    true: selected_processing_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
+                                                }}
+                                                
+                                                thumbColor={
+                                                    selected_processing_post.user.private_account 
+                                                        ? "#333333" 
+                                                        : (selected_processing_post.public_visibility ? GREEN_COLOR : RED_COLOR)
+                                                }
+                                            />
+                                        </View>
+
+                                        <View 
+                                            className="allow_comments_container"
+
+                                            style={[
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border,
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name={selected_processing_post.allow_comments ? "comment" : "comment-slash"}
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Switch 
+                                                className="allow_comments"
+                                                value={selected_processing_post.allow_comments} // Checks The Allow Comments Checkbox
+                                                onValueChange={(new_value) => editPostSettings(selected_processing_post.id, "allow_comments", new_value)}
+                                                trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                thumbColor={selected_processing_post.allow_comments ? GREEN_COLOR : RED_COLOR}
+                                            />
+                                        </View>
+
+                                        <View 
+                                            className="hide_likes_container"
+
+                                            style={[
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border,
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="heart"
+                                                    size={20}
+                                                    solid={!selected_processing_post.hide_likes}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Switch 
+                                                className="hide_likes" 
+                                                value={!selected_processing_post.hide_likes} // Checks The Hide Likes Checkbox
+                                                onValueChange={(new_value) => editPostSettings(selected_processing_post.id, "hide_likes", !new_value)}
+                                                trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                thumbColor={!selected_processing_post.hide_likes ? GREEN_COLOR : RED_COLOR}
+                                            />
+                                        </View>
+
+                                        <Pressable
+                                            className="back_post_settings_button"
+                                            onPress={() => setProcessingPostPropertiesSheet("main")}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="xmark"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                        </Pressable>
+                                    </View>
+                                )}
+
+                                {processing_post_properties_sheet === "delete" && (
+                                    <View className="delete_processing_post" style={styles.sheet_container}>
+                                        <Text 
+                                            style={[
+                                                styles.sheet_text, 
+                                                { textAlign: "center" }
+                                            ]}
+                                        >
+                                            Naozaj chcete vymazať Váš príspevok?
+                                        </Text>
+
+                                        <Pressable
+                                            onPress={() => deletePost(selected_processing_post.id)}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name="eraser"
+                                                    size={20}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>Vymazať</Text>
+                                        </Pressable>
+
+                                        <Pressable 
+                                            onPress={() => setProcessingPostPropertiesSheet("main")}
                                             accessibilityRole="button"
 
                                             style={({ pressed }) => [

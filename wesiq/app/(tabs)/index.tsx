@@ -259,6 +259,7 @@ export default function HomeScreen() {
           <Feed 
             tracked_tasks={tracked_tasks} 
             processing_posts={processing_posts}
+            onProcessingPostsUpdate={(processing_posts:ProcessingPost[]) => setProcessingPosts(processing_posts)}
           />
         </ScrollView>
       </SafeAreaView>
