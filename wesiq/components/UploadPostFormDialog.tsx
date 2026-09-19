@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert, ActivityIndicator } from "react-native"
-import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
+import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert, ActivityIndicator, ScrollView } from "react-native"
+import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR, YELLOW_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import SelectPosts from "@/components/SelectPosts"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -52,6 +52,11 @@ interface PostDetails {
     }[]
 }
 
+interface SelectedFile extends ImagePicker.ImagePickerAsset {
+    is_muted?:boolean,
+    thumbnail_filename?:string
+}
+
 export interface UploadProgressResponse {
     success:boolean,
 
@@ -64,6 +69,13 @@ export interface UploadProgressResponse {
     message:string
 }
 
+interface NominatimPlace {
+    display_name:string,
+    lat:string,
+    lon:string,
+    [key:string]:any
+}
+
 type UploadPostFormDialogProps = {
     visible:boolean,
     onClose:() => void,
@@ -73,13 +85,19 @@ type UploadPostFormDialogProps = {
 
 export default function UploadPostFormDialog({ visible, onClose, onCompressTasksLoad }:UploadPostFormDialogProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
-    const [selected_files, setSelectedFiles] = useState<ImagePicker.ImagePickerAsset[]>([]) // Stores The Selected Files
+    const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
     const [description, setDescription] = useState<string>("") // Stores The Description
     const [tagged_users, setTaggedUsers] = useState<number[]>([]) // Stores The Tagged Users
     const [added_hashtags, setAddedHashtags] = useState<string[]>([]) // Stores The Added Hashtags
+
     const [location, setLocation] = useState<string>("") // Stores The Location
+    const [location_results, setLocationResults] = useState<NominatimPlace[]>([]) // Stores The Location Results
     const [latitude, setLatitude] = useState<number|null>(null) // Stores The Latitude
     const [longitude, setLongitude] = useState<number|null>(null) // Stores The Longitude
+    const [is_location_valid, setIsLocationValid] = useState<boolean>(false) // Stores The Information If The Location Is Valid
+    const [is_location_loading, setIsLocationLoading] = useState<boolean>(false) // Stores The Information If The Location Is Loading
+    let debounce_timeout:number // Debounce Timeout Between API Requests
+
     const [public_visibility, setPublicVisibility] = useState<boolean>(true) // Stores The Information If The Public Visibility Is Enabled
     const [allow_comments, setAllowComments] = useState<boolean>(true) // Stores The Information If The Comments Are Allowed
     const [hide_likes, setHideLikes] = useState<boolean>(false) // Stores The Information If Likes Are Hidden
@@ -138,8 +156,8 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
 
     // Function For Handle The Media Selection
     const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]):void => {
-        setSelectedFiles((previous_selected_files:ImagePicker.ImagePickerAsset[]) => {
-            const combined_selected_files:ImagePicker.ImagePickerAsset[] = [...previous_selected_files, ...new_selected_files] // Gets The Combined Selected Files
+        setSelectedFiles((previous_selected_files:SelectedFile[]) => {
+            const combined_selected_files:SelectedFile[] = [...previous_selected_files, ...new_selected_files] // Gets The Combined Selected Files
             return combined_selected_files.slice(0, 5) // Removes Unnecessary Files
         })
     }
@@ -198,7 +216,7 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
         const MIN_VIDEO_DURATION:number = 1 // 1 Second
 
-        return selected_files.map((one_media:ImagePicker.ImagePickerAsset, index:number) => {
+        return selected_files.map((one_media:SelectedFile, index:number) => {
             console.log(selected_files)
 
             // Accepts Only 5 Files And Only The Image And Video Formats
@@ -207,151 +225,123 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
                 const current_progress:number = post_preview_progress[one_media.uri] || 0 // Gets The Current Progress
         
                 return (
-                    <View key={one_media.assetId || index} style={styles.post}>
+                    <View className="post" key={one_media.assetId || index} style={styles.post}>
                         {current_progress < 100 && (
-                            <View style={styles.loadingOverlay}>
-                                <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                            <View style={styles.posts_preview_loading}>
+                                <ActivityIndicator className="loading" size="small" color={SECONDARY_COLOR} />
                                 <Text className="loading_progress" style={styles.loading_progress}>{current_progress}%</Text>
                             </View>
                         )}
 
-                        <View 
-                            className="post"
-                            // draggable = true
-                        >
-                            <View className="loading"></View>
-                            <Text className="loading_progress">0%</Text>
-
-                            <View className="remove_post" accessibilityLabel="Odstrániť...">
-                                <Icon
-                                    icon_name="xmark"
-                                    // onPress={}
-                                    // removeFile(index, select_posts, posts_preview) // Removes The File
-                                />
-                            </View>
-
-                            {is_video ? (
-                                <>
-                                    {/* Video */}
-                                    <Video
-                                        source={{ uri: one_media.uri }} // Sets The Source
-                                        useNativeControls={false} // Disables The Controls
-                                        resizeMode={ResizeMode.COVER}
-                                        isLooping={false}
-                                        isMuted={true} // Mutes The Video
-                                        style={{ width: "100%", height: "100%" }}
-                                    />
-
-                                    {/* Checks The Video Size */}
-                                    {one_media.fileSize || 0 > MAX_VIDEO_SIZE && (
-                                        <>
-                                            <View className="tooltip">
-                                                <Text>Video je príliš veľké</Text>
-                                            </View>
-
-                                            <FontAwesome6
-                                                name="triangle-exclamation"
-                                                color={BLUE_COLOR}
-                                            />
-                                        </>
-                                    )}
-
-                                    {/* Checks The Video Duration */}
-                                    {one_media.duration || 0 > MAX_VIDEO_DURATION && (
-                                        <>
-                                            <View className="tooltip">
-                                                <Text>Video je príliš dlhé</Text>
-                                            </View>
-
-                                            <FontAwesome6
-                                                name="triangle-exclamation"
-                                                color={BLUE_COLOR}
-                                            />
-                                        </>
-                                    )}
-
-                                    {/* Checks The Video Duration */}
-                                    {one_media.duration || 0 < MIN_VIDEO_DURATION && (
-                                        <>
-                                            <View className="tooltip">
-                                                <Text>Video je príliš krátke</Text>
-                                            </View>
-
-                                            <FontAwesome6
-                                                name="triangle-exclamation"
-                                                color={BLUE_COLOR}
-                                            />
-                                        </>
-                                    )}
-
-                                    <View className="video_settings">
-                                        <View className="toggle_mute" accessibilityLabel="Vypnúť zvuk">
-                                            <Icon
-                                                icon_name="volume-high"
-                                                // onPress={}
-                                                // toggleMuteVideo(post, this, toggle_mute_label.querySelector("i") as HTMLElement) // Toggles Mute / Unmute Of Video
-                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                            />
-                                        </View>
-
-                                        <View className="select_thumbnail" accessibilityLabel="Vybrať náhľad">
-                                            <Icon
-                                                icon_name="image"
-                                                // onPress={}
-                                                // toggleMuteVideo(post, this, toggle_mute_label.querySelector("i") as HTMLElement) // Toggles Mute / Unmute Of Video
-                                                is_regular={true}
-                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                            />
-
-                                            {/* // Select Thumbnail Input Change Functionality
-                                            select_thumbnail_input.addEventListener("change", function():void {
-                                                const thumbnail_file:File|null = this.files?.[0] || null // Gets The Thumbnail File
-
-                                                if(!thumbnail_file) return
-
-                                                const thumbnail_file_reader:FileReader = new FileReader() // Reads The Content of The File
-
-                                                thumbnail_file_reader.addEventListener("load", function():void {
-                                                    const file_data:string = thumbnail_file_reader.result as string // Gets The File Data
-
-                                                    if(!file_data) return
-
-                                                    if(element) {
-                                                        (element as HTMLVideoElement).poster = file_data // Sets The Video Poster Image
-                                                    }
-
-                                                    post.dataset["thumbnail_filename"] = thumbnail_file.name // Stores The Thumbnail's Filename
-                                                })
-
-                                                thumbnail_file_reader.readAsDataURL(thumbnail_file) // Renders The Preview
-                                            }) */}
-                                        </View>
-                                    </View>
-                                </>
-                            ) : (
-                                <>
-                                    {/* Image */}
-                                    <Image
-                                        source={{ uri: one_media.uri }}
-                                        style={{ width: "100%", height: "100%" }}
-                                    />
-
-                                    {/* Checks The Image Size */}
-                                    {one_media.fileSize || 0 > MAX_IMAGE_SIZE && (
-                                        <>
-                                            <View className="tooltip">
-                                                <Text>Obrázok je príliš veľký</Text>
-                                            </View>
-
-                                            <FontAwesome6
-                                                name="triangle-exclamation"
-                                                color={BLUE_COLOR}
-                                            />
-                                        </>
-                                    )}
-                                </>
-                            )}
+                        <View className="remove_post" accessibilityLabel="Odstrániť..." style={styles.remove_post}>
+                            <Icon
+                                icon_name="xmark"
+                                // onPress={}
+                                // removeFile(index, select_posts, posts_preview) // Removes The File
+                                size={22}
+                            />
                         </View>
+
+                        {is_video ? (
+                            <>
+                                {/* Video */}
+                                <Video
+                                    source={{ uri: one_media.uri }} // Sets The Source
+                                    useNativeControls={false} // Disables The Controls
+                                    resizeMode={ResizeMode.COVER}
+                                    isLooping={false}
+                                    isMuted={true} // Mutes The Video
+                                    style={{ width: "100%", height: "100%" }}
+                                    // filter: blur(2px);
+                                />
+
+                                {/* Checks The Video Size */}
+                                {one_media.fileSize || 0 > MAX_VIDEO_SIZE && (
+                                    <>
+                                        <View className="tooltip">
+                                            <Text>Video je príliš veľké</Text>
+                                        </View>
+
+                                        <FontAwesome6
+                                            name="triangle-exclamation"
+                                            color={YELLOW_COLOR}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Checks The Video Duration */}
+                                {one_media.duration || 0 > MAX_VIDEO_DURATION && (
+                                    <>
+                                        <View className="tooltip">
+                                            <Text>Video je príliš dlhé</Text>
+                                        </View>
+
+                                        <FontAwesome6
+                                            name="triangle-exclamation"
+                                            color={YELLOW_COLOR}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Checks The Video Duration */}
+                                {one_media.duration || 0 < MIN_VIDEO_DURATION && (
+                                    <>
+                                        <View className="tooltip">
+                                            <Text>Video je príliš krátke</Text>
+                                        </View>
+
+                                        <FontAwesome6
+                                            name="triangle-exclamation"
+                                            color={YELLOW_COLOR}
+                                        />
+                                    </>
+                                )}
+
+                                <View className="video_settings" style={styles.video_settings}>
+                                    <View className="toggle_mute" accessibilityLabel="Vypnúť zvuk" style={styles.toggle_mute}>
+                                        <Icon
+                                            icon_name={one_media.is_muted ? "volume-xmark" : "volume-high"}
+                                            onPress={() => toggleMuteVideo(index)} // Toggles Mute / Unmute Of Video
+                                            size={22}
+                                            pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                        />
+                                    </View>
+
+                                    <View className="select_thumbnail" accessibilityLabel="Vybrať náhľad" style={styles.select_thumbnail}>
+                                        <Icon
+                                            icon_name="image"
+                                            onPress={() => selectThumbnail(index)}
+                                            size={22}
+                                            is_regular={true}
+                                            pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                        />
+                                    </View>
+                                </View>
+                            </>
+                        ) : (
+                            <>
+                                {/* Image */}
+                                <Image
+                                    source={{ uri: one_media.uri }}
+                                    style={{ width: "100%", height: "100%" }}
+                                    // filter: blur(2px);
+                                />
+
+                                {/* Checks The Image Size */}
+                                {one_media.fileSize || 0 > MAX_IMAGE_SIZE && (
+                                    <>
+                                        <View className="tooltip">
+                                            <Text>Obrázok je príliš veľký</Text>
+                                        </View>
+
+                                        <FontAwesome6
+                                            name="triangle-exclamation"
+                                            color={YELLOW_COLOR}
+                                        />
+                                    </>
+                                )}
+                            </>
+                        )}
 
                         {/* // Post Drag & Drop Functionalities (Change The Order of The Posts)
                         post.addEventListener("dragstart", function(event:DragEvent):void {
@@ -391,6 +381,57 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         })
     }
 
+    // // Function For Remove File
+    // function removeFile(index:number, select_posts:HTMLInputElement, posts_preview:HTMLDivElement):void {
+    //     posts_preview_state.current_files.splice(index, 1) // Removes The File From The Current Files
+    //     syncFiles(select_posts, posts_preview) // Synchronizes Files
+    // }
+
+    // Function For Toggle Mute Video
+    const toggleMuteVideo = (clicked_index:number):void => {
+        // Sets The Selected Files
+        setSelectedFiles((previous_selected_files:SelectedFile[]) =>
+            previous_selected_files.map((one_selected_file:SelectedFile, index:number) => {
+                if (index === clicked_index) {
+                    return {
+                        ...one_selected_file,
+                        is_muted: !one_selected_file.is_muted
+                    }
+                }
+
+                return one_selected_file // Returns The Unchanged Selected File
+            })
+        )
+    }
+
+    // Function For Select The Thumbnail
+    const selectThumbnail = (clicked_index:number):void => {
+        console.log(clicked_index)
+
+        {/* // Select Thumbnail Input Change Functionality
+        select_thumbnail_input.addEventListener("change", function():void {
+            const thumbnail_file:File|null = this.files?.[0] || null // Gets The Thumbnail File
+
+            if(!thumbnail_file) return
+
+            const thumbnail_file_reader:FileReader = new FileReader() // Reads The Content of The File
+
+            thumbnail_file_reader.addEventListener("load", function():void {
+                const file_data:string = thumbnail_file_reader.result as string // Gets The File Data
+
+                if(!file_data) return
+
+                if(element) {
+                    (element as HTMLVideoElement).poster = file_data // Sets The Video Poster Image
+                }
+
+                post.dataset["thumbnail_filename"] = thumbnail_file.name // Stores The Thumbnail's Filename
+            })
+
+            thumbnail_file_reader.readAsDataURL(thumbnail_file) // Renders The Preview
+        }) */}
+    }
+
     // Function For Handle The Emoji Select
     const handleEmojiSelect = (emoji:{ emoji:string }) => {
         if(description.length >= MAX_DESCRIPTION_LENGTH) return
@@ -410,33 +451,115 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         }
     }
 
-    //  // Location Input Functionality
-    //  location_input.addEventListener("input", function():void {
-    //     clearTimeout(debounce_timeout) // Clears The Debounce Timeout
+    // Function For Handle Search Location
+    const handleSearchLocation = (searched_text:string):void => {
+        clearTimeout(debounce_timeout) // Clears The Debounce Timeout
 
-    //     const searched_location = location_input.value // Gets The Searched Location
+        setLocation(searched_text) // Sets The Location
 
-    //     if(searched_location.length < 3) {
-    //         const all_places:NodeListOf<HTMLDivElement> = location_results.querySelectorAll<HTMLDivElement>(".place") // Gets All Places
+        if(searched_text.length < 3) {
+            if(location_results.length > 0) setLocationResults([]) // Sets The Location Results
+            setIsLocationValid(false) // Sets The Information That The Location Isn't Valid
+            return
+        }
 
-    //         if(location_results.querySelectorAll(".place").length > 0) {
-    //             all_places.forEach(function(one_place:HTMLDivElement):void {
-    //                 one_place.remove() // Removes The Place From The DOM
-    //             })
-    //         }
+        // Gets Location After 1000 MS Delay (Because of The Nominatim Usage Policy - 1 Request per Second)
+        debounce_timeout = window.setTimeout(function():void {
+            getLocation(searched_text)
+        }, 1000)
+    }
 
-    //         location_loading.classList.add("hidden") // Hides The Loader
-    //         location_results.classList.add("hidden") // Hides The Location Results
-    //         return
-    //     }
+    // Function For Get Locations By Searched Location
+    const getLocation = async (searched_text:string):Promise<void> => {
+        if(!searched_text.trim()) {
+            setIsLocationValid(false) // Sets The Information That The Location Isn't Valid
+            setLocationResults([]) // Sets The Location Results
+            setLatitude(null) // Sets The Latitude
+            setLongitude(null) // Sets The Longitude
+            return
+        }
 
-    //     location_loading.classList.remove("hidden") // Shows The Loader
+        setIsLocationLoading(true) // Sets The Information That The Location Is Loading
+    
+        try {
+            const url:string = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}&addressdetails=1&limit=10&featuretype=settlement` // Nominatim API https://nominatim.org/
 
-    //     // Gets Location After 1000 MS Delay (Because of The Nominatim Usage Policy - 1 Request per Second)
-    //     debounce_timeout = window.setTimeout(function():void {
-    //         getLocation(searched_location, location_results, location_input, latitude, longitude)
-    //     }, 1000)
-    // })
+            // Sends The GET Request To The Server
+            const location_response:Response = await fetch(`${url}`, {
+                method: "GET",
+        
+                headers: {
+                    "Accept-Language": Platform.OS === "web" ? navigator.language : "sk", // Gets Results In Users System Language
+                    "User-Agent": "Wesiq - Native App (behulpatrik@gmail.com)" // Sends User Agent Informations
+                }
+            })
+
+            if(!location_response.ok) {
+                Alert.alert("Chyba", "Pri načítaní polohy došlo k chybe.") // Shows The Alert
+            }
+    
+            const data:NominatimPlace[] = await location_response.json() // Gets The Data
+            const unique_data:NominatimPlace[] = getUniquePlaces(data) // Gets Only The Unique Data
+
+            setLocationResults(unique_data) // Sets The Location Results
+    
+            // Stores The Coordinates
+            if(storeCoordinates(unique_data, searched_text)) {
+                setIsLocationValid(true) // Sets The Information That The Location Is Valid
+            }
+
+            else {
+                setIsLocationValid(false) // Sets The Information That The Location Isn't Valid
+            }
+        } 
+        
+        catch {
+            Alert.alert("Chyba", "Pri načítaní polohy došlo k chybe.") // Shows The Alert
+        } 
+        
+        finally {
+            setIsLocationLoading(true) // Sets The Information That The Location Isn't Loading
+        }
+    }
+
+    // Function For Get Unique Places From Fetched Data
+    const getUniquePlaces = (data:NominatimPlace[]):NominatimPlace[] => {
+        return data.filter(function(one_place:NominatimPlace, index:number, self:NominatimPlace[]) {
+            return index === self.findIndex(function(p:NominatimPlace) {
+                return p.display_name === one_place.display_name
+            })
+        })
+    }
+
+    // Function For Store Coordinates To The Hidden Inputs
+    const storeCoordinates = (data:NominatimPlace[] = location_results, searched_text:string):boolean => {
+        const matching_location:NominatimPlace|null = data.find((one_place:NominatimPlace) => one_place.display_name === searched_text) || null // Gets The Matching Location If There is Any
+
+        if(matching_location) {
+            console.log("MATCH")
+            setLatitude(Number(matching_location.lat)) // Sets The Latitude
+            setLongitude(Number(matching_location.lon)) // Sets The Longitude
+            
+            return true // Returns True If The Coordinates Were Stored
+        }
+
+        else {
+            console.log("NEMATCH")
+            setLatitude(null) // Deletes The Latitude
+            setLongitude(null) // Deletes The Longitude
+
+            return false // Returns False If The Coordinates Were Not Stored
+        }
+    }
+
+    // Function For Add Location
+    const addLocation = (clicked_location:string, latitude:number, longitude:number):void => {
+        setLocation(clicked_location) // Sets The Location
+        setIsLocationValid(true) // Sets The Information That The Location Is Valid
+        setLocationResults([]) // Sets The Location Results
+        setLatitude(latitude) // Sets The Latitude
+        setLongitude(longitude) // Sets The Longitude
+    }
 
     // // Location Focus Functionality
     // location_input.addEventListener("focus", function():void {
@@ -454,21 +577,6 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
     //     }
     // })
 
-    // // Change Focused Place In The Location Results
-    // location_container.addEventListener("keydown", function(event:KeyboardEvent):void {
-    //     if(event.key === "ArrowUp" || event.key === "ArrowDown" || event.key === "Enter") event.preventDefault() // Prevents Default Behaviour
-
-    //     if(event.key === "ArrowUp") changeFocusedPlace(location_state.focused_place_index - 1, location_results) // Changes Focused Place (Shows The Previous Place)
-    //     else if(event.key === "ArrowDown") changeFocusedPlace(location_state.focused_place_index + 1, location_results) // Changes Focused Place (Shows The Next Place)
-
-    //     else if(event.key === "Enter") {
-    //         const all_places:NodeListOf<HTMLDivElement> = location_results.querySelectorAll(".place"); // Gets All Places
-
-    //         (all_places[location_state.focused_place_index] as HTMLDivElement).click() // Adds The Location Name To The Location Input Value After Click
-    //         upload_post_form_dialog.showModal() // Shows The Upload Post Form Dialog
-    //     }
-    // })
-
     // Function For Handle Upload Post Form Submission
     const handleUploadPostSubmission = ():void => {
         Keyboard.dismiss() // Hides The Keyboard
@@ -479,7 +587,7 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         }
 
         // Gets The Selected Files Data
-        const selected_files_data:RNMediaAsset[] = selected_files.map((one_selected_file:ImagePicker.ImagePickerAsset, index:number) => {
+        const selected_files_data:RNMediaAsset[] = selected_files.map((one_selected_file:SelectedFile, index:number) => {
             const is_video:boolean = one_selected_file.type === "video" // Stores The Information If The Selected File Is Video
             const default_extension:"mp4"|"jpg" = is_video ? "mp4" : "jpg" // Sets The Default Extension
             
@@ -829,20 +937,51 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
                                         accessibilityLabel="Miesto" 
                                         value={location}
-                                        onChangeText={setLocation}
+                                        onChangeText={(text) => handleSearchLocation(text)}
                                         maxLength={255}
 
                                         style={[
                                             styles.location, 
+                                            is_location_valid ? { borderBottomColor: GREEN_COLOR } : { borderBottomColor: transparentize(BLUE_COLOR, 0.5) },
                                             { outlineStyle: "none" } as any
                                         ]}
                                     />
                                 </View>
 
-                                <View className="location_results_container">
-                                    <View className="loading hidden"></View>
-                                    <View className="location_results hidden"></View>
-                                </View>
+                                <ScrollView 
+                                    className="location_results_container" 
+                                    showsVerticalScrollIndicator={false}
+                                    indicatorStyle="white"
+                                    style={styles.location_results_container}
+                                    contentContainerStyle={styles.location_results_container}
+                                >
+                                    {is_location_loading && (
+                                        <ActivityIndicator className="loading" size="small" color={SECONDARY_COLOR} style={styles.loading} />
+                                    )}
+
+                                    <View className="location_results" style={styles.location_results}>
+                                        {location_results.map((one_place:NominatimPlace) => (
+                                            <Pressable 
+                                                className="place"
+                                                onPress={() => addLocation(one_place.display_name, Number(one_place.lat), Number(one_place.lon))}
+                                                style={styles.place}
+                                            >
+                                                <Text 
+                                                    className="place_text"
+                                                    numberOfLines={1} 
+                                                    ellipsizeMode="tail"
+
+                                                    style={{ 
+                                                        color: SECONDARY_COLOR,
+                                                        maxWidth: "100%",
+                                                    }}
+                                                >
+                                                    {one_place.display_name}
+                                                </Text>
+                                            </Pressable>
+                                        ))}
+                                    </View>
+                                </ScrollView>
                             </View>
 
                             <Text className="form_report error" style={styles.form_report}></Text>
@@ -947,7 +1086,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
 
-    loadingOverlay: {
+    posts_preview_loading: {
         ...StyleSheet.absoluteFill,
         backgroundColor: "rgba(0, 0, 0, 0.6)", // Tmavé polopriehľadné pozadie
         justifyContent: "center",
@@ -960,6 +1099,105 @@ const styles = StyleSheet.create({
         color: "#cccccc",
         zIndex: 50,
         // transition: opacity 1s ease, visibility 1s ease;
+    },
+
+    remove_post: {
+        position: "absolute",
+        right: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        width: 25,
+        height: 25,
+        margin: 5,
+        backgroundColor: transparentize(MAIN_COLOR, 0.8),
+        borderRadius: "50%",
+        zIndex: 50,
+    },
+
+    video_settings: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        flexDirection: "row",
+        gap: 5,
+        margin: 5,
+    },
+
+    toggle_mute: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: 25,
+        height: 25,
+        zIndex: 50,
+    },
+
+    select_thumbnail: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: 25,
+        height: 25,
+        zIndex: 50,
+    },
+
+    tooltip: {
+        position: "absolute",
+        bottom: 5,
+        left: "50%",
+        transform: [{ translateX: "-50%" }],
+        zIndex: 50,
+
+        // &:hover {
+        //     &::before,
+        //     &::after {
+        //         --scale: 1;
+        //         transition: 0.3s transform 1s;
+        //     }
+        // }
+    },
+
+    tooltip_body: {
+        // --translate-y: calc(-100% - 10px);
+        // --scale: 0;
+        position: "absolute",
+        top: -1.5,
+        left: "50%",
+
+        transform: [
+            { translateX: "-50%" },
+            // { translateY(var(--translate-y, 0)) },
+            // { scale(var(--scale)) }
+        ],
+
+        transformOrigin: "bottom center",
+        maxWidth: "100%",
+        width: "100%",
+        padding: 5,
+        textAlign: "center",
+        borderRadius: SMALL_BORDER_RADIUS,
+        fontSize: 15,
+        backgroundColor: transparentize(SECONDARY_COLOR, 0.8),
+        color: SECONDARY_COLOR,
+        // text-shadow: 0px 0px 5px $main-color;
+        // transition: 0.3s transform 0s;
+    },
+
+    tooltip_triangle: {
+        // --translate-y: calc(-1 * 10px);
+        // --scale: 0;
+        position: "absolute",
+        top: -1.5,
+        left: "50%",
+
+        transform: [
+            { translateX: "-50%" },
+            // { translateY(var(--translate-y, 0)) },
+            // { scale(var(--scale)) }
+        ],
+
+        transformOrigin: "bottom center",
+        borderWidth: 10,
+        borderTopColor: transparentize(SECONDARY_COLOR, 0.8),
+        // transition: 0.3s transform 0s;
     },
 
     drag_active: {
@@ -1201,6 +1439,80 @@ const styles = StyleSheet.create({
         borderBottomColor: transparentize(BLUE_COLOR, 0.5),
         // transition: border-color 0.2s ease;
         // border-color: $blue-color
+    },
+
+    location_results_container: {
+        position: "relative",
+        maxHeight: 50 * 2 + 20 + 20 + 5,
+        padding: 10,
+
+        // &:not(:has(.location_results.hidden)) {
+        //     background-color: transparentize($blue-color, 0.9);
+        //     border: 1px solid transparentize($blue-color, 0.5);
+        //     border-radius: 0px 0px $small-border-radius $small-border-radius;
+        // }
+    },
+
+    loading: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+
+        transform: [
+            { translateX: "-100%" },
+            { translateY: "-50%" }
+        ],
+    },
+
+    location_results: {
+        // @include scrollbar;
+        gap: 10,
+        maxHeight: 50 * 2 + 20,
+        marginBottom: 50,
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderBottomRightRadius: SMALL_BORDER_RADIUS,
+        borderBottomLeftRadius: SMALL_BORDER_RADIUS,
+        opacity: 1,
+        // transition: visibility 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+
+        // &.hidden {
+        //     visibility: hidden;
+        //     opacity: 0;
+        //     height: 50px;
+        //     margin-bottom: 0px;
+
+        //     .place {
+        //         pointer-events: none;
+        //     }
+        // }
+    },
+
+    place: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        flexShrink: 0,
+        height: 50,
+        paddingHorizontal: 10,
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        color: SECONDARY_COLOR,
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        // transition: transform 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+        
+        // &:hover {
+        //     transform: translateY(-2px);
+        //     background: transparent;
+        //     border-color: transparentize($blue-color, 0.25);
+        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
+        //     cursor: pointer;
+        // }
+
+        // &:focus-visible {
+        //     background-color: transparentize($blue-color, 0.8);
+        // }
     },
 
     form_report: {
