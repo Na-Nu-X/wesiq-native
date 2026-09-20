@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react"
-import { View, StyleSheet, Text, Image, Platform, Alert, ActivityIndicator } from "react-native"
-import { MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { View, StyleSheet, Platform } from "react-native"
+import { MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import SelectPosts from "@/components/SelectPosts"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import * as ImagePicker from "expo-image-picker"
-import { ResizeMode, Video } from "expo-av"
-import { FontAwesome6 } from "@expo/vector-icons"
-import Icon from "@/components/Icon"
-import { BlurView } from "expo-blur"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { useSharedValue, useAnimatedStyle, withSpring, runOnJS, SharedValue } from "react-native-reanimated"
+import { PostPreviewItem } from "./PostPreviewItem"
 
 import type { SelectedFile } from "@/components/UploadPostFormDialog"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
@@ -20,8 +19,105 @@ interface PostsPreviewProps {
     logged_in_user:LoggedInUser|null
 }
 
-export const PostsPreview = ({ onSelectedFilesUpdate, onThumbnailFilesUpdate, thumbnail_files, selected_files, logged_in_user }:PostsPreviewProps) => {
+export const PostsPreview = ({ 
+    onSelectedFilesUpdate, 
+    onThumbnailFilesUpdate, 
+    thumbnail_files, 
+    selected_files, 
+    logged_in_user
+}:PostsPreviewProps) => {
     const [post_preview_progress, setPostPreviewProgress] = useState<Record<string, number>>({}) // Stores The Post Preview Progress
+    const [tooltips, setTooltips] = useState<(string|number)[]>([]) // Stores The Tooltips
+
+    const [drop_zone, setDropZone] = useState({ x: 0, y: 0, width: 0, height: 0 })
+    const [dragged_file, setDraggedFile] = useState<SelectedFile|null>(null) // Stores The Dragged File
+    const drag_x:SharedValue<number> = useSharedValue(0)
+    const drag_y:SharedValue<number> = useSharedValue(0)
+    const active_drag_index:SharedValue<number|null> = useSharedValue<number|null>(null) // Stores The Active Drag Index
+    const hovered_index:SharedValue<number|null> = useSharedValue<number|null>(null) // Stores The Hovered Index
+
+    // Function To Handle Start Of The File Drag From The Posts Preview
+    const handleDragStart = (x:number, y:number, dragged_file:SelectedFile):void => {
+        drag_x.value = x
+        drag_y.value = y
+
+        setDraggedFile(dragged_file) // Sets The Dragged File From The Posts Preview
+        onThumbnailFilesUpdate(thumbnail_files) // Sets The Thumbnail Files
+    }
+
+    // Function To Handle The File Drop From The Posts Preview
+    const handleDrop = (x:number, y:number, dragged_file:SelectedFile, dropped_index:number|null):void => {
+        if(dropped_index === null) {
+            setDraggedFile(null) // Sets The Dragged File From The Posts Preview
+            return
+        }
+
+        const previous_index:number = selected_files.findIndex(one_selected_file => one_selected_file.assetId === dragged_file.assetId) // Gets The Previous Index
+
+        if (
+            previous_index === -1 || 
+            dropped_index === null || 
+            dropped_index === -1 || 
+            previous_index === dropped_index
+        ) {
+            setDraggedFile(null) // Sets The Dragged File From The Posts Preview
+            return
+        }
+
+        const updated_selected_files = [...selected_files] // Stores The New State Of Updated Selected Files
+        const [moved_item] = updated_selected_files.splice(previous_index, 1)
+        updated_selected_files.splice(dropped_index, 0, moved_item) // Reorders The Selected Files
+
+        onSelectedFilesUpdate(updated_selected_files) // Sets The Selected Files
+        setDraggedFile(null) // Sets The Dragged File From The Posts Preview
+    }
+
+    const ITEM_SIZE = 100;
+    const GAP = 10;
+    const STEP = ITEM_SIZE + GAP; // 110 (o toľkoto sa posúvame o jednu bunku)
+
+    // POZOR: Toto musíš prispôsobiť svojej apke. 
+    // Ak je grid pevný (napríklad vždy 3 stĺpce), napíš 3. 
+    // Prípadne to vypočítaj z drop_zone: Math.floor(drop_zone.width / STEP)
+    const COLUMNS = 3;
+
+    // Function For Initialize The Drag Gesture
+    const initializeDragGesture = (selected_file:SelectedFile, index:number) => {
+        return Gesture.Pan()
+            // Creates The Drag Gesture (Starts After 250MS Hold)
+            .activateAfterLongPress(250)
+            .onStart((event) => {
+                active_drag_index.value = index
+                drag_x.value = 0
+                drag_y.value = 0
+
+                runOnJS(handleDragStart)(event.absoluteX, event.absoluteY, selected_file)
+            })
+            .onChange((event) => {
+                drag_x.value = event.translationX
+                drag_y.value = event.translationY
+
+                const local_x:number = event.absoluteX - (drop_zone?.x || 0) // Gets The Local X Position
+                const local_y:number = event.absoluteY - (drop_zone?.y || 0) // Gets The Local Y Position
+
+                const column:number = Math.floor(local_x / STEP) // Gets The Column
+                const row:number = Math.floor(local_y / STEP) // Gets The Row
+                const safe_column:number = Math.max(0, Math.min(column, COLUMNS - 1)) // Gets The Safe Column
+                const safe_row:number = Math.max(0, row) // Gets The Safe Row
+                const new_hovered_index:number = (safe_row * COLUMNS) + safe_column // Gets The New Hovered Index
+                
+                hovered_index.value = Math.max(0, Math.min(new_hovered_index, selected_files.length - 1)) // Sets The Hovered Index
+            })
+            .onFinalize((event) => {
+                runOnJS(handleDrop)(event.absoluteX, event.absoluteY, selected_file, hovered_index.value)
+                
+                active_drag_index.value = null // Sets The Active Drag Index
+                hovered_index.value = null // Sets The Hovered Index
+                
+                drag_x.value = withSpring(0)
+                drag_y.value = withSpring(0)
+            })
+    }
 
     // Function For Handle The Media Selection
     const handleMediaSelection = (new_selected_files:ImagePicker.ImagePickerAsset[]):void => {
@@ -91,262 +187,51 @@ export const PostsPreview = ({ onSelectedFilesUpdate, onThumbnailFilesUpdate, th
         const MIN_VIDEO_DURATION:number = 1 // 1 Second
 
         return selected_files.map((one_media:SelectedFile, index:number) => {
+            const key:string|number = one_media.assetId || index // Gets The Key
             const thumbnail_url:string|null = thumbnail_files.find((one_thumbnail_file:ImagePicker.ImagePickerAsset) => one_thumbnail_file.fileName === one_media.thumbnail_filename)?.uri || null // Gets The Thumbnail URL Is Is Available
 
             // Accepts Only 5 Files And Only The Image And Video Formats
             if(index < 5 && (one_media.type === "image" || one_media.type === "video")) {
                 const is_video:boolean = one_media.type === "video" // Gets The Information If The File Is Video
                 const current_progress:number = post_preview_progress[one_media.uri] || 0 // Gets The Current Progress
-        
+
                 return (
-                    <View className="post" key={one_media.assetId || index} style={styles.post}>
-                        {current_progress < 100 && (
-                            <BlurView 
-                                intensity={10} 
-                                tint="dark" 
-                                style={styles.posts_preview_loading}
-                            >
-                                <ActivityIndicator className="loading" size="small" color={SECONDARY_COLOR} />
-                                <Text className="loading_progress" style={styles.loading_progress}>{current_progress}%</Text>
-                            </BlurView>
-                        )}
-
-                        <View className="remove_post" accessibilityLabel="Odstrániť..." style={styles.remove_post}>
-                            <Icon
-                                icon_name="xmark"
-                                onPress={() => removeFile(index)} // Removes The File
-                                size={22}
-                            />
-                        </View>
-
-                        {is_video ? (
-                            <>  
-                                {/* Video */}
-                                {one_media.thumbnail_filename && thumbnail_url ? (
-                                    <Image 
-                                        source={{ uri: thumbnail_url }} 
-                                        style={StyleSheet.absoluteFill} 
-                                        resizeMode="cover"
-                                    />
-                                ) : (
-                                    <Video
-                                        source={{ uri: one_media.uri }} // Sets The Source
-                                        useNativeControls={false} // Disables The Controls
-                                        resizeMode={ResizeMode.COVER}
-                                        isLooping={false}
-                                        isMuted={true} // Mutes The Video
-                                        style={{ width: "100%", height: "100%" }}
-                                        // filter: blur(2px);
-                                    />
-                                )}
-
-                                {/* Checks The Video Size */}
-                                {one_media.fileSize || 0 > MAX_VIDEO_SIZE && (
-                                    <>
-                                        <View className="tooltip">
-                                            <Text>Video je príliš veľké</Text>
-                                        </View>
-
-                                        <FontAwesome6
-                                            name="triangle-exclamation"
-                                            color={YELLOW_COLOR}
-                                        />
-                                    </>
-                                )}
-
-                                {/* Checks The Video Duration */}
-                                {one_media.duration || 0 > MAX_VIDEO_DURATION && (
-                                    <>
-                                        <View className="tooltip">
-                                            <Text>Video je príliš dlhé</Text>
-                                        </View>
-
-                                        <FontAwesome6
-                                            name="triangle-exclamation"
-                                            color={YELLOW_COLOR}
-                                        />
-                                    </>
-                                )}
-
-                                {/* Checks The Video Duration */}
-                                {one_media.duration || 0 < MIN_VIDEO_DURATION && (
-                                    <>
-                                        <View className="tooltip">
-                                            <Text>Video je príliš krátke</Text>
-                                        </View>
-
-                                        <FontAwesome6
-                                            name="triangle-exclamation"
-                                            color={YELLOW_COLOR}
-                                        />
-                                    </>
-                                )}
-
-                                <View className="video_settings" style={styles.video_settings}>
-                                    <View className="toggle_mute" accessibilityLabel="Vypnúť zvuk" style={styles.toggle_mute}>
-                                        <Icon
-                                            icon_name={one_media.is_muted ? "volume-xmark" : "volume-high"}
-                                            onPress={() => toggleMuteVideo(index)} // Toggles Mute / Unmute Of Video
-                                            size={22}
-                                            pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                        />
-                                    </View>
-
-                                    <View className="select_thumbnail" accessibilityLabel="Vybrať náhľad" style={styles.select_thumbnail}>
-                                        <Icon
-                                            icon_name="image"
-                                            onPress={() => selectThumbnail(index)}
-                                            size={22}
-                                            is_regular={true}
-                                            pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                        />
-                                    </View>
-                                </View>
-                            </>
-                        ) : (
-                            <>
-                                {/* Image */}
-                                <Image
-                                    source={{ uri: one_media.uri }}
-                                    style={{ width: "100%", height: "100%" }}
-                                    // filter: blur(2px);
-                                />
-
-                                {/* Checks The Image Size */}
-                                {one_media.fileSize || 0 > MAX_IMAGE_SIZE && (
-                                    <>
-                                        <View className="tooltip">
-                                            <Text>Obrázok je príliš veľký</Text>
-                                        </View>
-
-                                        <FontAwesome6
-                                            name="triangle-exclamation"
-                                            color={YELLOW_COLOR}
-                                        />
-                                    </>
-                                )}
-                            </>
-                        )}
-
-                        {/* // Post Drag & Drop Functionalities (Change The Order of The Posts)
-                        post.addEventListener("dragstart", function(event:DragEvent):void {
-                            event.dataTransfer?.setData("sourceIndex", index.toString())
-
-                            post.style.opacity = "0.5" // Adds Transparency To The Dragged Post
-                            post.style.transform = "scale(1)" // Adds Normal Scale To The Dragged Post
-
-                            posts_preview.querySelectorAll<HTMLDivElement>(".post").forEach(function(one_post:HTMLDivElement):void {
-                                if(one_post !== post) one_post.classList.add("drag_active") // Adds Drag Active Class To All Posts Except The One That Was Dragged
-                            })
-                        })
-
-                        post.addEventListener("dragend", function():void {
-                            post.style.opacity = "1" // Removes Transparency From The Dragged Post
-                            post.removeAttribute("style") // Removes Hardcoded Style (style="transform: scale(1)) From The Dragged Post
-
-                            posts_preview.querySelectorAll<HTMLDivElement>(".post").forEach(one_post => one_post.classList.remove("drag_active")) // Removes Drag Active Class From All Posts
-                        })
-
-                        post.addEventListener("dragover", (event:DragEvent) => event.preventDefault())
-
-                        post.addEventListener("drop", function(event:DragEvent):void {
-                            event.preventDefault()
-                            event.stopPropagation()
-
-                            posts_preview.classList.remove("drag_active") // Removes Drag Animation From The Post Preview
-
-                            const from_index = parseInt(event.dataTransfer?.getData("sourceIndex") || "-1")
-                            const to_index = index
-
-                            if(from_index !== -1 && from_index !== to_index) changePostOrder(from_index, to_index, select_posts, posts_preview) // Changes Post Order
-                        }) */}
-                    </View>
+                    <GestureDetector 
+                        gesture={initializeDragGesture(one_media, index)}
+                        key={key} 
+                    >
+                        <PostPreviewItem 
+                            onSelectedFilesUpdate={(selected_files:SelectedFile[]) => onSelectedFilesUpdate(selected_files)}
+                            selected_files={selected_files}
+                            onThumbnailFilesUpdate={(thumbnail_files:ImagePicker.ImagePickerAsset[]) => onThumbnailFilesUpdate(selected_files)}
+                            thumbnail_files={thumbnail_files}
+                            key={key}
+                            thumbnail_url={thumbnail_url}
+                            index={index}
+                            active_drag_index={active_drag_index}
+                            hovered_index={hovered_index}
+                            drag_x={drag_x}
+                            drag_y={drag_y}
+                            is_video={is_video}
+                            current_progress={current_progress}
+                            selected_file={one_media}
+                            MAX_IMAGE_SIZE={MAX_IMAGE_SIZE}
+                            MAX_VIDEO_SIZE={MAX_VIDEO_SIZE}
+                            MAX_VIDEO_DURATION={MAX_VIDEO_DURATION}
+                            MIN_VIDEO_DURATION={MIN_VIDEO_DURATION}
+                        />
+                    </GestureDetector>
                 )
             }
         })
     }
 
-    // Function For Remove File
-    const removeFile = (clicked_index:number):void => {
-        const updated_selected_files:SelectedFile[] = selected_files.filter((_, index:number) => index !== clicked_index) // Stores The New State Of Updated Posts
-        onSelectedFilesUpdate(updated_selected_files) // Sets The Selected Files
-    }
-
-    // Function For Toggle Mute Video
-    const toggleMuteVideo = (clicked_index:number):void => {
-        // Stores The New State Of Updated Posts
-        const updated_selected_files:SelectedFile[] = selected_files.map((one_selected_file:SelectedFile, index:number) => {
-            if(index === clicked_index) {
-                return {
-                    ...one_selected_file,
-                    is_muted: !one_selected_file.is_muted
-                }
-            }
-
-            return one_selected_file // Returns The Unchanged Selected File
-        })
-
-        onSelectedFilesUpdate(updated_selected_files) // Sets The Selected Files
-    }
-
-    // Function For Select The Thumbnail
-    const selectThumbnail = async (clicked_index:number):Promise<void> => {
-        try {
-            const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
-        
-            if(!permission_result.granted) {
-                Alert.alert("Prístup zamietnutý", "Pre výber fotiek a videí musíte povoliť prístup.") // Shows The Alert
-                return
-            }
-        
-            // Opens The Gallery
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.All,
-                quality: 1
-            })
-        
-            if(!result.canceled && result.assets) {
-                // Accepts Only The Image Formats
-                const valid_files:ImagePicker.ImagePickerAsset[] = result.assets.filter((one_file:ImagePicker.ImagePickerAsset) => {
-                    const is_valid_type = one_file.type === "image"
-                    const is_valid_mime = one_file.mimeType
-                        ? one_file.mimeType.startsWith("image/")
-                        : true
-            
-                    return is_valid_type && is_valid_mime
-                })
-        
-                if(valid_files.length < result.assets.length) {
-                    Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.") // Shows The Alert
-                }
-        
-                if(valid_files.length > 0) {
-                    // Stores The New State Of Updated Posts
-                    const updated_selected_files:SelectedFile[] = selected_files.map((one_selected_file:SelectedFile, index:number) => {
-                        if(index === clicked_index) {
-                            return {
-                                ...one_selected_file,
-                                thumbnail_filename: valid_files[0].fileName || null
-                            }
-                        }
-
-                        return one_selected_file // Returns The Unchanged Selected File
-                    })
-
-                    onSelectedFilesUpdate(updated_selected_files) // Sets The Selected Files
-                    onThumbnailFilesUpdate([...thumbnail_files, valid_files[0]]) // Sets The Thumbnail Files
-                }
-            }
-        }
-
-        catch(error) {
-            console.warn("Pri výbere súborov došlo k chybe.")
-            Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.") // Shows The Alert
-        }
-    }
-
     return (
-        <View className="posts_preview" style={styles.posts_preview}>
+        <View 
+            className="posts_preview" 
+            onLayout={(event) => {setDropZone(event.nativeEvent.layout)}}
+            style={styles.posts_preview}
+        >
             <SelectPosts onMediaSelection={handleMediaSelection} />
             {selected_files.length > 0 && (renderPostPreview())} {/* Renders Post Preview */}
         </View>
@@ -443,7 +328,8 @@ const styles = StyleSheet.create({
         // --translate-y: calc(-100% - 10px);
         // --scale: 0;
         position: "absolute",
-        top: -1.5,
+        // top: -1.5,
+        bottom: 35 + 1,
         left: "50%",
 
         transform: [
@@ -469,7 +355,8 @@ const styles = StyleSheet.create({
         // --translate-y: calc(-1 * 10px);
         // --scale: 0;
         position: "absolute",
-        top: -1.5,
+        // top: -1.5,
+        bottom: 15 + 1,
         left: "50%",
 
         transform: [

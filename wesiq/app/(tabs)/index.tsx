@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Pressable, Text, ScrollView, Alert } from "react-native"
-import IconButton from "@/components/IconButton"
+import { View, StyleSheet, Pressable, Text, ScrollView, Alert, Image } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
-import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize } from "@/constants/colors"
-import { BlurView } from "expo-blur"
 import UploadPostFormDialog from "@/components/UploadPostFormDialog"
 import SearchUsers from "@/components/SearchUsers"
 import Feed from "@/components/Feed"
@@ -19,6 +16,7 @@ import Banner from "@/components/Banner"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { UploadProgressResponse, CompressTask } from "@/components/UploadPostFormDialog"
 import type { LoadedProcessingPostsResponse, ProcessingPost, ProcessingMedia } from "@/components/Feed"
+import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 
 export interface TrackedTask {
   task_id:string,
@@ -180,7 +178,7 @@ export default function HomeScreen() {
     try {
       const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
 
-      // Sends The POST Request To The Server
+      // Sends The GET Request To The Server
       const loaded_processing_posts_response:Response = await fetch(`${API_URL}/get-processing-posts/`, {
         method: "GET",
 

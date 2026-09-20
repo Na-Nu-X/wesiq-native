@@ -41,8 +41,22 @@ export const AnimatedProgressBar = ({ progress }:AnimatedProgressBarProps) => {
 
     return (
         <View className="upload_progress" style={styles.upload_progress}>
-            <Animated.View style={[styles.upload_progress_active, animated_progress_bar]} />
-            <Animated.Text style={[styles.upload_progress_label, animated_progress_bar_label]}>{`${progress}%`}</Animated.Text>
+            <Animated.View 
+                style={[
+                    styles.upload_progress_active, 
+                    animated_progress_bar
+                ]} 
+            />
+
+            <Animated.Text 
+                style={[
+                    styles.upload_progress_label, 
+                    animated_progress_bar_label, 
+                    { whiteSpace: "nowrap" } as any
+                ]}
+            >
+                {`${progress}%`}
+            </Animated.Text>
         </View>
     )
 }

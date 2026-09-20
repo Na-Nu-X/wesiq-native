@@ -16,6 +16,7 @@ import { PostsPreview } from "./pages/community/PostsPreview"
 import { LocationContainer } from "./pages/community/LocationContainer"
 
 import type { LoggedInUser, LoggedInUserResponse } from "./LoginFormDialog"
+import Animated, { SharedValue, useAnimatedStyle, useSharedValue } from "react-native-reanimated"
 
 export interface UploadPostResponse {
     success:boolean,
@@ -77,7 +78,11 @@ type UploadPostFormDialogProps = {
     onCompressTasksLoad:(compress_tasks:CompressTask[]) => void
 }
 
-export default function UploadPostFormDialog({ visible, onClose, onCompressTasksLoad }:UploadPostFormDialogProps) {
+export default function UploadPostFormDialog({ 
+    visible,
+    onClose, 
+    onCompressTasksLoad
+}:UploadPostFormDialogProps) {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
@@ -107,7 +112,7 @@ export default function UploadPostFormDialog({ visible, onClose, onCompressTasks
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
                 method: "GET",
 
@@ -857,5 +862,21 @@ const styles = StyleSheet.create({
         //     letter-spacing: 0.5px;
         //     cursor: pointer;
         // }
+    },
+
+    floating_file: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        elevation: 10,
+        zIndex: 9999,
+    },
+    
+    post: {
+        position: "relative",
+        width: 100,
+        height: 100,
+        borderRadius: SMALL_BORDER_RADIUS,
+        overflow: "hidden",
     },
 })

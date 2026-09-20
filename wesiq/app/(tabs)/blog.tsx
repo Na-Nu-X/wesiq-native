@@ -51,7 +51,7 @@ export default function BlogScreen() {
      // Function For Get The Articles
      const getArticles = async ():Promise<void> => {
         try {
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const articles_response:Response = await fetch(`${API_URL}/get-articles/`, {
                 method: "GET",
 

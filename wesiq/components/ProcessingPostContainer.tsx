@@ -126,7 +126,12 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
             <Text className="processing_post_report" style={{ color: SECONDARY_COLOR }}>{processing_post_report}</Text>
 
             <View className="processing_media_info_container">
-                <Text className="processing_media_info" style={{ color: SECONDARY_COLOR }}>
+                <Text 
+                    className="processing_media_info" 
+                    numberOfLines={1} 
+                    ellipsizeMode="tail" 
+                    style={{ color: SECONDARY_COLOR }}
+                >
                     Súbory:{" "}
                     
                     {processing_post.media.map((one_post_media:ProcessingMedia, index) => (

@@ -44,7 +44,7 @@ export default function HistorySection() {
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const loaded_activity_history_response:Response = await fetch(`${API_URL}/get-activity-history/`, {
                 method: "GET",
 

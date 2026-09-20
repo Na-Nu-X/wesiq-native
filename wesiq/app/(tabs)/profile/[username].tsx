@@ -186,7 +186,7 @@ export default function ProfileScreen() {
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
                 method: "GET",
 
@@ -228,7 +228,7 @@ export default function ProfileScreen() {
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const profile_response:Response = await fetch(`${API_URL}/get-profile/${username}/`, {
                 method: "GET",
 

@@ -78,7 +78,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
                 method: "GET",
 
@@ -120,7 +120,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const official_tasks_response:Response = await fetch(`${API_URL}/get-official-tasks/`, {
                 method: "GET",
 
@@ -308,7 +308,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const custom_tasks_response:Response = await fetch(`${API_URL}/get-custom-tasks/`, {
                 method: "GET",
 

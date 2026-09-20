@@ -192,7 +192,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
                 method: "GET",
 
@@ -238,7 +238,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const loaded_posts_response:Response = await fetch(`${API_URL}/get-posts/?page=${page}&searched_text=${encodeURIComponent(search_text)}`, {
                 method: "GET",
 

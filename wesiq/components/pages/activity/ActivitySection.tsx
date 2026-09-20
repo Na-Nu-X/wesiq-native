@@ -163,7 +163,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
                 method: "GET",
 
@@ -208,7 +208,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const loaded_training_plans_response:Response = await fetch(`${API_URL}/get-training-plans/`, {
                 method: "GET",
 
@@ -262,7 +262,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const xp_boost_response:Response = await fetch(`${API_URL}/get-xp-boost/`, {
                 method: "GET",
 
@@ -314,7 +314,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const used_xp_boost_response:Response = await fetch(`${API_URL}/use-xp-boost/`, {
                 method: "GET",
 
@@ -406,7 +406,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const loaded_activity_response:Response = await fetch(`${API_URL}/get-activity/`, {
                 method: "GET",
 
