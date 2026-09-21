@@ -95,6 +95,9 @@ export const PostContainer = ({
     const [comment, setComment] = useState<string>("") // Stores The Written Comment
     const MAX_COMMENT_LENGTH:number = 100 // Sets The Maximum Comment Length
 
+    const [selected_parent_comment, setSelectedParentComment] = useState<Comment|null>(null) // Stores The Selected Parent Comment
+    const [expanded_comments, setExpandedComments] = useState<number[]>([]) // Stores The IDs Of Expanded Post Comments (Visible Replies)
+
     const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
     const [playing_video, setPlayingVideo] = useState<number|null>(null) // Stores The Current Playing Video ID
     const is_volume_slider_sliding = useRef<boolean>(false) // Stores The Information If The Volume Slider Is Sliding
@@ -132,6 +135,8 @@ export const PostContainer = ({
             }
 
             const loaded_post_comments_data:loadedPostCommentsResponse = await loaded_post_comments_response.json() // Gets The Loaded Post Comments Data
+
+            console.log(loaded_post_comments_data.visible_comments)
 
             // If The Response Isn't Success
             if(!loaded_post_comments_data.success) {
@@ -238,17 +243,40 @@ export const PostContainer = ({
     }
 
     // Function For Load Comments
-    const loadComments = (post_comments:Comment[]) => {
-        return post_comments.map((one_post_comment:Comment, index:number) => (
+    const loadComments = () => {
+        const root_comments:Comment[] = (post.comments || []).filter((one_comment:Comment) => one_comment.level === 1 || one_comment.parent_id === null) // Gets The Root Comments
+        return root_comments.map((root_comment:Comment) => createCommentHTML(root_comment)) // Creates The Comment HTML
+    }
+
+    // Function For Toggle Reply On Comment
+    const toggleReplyOnComment = (comment:Comment):void => {
+        if(selected_parent_comment) setSelectedParentComment(null) // Sets Selected Parent Comment
+        else setSelectedParentComment(comment) // Sets Selected Parent Comment
+    }
+
+    // Function For Toggle Visibility Of The Comment Replies
+    const toggleShowReplies = (comment:Comment):void => {
+        setExpandedComments((previous_comments:number[]) => {
+            if(previous_comments.includes(comment.id)) return previous_comments.filter(id => id !== comment.id) // Hides The Replies
+            else return [...previous_comments, comment.id] // Shows The Replies
+        })
+    }
+
+    const createCommentHTML = (one_post_comment:Comment) => {
+        const children_comments:Comment[] = (post.comments || []).filter((one_post_comment_2:Comment) => one_post_comment_2.parent_id === one_post_comment.id) // Gets The Children Comments
+        const has_replies:boolean = children_comments.length > 0 // Checks If The Comment Has Any Replies
+        const is_expanded:boolean = expanded_comments.includes(one_post_comment.id) // Checks If The Comment Has Expanded Replies
+    
+        return (
             <View 
-                key={one_post_comment.id || index}
+                key={one_post_comment.id}
                 className="one_comment" 
                 style={styles.one_comment}
             >
                 <View className="comment_container" style={styles.comment_container}>
                     <View className="user" style={styles.user}>
                         <ProfilePictureLink user_id={one_post_comment.user.id} user_profile_picture_name={one_post_comment.user.profile_picture_name || null} user_subscription={one_post_comment.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
-
+                        
                         <Text 
                             className="username" 
 
@@ -259,7 +287,7 @@ export const PostContainer = ({
                         >
                             {one_post_comment.user.username}
                         </Text>
-
+    
                         <View 
                             className="show_comment_properties_button"
                             accessibilityLabel="Viac..." 
@@ -275,7 +303,7 @@ export const PostContainer = ({
                             />
                         </View>
                     </View>
-
+    
                     <View 
                         className="right"
 
@@ -301,7 +329,7 @@ export const PostContainer = ({
                         >
                             {one_post_comment.comment}
                         </Text>
-
+    
                         <View className="likes_container" style={styles.likes_container}>
                             <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.comment_likes}>
                                 <Icon
@@ -327,18 +355,18 @@ export const PostContainer = ({
                     {one_post_comment.level < 5 && (
                         <View className="reply" accessibilityLabel="Odpovedať...">
                             <Icon
-                                icon_name="comment"
-                                // onPress={}
-                                is_regular={true}
+                                icon_name={selected_parent_comment && selected_parent_comment.id === one_post_comment.id ? "comment-slash" : "comment"}
+                                onPress={() => toggleReplyOnComment(one_post_comment)}
+                                is_regular={!(selected_parent_comment && selected_parent_comment.id === one_post_comment.id)}
                             />
                         </View>
                     )}
 
-                    {one_post_comment.parent_id && (
+                    {has_replies && (
                         <View className="show_replies" accessibilityLabel="Zobraziť odpovede...">
                             <Icon
-                                icon_name="angle-down"
-                                // onPress={}
+                                icon_name={is_expanded ? "angle-up" : "angle-down"}
+                                onPress={() => toggleShowReplies(one_post_comment)}
                             />
                         </View>
                     )}
@@ -348,26 +376,13 @@ export const PostContainer = ({
                     </View>
                 </View>
                 
-                <View className="reply_container hidden" style={styles.reply_container}>
-
-                </View>
-
-                {/* // Appends The Reply
-                if(one_visible_comment.parent_id) {
-                    const parent_comment:HTMLDivElement|null = all_comments.querySelector(`[data-comment_id="${one_visible_comment.parent_id}"]`) as HTMLDivElement || null // Gets The Parent Comment
-
-                    if(parent_comment) {
-                        const reply_container:HTMLDivElement = parent_comment.querySelector(".reply_container") as HTMLDivElement // Gets The Reply Container
-
-                        reply_container.prepend(one_comment_container)
-
-                        if(one_visible_comment.level === 2) {
-                            one_comment_container.classList.add("first_level_reply")
-                        }
-                    }
-                } */}
+                {is_expanded && has_replies && (
+                    <View className="reply_container" style={styles.reply_container}>
+                        {children_comments.map((one_child_comment:Comment) => createCommentHTML(one_child_comment))}
+                    </View>
+                )}
             </View>
-        ))
+        )
     }
 
     // Function For Toggle Post Like
@@ -1178,8 +1193,7 @@ export const PostContainer = ({
                         indicatorStyle="white"
                         style={styles.all_comments}
                     >
-                        {/* Loads The Comments */}
-                        {post.comments.length > 0 && loadComments(post.comments)}
+                        {post.comments.length > 0 && loadComments()} {/* Loads The Comments */}
 
                         {has_next_post_comments && (
                             <Pressable 
@@ -1196,9 +1210,9 @@ export const PostContainer = ({
                         <TextInput
                             className="comment"
                             textAlignVertical="top" 
-                            placeholder="Napísať komentár" 
+                            placeholder={selected_parent_comment ? `Odpoveď užívateľovi ${selected_parent_comment.user.username}` : "Napísať komentár"}
                             placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel="Napísať komentár" 
+                            accessibilityLabel={selected_parent_comment ? `Odpoveď užívateľovi ${selected_parent_comment.user.username}` : "Napísať komentár"}
                             value={comment}
                             onChangeText={setComment}
                             maxLength={MAX_COMMENT_LENGTH}
@@ -1257,7 +1271,7 @@ export const PostContainer = ({
                             className="send" 
                             accessibilityLabel="Odoslať komentár"
                             accessibilityRole="button"
-                            onPress={() => addComment(post.id, comment, null)}
+                            onPress={() => addComment(post.id, comment, selected_parent_comment ? selected_parent_comment.id : null)}
                             style={styles.send}
                         >
                             <Svg 

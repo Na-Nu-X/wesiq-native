@@ -73,6 +73,7 @@ export const PostPreviewItem = ({
                     { scale: 1.05 },
                 ],
 
+                backfaceVisibility: "hidden",
                 zIndex: 9999,
             }
         }

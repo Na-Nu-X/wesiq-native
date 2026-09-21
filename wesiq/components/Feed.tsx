@@ -110,7 +110,7 @@ export interface Comment {
     likes:number,
     likes_from_users:number[],
     creation_time:string,
-    parent_id?:number|null,
+    parent_id:number|null,
     reports_from_users?:number[],
     level:number
 }
