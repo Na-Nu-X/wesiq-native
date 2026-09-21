@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, use } from "react"
+import { useState, useEffect, useRef } from "react"
 import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, ActivityIndicator } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
@@ -8,8 +8,8 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 
-import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
-import { BasicResponse } from "./Feed"
+import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { BasicResponse } from "@/components/Feed"
 
 interface loadedUser {
     id:number,

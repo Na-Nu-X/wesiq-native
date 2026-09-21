@@ -10,7 +10,7 @@ import { BlurView } from "expo-blur"
 import { Tooltip } from "@/components/Tooltip"
 import Animated, { useAnimatedStyle, withSpring, SharedValue } from "react-native-reanimated"
 
-import type { SelectedFile } from "@/components/UploadPostFormDialog"
+import type { SelectedFile } from "./UploadPostFormDialog"
 
 interface PostPreviewItemProps {
     onSelectedFilesUpdate:(selected_files:SelectedFile[]) => void,

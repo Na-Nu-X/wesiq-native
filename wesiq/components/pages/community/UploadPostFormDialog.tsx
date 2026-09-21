@@ -1,22 +1,18 @@
-import React, { useEffect, useState } from "react"
-import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Image, Platform, TouchableWithoutFeedback, Keyboard, Button, Alert, ActivityIndicator, ScrollView } from "react-native"
+import { useEffect, useState } from "react"
+import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Platform, Keyboard, Alert } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR, YELLOW_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
-import SelectPosts from "@/components/SelectPosts"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import Icon from "./Icon"
+import Icon from "@/components/Icon"
 import EmojiPicker from "rn-emoji-keyboard"
 import * as ImagePicker from "expo-image-picker"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { AVPlaybackStatus, ResizeMode, Video } from "expo-av"
-import { FontAwesome6 } from "@expo/vector-icons"
-import { PostsPreview } from "./pages/community/PostsPreview"
-import { LocationContainer } from "./pages/community/LocationContainer"
+import { PostsPreview } from "./PostsPreview"
+import { LocationContainer } from "./LocationContainer"
 
-import type { LoggedInUser, LoggedInUserResponse } from "./LoginFormDialog"
-import Animated, { SharedValue, useAnimatedStyle, useSharedValue } from "react-native-reanimated"
+import type { LoggedInUser, LoggedInUserResponse } from "@/components/LoginFormDialog"
 
 export interface UploadPostResponse {
     success:boolean,

@@ -36,7 +36,6 @@ export interface Activity {
 }
 
 export default function HistorySection() {
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [activity_history, setActivityHistory] = useState<Activity[]>([]) // Stores The Activity History
 
     // Function For Get The Activity History
@@ -102,7 +101,7 @@ export default function HistorySection() {
                     contentContainerStyle={styles.activity_history}
                 >
                     {activity_history.map((one_activity:Activity) => (
-                        <View className="one_activity" style={styles.one_activity}>
+                        <View key={one_activity.end_time} className="one_activity" style={styles.one_activity}>
                             <FontAwesome6
                                 name="list"
                                 size={20}

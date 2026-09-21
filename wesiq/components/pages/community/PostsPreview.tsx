@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react"
 import { View, StyleSheet, Platform } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import SelectPosts from "@/components/SelectPosts"
+import SelectPosts from "@/components/pages/community/SelectPosts"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import * as ImagePicker from "expo-image-picker"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { useSharedValue, useAnimatedStyle, withSpring, runOnJS, SharedValue } from "react-native-reanimated"
 import { PostPreviewItem } from "./PostPreviewItem"
 
-import type { SelectedFile } from "@/components/UploadPostFormDialog"
+import type { SelectedFile } from "./UploadPostFormDialog"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 interface PostsPreviewProps {

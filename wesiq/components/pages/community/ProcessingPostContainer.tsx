@@ -4,15 +4,15 @@ import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, 
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import ProfilePictureLink from "./ProfilePictureLink"
+import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
 import { getTimeAgo } from "@/utils/time"
-import { DynamicImage } from "./DynamicImage"
+import { DynamicImage } from "@/components/pages/community/DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import { AnimatedProgressBar } from "./pages/community/AnimatedProgressBar"
+import { AnimatedProgressBar } from "./AnimatedProgressBar"
 
-import type { ProcessingPost, ProcessingMedia } from "./Feed"
-import type { LoggedInUser } from "./LoginFormDialog"
+import type { ProcessingPost, ProcessingMedia } from "@/components/Feed"
+import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
 
 interface ProcessingPostContainerProps {

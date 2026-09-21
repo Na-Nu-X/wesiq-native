@@ -1,32 +1,26 @@
-import React, { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Image, Share, Switch, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { useState, useRef } from "react"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import ProfilePictureLink from "./ProfilePictureLink"
+import ProfilePictureLink from "../../ProfilePictureLink"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DOMAIN, API_URL } from "@/constants/general"
-import { getTimeAgo, getFormattedTime } from "@/utils/time"
-import { FontAwesome6 } from "@expo/vector-icons"
-import { Video, ResizeMode } from "expo-av"
-import Slider from "@react-native-community/slider"
+import { getTimeAgo } from "@/utils/time"
 import Svg, { Path } from "react-native-svg"
 import EmojiPicker from "rn-emoji-keyboard"
 import { HeartParticle } from "./HeartParticle"
 import { getFollowButtonProperties } from "./SearchUsers"
 import { DynamicImage } from "./DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import { useMemo } from "react"
 import { DynamicVideo } from "./DynamicVideo"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
 
-import type { Post, Media, Comment } from "./Feed"
-import type { LoggedInUser } from "./LoginFormDialog"
-import type { BasicResponse } from "./Feed"
+import type { Post, Media, Comment } from "../../Feed"
+import type { LoggedInUser } from "../../LoginFormDialog"
+import type { BasicResponse } from "../../Feed"
 
 interface loadedPostCommentsResponse {
     success:boolean,
@@ -107,6 +101,8 @@ export const PostContainer = ({
     const [particles, setParticles] = useState<Particle[]>([]) // Stores The Like Particles
 
     const [is_video_metrics_open, setIsVideoMetricsOpen] = useState<boolean>(false) // Stores The Information If The Video Metrics Is Open
+
+    const [is_video_initialized, setIsVideoInitialized] = useState<boolean>(false) // Stores The Information If The Video Is Initialized (Downloaded)
 
     // Function For Get Post Comments
     const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:number) => {
@@ -1007,11 +1003,13 @@ export const PostContainer = ({
                                 <DynamicVideo 
                                     one_post={post}
                                     one_post_media={one_post_media}
+                                    onSetPlayingVideo={setPlayingVideo}
                                     playing_video={playing_video}
-                                    setPlayingVideo={setPlayingVideo}
                                     data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
                                     is_volume_slider_sliding={is_volume_slider_sliding}
                                     onVideoDurationLoad={(video_duration:number) => handleVideoDurationLoad(video_duration, post.id, one_post_media.id)}
+                                    onSetIsVideoInitialized={(is_video_initialized:boolean) => setIsVideoInitialized(is_video_initialized)}
+                                    is_video_initialized={is_video_initialized}
                                 />
                             )}
                         </View>
@@ -1122,7 +1120,7 @@ export const PostContainer = ({
                     <Text className="views_counter" style={styles.views_counter}>{String(post.views)}</Text>
                 </View>
 
-                {logged_in_user && post.user.id === logged_in_user.id && (() => {
+                {logged_in_user && post.user.id === logged_in_user.id && is_video_initialized && (() => {
                     const current_media:Media = post.media[active_post_media_index] ?? post.media[0] // Gets The Current Media
                     if(!current_media) return null
 

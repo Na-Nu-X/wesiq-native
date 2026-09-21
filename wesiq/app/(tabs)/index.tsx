@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react"
 import { View, StyleSheet, Pressable, Text, ScrollView, Alert, Image } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
-import UploadPostFormDialog from "@/components/UploadPostFormDialog"
-import SearchUsers from "@/components/SearchUsers"
+import UploadPostFormDialog from "@/components/pages/community/UploadPostFormDialog"
+import SearchUsers from "@/components/pages/community/SearchUsers"
 import Feed from "@/components/Feed"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import LoginFormDialog from "@/components/LoginFormDialog"
@@ -14,9 +14,8 @@ import { API_URL } from "@/constants/general"
 import Banner from "@/components/Banner"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { UploadProgressResponse, CompressTask } from "@/components/UploadPostFormDialog"
-import type { LoadedProcessingPostsResponse, ProcessingPost, ProcessingMedia } from "@/components/Feed"
-import { SMALL_BORDER_RADIUS } from "@/constants/borders"
+import type { UploadProgressResponse, CompressTask } from "@/components/pages/community/UploadPostFormDialog"
+import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components/Feed"
 
 export interface TrackedTask {
   task_id:string,
