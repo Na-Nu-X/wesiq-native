@@ -1,6 +1,6 @@
-import { useState, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { useState, useRef, useEffect } from "react"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform, Image, LayoutChangeEvent } from "react-native"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -21,6 +21,7 @@ import { BlurView } from "expo-blur"
 import type { Post, Media, Comment } from "../../Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
 import type { BasicResponse } from "../../Feed"
+import type { vtt } from "../activity/CustomVideoControls"
 
 interface loadedPostCommentsResponse {
     success:boolean,
@@ -103,6 +104,13 @@ export const PostContainer = ({
     const [is_video_metrics_open, setIsVideoMetricsOpen] = useState<boolean>(false) // Stores The Information If The Video Metrics Is Open
 
     const [is_video_initialized, setIsVideoInitialized] = useState<boolean>(false) // Stores The Information If The Video Is Initialized (Downloaded)
+    
+    const [show_controls, setShowControls] = useState<boolean>(true) // Stores The Information If The Custom Video Controls Are Visible
+    const [is_scrubber_dragged, setIsScrubberDragged] = useState<boolean>(false) // Stores The Information If The Scrubber Is Dragged
+    const [video_scrubber_preview, setVttVideoScrubberPreview] = useState<vtt|null>(null) // Stores The VTT Video Scrubber Preview (Position)
+    const [video_scrubber_preview_image, setVttVideoScrubberPreviewImage] = useState<string>("") // Stores The VTT Video Scrubber Preview Image
+    const [scrubber_position, setScrubberPosition] = useState<number>(0) // Stores The Scrubber Position
+    const [scrubber_width, setScrubberWidth] = useState<number>(0) // Stores The Scrubber Width
 
     // Function For Get Post Comments
     const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:number) => {
@@ -858,7 +866,7 @@ export const PostContainer = ({
         .runOnJS(true)
 
         .onEnd((event) => {
-            if(is_volume_slider_sliding.current) return // Do Nothing If The Volume Slider Is Sliding
+            if(is_volume_slider_sliding.current || is_scrubber_dragged) return // Do Nothing If The Volume Slider Is Sliding Or If The Video Controls Scrubber Is Dragged
             if(event.translationX < -50) changePostMedia(post.id, active_post_media_index + 1, max_active_post_media_index) // Shows The Next Post Media
             else if (event.translationX > 50) changePostMedia(post.id, active_post_media_index - 1, max_active_post_media_index) // Shows The Previous Post Media
         })
@@ -1010,6 +1018,16 @@ export const PostContainer = ({
                                     onVideoDurationLoad={(video_duration:number) => handleVideoDurationLoad(video_duration, post.id, one_post_media.id)}
                                     onSetIsVideoInitialized={(is_video_initialized:boolean) => setIsVideoInitialized(is_video_initialized)}
                                     is_video_initialized={is_video_initialized}
+                                    onShowControls={(show_controls:boolean) => setShowControls(show_controls)}
+                                    show_controls={show_controls}
+                                    onIsScrubberDragged={setIsScrubberDragged}
+                                    is_scrubber_dragged={is_scrubber_dragged}
+                                    onVttVideoScrubberPreviewUpdate={setVttVideoScrubberPreview}
+                                    onVttVideoScrubberPreviewImageUpdate={setVttVideoScrubberPreviewImage}
+                                    onScrubberPositionUpdate={(scrubber_position:number) => setScrubberPosition(scrubber_position)}
+                                    scrubber_position={scrubber_position}
+                                    onSetScrubberWidth={(event:LayoutChangeEvent) => setScrubberWidth(event.nativeEvent.layout.width)}
+                                    scrubber_width={scrubber_width}
                                 />
                             )}
                         </View>
@@ -1017,35 +1035,83 @@ export const PostContainer = ({
 
                     <View className="particles" style={styles.particles}></View>
 
-                    <View 
-                        className="post_bars"
+                    {!show_controls && (
+                        <View 
+                            className="post_bars"
 
-                        style={[
-                            styles.post_bars,
-                            post.media.length === 0 && { display: "none" }
-                        ]}
-                    >
-                        {post.media.length > 1 && (
-                            post.media.map((one_post_media:Media, index:number) => (
-                                <Pressable 
-                                    key={index} 
-                                    className="bar" 
-                                    onPress={() => changePostMedia(post.id, index, max_active_post_media_index)}
+                            style={[
+                                styles.post_bars,
+                                post.media.length === 0 && { display: "none" }
+                            ]}
+                        >
+                            {post.media.length > 1 && (
+                                post.media.map((_, index:number) => (
+                                    <Pressable 
+                                        key={index} 
+                                        className="bar" 
+                                        onPress={() => changePostMedia(post.id, index, max_active_post_media_index)}
 
-                                    style={[
-                                        styles.bar, 
-                                        { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
-                                    ]}
-                                />
-                            ))
-                        )}
-                    </View>
+                                        style={[
+                                            styles.bar, 
+                                            { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                        ]}
+                                    />
+                                ))
+                            )}
+                        </View>
+                    )}
                 </View>
             </GestureDetector>
 
-            <View className="video_scrubber_preview" style={styles.video_scrubber_preview}>
-                <View className="triangle" style={styles.triangle}></View>
-            </View>
+            {video_scrubber_preview && is_scrubber_dragged && (
+                <View 
+                    style={{ 
+                        position: "relative", 
+                        bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20,
+
+                        left: Math.min(
+                            Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
+                            scrubber_width - video_scrubber_preview.w
+                        ),
+                    }}
+                >
+                    <View 
+                        className="video_scrubber_preview"
+
+                        style={[
+                            styles.video_scrubber_preview,
+
+                            {
+                                width: video_scrubber_preview.w,
+                                height: video_scrubber_preview.h,
+                            }
+                        ]}
+                    >
+                        <DynamicImage 
+                            uri={`${DOMAIN}/${video_scrubber_preview_image}`}
+
+                            style={{ 
+                                position: "absolute",
+                                left: -video_scrubber_preview.x,
+                                top: -video_scrubber_preview.y,
+                            }}
+                        />
+                    </View>
+                
+                    <View 
+                        className="triangle" 
+
+                        style={[
+                            styles.triangle,
+
+                            {
+                                top: video_scrubber_preview.h + 10,
+                                left: (video_scrubber_preview.w / 2) - 10,
+                            }
+                        ]} 
+                    />
+                </View>
+            )}
 
             <View className="society" style={styles.society}>
                 <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
@@ -1549,27 +1615,26 @@ const styles = StyleSheet.create({
 
     video_scrubber_preview: {
         position: "absolute",
-        transform: [{ translateX: "-50%" }],
-        display: "none",
         width: 160,
         height: 90,
         borderWidth: 1,
         borderColor: "#cccccc",
         borderRadius: SMALL_BORDER_RADIUS,
         opacity: 0.9,
+        overflow: "hidden",
         zIndex: 200,
     },
-
+    
     triangle: {
         position: "absolute",
-        bottom: -18,
-        left: "50%",
-        transform: [{ translateX: "-50%" }],
         width: 0,
         height: 0,
+        backgroundColor: "transparent",
         borderTopWidth: 10,
-        borderLeftWidth: 10,
         borderRightWidth: 10,
+        borderRightColor: "transparent",
+        borderLeftWidth: 10,
+        borderLeftColor: "transparent",
         borderTopColor: "#cccccc",
     },
 

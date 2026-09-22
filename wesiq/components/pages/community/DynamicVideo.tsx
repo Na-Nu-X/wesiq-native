@@ -8,9 +8,10 @@ import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet"
 import * as ScreenOrientation from "expo-screen-orientation"
+import { CustomVideoControls } from "../activity/CustomVideoControls"
 
 import type { Media, Post } from "@/components/Feed"
-import { CustomVideoControls } from "../activity/CustomVideoControls"
+import type { vtt } from "../activity/CustomVideoControls"
 
 interface DynamicVideoProps {
     one_post:Post,
@@ -21,7 +22,17 @@ interface DynamicVideoProps {
     is_volume_slider_sliding:RefObject<boolean>,
     onVideoDurationLoad:(video_duration:number) => void,
     onSetIsVideoInitialized:(is_video_initialized:boolean) => void,
-    is_video_initialized:boolean
+    is_video_initialized:boolean,
+    onShowControls:(show_controls:boolean) => void,
+    show_controls:boolean,
+    onIsScrubberDragged:(is_scrubber_dragged:boolean) => void,
+    is_scrubber_dragged:boolean,
+    onVttVideoScrubberPreviewUpdate:(video_scrubber_preview:vtt|null) => void,
+    onVttVideoScrubberPreviewImageUpdate:(sprite_sheet:string) => void,
+    onScrubberPositionUpdate:(scrubber_position:number) => void,
+    scrubber_position:number,
+    onSetScrubberWidth:(event:LayoutChangeEvent) => void,
+    scrubber_width:number,
 }
 
 export const DynamicVideo = ({ 
@@ -33,7 +44,17 @@ export const DynamicVideo = ({
     is_volume_slider_sliding, 
     onVideoDurationLoad,
     onSetIsVideoInitialized,
-    is_video_initialized
+    is_video_initialized,
+    onShowControls,
+    show_controls,
+    onIsScrubberDragged,
+    is_scrubber_dragged,
+    onVttVideoScrubberPreviewUpdate,
+    onVttVideoScrubberPreviewImageUpdate,
+    onScrubberPositionUpdate,
+    scrubber_position,
+    onSetScrubberWidth,
+    scrubber_width,
 }:DynamicVideoProps) => {
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
@@ -58,10 +79,8 @@ export const DynamicVideo = ({
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [video_settings_sheet, setVideoSettingsSheet] = useState<"main"|"quality"|"speed">("main") // Stores The Active Video Settings Sheet
 
-    const [show_controls, setShowControls] = useState<boolean>(true) // Stores The Information If The Custom Video Controls Are Visible
     const controls_timeout = useRef<any>(null) // Stores The Controls Timeout
     // const controls_timeout = useRef<NodeJS.Timeout | null>(null)
-    const [scrubber_width, setScrubberWidth] = useState<number>(0) // Stores The Scrubber Width
 
     const [is_fullscreen, setIsFullscreen] = useState<boolean>(false) // Stores The Information If The Video Is In Fullscreen Mode
 
@@ -122,7 +141,7 @@ export const DynamicVideo = ({
     const initializeVideo = ():void => {
         onSetIsVideoInitialized(true) // Sets The Information If The Video Is Initialized
         playPauseVideo(one_post_media.id) // Plays The Video
-        setShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
+        onShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
         startControlsTimer() // Starts The Controls Timer
     }
 
@@ -274,69 +293,36 @@ export const DynamicVideo = ({
     // Function For Handle The Tap On The Video
     const handleTapVideo = ():void => {
         if(show_controls) {
-            setShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
-            if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
+            onShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
+            stopControlsTimer() // Stops The Controls Timer
         } 
         
         else {
-            setShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
+            onShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
             startControlsTimer() // Starts The Controls Timer
         }
     }
 
     // Function For Start The Controls Timer
     const startControlsTimer = ():void => {
-        if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
+        stopControlsTimer() // Stops The Controls Timer
         
         // 5 Seconds Timeout
         controls_timeout.current = setTimeout(() => {
-            setShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
+            onShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
         }, 5000)
+    }
+
+    // Function For Stop The Controls Timer
+    const stopControlsTimer = ():void => {
+        if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
     }
 
     useEffect(() => {
         return () => {
-            if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
+            stopControlsTimer() // Stops The Controls Timer
         }
     }, [])
-
-    // // Scrubber Hitbox Mouse Move Functionality
-    // scrubber_hitbox.addEventListener("mousemove", async function(event:MouseEvent):Promise<void> {
-    //     const scrubber_rect:DOMRect = scrubber_hitbox.getBoundingClientRect() // Gets The Scrubber Rect
-    //     const scrubber_width:number = scrubber_hitbox.offsetWidth // Gets The Scrubber Width
-    //     const hovered_scrubber_position:number = event.clientX - scrubber_rect.left // Gets Current Hovered Scrubber Position
-    //     const scrubber_progress:number = Math.min(Math.max((hovered_scrubber_position / scrubber_width) * 100, 0), 100) // Calculates The Current Scrubber Progress
-    //     const hovered_video_time:number = (scrubber_progress / 100) * one_video.duration || 0 // Gets The Hovered Video Time
-
-    //     is_hovered_scrubber = true // Marks The Scrubber As Hovered
-    //     scrubber.style.setProperty("--progress", `${scrubber_progress}%`) // Shows The Progress In Scrubber
-    //     elapsed_time.textContent = `${getFormattedTime("minutes", hovered_video_time)}:${getFormattedTime("seconds", hovered_video_time, true)}` // Sets The Elapsed Timer
-
-    //     // Video Scrubber Preview
-
-    //     const post_container = this.closest(".post_container") as HTMLDivElement // Gets The Post Container
-    //     const video_scrubber_preview:HTMLDivElement = post_container.querySelector(".video_scrubber_preview") as HTMLDivElement // Gets The Video Scrubber Preview Container
-    //     const sprite_sheet:string|null = video_container.dataset["sprite_sheet"] || null // Gets The Sprite Sheet Path
-    //     const vtt_file:string|null = video_container.dataset["vtt_file"] || null // Gets The VTT File Path
-        
-    //     let vtt_video_previews:vtt[] = [] // Stores The VTT Video Previews
-
-    //     if(vtt_file && sprite_sheet) {
-    //         await loadVttData(vtt_file, vtt_video_previews) // Loads The VTT File Data
-    //         initializeVideoPreview(hovered_video_time, vtt_video_previews, sprite_sheet, video_scrubber_preview, hovered_scrubber_position, scrubber_rect, post_container) // Initializes The Video Preview
-    //     }
-    // })
-
-    // // Scrubber Hitbox Mouse Out Functionality
-    // scrubber_hitbox.addEventListener("mouseout", function():void {
-    //     const post_container = this.closest(".post_container") as HTMLDivElement // Gets The Post Container
-    //     const video_scrubber_preview:HTMLDivElement = post_container.querySelector(".video_scrubber_preview") as HTMLDivElement // Gets The Video Scrubber Preview Container
-        
-    //     is_hovered_scrubber = false // Marks The Scrubber As No Hovered
-    //     scrubber.style.setProperty("--progress", previous_scrubber_progress) // Shows The Progress In Scrubber
-    //     elapsed_time.textContent = `${getFormattedTime("minutes", previous_elapsed_time)}:${getFormattedTime("seconds", previous_elapsed_time, true)}` // Sets The Elapsed Timer
-    //     video_scrubber_preview.style.display = "none" // Hides The Video Scrubber Preview
-    // })
 
     // Function For Change The Video Time
     const changeVideoTime = async (event:GestureResponderEvent):Promise<void> => {
@@ -345,8 +331,8 @@ export const DynamicVideo = ({
     
         if(clicked_scrubber_position === undefined || scrubber_width === 0 || duration === 0) return
     
-        const scrubber_progress = Math.min(Math.max(clicked_scrubber_position / scrubber_width, 0), 1) // Calculates The Current Scrubber Progress
-        const clicked_video_time = scrubber_progress * duration // Gets The Clicked Video Time
+        const scrubber_progress:number = Math.min(Math.max(clicked_scrubber_position / scrubber_width, 0), 1) // Calculates The Current Scrubber Progress
+        const clicked_video_time:number = scrubber_progress * duration // Gets The Clicked Video Time
         const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         if(current_video) await current_video.setPositionAsync(clicked_video_time) // Sets The New Current Video Time Position
@@ -578,8 +564,17 @@ export const DynamicVideo = ({
                             onShowVideoSettings={showVideoSettings}
                             is_fullscreen={is_fullscreen}
                             onToggleVideoFullscreen={toggleVideoFullscreen}
-                            onHandleScrubberLayout={(event:LayoutChangeEvent) => setScrubberWidth(event.nativeEvent.layout.width)}
-                            onChangeVideoTime={changeVideoTime}
+                            onSetScrubberWidth={(event:LayoutChangeEvent) => onSetScrubberWidth(event)}
+                            scrubber_width={scrubber_width}
+                            current_video={getCurrentVideo()}
+                            onStartControlsTimer={startControlsTimer}
+                            onStopControlsTimer={stopControlsTimer}
+                            onIsScrubberDragged={onIsScrubberDragged}
+                            is_scrubber_dragged={is_scrubber_dragged}
+                            onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
+                            onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
+                            onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
+                            scrubber_position={scrubber_position}
                         />
                     </View>
                 </Modal>
@@ -603,8 +598,17 @@ export const DynamicVideo = ({
                     onShowVideoSettings={showVideoSettings}
                     is_fullscreen={is_fullscreen}
                     onToggleVideoFullscreen={toggleVideoFullscreen}
-                    onHandleScrubberLayout={(event:LayoutChangeEvent) => setScrubberWidth(event.nativeEvent.layout.width)}
-                    onChangeVideoTime={changeVideoTime}
+                    onSetScrubberWidth={(event:LayoutChangeEvent) => onSetScrubberWidth(event)}
+                    scrubber_width={scrubber_width}
+                    current_video={getCurrentVideo()}
+                    onStartControlsTimer={startControlsTimer}
+                    onStopControlsTimer={stopControlsTimer}
+                    onIsScrubberDragged={onIsScrubberDragged}
+                    is_scrubber_dragged={is_scrubber_dragged}
+                    onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
+                    onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
+                    onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
+                    scrubber_position={scrubber_position}
                 />
             )}
 

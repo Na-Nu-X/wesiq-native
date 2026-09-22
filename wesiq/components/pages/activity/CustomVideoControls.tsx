@@ -1,13 +1,25 @@
-import { RefObject, useRef, useState } from "react"
-import { View, StyleSheet, Text, Pressable, LayoutChangeEvent, GestureResponderEvent, PanResponder } from "react-native"
+import { RefObject, useEffect, useRef, useState } from "react"
+import { View, StyleSheet, Text, LayoutChangeEvent, GestureResponderEvent, PanResponder, PanResponderInstance } from "react-native"
 import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR } from "@/constants/colors"
-import { BIG_BORDER_RADIUS } from "@/constants/borders"
+import { BIG_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedTime } from "@/utils/time"
 import Slider from "@react-native-community/slider"
 import { FontAwesome6 } from "@expo/vector-icons"
+import { Video } from "expo-av"
 
 import type { Media } from "@/components/Feed"
+import { DOMAIN } from "@/constants/general"
+
+export interface vtt {
+    start:number,
+    end:number,
+    image:string,
+    x:number,
+    y:number,
+    w:number,
+    h:number
+}
 
 interface CustomVideoControlsProps {
     one_post_media:Media,
@@ -26,8 +38,17 @@ interface CustomVideoControlsProps {
     onShowVideoSettings:() => void,
     is_fullscreen:boolean,
     onToggleVideoFullscreen:() => void,
-    onHandleScrubberLayout:(event:LayoutChangeEvent) => void,
-    onChangeVideoTime:(event:GestureResponderEvent) => void,
+    onSetScrubberWidth:(event:LayoutChangeEvent) => void,
+    scrubber_width:number,
+    current_video:Video|null
+    onStartControlsTimer:() => void,
+    onStopControlsTimer:() => void,
+    onIsScrubberDragged:(is_scrubber_dragged:boolean) => void,
+    is_scrubber_dragged:boolean,
+    onVttVideoScrubberPreviewUpdate:(video_scrubber_preview:vtt|null) => void,
+    onVttVideoScrubberPreviewImageUpdate:(sprite_sheet:string) => void,
+    onScrubberPositionUpdate:(scrubber_position:number) => void,
+    scrubber_position:number,
 }
 
 export const CustomVideoControls = ({ 
@@ -47,9 +68,23 @@ export const CustomVideoControls = ({
     onShowVideoSettings,
     is_fullscreen,
     onToggleVideoFullscreen,
-    onHandleScrubberLayout,
-    onChangeVideoTime
+    onSetScrubberWidth,
+    scrubber_width,
+    current_video,
+    onStartControlsTimer,
+    onStopControlsTimer,
+    onIsScrubberDragged,
+    is_scrubber_dragged,
+    onVttVideoScrubberPreviewUpdate,
+    onVttVideoScrubberPreviewImageUpdate,
+    onScrubberPositionUpdate,
+    scrubber_position
 }:CustomVideoControlsProps) => {
+    const [scrubber_progress, setScrubberProgress] = useState<number>(0) // Stores The Scrubber Progress
+    
+    const [scrubber_time, setScrubberTime] = useState<number>(0) // Stores The Scrubber Time
+    const [vtt_video_previews, setVttVideoPreviews] = useState<vtt[]>([]) // Stores The VTT Video Previews
+
     // Function For Get The Volume Icon
     const getVolumeIcon = ():string => {
         const current_volume:number = is_muted ? 0 : volume // Gets The Current Volume (0 If The Video Is Muted)
@@ -57,6 +92,125 @@ export const CustomVideoControls = ({
         if(current_volume === 0) return "volume-xmark"
         if(current_volume <= 0.5) return "volume-low"
         return "volume-high"
+    }
+
+    // Creates The Scrubbar Gesture
+    const scrubbar_gesture:PanResponderInstance = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => true, // Enables The Tap
+            onMoveShouldSetPanResponder: () => true, // Enables The Move
+    
+            // Tap Start (mousedown / touchstart)
+            onPanResponderGrant: (event:GestureResponderEvent):void => {
+                onStopControlsTimer() // Stops The Controls Timer
+                onIsScrubberDragged(true) // Sets The Information That The Scrubber Is Dragged
+                calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+            },
+    
+            // Move (mousemove / touchmove)
+            onPanResponderMove: (event:GestureResponderEvent):void => {
+                calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+            },
+    
+            // Tap End (mouseup / touchend)
+            onPanResponderRelease: async (event:GestureResponderEvent):Promise<void> => {
+                onIsScrubberDragged(false) // Sets The Information That The Scrubber Isn't Dragged
+                
+                const scrubber_progress:number|undefined = calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+
+                if(scrubber_progress !== undefined && duration > 0) {
+                    const video_time:number = scrubber_progress * duration // Gets The Video Time
+                    if(current_video) await current_video.setPositionAsync(video_time) // Sets The New Current Video Time Position
+                }
+
+                onStartControlsTimer() // Starts The Controls Timer
+            }
+        })
+    ).current
+
+    // Function For Load The VTT File Data
+    const loadVttData = async (vtt_url:string) => {
+        try {
+            // Sends The GET Request To The Server
+            const loaded_vtt_file_response:Response = await fetch(`${DOMAIN}/media/${vtt_url}`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                }
+            })
+
+            const loaded_vtt_file_text:string = await loaded_vtt_file_response.text() // Gets The Text Content Of The VTT File
+            const regex:RegExp = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\s+(.+)#xywh=(\d+),(\d+),(\d+),(\d+)/g;
+            let match
+
+            while((match = regex.exec(loaded_vtt_file_text)) !== null) {
+                // Stores The Data Of VTT Video Preview To All VTT Video Previews
+                const new_vtt_video_previews:vtt = {
+                    start: parseVttTime(match[1] as string),
+                    end: parseVttTime(match[2] as string),
+                    image: match[3] as string,
+                    x: parseInt(match[4] as string),
+                    y: parseInt(match[5] as string),
+                    w: parseInt(match[6] as string),
+                    h: parseInt(match[7] as string)
+                }
+
+                // Sets The VTT Video Previews
+                setVttVideoPreviews((previous_vtt_video_previews:vtt[]) => {
+                    return [...previous_vtt_video_previews, new_vtt_video_previews] // Returns The Combined VTT Video Previews
+                })
+            }
+        } 
+        
+        catch {
+            console.error("Pri získavaní náhľadov pre video došlo k chybe.")
+        } 
+    }
+
+    // Initializes The Load Of The VTT File Data
+    useEffect(() => {
+        if(one_post_media.vtt_file) loadVttData(one_post_media.vtt_file) // Loads The VTT File Data
+    }, [one_post_media])
+
+    // Function For Parse The VTT Time
+    const parseVttTime = (time:string):number => {
+        const parts:string[] = time.split(':')
+        const seconds_parts:string[] = (parts[2] as string).split('.')
+
+        return parseInt(parts[0] as string) * 3600 + parseInt(parts[1] as string) * 60 + parseInt(seconds_parts[0] as string) + parseFloat('0.' + seconds_parts[1] as string)
+    }
+
+    // Function For Initialize The Video Preview
+    const initializeVideoPreview = ():void => {
+        const current_video_preview:vtt|null = vtt_video_previews.find(one_vtt_video_preview => (scrubber_time / 1000) >= one_vtt_video_preview.start && (scrubber_time / 1000) <= one_vtt_video_preview.end) || null // Gets The Current Video Preview
+        onVttVideoScrubberPreviewUpdate(current_video_preview) // Sets The VTT Video Scrubber Preview
+        if(one_post_media.sprite_sheet) onVttVideoScrubberPreviewImageUpdate(`media/${one_post_media.sprite_sheet}`) // Sets The VTT Video Scrubber Preview
+    }
+
+    // Initializes The Load Of The VTT File Data
+    useEffect(() => {
+        initializeVideoPreview() // Loads The VTT File Data
+    }, [scrubber_time, vtt_video_previews, one_post_media, scrubber_position])
+
+    // Function For Calculate End Set The Scrubber Progress (funguje pre Web aj Native)
+    const calculateAndSetScrubberProgress = (event:GestureResponderEvent):number|undefined => {
+        if(scrubber_width === 0) return
+    
+        const native_event:any = event.nativeEvent as any // Gets The Native Event (iOS / Android)
+        const scrubber_position:number|undefined = native_event.locationX ?? native_event.offsetX // Gets Current Clicked Scrubber Position
+    
+        if(scrubber_position === undefined) return
+    
+        const clamped_position:number = Math.min(Math.max(0, scrubber_position), scrubber_width)
+        const scrubber_progress:number = clamped_position / scrubber_width // Calculates The Current Scrubber Progress
+
+        setScrubberProgress(scrubber_progress) // Sets The Scrubber Progress
+        onScrubberPositionUpdate(scrubber_position) // Sets The Scrubber Position
+        setScrubberTime(duration * scrubber_progress) // Sets The Scrubber Time
+        
+        return scrubber_progress // Returns The Scrubber Progress
     }
 
     return (
@@ -114,7 +268,11 @@ export const CustomVideoControls = ({
                             color: SECONDARY_COLOR,
                         }}
                     >
-                        {`${getFormattedTime("minutes", elapsed_time / 1000)}:${getFormattedTime("seconds", elapsed_time / 1000, true)}`}
+                        {!is_scrubber_dragged ? (
+                            `${getFormattedTime("minutes", elapsed_time / 1000)}:${getFormattedTime("seconds", elapsed_time / 1000, true)}`
+                        ) : (
+                            `${getFormattedTime("minutes", scrubber_time / 1000)}:${getFormattedTime("seconds", scrubber_time / 1000, true)}`
+                        )}
                     </Text>
 
                     <Text
@@ -236,41 +394,51 @@ export const CustomVideoControls = ({
                 </View>
             </View>
 
-            <Pressable 
+            <View 
                 className="scrubber_hitbox" 
-                onLayout={onHandleScrubberLayout} 
-                onPress={onChangeVideoTime}
+                onLayout={onSetScrubberWidth} 
                 style={styles.scrubber_hitbox}
-            >
-                <View className="scrubber" style={styles.scrubber} pointerEvents="none">
-                    <View 
-                        className="scrubber_track" 
+                {...scrubbar_gesture.panHandlers} 
+            />
 
-                        style={[
-                            styles.scrubber_track,
-                            { width: duration > 0 ? `${(elapsed_time / duration) * 100}%` : "0%" }
-                        ]}
-                    />
+            <View className="scrubber" style={styles.scrubber}>
+                <View 
+                    className="scrubber_track" 
 
-                    <View 
-                        className="scrubber_thumb" 
+                    style={[
+                        styles.scrubber_track,
 
-                        style={[
-                            styles.scrubber_thumb,
-                            { marginLeft: duration > 0 ? `${(elapsed_time / duration) * 100}%` : "0%" }
-                        ]}
-                    />
+                        { 
+                            width: duration > 0 
+                                ? (is_scrubber_dragged ? `${scrubber_progress * 100}%` : `${(elapsed_time / duration) * 100}%`) 
+                                : "0%" 
+                        }
+                    ]}
+                />
 
-                    <View 
-                        className="buffering_bar" 
+                <View 
+                    className="scrubber_thumb" 
 
-                        style={[
-                            styles.buffering_bar,
-                            { width: duration > 0 ? `${(buffered_time / duration) * 100}%` : "0%" }
-                        ]}
-                    />
-                </View>
-            </Pressable>
+                    style={[
+                        styles.scrubber_thumb,
+
+                        { 
+                            marginLeft: duration > 0 
+                                ? (is_scrubber_dragged ? `${scrubber_progress * 100}%` : `${(elapsed_time / duration) * 100}%`) 
+                                : "0%" 
+                        }
+                    ]}
+                />
+
+                <View 
+                    className="buffering_bar" 
+
+                    style={[
+                        styles.buffering_bar,
+                        { width: duration > 0 ? `${(buffered_time / duration) * 100}%` : "0%" }
+                    ]}
+                />
+            </View>
         </View>
     )
 }
@@ -372,30 +540,22 @@ const styles = StyleSheet.create({
     },
 
     scrubber_hitbox: {
-        // width: calc(100% - $big-border-radius);
+        position: "absolute",
+        bottom: -10 + (5 / 2),
         width: "100%",
+        height: 20,
         marginHorizontal: "auto",
         paddingVertical: 5,
-
-        // &:hover {
-        //     .scrubber {
-        //         &::before {
-        //             transition: width 0s;
-        //         }
-
-        //         &::after {
-        //             transition: transform 0s, margin-left 0s;
-        //         }
-        //     }
-        // }
     },
 
     scrubber: {
-        position: "relative",
+        position: "absolute",
+        bottom: 0,
         width: "100%",
         height: 5,
         backgroundColor: LIGHT_BLUE_COLOR,
         borderRadius: 8 / 2,
+        pointerEvents: "none",
 
         // &:hover {
         //     // height: 8px;
@@ -416,6 +576,7 @@ const styles = StyleSheet.create({
         borderRadius: 8 / 2,
         // transition: width 0.1s linear;
         zIndex: 100,
+        pointerEvents: "none",
     },
 
     scrubber_thumb: {
@@ -429,6 +590,7 @@ const styles = StyleSheet.create({
         borderRadius: "50%",
         // transition: transform 0.3s ease, margin-left 0.1s linear, background-color 0.3s ease;
         zIndex: 100,
+        pointerEvents: "none",
     },
 
     buffering_bar: {
@@ -440,5 +602,6 @@ const styles = StyleSheet.create({
         borderRadius: 8 / 2,
         // transition: width 0.1s linear;
         zIndex: 50,
+        pointerEvents: "none",
     },
 })
