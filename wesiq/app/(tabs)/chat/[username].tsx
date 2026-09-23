@@ -531,6 +531,7 @@ export default function ChatDetailScreen() {
                                     <View className="receiver" style={styles.receiver}>
                                         <ProfilePictureLink 
                                             user_id={receiver.id} 
+                                            user_username={receiver.username}
                                             user_profile_picture_name={receiver.profile_picture_name || null} 
                                             user_subscription={receiver.subscription?.is_active || false} 
                                             label="Zobraziť užívateľa" 
@@ -690,7 +691,13 @@ export default function ChatDetailScreen() {
                                                     left: 6,
                                                 }}
                                             >
-                                                <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                                <ProfilePictureLink 
+                                                    user_id={logged_in_user.id} 
+                                                    user_username={logged_in_user.username}
+                                                    user_profile_picture_name={logged_in_user.profile_picture_name || null} 
+                                                    user_subscription={logged_in_user.subscription?.is_active || false} 
+                                                    label="Môj účet" 
+                                                />
                                             </View>
                                         )}
 

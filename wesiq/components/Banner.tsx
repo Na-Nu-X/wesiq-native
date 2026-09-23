@@ -41,6 +41,7 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                         <View className="account" style={styles.account}>
                             <ProfilePictureLink 
                                 user_id={logged_in_user.id} 
+                                user_username={logged_in_user.username}
                                 user_profile_picture_name={logged_in_user.profile_picture_name || null} 
                                 user_subscription={logged_in_user.subscription?.is_active || false} 
                                 label="Môj účet" 

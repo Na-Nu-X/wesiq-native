@@ -313,7 +313,7 @@ export default function UploadPostFormDialog({
             setButtonText("Nahráva sa... 0%") // Sets The Button Text
 
             // Uploads The Post With Progress
-            const upload_post_response: Response = await uploadPostWithProgress(
+            const upload_post_response:Response = await uploadPostWithProgress(
                 `${API_URL}/upload-post/`,
 
                 {

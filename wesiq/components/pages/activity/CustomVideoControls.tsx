@@ -38,8 +38,7 @@ interface CustomVideoControlsProps {
     onShowVideoSettings:() => void,
     is_fullscreen:boolean,
     onToggleVideoFullscreen:() => void,
-    onSetScrubberWidth:(event:LayoutChangeEvent) => void,
-    scrubber_width:number,
+    onSetScrubberWidth:(scrubber_width:number) => void,
     current_video:Video|null
     onStartControlsTimer:() => void,
     onStopControlsTimer:() => void,
@@ -69,7 +68,6 @@ export const CustomVideoControls = ({
     is_fullscreen,
     onToggleVideoFullscreen,
     onSetScrubberWidth,
-    scrubber_width,
     current_video,
     onStartControlsTimer,
     onStopControlsTimer,
@@ -84,6 +82,15 @@ export const CustomVideoControls = ({
     
     const [scrubber_time, setScrubberTime] = useState<number>(0) // Stores The Scrubber Time
     const [vtt_video_previews, setVttVideoPreviews] = useState<vtt[]>([]) // Stores The VTT Video Previews
+
+    const scrubber_width_reference = useRef<number>(0) // Stores The Scrubber Width Reference
+
+    const latest_video_reference = useRef<Video|null>(current_video) // Stores The Latest Video Reference
+
+    // Initializes The Update Of The Latest Video Reference
+    useEffect(() => {
+        latest_video_reference.current = current_video // Sets The Latest Video Reference
+    }, [current_video])
 
     // Function For Get The Volume Icon
     const getVolumeIcon = ():string => {
@@ -120,13 +127,20 @@ export const CustomVideoControls = ({
 
                 if(scrubber_progress !== undefined && duration > 0) {
                     const video_time:number = scrubber_progress * duration // Gets The Video Time
-                    if(current_video) await current_video.setPositionAsync(video_time) // Sets The New Current Video Time Position
+                    if(latest_video_reference.current) await latest_video_reference.current.setPositionAsync(video_time) // Sets The New Current Video Time Position
                 }
 
                 onStartControlsTimer() // Starts The Controls Timer
             }
         })
     ).current
+
+    // Function For Handle Set Scrubber Width
+    const handleSetScrubberWidth = (event:LayoutChangeEvent):void => {
+        const scrubber_width:number = event.nativeEvent.layout.width // Gets The Scrubber Width
+        scrubber_width_reference.current = scrubber_width // Sets The Scrubber Width Reference
+        onSetScrubberWidth(event.nativeEvent.layout.width) // Sets The Scrubber Width
+    }
 
     // Function For Load The VTT File Data
     const loadVttData = async (vtt_url:string) => {
@@ -196,6 +210,8 @@ export const CustomVideoControls = ({
 
     // Function For Calculate End Set The Scrubber Progress (funguje pre Web aj Native)
     const calculateAndSetScrubberProgress = (event:GestureResponderEvent):number|undefined => {
+        const scrubber_width:number = scrubber_width_reference.current // Gets The Scrubber Width
+
         if(scrubber_width === 0) return
     
         const native_event:any = event.nativeEvent as any // Gets The Native Event (iOS / Android)
@@ -396,7 +412,7 @@ export const CustomVideoControls = ({
 
             <View 
                 className="scrubber_hitbox" 
-                onLayout={onSetScrubberWidth} 
+                onLayout={(event:LayoutChangeEvent) => handleSetScrubberWidth(event)} 
                 style={styles.scrubber_hitbox}
                 {...scrubbar_gesture.panHandlers} 
             />

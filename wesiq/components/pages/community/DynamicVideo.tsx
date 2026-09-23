@@ -1,19 +1,24 @@
 import { useState, useEffect, useRef, RefObject, useMemo } from "react"
-import { View, Image, StyleSheet, Text, Pressable, Modal, TouchableOpacity, LayoutChangeEvent, GestureResponderEvent, PanResponder } from "react-native"
+import { View, Image, StyleSheet, Text, Pressable, Modal, TouchableOpacity, LayoutChangeEvent, GestureResponderEvent, PanResponder, AppState, AppStateStatus, Alert, NativeEventSubscription } from "react-native"
 import { Video, ResizeMode, AVPlaybackStatus } from "expo-av"
-import { DOMAIN } from "@/constants/general"
+import { API_URL, DOMAIN } from "@/constants/general"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BIG_BORDER_RADIUS } from "@/constants/borders"
+import { BIG_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet"
 import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
+import AsyncStorage from "@react-native-async-storage/async-storage"
+import { DynamicImage } from "./DynamicImage"
 
-import type { Media, Post } from "@/components/Feed"
+import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { BasicResponse } from "@/components/Feed"
+import type { Post, Media } from "@/components/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 
 interface DynamicVideoProps {
+    logged_in_user:LoggedInUser|null,
     one_post:Post,
     one_post_media:Media,
     onSetPlayingVideo:(id:number|null) => void,
@@ -28,14 +33,19 @@ interface DynamicVideoProps {
     onIsScrubberDragged:(is_scrubber_dragged:boolean) => void,
     is_scrubber_dragged:boolean,
     onVttVideoScrubberPreviewUpdate:(video_scrubber_preview:vtt|null) => void,
+    video_scrubber_preview:vtt|null,
     onVttVideoScrubberPreviewImageUpdate:(sprite_sheet:string) => void,
+    video_scrubber_preview_image:string,
     onScrubberPositionUpdate:(scrubber_position:number) => void,
     scrubber_position:number,
-    onSetScrubberWidth:(event:LayoutChangeEvent) => void,
+    onSetScrubberWidth:(scrubber_width:number) => void,
     scrubber_width:number,
+    onStopControlsTimer:() => void,
+    controls_timeout:any
 }
 
 export const DynamicVideo = ({ 
+    logged_in_user,
     one_post, 
     one_post_media, 
     onSetPlayingVideo, 
@@ -50,11 +60,15 @@ export const DynamicVideo = ({
     onIsScrubberDragged,
     is_scrubber_dragged,
     onVttVideoScrubberPreviewUpdate,
+    video_scrubber_preview,
     onVttVideoScrubberPreviewImageUpdate,
+    video_scrubber_preview_image,
     onScrubberPositionUpdate,
     scrubber_position,
     onSetScrubberWidth,
     scrubber_width,
+    onStopControlsTimer,
+    controls_timeout
 }:DynamicVideoProps) => {
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
@@ -79,10 +93,10 @@ export const DynamicVideo = ({
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [video_settings_sheet, setVideoSettingsSheet] = useState<"main"|"quality"|"speed">("main") // Stores The Active Video Settings Sheet
 
-    const controls_timeout = useRef<any>(null) // Stores The Controls Timeout
-    // const controls_timeout = useRef<NodeJS.Timeout | null>(null)
-
     const [is_fullscreen, setIsFullscreen] = useState<boolean>(false) // Stores The Information If The Video Is In Fullscreen Mode
+
+    const start_time = useRef<number>(0) // Stores The Start Time Of The Video
+    const total_watch_time = useRef<number>(0) // Stores The Total Watch Time Of The Video
 
     // Function For Get The Video URL
     const getVideoURL = (quality:number):string => {
@@ -123,6 +137,35 @@ export const DynamicVideo = ({
         if(data_saving_mode) setActiveQuality(480)
         else setActiveQuality(-1)
     }, [data_saving_mode])
+
+    // Initializes Record Of Video Watch Time
+    useEffect(() => {
+        if(playing_video) start_time.current = Date.now() // Sets The Start Time
+        else initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+    
+        return () => {
+            initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+        }
+    }, [playing_video])
+
+    // Initializes The Reset Of Record Of Video Watch Time
+    useEffect(() => {
+        const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
+            // When App Is On Background
+            if(nextAppState.match(/inactive|background/)) {
+                initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+            } 
+            
+            // When App Is On Screen
+            else if(nextAppState === "active" && playing_video) {
+                start_time.current = Date.now() // Sets The Start Time
+            }
+        })
+    
+        return () => {
+            app_state_subscription.remove()
+        }
+    }, [playing_video])
 
     // Initializes The Video Orientation
     useEffect(() => {
@@ -294,7 +337,7 @@ export const DynamicVideo = ({
     const handleTapVideo = ():void => {
         if(show_controls) {
             onShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
-            stopControlsTimer() // Stops The Controls Timer
+            onStopControlsTimer() // Stops The Controls Timer
         } 
         
         else {
@@ -305,7 +348,7 @@ export const DynamicVideo = ({
 
     // Function For Start The Controls Timer
     const startControlsTimer = ():void => {
-        stopControlsTimer() // Stops The Controls Timer
+        onStopControlsTimer() // Stops The Controls Timer
         
         // 5 Seconds Timeout
         controls_timeout.current = setTimeout(() => {
@@ -313,30 +356,71 @@ export const DynamicVideo = ({
         }, 5000)
     }
 
-    // Function For Stop The Controls Timer
-    const stopControlsTimer = ():void => {
-        if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
-    }
-
     useEffect(() => {
         return () => {
-            stopControlsTimer() // Stops The Controls Timer
+            onStopControlsTimer() // Stops The Controls Timer
         }
     }, [])
 
-    // Function For Change The Video Time
-    const changeVideoTime = async (event:GestureResponderEvent):Promise<void> => {
-        const native_event:any = event.nativeEvent as any // Gets The Native Event (iOS / Android)
-        const clicked_scrubber_position:number|undefined = native_event.locationX ?? native_event.offsetX // Gets Current Clicked Scrubber Position
+    // Function For Initialize Record Video Watch Time
+    const initializeRecordVideoWatchTime = ():void => {
+        if(start_time.current === 0) return
     
-        if(clicked_scrubber_position === undefined || scrubber_width === 0 || duration === 0) return
-    
-        const scrubber_progress:number = Math.min(Math.max(clicked_scrubber_position / scrubber_width, 0), 1) // Calculates The Current Scrubber Progress
-        const clicked_video_time:number = scrubber_progress * duration // Gets The Clicked Video Time
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+        const elapsed_seconds:number = (Date.now() - start_time.current) / 1000 // Gets The Elapsed Seconds Of The Watched Sequence
 
-        if(current_video) await current_video.setPositionAsync(clicked_video_time) // Sets The New Current Video Time Position
-        startControlsTimer() // Starts The Controls Timer
+        total_watch_time.current += elapsed_seconds // Increases The Total Watch Time
+        start_time.current = 0 // Resets The Start Time
+    
+        if(total_watch_time.current >= 1) {
+            recordVideoWatchTime(one_post_media.id, total_watch_time.current) // Records The Video Watch Time
+            total_watch_time.current = 0 // Resets The Total Watch Time
+        }
+    }
+    
+    // Function For Record The Video Watch Time
+    const recordVideoWatchTime = async (post_media_id:number, watch_time:number):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                console.warn("Celkový čas pozerania nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const updated_video_watch_time_response:Response = await fetch(`${API_URL}/update-video-watch-time/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    post_media_id: post_media_id,
+                    watch_time: watch_time
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!updated_video_watch_time_response.ok) {
+                console.warn("Pri zaznamenávaní času pozerania videa došlo k chybe.") // Shows The Alert
+                return
+            }
+
+            const updated_video_watch_time_data:BasicResponse = await updated_video_watch_time_response.json() // Gets The Updated Video Watch Time Data
+
+            // If The Response Isn't Success
+            if(!updated_video_watch_time_data.success) {
+                console.warn(updated_video_watch_time_data.message) // Shows The Alert
+                return
+            }
+        } 
+        
+        catch {
+            console.warn("Pri zaznamenávaní času pozerania videa došlo k chybe.") // Shows The Alert
+        }
     }
 
     return (
@@ -564,11 +648,10 @@ export const DynamicVideo = ({
                             onShowVideoSettings={showVideoSettings}
                             is_fullscreen={is_fullscreen}
                             onToggleVideoFullscreen={toggleVideoFullscreen}
-                            onSetScrubberWidth={(event:LayoutChangeEvent) => onSetScrubberWidth(event)}
-                            scrubber_width={scrubber_width}
+                            onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
                             current_video={getCurrentVideo()}
                             onStartControlsTimer={startControlsTimer}
-                            onStopControlsTimer={stopControlsTimer}
+                            onStopControlsTimer={onStopControlsTimer}
                             onIsScrubberDragged={onIsScrubberDragged}
                             is_scrubber_dragged={is_scrubber_dragged}
                             onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
@@ -577,6 +660,56 @@ export const DynamicVideo = ({
                             scrubber_position={scrubber_position}
                         />
                     </View>
+
+                    {video_scrubber_preview && is_scrubber_dragged && (
+                        <View 
+                            style={{ 
+                                position: "relative", 
+                                bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 10,
+
+                                left: Math.min(
+                                    Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
+                                    scrubber_width - video_scrubber_preview.w
+                                ),
+                            }}
+                        >
+                            <View 
+                                className="video_scrubber_preview"
+
+                                style={[
+                                    styles.video_scrubber_preview,
+
+                                    {
+                                        width: video_scrubber_preview.w,
+                                        height: video_scrubber_preview.h,
+                                    }
+                                ]}
+                            >
+                                <DynamicImage 
+                                    uri={`${DOMAIN}/${video_scrubber_preview_image}`}
+
+                                    style={{ 
+                                        position: "absolute",
+                                        left: -video_scrubber_preview.x,
+                                        top: -video_scrubber_preview.y,
+                                    }}
+                                />
+                            </View>
+                        
+                            <View 
+                                className="triangle" 
+
+                                style={[
+                                    styles.triangle,
+
+                                    {
+                                        top: video_scrubber_preview.h + 10,
+                                        left: (video_scrubber_preview.w / 2) - 10,
+                                    }
+                                ]} 
+                            />
+                        </View>
+                    )}
                 </Modal>
             </View>
 
@@ -598,11 +731,10 @@ export const DynamicVideo = ({
                     onShowVideoSettings={showVideoSettings}
                     is_fullscreen={is_fullscreen}
                     onToggleVideoFullscreen={toggleVideoFullscreen}
-                    onSetScrubberWidth={(event:LayoutChangeEvent) => onSetScrubberWidth(event)}
-                    scrubber_width={scrubber_width}
+                    onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
                     current_video={getCurrentVideo()}
                     onStartControlsTimer={startControlsTimer}
-                    onStopControlsTimer={stopControlsTimer}
+                    onStopControlsTimer={onStopControlsTimer}
                     onIsScrubberDragged={onIsScrubberDragged}
                     is_scrubber_dragged={is_scrubber_dragged}
                     onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
@@ -970,6 +1102,31 @@ const styles = StyleSheet.create({
         //         transform: translateX(10px);
         //     }
         // }
+    },
+
+    video_scrubber_preview: {
+        position: "absolute",
+        width: 160,
+        height: 90,
+        borderWidth: 1,
+        borderColor: "#cccccc",
+        borderRadius: SMALL_BORDER_RADIUS,
+        opacity: 0.9,
+        overflow: "hidden",
+        zIndex: 200,
+    },
+    
+    triangle: {
+        position: "absolute",
+        width: 0,
+        height: 0,
+        backgroundColor: "transparent",
+        borderTopWidth: 10,
+        borderRightWidth: 10,
+        borderRightColor: "transparent",
+        borderLeftWidth: 10,
+        borderLeftColor: "transparent",
+        borderTopColor: "#cccccc",
     },
 
     sheet_container: {

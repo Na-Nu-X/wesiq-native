@@ -239,6 +239,7 @@ export default function ChatScreen() {
                                 <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
                                     <ProfilePictureLink 
                                         user_id={one_item.sender.id} 
+                                        user_username={one_item.sender.username}
                                         user_profile_picture_name={one_item.sender.profile_picture_name || null} 
                                         user_subscription={one_item.sender.subscription?.is_active || false} 
                                         label="Zobraziť užívateľa" 

@@ -2,12 +2,14 @@ import React, { useState, useRef } from "react"
 import { StyleSheet, Pressable, Image, Animated, View } from "react-native"
 import { LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { LoggedInUser } from "./LoginFormDialog"
 import type { User } from "./Feed"
 
 type IconProps = {
     user_id:number,
+    user_username:string,
     user_profile_picture_name:string|null,
     user_subscription:boolean,
     label:string,
@@ -17,8 +19,9 @@ type IconProps = {
 
 const AnimatedImage = Animated.createAnimatedComponent(Image) // Creates The Animated Image Element
 
-export default function ProfilePictureLink({ user_id, user_profile_picture_name, user_subscription, label = "Môj účet", width = 32, height = 32 }:IconProps) {
+export default function ProfilePictureLink({ user_id, user_username, user_profile_picture_name, user_subscription, label = "Môj účet", width = 32, height = 32 }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
+    const router:ImperativeRouter = useRouter() // Gets The Router
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
     // Function For Handle Press In
@@ -51,7 +54,7 @@ export default function ProfilePictureLink({ user_id, user_profile_picture_name,
 
     return (
         <Pressable 
-            // onPress={handleGoToProfile}
+            onPress={() => router.push(`/profile/${user_username}`)}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             accessibilityRole="button"

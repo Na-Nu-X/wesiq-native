@@ -151,6 +151,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                 <View className="left">
                     <ProfilePictureLink 
                         user_id={processing_post.user.id} 
+                        user_username={processing_post.user.username}
                         user_profile_picture_name={processing_post.user.profile_picture_name || null} 
                         user_subscription={processing_post.user.subscription?.is_active || false} 
                         label="Zobraziť užívateľa" 

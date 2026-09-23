@@ -106,6 +106,7 @@ export const PostContainer = ({
     const [is_video_initialized, setIsVideoInitialized] = useState<boolean>(false) // Stores The Information If The Video Is Initialized (Downloaded)
     
     const [show_controls, setShowControls] = useState<boolean>(true) // Stores The Information If The Custom Video Controls Are Visible
+    const controls_timeout = useRef<any>(null) // Stores The Controls Timeout
     const [is_scrubber_dragged, setIsScrubberDragged] = useState<boolean>(false) // Stores The Information If The Scrubber Is Dragged
     const [video_scrubber_preview, setVttVideoScrubberPreview] = useState<vtt|null>(null) // Stores The VTT Video Scrubber Preview (Position)
     const [video_scrubber_preview_image, setVttVideoScrubberPreviewImage] = useState<string>("") // Stores The VTT Video Scrubber Preview Image
@@ -279,7 +280,13 @@ export const PostContainer = ({
             >
                 <View className="comment_container" style={styles.comment_container}>
                     <View className="user" style={styles.user}>
-                        <ProfilePictureLink user_id={one_post_comment.user.id} user_profile_picture_name={one_post_comment.user.profile_picture_name || null} user_subscription={one_post_comment.user.subscription?.is_active || false} label="Zobraziť užívateľa" />
+                        <ProfilePictureLink 
+                            user_id={one_post_comment.user.id} 
+                            user_username={one_post_comment.user.username}
+                            user_profile_picture_name={one_post_comment.user.profile_picture_name || null} 
+                            user_subscription={one_post_comment.user.subscription?.is_active || false} 
+                            label="Zobraziť užívateľa" 
+                        />
                         
                         <Text 
                             className="username" 
@@ -821,6 +828,9 @@ export const PostContainer = ({
     // Function For Change The Active Post Media
     const changePostMedia = (post_id:number, new_index:number, max_index:number):void => {
         if(new_index >= 0 && new_index <= max_index) {
+            stopControlsTimer() // Stops The Controls Timer
+            setShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
+
             // Sets The Active Post Media
             setActivePostMedia(previous_active_post_media => ({
                 ...previous_active_post_media,
@@ -829,6 +839,11 @@ export const PostContainer = ({
 
             setPlayingVideo(null) // Sets The Playing Video
         }
+    }
+
+    // Function For Stop The Controls Timer
+    const stopControlsTimer = ():void => {
+        if(controls_timeout.current) clearTimeout(controls_timeout.current) // Clears The Controls Timeout
     }
 
     // Function For Handle The Video Duration Load
@@ -908,6 +923,7 @@ export const PostContainer = ({
                 <View className="left">
                     <ProfilePictureLink 
                         user_id={post.user.id} 
+                        user_username={post.user.username}
                         user_profile_picture_name={post.user.profile_picture_name || null} 
                         user_subscription={post.user.subscription?.is_active || false} 
                         label="Zobraziť užívateľa" 
@@ -1003,12 +1019,14 @@ export const PostContainer = ({
                                     <DynamicImage 
                                         key={one_post_media.id || index}
                                         uri={`${DOMAIN}/media/${one_post_media.file}`} 
+                                        scale_by_aspect_ratio={true}
                                     />
                                 </View>
                             )}
 
                             {one_post_media.is_video && (
                                 <DynamicVideo 
+                                    logged_in_user={logged_in_user}
                                     one_post={post}
                                     one_post_media={one_post_media}
                                     onSetPlayingVideo={setPlayingVideo}
@@ -1023,11 +1041,15 @@ export const PostContainer = ({
                                     onIsScrubberDragged={setIsScrubberDragged}
                                     is_scrubber_dragged={is_scrubber_dragged}
                                     onVttVideoScrubberPreviewUpdate={setVttVideoScrubberPreview}
+                                    video_scrubber_preview={video_scrubber_preview}
                                     onVttVideoScrubberPreviewImageUpdate={setVttVideoScrubberPreviewImage}
+                                    video_scrubber_preview_image={video_scrubber_preview_image}
                                     onScrubberPositionUpdate={(scrubber_position:number) => setScrubberPosition(scrubber_position)}
                                     scrubber_position={scrubber_position}
-                                    onSetScrubberWidth={(event:LayoutChangeEvent) => setScrubberWidth(event.nativeEvent.layout.width)}
+                                    onSetScrubberWidth={(scrubber_width:number) => setScrubberWidth(scrubber_width)}
                                     scrubber_width={scrubber_width}
+                                    onStopControlsTimer={stopControlsTimer}
+                                    controls_timeout={controls_timeout}
                                 />
                             )}
                         </View>
@@ -1295,7 +1317,13 @@ export const PostContainer = ({
                                     left: 6,
                                 }}
                             >
-                                <ProfilePictureLink user_id={logged_in_user.id} user_profile_picture_name={logged_in_user.profile_picture_name || null} user_subscription={logged_in_user.subscription?.is_active || false} label="Môj účet" />
+                                <ProfilePictureLink 
+                                    user_id={logged_in_user.id} 
+                                    user_username={logged_in_user.username}
+                                    user_profile_picture_name={logged_in_user.profile_picture_name || null} 
+                                    user_subscription={logged_in_user.subscription?.is_active || false} 
+                                    label="Môj účet" 
+                                />
                             </View>
                         )}
 
