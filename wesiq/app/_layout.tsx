@@ -28,6 +28,7 @@ import { StatusBar } from "expo-status-bar"
 import "react-native-reanimated"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { useColorScheme } from "@/hooks/use-color-scheme"
+import "./i18n"
 
 export const unstable_settings = {
   anchor: "(tabs)"

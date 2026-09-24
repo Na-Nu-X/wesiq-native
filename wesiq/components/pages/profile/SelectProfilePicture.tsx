@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react"
+import { useState, useRef } from "react"
 import { Pressable, Alert, StyleSheet, Animated, Image, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import {LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
+import { useTranslation } from "react-i18next"
 
 type SelectProfilePictureProps = {
     onProfilePictureSelection:(media:ImagePicker.ImagePickerAsset) => void,
@@ -17,6 +18,8 @@ export default function SelectProfilePicture({
     previous_profile_picture, 
     is_subscriber 
 }:SelectProfilePictureProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [is_pressed, setIsPressed] = useState(false) // Stores The Information If The Button Is Pressed
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
@@ -53,7 +56,7 @@ export default function SelectProfilePicture({
         const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
 
         if(!permission_result.granted) {
-            Alert.alert("Prístup zamietnutý", "Pre výber fotiek musíte povoliť prístup.") // Shows The Alert
+            Alert.alert(t("Prístup zamietnutý"), t("Pre výber fotiek musíte povoliť prístup.")) // Shows The Alert
             return
         }
 
@@ -75,7 +78,7 @@ export default function SelectProfilePicture({
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             accessibilityRole="button"
-            accessibilityLabel="Nahrať obrázok"
+            accessibilityLabel={t("Nahrať obrázok")}
         >
             <View className="profile_picture_container" style={styles.profile_picture_container}>
                 <AnimatedImage 

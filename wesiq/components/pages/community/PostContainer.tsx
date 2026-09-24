@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform, Image, LayoutChangeEvent } from "react-native"
+import { useState, useRef } from "react"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -17,6 +17,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { DynamicVideo } from "./DynamicVideo"
 import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
+import { useTranslation } from "react-i18next"
 
 import type { Post, Media, Comment } from "../../Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
@@ -81,7 +82,8 @@ export const PostContainer = ({
     onLoggedInUserUpdate, 
     are_posts_loading 
 }:PostContainerProps) => {
-    // const [post_comments, setPostComments] = useState<comment[]>([]) // Stores The Post Comments
+    const { t } = useTranslation() // Initializes The Translations
+
     const [post_comments_page, setPostCommentsPage] = useState<number>(1) // Stores The Current Post Comments Page Number
     const [has_next_post_comments, setHasNextPostComments] = useState<boolean>(true) // Stores The Information If There Are More Post Comments Available
     const [are_post_comments_loading, setArePostCommentsLoading] = useState<boolean>(false) // Stores The Information If Post Comments Are Loading
@@ -135,7 +137,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!loaded_post_comments_response.ok) {
-                Alert.alert("Chyba", "Pri hľadaní komentárov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri hľadaní komentárov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -145,7 +147,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!loaded_post_comments_data.success) {
-                Alert.alert("Chyba", loaded_post_comments_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_post_comments_data.message) // Shows The Alert
                 return
             }
 
@@ -191,7 +193,7 @@ export const PostContainer = ({
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri hľadaní komentárov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri hľadaní komentárov došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -285,7 +287,7 @@ export const PostContainer = ({
                             user_username={one_post_comment.user.username}
                             user_profile_picture_name={one_post_comment.user.profile_picture_name || null} 
                             user_subscription={one_post_comment.user.subscription?.is_active || false} 
-                            label="Zobraziť užívateľa" 
+                            label={t("Zobraziť užívateľa")} 
                         />
                         
                         <Text 
@@ -301,7 +303,7 @@ export const PostContainer = ({
     
                         <View 
                             className="show_comment_properties_button"
-                            accessibilityLabel="Viac..." 
+                            accessibilityLabel={t("Viac...")} 
                             
                             style={{ 
                                 marginLeft: "auto", 
@@ -342,7 +344,7 @@ export const PostContainer = ({
                         </Text>
     
                         <View className="likes_container" style={styles.likes_container}>
-                            <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.comment_likes}>
+                            <View className="likes" accessibilityLabel={t("Páči sa mi...")} style={styles.comment_likes}>
                                 <Icon
                                     icon_name="heart"
                                     onPress={() => togglePostCommentLike(one_post_comment.id)}
@@ -364,7 +366,7 @@ export const PostContainer = ({
 
                 <View className="interactions" style={styles.interactions}>
                     {one_post_comment.level < 5 && (
-                        <View className="reply" accessibilityLabel="Odpovedať...">
+                        <View className="reply" accessibilityLabel={t("Odpovedať...")}>
                             <Icon
                                 icon_name={selected_parent_comment && selected_parent_comment.id === one_post_comment.id ? "comment-slash" : "comment"}
                                 onPress={() => toggleReplyOnComment(one_post_comment)}
@@ -374,7 +376,7 @@ export const PostContainer = ({
                     )}
 
                     {has_replies && (
-                        <View className="show_replies" accessibilityLabel="Zobraziť odpovede...">
+                        <View className="show_replies" accessibilityLabel={t("Zobraziť odpovede...")}>
                             <Icon
                                 icon_name={is_expanded ? "angle-up" : "angle-down"}
                                 onPress={() => toggleShowReplies(one_post_comment)}
@@ -382,7 +384,7 @@ export const PostContainer = ({
                         </View>
                     )}
 
-                    <View className="date" accessibilityLabel="Dátum zverejnenia" style={styles.date}>
+                    <View className="date" accessibilityLabel={t("Dátum zverejnenia")} style={styles.date}>
                         <Text style={styles.date_text}>{getTimeAgo(one_post_comment.creation_time)}</Text>
                     </View>
                 </View>
@@ -400,7 +402,7 @@ export const PostContainer = ({
     const togglePostLike = async (post_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -423,7 +425,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_like_response.ok) {
-                Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene označenia páči sa mi to došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -431,7 +433,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_like_data.success) {
-                Alert.alert("Chyba", toggle_post_like_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_post_like_data.message) // Shows The Alert
                 return
             }
             
@@ -461,7 +463,7 @@ export const PostContainer = ({
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene označenia páči sa mi to došlo k chybe.")) // Shows The Alert
         }
     }
     
@@ -505,21 +507,21 @@ export const PostContainer = ({
     
         try {
             const result = await Share.share({
-                message: `Wesiq - Príspevok užívateľa ${username}\n${link}`,
+                message: `Wesiq - ${t("Príspevok užívateľa")} ${username}\n${link}`,
                 url: link, // Only IOS
-                title: `Wesiq - Príspevok užívateľa ${username}`
+                title: `Wesiq - ${t("Príspevok užívateľa")} ${username}`
             })
     
             if(result.action === Share.sharedAction) {
-                if(result.activityType) console.log("Zdieľané cez: ", result.activityType) // Only IOS
-                else console.log("Úspešne zdieľané")
+                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
+                else console.log(t("Úspešne zdieľané"))
             } 
             
-            else if(result.action === Share.dismissedAction) console.log("Zdieľanie zrušené") // Only IOS
+            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
         } 
 
         catch(error:any) {
-            Alert.alert("Chyba", "Nepodarilo sa otvoriť menu na zdieľanie.")
+            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
         }
     }
 
@@ -527,7 +529,7 @@ export const PostContainer = ({
     const togglePostSave = async (post_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Príspevok nie je možné uložiť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Príspevok nie je možné uložiť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -550,7 +552,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_save_response.ok) {
-                Alert.alert("Chyba", "Pri zmene uloženia príspevku došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene uloženia príspevku došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -558,7 +560,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_save_data.success) {
-                Alert.alert("Chyba", toggle_post_save_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_post_save_data.message) // Shows The Alert
                 return
             }
             
@@ -582,7 +584,7 @@ export const PostContainer = ({
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri zmene uloženia príspevku došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene uloženia príspevku došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -590,7 +592,7 @@ export const PostContainer = ({
     const togglePostCommentLike = async (comment_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -613,7 +615,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_comment_like_response.ok) {
-                Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene označenia páči sa mi to došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -621,7 +623,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_post_comment_like_data.success) {
-                Alert.alert("Chyba", toggle_post_comment_like_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_post_comment_like_data.message) // Shows The Alert
                 return
             }
             
@@ -662,7 +664,7 @@ export const PostContainer = ({
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri zmene označenia páči sa mi to došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene označenia páči sa mi to došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -670,7 +672,7 @@ export const PostContainer = ({
     const addComment = async (post_id:number, comment:string, parent_id:number|null):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Komentár nie je možné pridať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Komentár nie je možné pridať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -695,7 +697,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!added_post_comment_response.ok) {
-                Alert.alert("Chyba", "Pri pridávaní komentáru došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri pridávaní komentáru došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -703,12 +705,12 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!added_post_comment_data.success || !added_post_comment_data.comment) {
-                Alert.alert("Chyba", added_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), added_post_comment_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", added_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), added_post_comment_data.message) // Shows The Alert
 
                 // Stores The New Comment Data
                 const new_comment:Comment = {
@@ -753,7 +755,7 @@ export const PostContainer = ({
         }
         
         catch {
-            Alert.alert("Chyba", "Pri pridávaní komentáru došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri pridávaní komentáru došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -761,7 +763,7 @@ export const PostContainer = ({
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Sledovanie nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -784,7 +786,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_follow_response.ok) {
-                Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -792,7 +794,7 @@ export const PostContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_follow_data.success) {
-                Alert.alert("Chyba", toggle_follow_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_follow_data.message) // Shows The Alert
                 return
             }
             
@@ -821,7 +823,7 @@ export const PostContainer = ({
         }
 
         catch {
-            Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -889,7 +891,7 @@ export const PostContainer = ({
     // Function For Handle Open Maps
     const handleOpenMaps = async () => {
         if(!post.coordinates?.latitude || !post.coordinates?.longitude) {
-            Alert.alert("Upozornenie", "Presné súradnice tohto miesta nie sú k dispozícii.");
+            Alert.alert(t("Upozornenie"), t("Presné súradnice tohto miesta nie sú k dispozícii."));
             return
         }
     
@@ -913,7 +915,7 @@ export const PostContainer = ({
         } 
         
         catch {
-            console.error("Nepodarilo sa otvoriť mapy.")
+            console.error(t("Nepodarilo sa otvoriť mapy."))
         }
     }
     
@@ -926,7 +928,7 @@ export const PostContainer = ({
                         user_username={post.user.username}
                         user_profile_picture_name={post.user.profile_picture_name || null} 
                         user_subscription={post.user.subscription?.is_active || false} 
-                        label="Zobraziť užívateľa" 
+                        label={t("Zobraziť užívateľa")} 
                         width={45} 
                         height={45} 
                     />
@@ -970,7 +972,7 @@ export const PostContainer = ({
                                     className="location"
                                     onPress={handleOpenMaps}
                                     accessibilityRole="button"
-                                    accessibilityLabel="Otvoriť mapy" 
+                                    accessibilityLabel={t("Otvoriť mapy")} 
                                     style={styles.location}
                                 >
                                     <Text numberOfLines={1} ellipsizeMode="tail">
@@ -1136,7 +1138,11 @@ export const PostContainer = ({
             )}
 
             <View className="society" style={styles.society}>
-                <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
+                <View 
+                    className="likes" 
+                    accessibilityLabel={t("Páči sa mi...")} 
+                    style={styles.society_likes}
+                >
                     <View 
                         style={{ 
                             position: "relative", 
@@ -1165,13 +1171,13 @@ export const PostContainer = ({
                     </View>
 
                     {logged_in_user && post.hide_likes && post.user.id !== logged_in_user.id 
-                    ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>Skryté</Text>)
+                    ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>{t("Skryté")}</Text>)
                     : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(post.likes)}</Text>)}
                 </View>
 
                 <View 
                     className="comments" 
-                    accessibilityLabel="Komentáre..."
+                    accessibilityLabel={t("Komentáre...")}
                     style={styles.comments}
                 >
                     <Icon
@@ -1183,10 +1189,10 @@ export const PostContainer = ({
 
                     {post.allow_comments 
                     ? (<Text className="comments_counter" style={styles.comments_counter}>{String(post.comments_amount)}</Text>)
-                    : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>Vypnuté</Text>)}
+                    : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>{t("Vypnuté")}</Text>)}
                 </View>
 
-                <View className="share" accessibilityLabel="Zdielať...">
+                <View className="share" accessibilityLabel={t("Zdielať...")}>
                     <Icon
                         icon_name="share-nodes"
                         onPress={() => sharePost(post.id, post.user.username)}
@@ -1196,7 +1202,7 @@ export const PostContainer = ({
 
                 <View 
                     className="views" 
-                    accessibilityLabel="Počet videní..."
+                    accessibilityLabel={t("Počet videní...")}
                     style={styles.views}
                 >
                     <Icon
@@ -1219,7 +1225,7 @@ export const PostContainer = ({
 
                     return (
                         <View key={current_media.id || active_post_media_index}>
-                            <View className="show_video_metrics" accessibilityLabel="Štatistiky...">
+                            <View className="show_video_metrics" accessibilityLabel={t("Štatistiky...")}>
                                 <Icon
                                     icon_name="chart-simple"
                                     onPress={() => setIsVideoMetricsOpen(previous => !previous)}
@@ -1231,7 +1237,7 @@ export const PostContainer = ({
                 })()}
 
                 <View className={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? "save active" : "save"} accessibilityLabel="Uložiť...">
-                    <View className="save" accessibilityLabel="Uložiť...">
+                    <View className="save" accessibilityLabel={t("Uložiť...")}>
                         <Icon
                             icon_name="bookmark"
                             onPress={() => togglePostSave(post.id)}
@@ -1287,7 +1293,7 @@ export const PostContainer = ({
                                 onPress={() => loadMorePostComments(post.id)} 
                                 style={styles.show_more}
                             >
-                                <Text style={{ color: LIGHT_BLUE_COLOR }}>Zobraziť viac</Text>
+                                <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("Zobraziť viac")}</Text>
                             </Pressable>
                         )}
                     </ScrollView>
@@ -1296,9 +1302,21 @@ export const PostContainer = ({
                         <TextInput
                             className="comment"
                             textAlignVertical="top" 
-                            placeholder={selected_parent_comment ? `Odpoveď užívateľovi ${selected_parent_comment.user.username}` : "Napísať komentár"}
+
+                            placeholder={
+                                selected_parent_comment 
+                                ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
+                                : t("Napísať komentár")
+                            }
+                                
                             placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel={selected_parent_comment ? `Odpoveď užívateľovi ${selected_parent_comment.user.username}` : "Napísať komentár"}
+
+                            accessibilityLabel={
+                                selected_parent_comment 
+                                ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
+                                : t("Napísať komentár")
+                            }
+
                             value={comment}
                             onChangeText={setComment}
                             maxLength={MAX_COMMENT_LENGTH}
@@ -1322,14 +1340,14 @@ export const PostContainer = ({
                                     user_username={logged_in_user.username}
                                     user_profile_picture_name={logged_in_user.profile_picture_name || null} 
                                     user_subscription={logged_in_user.subscription?.is_active || false} 
-                                    label="Môj účet" 
+                                    label={t("Môj účet")} 
                                 />
                             </View>
                         )}
 
                         <View 
                             className="add_emoji"
-                            accessibilityLabel="Pridať emoji"
+                            accessibilityLabel={t("Pridať emoji")}
                             style={styles.add_emoji}
                         >
                             <Icon 
@@ -1345,23 +1363,23 @@ export const PostContainer = ({
                             onClose={() => setIsEmojiPickerOpen(false)}
 
                             translation={{
-                                smileys_emotion: "Smajlíky",
-                                people_body: "Ľudia", 
-                                recently_used: "Naposledy použité",
-                                animals_nature: "Zvieratá",
-                                food_drink: "Jedlo a nápoje",
-                                activities: "Aktivity",
-                                travel_places: "Cestovanie",
-                                objects: "Predmety",
-                                symbols: "Symboly",
-                                flags: "Vlajky",
-                                search: "Hľadať...",
+                                smileys_emotion: t("Smajlíky"),
+                                people_body: t("Ľudia"), 
+                                recently_used: t("Naposledy použité"),
+                                animals_nature: t("Zvieratá"),
+                                food_drink: t("Jedlo a nápoje"),
+                                activities: t("Aktivity"),
+                                travel_places: t("Cestovanie"),
+                                objects: t("Predmety"),
+                                symbols: t("Symboly"),
+                                flags: t("Vlajky"),
+                                search: t("Hľadať..."),
                             }}
                         />
 
                         <Pressable 
                             className="send" 
-                            accessibilityLabel="Odoslať komentár"
+                            accessibilityLabel={t("Odoslať komentár")}
                             accessibilityRole="button"
                             onPress={() => addComment(post.id, comment, selected_parent_comment ? selected_parent_comment.id : null)}
                             style={styles.send}

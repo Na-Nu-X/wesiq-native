@@ -11,6 +11,7 @@ import { useMemo } from "react"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { PostContainer } from "./pages/community/PostContainer"
 import { ProcessingPostContainer } from "./pages/community/ProcessingPostContainer"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
@@ -165,6 +166,8 @@ interface FeedProps {
 }
 
 export default function Feed({ tracked_tasks, processing_posts, onProcessingPostsUpdate }:FeedProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [posts, setPosts] = useState<Post[]>([]) // Stores The Posts
@@ -252,7 +255,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
             // If The Response Isn't Success
             if(!loaded_posts_response.ok) {
                 setIsError(true) // Sets The Information That There Is An Error
-                Alert.alert("Chyba", "Pri hľadaní príspevkov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri hľadaní príspevkov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -260,7 +263,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!loaded_posts_data.success) {
-                Alert.alert("Chyba", loaded_posts_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_posts_data.message) // Shows The Alert
                 return
             }
 
@@ -281,7 +284,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         
         catch {
             setIsError(true) // Sets The Information That There Is An Error
-            Alert.alert("Chyba", "Pri hľadaní príspevkov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri hľadaní príspevkov došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -371,7 +374,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const reportPost = async (post_id:number, reason:string) => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -395,7 +398,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!reported_post_response.ok) {
-                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -403,19 +406,19 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!reported_post_data.success) {
-                Alert.alert("Chyba", reported_post_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), reported_post_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", reported_post_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), reported_post_data.message) // Shows The Alert
                 hidePostProperties() // Closes The Post Properties
                 return
             }
         }
         
         catch {
-            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -423,7 +426,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const editPostSettings = async (post_id:number, setting:string, action:boolean):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Príspevok nie je možné upraviť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Príspevok nie je možné upraviť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -448,7 +451,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!edited_post_settings_response.ok) {
-                Alert.alert("Chyba", "Pri úprave príspevku došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri úprave príspevku došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -456,12 +459,12 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!edited_post_settings_data.success) {
-                Alert.alert("Chyba", edited_post_settings_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), edited_post_settings_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", edited_post_settings_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), edited_post_settings_data.message) // Shows The Alert
 
                 // Sets The Posts
                 setPosts(previous_posts => previous_posts.map(one_post => one_post.id === post_id
@@ -485,7 +488,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         }
         
         catch {
-            Alert.alert("Chyba", "Pri úprave príspevku došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri úprave príspevku došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -493,7 +496,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const deletePost = async (post_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Príspevok nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Príspevok nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -516,7 +519,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!deleted_post_response.ok) {
-                Alert.alert("Chyba", "Pri odstraňovaní príspevku došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní príspevku došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -524,12 +527,12 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!deleted_post_data.success) {
-                Alert.alert("Chyba", deleted_post_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), deleted_post_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", deleted_post_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), deleted_post_data.message) // Shows The Alert
 
                 // // Gets All Processing Posts From The Local Storage
                 // const processing_posts:compressTask[] = JSON.parse(localStorage.getItem("processing_posts") || "[]") // Gets The Processing Posts From The Local Storage
@@ -555,7 +558,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         }
         
         catch {
-            Alert.alert("Chyba", "Pri odstraňovaní príspevku došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní príspevku došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -563,7 +566,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const reportComment = async (comment_id:number, reason:string) => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -587,7 +590,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!reported_post_comment_response.ok) {
-                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -595,19 +598,19 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!reported_post_comment_data.success) {
-                Alert.alert("Chyba", reported_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), reported_post_comment_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", reported_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), reported_post_comment_data.message) // Shows The Alert
                 hidePostCommentProperties() // Closes The Post Comment Properties
                 return
             }
         }
         
         catch {
-            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -615,7 +618,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const deleteComment = async (comment_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Komentár nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Komentár nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -638,7 +641,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!deleted_post_comment_response.ok) {
-                Alert.alert("Chyba", "Pri odstraňovaní komentáru došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní komentáru došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -646,12 +649,12 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
             // If The Response Isn't Success
             if(!deleted_post_comment_data.success) {
-                Alert.alert("Chyba", deleted_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), deleted_post_comment_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", deleted_post_comment_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), deleted_post_comment_data.message) // Shows The Alert
 
                 // Sets The Posts
                 if(selected_post_comment) {
@@ -681,7 +684,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         }
         
         catch {
-            Alert.alert("Chyba", "Pri odstraňovaní komentáru došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní komentáru došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -699,9 +702,9 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                         <TextInput
                             className="search_bar"
                             textAlignVertical="top" 
-                            placeholder="Nájsť príspevky" 
+                            placeholder={t("Nájsť príspevky") }
                             placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel="Nájsť príspevky" 
+                            accessibilityLabel={t("Nájsť príspevky") }
                             value={search_text}
                             onChangeText={(text:string) => setSearchText(text)}
 
@@ -791,14 +794,14 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
                         {(are_posts_loading || !has_next) && !is_error && (
                             <Text className="feed_report" style={styles.feed_report}>
-                                {are_posts_loading ? "Načítavam..." : "Videli ste všetky príspevky."}
+                                {are_posts_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}
                             </Text>
                         )}
                     </>
                 )}
 
-                {posts.length === 0 && !is_error && (<Text className="feed_report" style={styles.feed_report}>Nenašli sa žiadne príspevky.</Text>)}
-                {is_error && (<Text className="feed_report" style={styles.feed_report}>Pri hľadaní príspevkov došlo k chybe.</Text>)}
+                {posts.length === 0 && !is_error && (<Text className="feed_report" style={styles.feed_report}>{t("Nenašli sa žiadne príspevky.")}</Text>)}
+                {is_error && (<Text className="feed_report" style={styles.feed_report}>{t("Pri hľadaní príspevkov došlo k chybe.")}</Text>)}
 
                 <BottomSheetModal
                     ref={post_properties}
@@ -834,7 +837,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                     />
                                                 </View>
 
-                                                <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
                                             </Pressable>
                                         )}
 
@@ -859,7 +862,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                     />
                                                 </View>
 
-                                                <Text style={styles.sheet_text}>Upraviť</Text>
+                                                <Text style={styles.sheet_text}>{t("Upraviť")}</Text>
                                             </Pressable>
                                         )}
 
@@ -887,8 +890,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 <Text 
                                                     style={[
                                                         styles.sheet_text,
-                                                        // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                        { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                        { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR } // Shows The Red Text If The Logged In User Is Developer Or Admin
                                                     ]}
                                                 >
                                                     Vymazať
@@ -914,7 +916,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -939,7 +941,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Spam</Text>
+                                            <Text style={styles.sheet_text}>{t("Spam")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -960,7 +962,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                            <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -981,7 +983,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                            <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1002,7 +1004,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                            <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1023,7 +1025,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                            <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1044,7 +1046,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Iné</Text>
+                                            <Text style={styles.sheet_text}>{t("Iné")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1065,7 +1067,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Späť</Text>
+                                            <Text style={styles.sheet_text}>{t("Späť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1176,7 +1178,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1189,7 +1191,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 { textAlign: "center" }
                                             ]}
                                         >
-                                            Naozaj chcete vymazať Váš príspevok?
+                                            {t("Naozaj chcete vymazať Váš príspevok?")}
                                         </Text>
 
                                         <Pressable
@@ -1210,7 +1212,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Vymazať</Text>
+                                            <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
                                         </Pressable>
 
                                         <Pressable 
@@ -1230,7 +1232,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zrušiť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1272,7 +1274,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                     />
                                                 </View>
 
-                                                <Text style={styles.sheet_text}>Upraviť</Text>
+                                                <Text style={styles.sheet_text}>{t("Upraviť")}</Text>
                                             </Pressable>
                                         )}
 
@@ -1304,7 +1306,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                         { color: selected_processing_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
                                                     ]}
                                                 >
-                                                    Vymazať
+                                                    {t("Vymazať")}
                                                 </Text>
                                             </Pressable>
                                         )}
@@ -1327,7 +1329,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1438,7 +1440,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1451,7 +1453,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 { textAlign: "center" }
                                             ]}
                                         >
-                                            Naozaj chcete vymazať Váš príspevok?
+                                            {t("Naozaj chcete vymazať Váš príspevok?")}
                                         </Text>
 
                                         <Pressable
@@ -1472,7 +1474,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Vymazať</Text>
+                                            <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
                                         </Pressable>
 
                                         <Pressable 
@@ -1492,7 +1494,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zrušiť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1535,7 +1537,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                     />
                                                 </View>
 
-                                                <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
                                             </Pressable>
                                         )}
 
@@ -1567,7 +1569,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                         { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
                                                     ]}
                                                 >
-                                                    Vymazať
+                                                    {t("Vymazať")}
                                                 </Text>
                                             </Pressable>
                                         )}
@@ -1590,7 +1592,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1615,7 +1617,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Spam</Text>
+                                            <Text style={styles.sheet_text}>{t("Spam")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1636,7 +1638,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                            <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1657,7 +1659,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                            <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1678,7 +1680,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                            <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1699,7 +1701,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                            <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1720,7 +1722,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Iné</Text>
+                                            <Text style={styles.sheet_text}>{t("Iné")}</Text>
                                         </Pressable>
 
                                         <Pressable
@@ -1741,7 +1743,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Späť</Text>
+                                            <Text style={styles.sheet_text}>{t("Späť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}
@@ -1754,7 +1756,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 { textAlign: "center" }
                                             ]}
                                         >
-                                            Naozaj chcete vymazať Váš komentár?
+                                            {t("Naozaj chcete vymazať Váš komentár?")}
                                         </Text>
 
                                         <Pressable
@@ -1775,7 +1777,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Vymazať</Text>
+                                            <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
                                         </Pressable>
 
                                         <Pressable 
@@ -1795,7 +1797,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                                 />
                                             </View>
 
-                                            <Text style={styles.sheet_text}>Zrušiť</Text>
+                                            <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
                                         </Pressable>
                                     </View>
                                 )}

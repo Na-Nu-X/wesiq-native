@@ -10,6 +10,7 @@ import { getTimeAgo } from "@/utils/time"
 import { DynamicImage } from "@/components/pages/community/DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
+import { useTranslation } from "react-i18next"
 
 import type { ProcessingPost, ProcessingMedia } from "@/components/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
@@ -23,12 +24,10 @@ interface ProcessingPostContainerProps {
 }
 
 export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShowProcessingPostProperties, logged_in_user }:ProcessingPostContainerProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
     const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
-
-    useEffect(() => {
-        console.log(tracked_tasks) // Gets The Upload Progress For Each Post Media
-    }, [tracked_tasks])
 
     // Function For Generate Styled Description
     const generateStyledDescription = (text:string, tagged_users:string|null, added_hashtags:string|null) => {
@@ -93,7 +92,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
     // Function For Handle Open Maps
     const handleOpenMaps = async () => {
         if(!processing_post.coordinates?.latitude || !processing_post.coordinates?.longitude) {
-            Alert.alert("Upozornenie", "Presné súradnice tohto miesta nie sú k dispozícii.");
+            Alert.alert(t("Upozornenie"), t("Presné súradnice tohto miesta nie sú k dispozícii."));
             return
         }
     
@@ -117,7 +116,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
         } 
         
         catch {
-            console.error("Nepodarilo sa otvoriť mapy.")
+            console.error(t("Nepodarilo sa otvoriť mapy."))
         }
     }
     
@@ -154,7 +153,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                         user_username={processing_post.user.username}
                         user_profile_picture_name={processing_post.user.profile_picture_name || null} 
                         user_subscription={processing_post.user.subscription?.is_active || false} 
-                        label="Zobraziť užívateľa" 
+                        label={t("Zobraziť užívateľa")} 
                         width={45} 
                         height={45} 
                     />
@@ -169,7 +168,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                             <Icon icon_name="user" />
                         </View>
 
-                        <View className="show_post_properties_button" accessibilityLabel="Viac...">
+                        <View className="show_post_properties_button" accessibilityLabel={t("Viac...")}>
                             <Icon
                                 icon_name="ellipsis-vertical"
                                 onPress={() => onShowProcessingPostProperties(processing_post)}
@@ -184,7 +183,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                                     className="location"
                                     onPress={handleOpenMaps}
                                     accessibilityRole="button"
-                                    accessibilityLabel="Otvoriť mapy" 
+                                    accessibilityLabel={t("Otvoriť mapy")} 
                                     style={styles.location}
                                 >
                                     <Text numberOfLines={1} ellipsizeMode="tail">
@@ -260,7 +259,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                         ]}
                     >
                         {processing_post.media.length > 1 && (
-                            processing_post.media.map((one_post_media:ProcessingMedia, index:number) => (
+                            processing_post.media.map((_, index:number) => (
                                 <Pressable 
                                     key={index} 
                                     className="bar" 
@@ -278,7 +277,11 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
             </GestureDetector>
 
             <View className="society" style={styles.society}>
-                <View className="likes" accessibilityLabel="Páči sa mi..." style={styles.society_likes}>
+                <View 
+                    className="likes" 
+                    accessibilityLabel={t("Páči sa mi...")} 
+                    style={styles.society_likes}
+                >
                     <View 
                         style={{ 
                             position: "relative", 
@@ -300,7 +303,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
 
                 <View 
                     className="comments" 
-                    accessibilityLabel="Komentáre..."
+                    accessibilityLabel={t("Komentáre...")}
                     style={styles.comments}
                 >
                     <Icon
@@ -314,7 +317,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                     : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>Vypnuté</Text>)}
                 </View>
 
-                <View className="share" accessibilityLabel="Zdielať...">
+                <View className="share" accessibilityLabel={t("Zdielať...")}>
                     <Icon
                         icon_name="share-nodes"
                         size={25}
@@ -323,7 +326,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
 
                 <View 
                     className="views" 
-                    accessibilityLabel="Počet videní..."
+                    accessibilityLabel={t("Počet videní...")}
                     style={styles.views}
                 >
                     <Icon
@@ -335,8 +338,8 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                     <Text className="views_counter" style={styles.views_counter}>0</Text>
                 </View>
 
-                <View className={"save"} accessibilityLabel="Uložiť...">
-                    <View className="save" accessibilityLabel="Uložiť...">
+                <View className={"save"} accessibilityLabel={t("Uložiť...")}>
+                    <View className="save" accessibilityLabel={t("Uložiť...")}>
                         <Icon
                             icon_name="bookmark"
                             size={25}

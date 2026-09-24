@@ -1,5 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { View, StyleSheet, ScrollView, Alert } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState } from "react"
@@ -12,6 +11,7 @@ import HistorySection from "@/components/pages/activity/HistorySection"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
@@ -30,6 +30,8 @@ interface CompletedOfficialTaskResponse {
 }
 
 export default function ActivityScreen() {
+    const { t } = useTranslation() // Initializes The Translations
+    
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -41,7 +43,7 @@ export default function ActivityScreen() {
     const completeOfficialTask = async (task_data:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Úlohu nie je možné dokončiť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Úlohu nie je možné dokončiť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -64,7 +66,7 @@ export default function ActivityScreen() {
 
             // If The Response Isn't Success
             if(!completed_official_task_response.ok) {
-                Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri označovaní úlohy za dokončenú došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -72,7 +74,7 @@ export default function ActivityScreen() {
 
             // If The Response Isn't Success
             if(!completed_official_task_data.success || !completed_official_task_data.task) {
-                Alert.alert("Chyba", completed_official_task_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), completed_official_task_data.message) // Shows The Alert
                 return
             }
 
@@ -110,7 +112,7 @@ export default function ActivityScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri označovaní úlohy za dokončenú došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri označovaní úlohy za dokončenú došlo k chybe.")) // Shows The Alert
         }
     }
 

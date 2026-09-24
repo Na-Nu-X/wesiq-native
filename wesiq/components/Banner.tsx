@@ -1,8 +1,9 @@
-import { View, StyleSheet, Pressable, Text, TouchableWithoutFeedback, Keyboard, ScrollView } from "react-native"
+import { View, StyleSheet, Pressable, Text } from "react-native"
 import IconButton from "./IconButton"
 import ProfilePictureLink from "./ProfilePictureLink"
 import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize } from "@/constants/colors"
 import { BlurView } from "expo-blur"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -13,6 +14,8 @@ interface BannerProps {
 }
 
 export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostFormDialogOpen }:BannerProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     return (
         <View style={styles.banner}>
             <BlurView intensity={20} style={StyleSheet.absoluteFill} />
@@ -44,13 +47,13 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                                 user_username={logged_in_user.username}
                                 user_profile_picture_name={logged_in_user.profile_picture_name || null} 
                                 user_subscription={logged_in_user.subscription?.is_active || false} 
-                                label="Môj účet" 
+                                label={t("Môj účet")} 
                             />
         
                             <Pressable
                                 // onPress={handleGoToProfile}
                                 accessibilityRole="button"
-                                accessibilityLabel="Môj účet" 
+                                accessibilityLabel={t("Môj účet")} 
                                 >
                                 {({ pressed }) => (
                                     <Text 
@@ -72,7 +75,7 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                         <View className="no_account" style={styles.no_account}>
                             <Pressable 
                                 onPress={() => setActiveForm("login_form")}
-                                accessibilityLabel="Prihlásiť sa"
+                                accessibilityLabel={t("Prihlásiť sa")}
                             >
                                 {({ pressed }) => (
                                     <Text 
@@ -83,7 +86,7 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                                             pressed && { textDecorationLine: "underline" } 
                                         ]}
                                     >
-                                        Neprihlásený
+                                        {t("Neprihlásený")}
                                     </Text>
                                 )}
                             </Pressable>

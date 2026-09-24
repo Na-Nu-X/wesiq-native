@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { View, StyleSheet, Pressable, Text, ScrollView, Image, TextInput } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import LoginFormDialog from "@/components/LoginFormDialog"
@@ -15,6 +15,7 @@ import Icon from "@/components/Icon"
 import { getMinimalistFormattedTime } from "@/utils/time"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
@@ -23,6 +24,8 @@ import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu
 import type { TrainingPlanSlide } from "@/components/pages/manage_training_plans/EditTrainingPlan"
 
 export default function NewTrainingPlanScreen() {
+  const { t } = useTranslation() // Initializes The Translations
+
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -482,9 +485,9 @@ export default function NewTrainingPlanScreen() {
 
               <View className="labels" style={styles.labels}>
                 <Text className="unit_amount" style={styles.label}>
-                  {training_plan_dragged_exercise.unit === "reps" && ("Počet opakovaní")}
-                  {training_plan_dragged_exercise.unit === "seconds" && ("Počet sekúnd")}
-                  {training_plan_dragged_exercise.unit === "steps" && ("Počet krokov")}
+                  {training_plan_dragged_exercise.unit === "reps" && t("Počet opakovaní")}
+                  {training_plan_dragged_exercise.unit === "seconds" && t("Počet sekúnd")}
+                  {training_plan_dragged_exercise.unit === "steps" && t("Počet krokov")}
                 </Text>
 
                 <Text style={styles.label}>Série</Text>
@@ -492,7 +495,7 @@ export default function NewTrainingPlanScreen() {
 
               <Pressable 
                 className="add_period"
-                accessibilityLabel="Pridať sériu"
+                accessibilityLabel={t("Pridať sériu")}
                 style={styles.add_period}
               >
                 <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>

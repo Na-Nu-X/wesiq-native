@@ -13,6 +13,7 @@ import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -38,6 +39,8 @@ interface Sender {
 }
 
 export default function ChatScreen() {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
@@ -90,7 +93,7 @@ export default function ChatScreen() {
     const getUnreadChats = async ():Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Nové správy nie je možné načítať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Nové správy nie je možné načítať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -109,7 +112,7 @@ export default function ChatScreen() {
 
             // If The Response Isn't Success
             if(!unread_chats_response.ok) {
-                Alert.alert("Chyba", "Pri načítaní nových správ došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri načítaní nových správ došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -119,7 +122,7 @@ export default function ChatScreen() {
 
             // If The Response Isn't Success
             if(!unread_chats_data.success) {
-                Alert.alert("Chyba", unread_chats_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), unread_chats_data.message) // Shows The Alert
                 return
             }
             
@@ -129,7 +132,7 @@ export default function ChatScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri načítaní nových správ došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri načítaní nových správ došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -218,9 +221,9 @@ export default function ChatScreen() {
                                 <TextInput
                                     className="search_bar"
                                     textAlignVertical="top" 
-                                    placeholder="Nájsť užívateľa" 
+                                    placeholder={t("Nájsť užívateľa")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Nájsť užívateľa" 
+                                    accessibilityLabel={t("Nájsť užívateľa")} 
                                     // value={searched_text}
                                     // onChangeText={getSearchedUsers}
 
@@ -242,7 +245,7 @@ export default function ChatScreen() {
                                         user_username={one_item.sender.username}
                                         user_profile_picture_name={one_item.sender.profile_picture_name || null} 
                                         user_subscription={one_item.sender.subscription?.is_active || false} 
-                                        label="Zobraziť užívateľa" 
+                                        label={t("Zobraziť užívateľa")} 
                                     />
 
                                     <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
@@ -252,7 +255,7 @@ export default function ChatScreen() {
 
                                         <View 
                                             className="chat"
-                                            accessibilityLabel="Zobraziť správy"
+                                            accessibilityLabel={t("Zobraziť správy")}
                                         >
                                             <Icon 
                                                 icon_name="comment-dots"
@@ -266,7 +269,7 @@ export default function ChatScreen() {
                             ))}
                         </ScrollView>
                     ) : (
-                        <Text className="no_messages" style={styles.no_messages}>Žiadne nové správy</Text>
+                        <Text className="no_messages" style={styles.no_messages}>{t("Žiadne nové správy")}</Text>
                     )}
                 </ScrollView>
             </SafeAreaView>

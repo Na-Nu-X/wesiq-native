@@ -2,9 +2,10 @@ import Icon from "@/components/Icon"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native"
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated"
+import { useTranslation } from "react-i18next"
 
 export type Day = 1|2|3|4|5|6|0
 
@@ -15,6 +16,8 @@ interface DaySelectMenuProps {
 }
 
 export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [is_day_select_menu_open, setIsDaySelectMenuOpen] = useState<boolean>(false) // Stores The Information If The Day Select Menu Is Open
     
     const [button_layout, setButtonLayout] = useState<{ x:number, y:number, width:number, height:number }|null>(null) // Stores The Button Layout
@@ -48,14 +51,14 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                     style={styles.select}
                 >
                     <Text style={{ color: LIGHT_BLUE_COLOR }}>
-                        {day === null && ("Nepriradiť deň")}
-                        {day === 1 && ("Pondelok")}
-                        {day === 2 && ("Utorok")}
-                        {day === 3 && ("Streda")}
-                        {day === 4 && ("Štvrtok")}
-                        {day === 5 && ("Piatok")}
-                        {day === 6 && ("Sobota")}
-                        {day === 0 && ("Nedeľa")}
+                        {day === null && t("Nepriradiť deň")}
+                        {day === 1 && t("Pondelok")}
+                        {day === 2 && t("Utorok")}
+                        {day === 3 && t("Streda")}
+                        {day === 4 && t("Štvrtok")}
+                        {day === 5 && t("Piatok")}
+                        {day === 6 && t("Sobota")}
+                        {day === 0 && t("Nedeľa")}
                     </Text>
 
                     <Icon icon_name={is_day_select_menu_open ? "angle-up" : "angle-down"} />
@@ -104,7 +107,7 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{ marginRight: 8.5 }}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Nepriradiť deň</Text>
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Nepriradiť deň")}</Text>
                                 </Pressable>
 
                                 <Pressable 
@@ -119,8 +122,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Pondelok</Text>
-                                    {used_days.includes(1) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Pondelok")}</Text>
+                                    {used_days.includes(1) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -135,8 +138,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Utorok</Text>
-                                    {used_days.includes(2) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Utorok")}</Text>
+                                    {used_days.includes(2) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -151,8 +154,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Streda</Text>
-                                    {used_days.includes(3) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Streda")}</Text>
+                                    {used_days.includes(3) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -167,8 +170,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Štvrtok</Text>
-                                    {used_days.includes(4) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Štvrtok")}</Text>
+                                    {used_days.includes(4) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -183,8 +186,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Piatok</Text>
-                                    {used_days.includes(5) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Piatok")}</Text>
+                                    {used_days.includes(5) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -199,8 +202,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Sobota</Text>
-                                    {used_days.includes(6) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Sobota")}</Text>
+                                    {used_days.includes(6) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
 
                                 <Pressable 
@@ -215,8 +218,8 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
                                         style={{marginRight: 8.5}}
                                     />
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>Nedeľa</Text>
-                                    {used_days.includes(0) && (<Text style={{ color: SECONDARY_COLOR }}>Použitý</Text>)}
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Nedeľa")}</Text>
+                                    {used_days.includes(0) && (<Text style={{ color: SECONDARY_COLOR }}>{t("Použitý")}</Text>)}
                                 </Pressable>
                             </Animated.View>
                         )}

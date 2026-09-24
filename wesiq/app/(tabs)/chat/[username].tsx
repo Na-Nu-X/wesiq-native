@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useLocalSearchParams } from "expo-router"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { MAIN_WIDTH } from "@/constants/dimensions"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -83,6 +84,8 @@ interface ChatSocketResponse {
 }
 
 export default function ChatDetailScreen() {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
@@ -152,13 +155,13 @@ export default function ChatDetailScreen() {
     const getChat = async (username:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Užívateľa nie je možné nájsť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Užívateľa nie je možné nájsť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
-            // Sends The POST Request To The Server
+            // Sends The GET Request To The Server
             const loaded_chat_response:Response = await fetch(`${API_URL}/get-chat/${username}/`, {
                 method: "GET",
 
@@ -171,7 +174,7 @@ export default function ChatDetailScreen() {
 
             // If The Response Isn't Success
             if(!loaded_chat_response.ok) {
-                Alert.alert("Chyba", "Pri hľadaní užívateľa došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri hľadaní užívateľa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -179,7 +182,7 @@ export default function ChatDetailScreen() {
 
             // If The Response Isn't Success
             if(!loaded_chat_data.success) {
-                Alert.alert("Chyba", loaded_chat_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_chat_data.message) // Shows The Alert
                 return
             }
             
@@ -190,7 +193,7 @@ export default function ChatDetailScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri hľadaní užívateľa došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri hľadaní užívateľa došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -353,12 +356,12 @@ export default function ChatDetailScreen() {
     
             // Interrupted Connection
             chat_socket.current.onclose = () => {
-                Alert.alert("Chyba", "Spojenie sa neočakávane prerušilo.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Spojenie sa neočakávane prerušilo.")) // Shows The Alert
             }
     
             // Interrupted Connection
             chat_socket.current.onerror = () => {
-                Alert.alert("Chyba", "Pri pokuse o spojenie došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri pokuse o spojenie došlo k chybe.")) // Shows The Alert
             }
         }
 
@@ -379,7 +382,7 @@ export default function ChatDetailScreen() {
         }
 
         else {
-            console.warn("Web Socket nie je otvorený.")
+            console.warn(t("Web Socket nie je otvorený."))
         }
     }
 
@@ -411,7 +414,7 @@ export default function ChatDetailScreen() {
         }
 
         else {
-            console.warn("Web Socket nie je otvorený.")
+            console.warn(t("Web Socket nie je otvorený."))
         }
     }
 
@@ -444,7 +447,7 @@ export default function ChatDetailScreen() {
         }
 
         else {
-            console.warn("Web Socket nie je otvorený.")
+            console.warn(t("Web Socket nie je otvorený."))
         }
     }
 
@@ -465,7 +468,7 @@ export default function ChatDetailScreen() {
         } 
         
         else {
-            console.warn("Web Socket nie je otvorený.")
+            console.warn(t("Web Socket nie je otvorený."))
         }
     }
 
@@ -534,7 +537,7 @@ export default function ChatDetailScreen() {
                                             user_username={receiver.username}
                                             user_profile_picture_name={receiver.profile_picture_name || null} 
                                             user_subscription={receiver.subscription?.is_active || false} 
-                                            label="Zobraziť užívateľa" 
+                                            label={t("Zobraziť užívateľa")} 
                                         />
 
                                         <View className="name">
@@ -625,7 +628,7 @@ export default function ChatDetailScreen() {
                                                             <Text 
                                                                 key={index}
                                                                 className="one_reaction" 
-                                                                accessibilityLabel={`Reakciu pridal: ${one_reaction.user.username}`}
+                                                                accessibilityLabel={t("Reakciu pridal: {{username}}", { username: one_reaction.user.username })}
                                                                 style={styles.one_reaction}
                                                             >
                                                                 {one_reaction.emoji}
@@ -635,7 +638,7 @@ export default function ChatDetailScreen() {
 
                                                     <View 
                                                         className="show_message_properties_button"
-                                                        accessibilityLabel="Viac..." 
+                                                        accessibilityLabel={t("Viac...")} 
                                                         
                                                         style={{ 
                                                             marginLeft: "auto", 
@@ -658,7 +661,7 @@ export default function ChatDetailScreen() {
                                                     ]}
                                                 >
                                                     {one_chat.formatted_time}
-                                                    {one_chat.is_edited && (" (upravené)")}
+                                                    {one_chat.is_edited && (t(" (upravené)"))}
                                                 </Text>
                                             </View>
                                         ))}
@@ -670,9 +673,9 @@ export default function ChatDetailScreen() {
                                         <TextInput
                                             className="new_message"
                                             textAlignVertical="top" 
-                                            placeholder={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"} 
+                                            placeholder={write_message_action === "new" ? t("Napísať správu") : t("Upraviť správu")} 
                                             placeholderTextColor={LIGHT_BLUE_COLOR}
-                                            accessibilityLabel={write_message_action === "new" ? "Napísať správu" : "Upraviť správu"}
+                                            accessibilityLabel={write_message_action === "new" ? t("Napísať správu") : t("Upraviť správu")}
                                             value={new_message}
                                             onChangeText={setNewMessage}
                                             maxLength={MAX_MESSAGE_LENGTH}
@@ -696,14 +699,14 @@ export default function ChatDetailScreen() {
                                                     user_username={logged_in_user.username}
                                                     user_profile_picture_name={logged_in_user.profile_picture_name || null} 
                                                     user_subscription={logged_in_user.subscription?.is_active || false} 
-                                                    label="Môj účet" 
+                                                    label={t("Môj účet")} 
                                                 />
                                             </View>
                                         )}
 
                                         <View 
                                             className="add_emoji"
-                                            accessibilityLabel="Pridať emoji"
+                                            accessibilityLabel={t("Pridať emoji")}
                                             style={styles.add_emoji}
                                         >
                                             <Icon 
@@ -719,23 +722,23 @@ export default function ChatDetailScreen() {
                                             onClose={() => setIsEmojiPickerOpen(false)}
 
                                             translation={{
-                                                smileys_emotion: "Smajlíky",
-                                                people_body: "Ľudia", 
-                                                recently_used: "Naposledy použité",
-                                                animals_nature: "Zvieratá",
-                                                food_drink: "Jedlo a nápoje",
-                                                activities: "Aktivity",
-                                                travel_places: "Cestovanie",
-                                                objects: "Predmety",
-                                                symbols: "Symboly",
-                                                flags: "Vlajky",
-                                                search: "Hľadať...",
+                                                smileys_emotion: t("Smajlíky"),
+                                                people_body: t("Ľudia"), 
+                                                recently_used: t("Naposledy použité"),
+                                                animals_nature: t("Zvieratá"),
+                                                food_drink: t("Jedlo a nápoje"),
+                                                activities: t("Aktivity"),
+                                                travel_places: t("Cestovanie"),
+                                                objects: t("Predmety"),
+                                                symbols: t("Symboly"),
+                                                flags: t("Vlajky"),
+                                                search: t("Hľadať..."),
                                             }}
                                         />
 
                                         <Pressable 
                                             className="send" 
-                                            accessibilityLabel="Odoslať správu"
+                                            accessibilityLabel={t("Odoslať správu")}
                                             accessibilityRole="button"
                                             onPress={sendMessage}
                                             style={styles.send}
@@ -790,7 +793,7 @@ export default function ChatDetailScreen() {
                                                                 />
                                                             </View>
 
-                                                            <Text style={styles.sheet_text}>Reakcia</Text>
+                                                            <Text style={styles.sheet_text}>{t("Reakcia")}</Text>
                                                         </Pressable>
 
                                                         {/* If The Post Belongs To The Logged In User And Isn't Older Than 15 Minutes The Edit Option Will Be Shown */}
@@ -814,7 +817,7 @@ export default function ChatDetailScreen() {
                                                                     />
                                                                 </View>
 
-                                                                <Text style={styles.sheet_text}>Upraviť</Text>
+                                                                <Text style={styles.sheet_text}>{t("Upraviť")}</Text>
                                                             </Pressable>
                                                         )}
 
@@ -839,7 +842,7 @@ export default function ChatDetailScreen() {
                                                                     />
                                                                 </View>
 
-                                                                <Text style={styles.sheet_text}>Vymazať</Text>
+                                                                <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
                                                             </Pressable>
                                                         )}
 
@@ -861,7 +864,7 @@ export default function ChatDetailScreen() {
                                                                 />
                                                             </View>
 
-                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                                         </Pressable>
                                                     </View>
                                                 )}
@@ -1110,7 +1113,7 @@ export default function ChatDetailScreen() {
                                                                 />
                                                             </View>
 
-                                                            <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                            <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                                         </Pressable>
                                                     </View>
                                                 )}

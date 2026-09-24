@@ -2,9 +2,10 @@ import * as Notifications from "expo-notifications"
 import IconButton from "@/components/IconButton"
 import { BLUE_COLOR, SECONDARY_COLOR } from "@/constants/colors"
 import { getFormattedTime } from "@/utils/time"
-import React, { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { View, Text, Animated, StyleSheet, Easing, Platform } from "react-native"
 import Svg, { Circle } from "react-native-svg"
+import { useTranslation } from "react-i18next"
 
 interface BreakProps {
     time:number // Time In Seconds
@@ -23,6 +24,8 @@ Notifications.setNotificationHandler({
 const AnimatedCircle = Animated.createAnimatedComponent(Circle) // Creates The Animated Circle
 
 export const Break = ({ time, skipBreak }:BreakProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
     const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The RemainingTime
@@ -49,7 +52,7 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
     
             const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
     
-            if(status !== "granted") console.error("Notifikácie neboli povolené.")
+            if(status !== "granted") console.error(t("Notifikácie neboli povolené."))
         }
     
         requestNotificationPermissions() // Requests The Notification Permissions
@@ -68,8 +71,8 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
             // Setup The Notification And Gets Its ID
             const id:string = await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: "Čas prestávky vypršal!",
-                    body: "Je čas pokračovať v tréningu. Poďme na to!",
+                    title: t("Čas prestávky vypršal!"),
+                    body: t("Je čas pokračovať v tréningu. Poďme na to!"),
                     sound: "default"
                 },
 
@@ -88,7 +91,7 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
         } 
         
         catch {
-            console.error("Pri plánovaní notifikácie došlo k chybe.")
+            console.error(t("Pri plánovaní notifikácie došlo k chybe."))
         }
     }
 

@@ -1,24 +1,23 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration, TextInput, Platform, useWindowDimensions } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, TextInput, Platform } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import IconButton from "@/components/IconButton"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
-import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"
-import { randomColor } from "@/utils/randomColor"
+import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import { getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { BasicResponse } from "@/components/Feed"
 import * as Notifications from "expo-notifications"
 import Icon from "@/components/Icon"
 import { generateKey } from "@/utils/generateKey"
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from "react-native-draggable-flatlist"
-import { TouchableOpacity } from "react-native-gesture-handler"
 import Svg, { Circle } from "react-native-svg"
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 import { DaySelectMenu } from "./DaySelectMenu"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
@@ -49,6 +48,8 @@ export default function EditTrainingPlan({
     onDragMove, 
     checkDropLocation
 }:EditTrainingPlanProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -74,7 +75,7 @@ export default function EditTrainingPlan({
     
             const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
     
-            if(status !== "granted") console.error("Notifikácie neboli povolené.")
+            if(status !== "granted") console.error(t("Notifikácie neboli povolené."))
         }
     
         requestNotificationPermissions() // Requests The Notification Permissions
@@ -224,8 +225,8 @@ export default function EditTrainingPlan({
             // Setup The Notification And Gets Its ID
             const id:string = await Notifications.scheduleNotificationAsync({
                 content: {
-                    title: "Tréningový plán",
-                    body: `Tréningový plán bol úspešne upravený.`,
+                    title: t("Tréningový plán"),
+                    body: t("Tréningový plán bol úspešne upravený."),
                     sound: "default"
                 },
 
@@ -244,7 +245,7 @@ export default function EditTrainingPlan({
         } 
         
         catch {
-            console.error("Pri plánovaní notifikácie došlo k chybe.")
+            console.error(t("Pri plánovaní notifikácie došlo k chybe."))
         }
     }
 
@@ -268,7 +269,7 @@ export default function EditTrainingPlan({
 
             // If The Response Isn't Success
             if(!loaded_training_plans_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní tréningových plánov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní tréningových plánov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -276,7 +277,7 @@ export default function EditTrainingPlan({
 
             // If The Response Isn't Success
             if(!loaded_training_plans_data.success) {
-                Alert.alert("Chyba", loaded_training_plans_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_training_plans_data.message) // Shows The Alert
                 return
             }
             
@@ -286,7 +287,7 @@ export default function EditTrainingPlan({
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní tréningových plánov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní tréningových plánov došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -338,7 +339,7 @@ export default function EditTrainingPlan({
                                                     fontSize: 30,
                                                 }}
                                             >
-                                                Warm Up
+                                                {t("Warm Up")}
                                             </Text>
 
                                             <View className="timer_container" style={styles.timer_container}>
@@ -391,9 +392,9 @@ export default function EditTrainingPlan({
                                                         className="title" 
                                                         keyboardType="default"
                                                         textAlignVertical="top"
-                                                        placeholder="Názov cviku" 
+                                                        placeholder={t("Názov cviku")} 
                                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                        accessibilityLabel="Názov cviku" 
+                                                        accessibilityLabel={t("Názov cviku")} 
                                                         value={active_exercise.exercise}
                                                         onChangeText={(text) => changeExerciseTitle(active_exercise, text)}
                                                         maxLength={50}
@@ -424,21 +425,21 @@ export default function EditTrainingPlan({
 
                                                 <View className="labels" style={styles.labels}>
                                                     <Text className="unit_amount" style={styles.label}>
-                                                        {active_exercise.unit === "reps" && ("Počet opakovaní")}
-                                                        {active_exercise.unit === "seconds" && ("Počet sekúnd")}
-                                                        {active_exercise.unit === "steps" && ("Počet krokov")}
+                                                        {active_exercise.unit === "reps" && t("Počet opakovaní")}
+                                                        {active_exercise.unit === "seconds" && t("Počet sekúnd")}
+                                                        {active_exercise.unit === "steps" && t("Počet krokov")}
                                                     </Text>
 
-                                                    <Text style={styles.label}>Série</Text>
+                                                    <Text style={styles.label}>{t("Série")}</Text>
                                                 </View>
 
                                                 <Pressable 
                                                     className="add_period"
                                                     onPress={() => addPeriod(active_exercise)}
-                                                    accessibilityLabel="Pridať sériu"
+                                                    accessibilityLabel={t("Pridať sériu")}
                                                     style={styles.add_period}
                                                 >
-                                                    <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>
+                                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Pridať sériu")}</Text>
                                                 </Pressable>
 
                                                 <View className="periods_container" style={styles.periods_container}>
@@ -486,11 +487,6 @@ export default function EditTrainingPlan({
                                     ) {
                                         return
                                     }
-
-                                    console.log(dragged_exercise)
-                                    console.log(dropped_exercise)
-
-                                    console.log(data)
                                 
                                     // Gets The Updated Exercises
                                     const updated_exercises:TrainingPlanExercise[] = data.map((one_exercise:TrainingPlanExercise, index:number) => ({
@@ -1067,12 +1063,12 @@ export default function EditTrainingPlan({
     // Function For Save The Training Plan
     const saveTrainingPlan = async ():Promise<void> => {
         if(!training_plan_title.trim()) {
-            Alert.alert("Chyba", "Pridajte názov pre tréningový plán.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pridajte názov pre tréningový plán.")) // Shows The Alert
             return
         }
 
         if(active_training_plan_exercises.length === 0) {
-            Alert.alert("Chyba", "Pridajte aspoň nejaký cvik pre tréningový plán.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pridajte aspoň nejaký cvik pre tréningový plán.")) // Shows The Alert
             return
         }
 
@@ -1142,7 +1138,7 @@ export default function EditTrainingPlan({
 
             try {
                 if(!logged_in_user) {
-                    Alert.alert("Chyba", "Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.") // Shows The Alert
+                    Alert.alert(t("Chyba"), t("Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.")) // Shows The Alert
                     return
                 }
 
@@ -1163,7 +1159,7 @@ export default function EditTrainingPlan({
 
                 // If The Response Isn't Success
                 if(!manage_training_plan_response.ok) {
-                    Alert.alert("Chyba", "Pri vykonávaní zmien v tréningovom pláne došlo k chybe.") // Shows The Alert
+                    Alert.alert(t("Chyba"), t("Pri vykonávaní zmien v tréningovom pláne došlo k chybe.")) // Shows The Alert
                     return
                 }
 
@@ -1171,17 +1167,15 @@ export default function EditTrainingPlan({
 
                 // If The Response Isn't Success
                 if(!manage_training_plan_data.success) {
-                    Alert.alert("Chyba", manage_training_plan_data.message) // Shows The Alert
+                    Alert.alert(t("Chyba"), manage_training_plan_data.message) // Shows The Alert
                     return
                 }
-
-                console.log(manage_training_plan_data)
 
                 scheduleNotification(10) // Schedules The Notification (After 10 Seconds)
             }
 
             catch {
-                Alert.alert("Chyba", "Pri vykonávaní zmien v tréningovom pláne došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri vykonávaní zmien v tréningovom pláne došlo k chybe.")) // Shows The Alert
             }
         }
     }
@@ -1214,7 +1208,7 @@ export default function EditTrainingPlan({
 
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Zmeny v tréningovom pláne nie je možné vykonať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -1235,7 +1229,7 @@ export default function EditTrainingPlan({
 
             // If The Response Isn't Success
             if(!manage_training_plan_response.ok) {
-                Alert.alert("Chyba", "Pri odstraňovaní tréningového plánu došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní tréningového plánu došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -1243,7 +1237,7 @@ export default function EditTrainingPlan({
 
             // If The Response Isn't Success
             if(!manage_training_plan_data.success) {
-                Alert.alert("Chyba", manage_training_plan_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), manage_training_plan_data.message) // Shows The Alert
                 return
             }
 
@@ -1264,7 +1258,7 @@ export default function EditTrainingPlan({
         }
 
         catch {
-            Alert.alert("Chyba", "Pri odstraňovaní tréningového plánu došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní tréningového plánu došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -1279,9 +1273,9 @@ export default function EditTrainingPlan({
                             autoCapitalize="none"
                             autoCorrect={false}
                             textAlignVertical="top" 
-                            placeholder="Názov" 
+                            placeholder={t("Názov")} 
                             placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel="Názov" 
+                            accessibilityLabel={t("Názov")} 
                             value={training_plan_title}
                             onChangeText={handleTitleChange}
                             maxLength={50}
@@ -1305,19 +1299,19 @@ export default function EditTrainingPlan({
                         <Pressable
                             className="save"
                             onPress={saveTrainingPlan}
-                            accessibilityLabel="Uložiť zmeny"
+                            accessibilityLabel={t("Uložiť zmeny")}
                             style={styles.save}
                         >
-                            <Text style={{ color: SECONDARY_COLOR }}>Uložiť zmeny</Text>
+                            <Text style={{ color: SECONDARY_COLOR }}>{t("Uložiť zmeny")}</Text>
                         </Pressable>
 
                         <Pressable
                             className="delete"
                             onPress={deleteTrainingPlan}
-                            accessibilityLabel="Vymazať"
+                            accessibilityLabel={t("Vymazať")}
                             style={styles.delete}
                         >
-                            <Text style={{ color: SECONDARY_COLOR }}>Vymazať</Text>
+                            <Text style={{ color: SECONDARY_COLOR }}>{t("Vymazať")}</Text>
                         </Pressable>
                     </View>
                 </View>

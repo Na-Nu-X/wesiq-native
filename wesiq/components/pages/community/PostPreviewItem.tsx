@@ -9,6 +9,7 @@ import Icon from "@/components/Icon"
 import { BlurView } from "expo-blur"
 import { Tooltip } from "@/components/Tooltip"
 import Animated, { useAnimatedStyle, withSpring, SharedValue } from "react-native-reanimated"
+import { useTranslation } from "react-i18next"
 
 import type { SelectedFile } from "./UploadPostFormDialog"
 
@@ -53,6 +54,8 @@ export const PostPreviewItem = ({
     MAX_VIDEO_DURATION,
     MIN_VIDEO_DURATION
 }:PostPreviewItemProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [post_preview_progress, setPostPreviewProgress] = useState<Record<string, number>>({}) // Stores The Post Preview Progress
     const [tooltips, setTooltips] = useState<(string|number)[]>([]) // Stores The Tooltips
 
@@ -198,7 +201,7 @@ export const PostPreviewItem = ({
             const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
         
             if(!permission_result.granted) {
-                Alert.alert("Prístup zamietnutý", "Pre výber fotiek a videí musíte povoliť prístup.") // Shows The Alert
+                Alert.alert(t("Prístup zamietnutý"), t("Pre výber fotiek a videí musíte povoliť prístup.")) // Shows The Alert
                 return
             }
         
@@ -220,7 +223,7 @@ export const PostPreviewItem = ({
                 })
         
                 if(valid_files.length < result.assets.length) {
-                    Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.") // Shows The Alert
+                    Alert.alert(t("Nepodporovaný formát"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.")) // Shows The Alert
                 }
         
                 if(valid_files.length > 0) {
@@ -242,9 +245,9 @@ export const PostPreviewItem = ({
             }
         }
 
-        catch(error) {
-            console.warn("Pri výbere súborov došlo k chybe.")
-            Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.") // Shows The Alert
+        catch {
+            console.warn(t("Pri výbere súborov došlo k chybe."))
+            Alert.alert(t("Nepodporovaný formát"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom.")) // Shows The Alert
         }
     }
 
@@ -268,7 +271,7 @@ export const PostPreviewItem = ({
                 </BlurView>
             )}
 
-            <View className="remove_post" accessibilityLabel="Odstrániť..." style={styles.remove_post}>
+            <View className="remove_post" accessibilityLabel={t("Odstrániť...")} style={styles.remove_post}>
                 <Icon
                     icon_name="xmark"
                     onPress={() => removeFile(index)} // Removes The File
@@ -312,22 +315,22 @@ export const PostPreviewItem = ({
                                 />    
                             </Pressable>
 
-                            {tooltips.includes(key) && (<Tooltip text="Video je príliš veľké" />)}
+                            {tooltips.includes(key) && (<Tooltip text={t("Video je príliš veľké")} />)}
                         </>
                     )}
 
                     {/* Checks The Video Duration */}
                     {selected_file.duration || 0 > MAX_VIDEO_DURATION && (
-                        tooltips.includes(key) && (<Tooltip text="Video je príliš dlhé" />)
+                        tooltips.includes(key) && (<Tooltip text={t("Video je príliš dlhé")} />)
                     )}
 
                     {/* Checks The Video Duration */}
                     {selected_file.duration || 0 < MIN_VIDEO_DURATION && (
-                        tooltips.includes(key) && (<Tooltip text="Video je príliš krátke" />)
+                        tooltips.includes(key) && (<Tooltip text={t("Video je príliš krátke")} />)
                     )}
 
                     <View className="video_settings" style={styles.video_settings}>
-                        <View className="toggle_mute" accessibilityLabel="Vypnúť zvuk" style={styles.toggle_mute}>
+                        <View className="toggle_mute" accessibilityLabel={t("Vypnúť zvuk")} style={styles.toggle_mute}>
                             <Icon
                                 icon_name={selected_file.is_muted ? "volume-xmark" : "volume-high"}
                                 onPress={() => toggleMuteVideo(index)} // Toggles Mute / Unmute Of Video
@@ -336,7 +339,7 @@ export const PostPreviewItem = ({
                             />
                         </View>
 
-                        <View className="select_thumbnail" accessibilityLabel="Vybrať náhľad" style={styles.select_thumbnail}>
+                        <View className="select_thumbnail" accessibilityLabel={t("Vybrať náhľad")} style={styles.select_thumbnail}>
                             <Icon
                                 icon_name="image"
                                 onPress={() => selectThumbnail(index)}
@@ -358,7 +361,7 @@ export const PostPreviewItem = ({
 
                     {/* Checks The Image Size */}
                     {selected_file.fileSize || 0 > MAX_IMAGE_SIZE && (
-                        tooltips.includes(key) && (<Tooltip text="Obrázok je príliš veľký" />)
+                        tooltips.includes(key) && (<Tooltip text={t("Obrázok je príliš veľký")} />)
                     )}
                 </>
             )}

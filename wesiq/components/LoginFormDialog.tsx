@@ -9,6 +9,7 @@ import { LinearGradient } from "expo-linear-gradient"
 import { FontAwesome6 } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
+import { useTranslation } from "react-i18next"
 
 export interface LoggedInUser {
     id:number,
@@ -65,6 +66,8 @@ interface LoginResponse {
 }
 
 export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:LoginFormDialogProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier
     const [password, setPassword] = useState<string>("") // Stores The Password
     const [is_password_hidden, setIsPasswordHidden] = useState<boolean>(true) // Stores The Information If The Password Is Hidden
@@ -88,7 +91,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
             } 
             
             catch {
-                console.error("Chyba pri automatickom prihlásení.")
+                console.error(t("Chyba pri automatickom prihlásení."))
             } 
             
             finally {
@@ -131,7 +134,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
         Keyboard.dismiss() // Hides The Keyboard
     
         if(!identifier.trim() || !password.trim()) {
-            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre prihlásenie.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Vyplnte všetky potrebné údaje pre prihlásenie.")) // Shows The Alert
             return
         }
     
@@ -157,17 +160,17 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
     
             if(login_data.success) {
                 if(login_data.access) await AsyncStorage.setItem("user_token", login_data.access) // Stores The User Token
-                Alert.alert("Úspech", login_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), login_data.message) // Shows The Alert
             } 
             
             else {
-                Alert.alert("Chyba", login_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), login_data.message) // Shows The Alert
             }
     
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri prihlasovaní došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri prihlasovaní došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -280,9 +283,9 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                     autoCapitalize="none"
                                     autoCorrect={false}
                                     textAlignVertical="top" 
-                                    placeholder="Používateľské meno alebo e-mail" 
+                                    placeholder={t("Používateľské meno alebo e-mail")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Používateľské meno alebo e-mail" 
+                                    accessibilityLabel={t("Používateľské meno alebo e-mail")} 
                                     value={identifier}
                                     onChangeText={setIdentifier}
                                     maxLength={50}
@@ -304,9 +307,9 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                     autoCapitalize="none"
                                     secureTextEntry={is_password_hidden ? true : false}
                                     textAlignVertical="top" 
-                                    placeholder="Zadajte vaše heslo" 
+                                    placeholder={t("Zadajte vaše heslo")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Zadajte vaše heslo" 
+                                    accessibilityLabel={t("Zadajte vaše heslo")} 
                                     value={password}
                                     onChangeText={setPassword}
                                     maxLength={50}
@@ -319,7 +322,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
 
                                 <View 
                                     className="show_hide_password" 
-                                    accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
+                                    accessibilityLabel={is_password_hidden ? t("Zobraziť heslo") : t("Skryť heslo")}
                                     style={styles.show_hide_password}
                                 >
                                     <Icon
@@ -335,7 +338,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                 className="login_form_submit"
                                 onPress={handleLogin}
                                 disabled={is_loading}
-                                accessibilityLabel="Prihlásiť sa"
+                                accessibilityLabel={t("Prihlásiť sa")}
 
                                 style={[
                                     styles.login_form_submit, 
@@ -362,7 +365,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                         }}
                                     />
 
-                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>alebo</Text>
+                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("alebo")}</Text>
 
                                     <View
                                         style={{ 
@@ -438,7 +441,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                     <Pressable
                                         // onPress={handleGoToPasswordReset}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Zmeniť heslo" 
+                                        accessibilityLabel={t("Zmeniť heslo")} 
                                     >
                                         {({ pressed }) => (
                                             <Text 
@@ -460,10 +463,11 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                     }}
                                 >
                                     <Text style={{ color: SECONDARY_COLOR }}>Ešte nemáte účet? </Text>
+                                    
                                     <Pressable
                                         onPress={onChangeActiveForm}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Vytvoriť účet" 
+                                        accessibilityLabel={t("Vytvoriť účet")} 
                                     >
                                         {({ pressed }) => (
                                             <Text

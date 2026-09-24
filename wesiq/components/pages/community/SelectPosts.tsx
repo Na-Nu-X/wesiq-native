@@ -1,9 +1,10 @@
-import React, { useState, useRef } from "react"
+import { useState, useRef } from "react"
 import { Pressable, Alert, StyleSheet, Animated } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, transparentize } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
+import { useTranslation } from "react-i18next"
 
 type SelectPostsProps = {
   onMediaSelection:(media:ImagePicker.ImagePickerAsset[]) => void
@@ -13,6 +14,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable) // Creates
 const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates The Animated Icon Element
 
 export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
+  const { t } = useTranslation() // Initializes The Translations
+
   const [is_pressed, setIsPressed] = useState(false) // Stores The Information If The Button Is Pressed
   const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
@@ -56,7 +59,7 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
       const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
   
       if(!permission_result.granted) {
-        Alert.alert("Prístup zamietnutý", "Pre výber fotiek a videí musíte povoliť prístup.") // Shows The Alert
+        Alert.alert(t("Prístup zamietnutý"), t("Pre výber fotiek a videí musíte povoliť prístup.")) // Shows The Alert
         return
       }
   
@@ -81,7 +84,7 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
         })
   
         if(valid_files.length < result.assets.length) {
-          Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.") // Shows The Alert
+          Alert.alert(t("Nepodporovaný formát"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.")) // Shows The Alert
         }
   
         if(valid_files.length > 0) onMediaSelection(valid_files) // Handles The Media Selection
@@ -89,8 +92,8 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
     }
 
     catch(error) {
-      console.warn("Pri výbere súborov došlo k chybe.")
-      Alert.alert("Nepodporovaný formát", "Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.") // Shows The Alert
+      console.warn(t("Pri výbere súborov došlo k chybe."))
+      Alert.alert(t("Nepodporovaný formát"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.")) // Shows The Alert
     }
   }
 

@@ -15,6 +15,7 @@ import Icon from "@/components/Icon"
 import { getMinimalistFormattedTime } from "@/utils/time"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
@@ -22,6 +23,8 @@ import type { TrainingPlanExercise } from "@/components/pages/activity/ActivityS
 import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
 
 export default function EditTrainingPlanScreen() {
+  const { t } = useTranslation() // Initializes The Translations
+
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -467,12 +470,12 @@ export default function EditTrainingPlanScreen() {
 
               <View className="labels" style={styles.labels}>
                 <Text className="unit_amount" style={styles.label}>
-                  {training_plan_dragged_exercise.unit === "reps" && ("Počet opakovaní")}
-                  {training_plan_dragged_exercise.unit === "seconds" && ("Počet sekúnd")}
-                  {training_plan_dragged_exercise.unit === "steps" && ("Počet krokov")}
+                  {training_plan_dragged_exercise.unit === "reps" && t("Počet opakovaní")}
+                  {training_plan_dragged_exercise.unit === "seconds" && t("Počet sekúnd")}
+                  {training_plan_dragged_exercise.unit === "steps" && t("Počet krokov")}
                 </Text>
 
-                <Text style={styles.label}>Série</Text>
+                <Text style={styles.label}>{t("Série")}</Text>
               </View>
 
               <Pressable 
@@ -480,7 +483,7 @@ export default function EditTrainingPlanScreen() {
                 accessibilityLabel="Pridať sériu"
                 style={styles.add_period}
               >
-                <Text style={{ color: SECONDARY_COLOR }}>Pridať sériu</Text>
+                <Text style={{ color: SECONDARY_COLOR }}>{t("Pridať sériu")}</Text>
               </Pressable>
 
               <View className="periods_container" style={styles.periods_container}>

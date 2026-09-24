@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Animated } from "react-native"
 import { CustomTaskCheckbox } from "./CustomTaskCheckbox"
 import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedDate } from "@/utils/time"
+import { useTranslation } from "react-i18next"
 
 import type { CustomTask } from "./TasksSection"
 
@@ -17,6 +18,8 @@ interface AnimatedCustomTaskProps {
 const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Animated View
 
 export const AnimatedCustomTask = ({ custom_task, onToggleCompleteCustomTask, onShowCustomTaskProperties }:AnimatedCustomTaskProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const animation_value = useRef(new Animated.Value(custom_task.is_completed ? 1 : 0)).current // Stores The Animation Value
 
     useEffect(() => {
@@ -88,7 +91,7 @@ export const AnimatedCustomTask = ({ custom_task, onToggleCompleteCustomTask, on
 
             <View 
                 className="show_custom_task_properties_button"
-                accessibilityLabel="Viac..." 
+                accessibilityLabel={t("Viac...")} 
             >
                 <Icon
                     icon_name="ellipsis-vertical"

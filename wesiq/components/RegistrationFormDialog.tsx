@@ -1,16 +1,14 @@
-import React, { useState, useRef, useEffect } from "react"
-import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Animated, Easing, Platform, Keyboard, Alert, Image } from "react-native"
+import { useState } from "react"
+import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Platform, Keyboard, Alert, Image } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "./Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { LinearGradient } from "expo-linear-gradient"
-import { FontAwesome6 } from "@expo/vector-icons"
-import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL, DOMAIN } from "@/constants/general"
 import * as Clipboard from "expo-clipboard"
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "./LoginFormDialog"
 import type { BasicResponse } from "./Feed"
@@ -23,6 +21,8 @@ type RegistrationFormDialogProps = {
 }
 
 export default function RegistrationFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:RegistrationFormDialogProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [first_name, setFirstName] = useState<string>("") // Stores The First Name
     const [last_name, setLastName] = useState<string>("") // Stores The Last Name
     const [email_address, setEmailAddress] = useState<string>("") // Stores The Email Address
@@ -117,12 +117,12 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
         }
 
         if(password_1 === password_2 && password_1 !== "") {
-            setFormReport("Heslá sa zhodujú") // Sets The Form Report
+            setFormReport(t("Heslá sa zhodujú")) // Sets The Form Report
             setFormReportAppearance("success") // Sets The Form Report Appearance
         } 
         
         else {
-            setFormReport("Heslá sa nezhodujú") // Sets The Form Report
+            setFormReport(t("Heslá sa nezhodujú")) // Sets The Form Report
             setFormReportAppearance("error") // Sets The Form Report Appearance
         }
     }
@@ -204,7 +204,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
     // Function For Copy The Password
     const copyPassword = async ():Promise<void> => {
         await Clipboard.setStringAsync(password) // Copies The Password
-        Alert.alert("Úspech", "Heslo bolo skopírované.") // Shows The Alert
+        Alert.alert(t("Úspech"), t("Heslo bolo skopírované.")) // Shows The Alert
     }
 
     // Function For Paste The Password
@@ -219,7 +219,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
         Keyboard.dismiss() // Hides The Keyboard
     
         if(!email_address.trim() || !is_phone_number_valid || !username.trim() || !password.trim() || !password_check.trim()) {
-            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre registráciu.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Vyplnte všetky potrebné údaje pre registráciu.")) // Shows The Alert
             return
         }
     
@@ -250,17 +250,17 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
             const register_data:BasicResponse = await register_response.json() // Gets The Register Data
     
             if(register_data.success) {
-                Alert.alert("Úspech", register_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), register_data.message) // Shows The Alert
             } 
             
             else {
-                Alert.alert("Chyba", register_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), register_data.message) // Shows The Alert
             }
     
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri registrácii došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri registrácii došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -312,7 +312,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                             <View style={styles.circle_decoration_after} />
 
                             <View style={styles.top}>
-                                <View className="back" accessibilityLabel="Zavrieť">
+                                <View className="back" accessibilityLabel={t("Zavrieť")}>
                                     <Icon
                                         icon_name="chevron-left"
                                         onPress={onClose}
@@ -335,9 +335,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                         keyboardType="default"
                                         autoCapitalize="words"
                                         textAlignVertical="top" 
-                                        placeholder="Meno" 
+                                        placeholder={t("Meno")} 
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                        accessibilityLabel="Meno" 
+                                        accessibilityLabel={t("Meno")} 
                                         value={first_name}
                                         onChangeText={setFirstName}
                                         maxLength={20}
@@ -359,9 +359,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                         keyboardType="default"
                                         autoCapitalize="words"
                                         textAlignVertical="top" 
-                                        placeholder="Priezvisko" 
+                                        placeholder={t("Priezvisko")} 
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                        accessibilityLabel="Priezvisko" 
+                                        accessibilityLabel={t("Priezvisko")} 
                                         value={last_name}
                                         onChangeText={setLastName}
                                         maxLength={50}
@@ -384,9 +384,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                         className="email_address"
                                         keyboardType="default"
                                         textAlignVertical="top" 
-                                        placeholder="E-mail" 
+                                        placeholder={t("E-mail")} 
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                        accessibilityLabel="E-mail" 
+                                        accessibilityLabel={t("E-mail")} 
                                         value={email_address}
                                         onChangeText={setEmailAddress}
                                         maxLength={50}
@@ -407,9 +407,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                         className="phone_number"
                                         keyboardType="phone-pad"
                                         textAlignVertical="top" 
-                                        placeholder="Telefónne číslo" 
+                                        placeholder={t("Telefónne číslo")} 
                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                        accessibilityLabel="Telefónne číslo" 
+                                        accessibilityLabel={t("Telefónne číslo")} 
                                         value={phone_number}
                                         onChangeText={handlePhoneNumberChange}
                                         maxLength={25}
@@ -439,9 +439,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                     className="username"
                                     keyboardType="default"
                                     textAlignVertical="top" 
-                                    placeholder="Používateľské meno" 
+                                    placeholder={t("Používateľské meno")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Používateľské meno" 
+                                    accessibilityLabel={t("Používateľské meno")} 
                                     value={username}
                                     onChangeText={setUsername}
                                     maxLength={20}
@@ -456,7 +456,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                             <View className="password_container" style={styles.password_container}>
                                 <View 
                                     className="generate_password" 
-                                    accessibilityLabel="Navrhnúť heslo"
+                                    accessibilityLabel={t("Navrhnúť heslo")}
                                     style={styles.generate_password}
                                 >
                                     <Icon
@@ -470,9 +470,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                     autoCapitalize="none"
                                     secureTextEntry={is_password_hidden ? true : false}
                                     textAlignVertical="top" 
-                                    placeholder="Vytvorte heslo" 
+                                    placeholder={t("Vytvorte heslo")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Vytvorte heslo" 
+                                    accessibilityLabel={t("Vytvorte heslo")}  
                                     value={password}
                                     onChangeText={handlePasswordChange}
                                     maxLength={50}
@@ -485,7 +485,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
 
                                 <View 
                                     className="show_hide_password" 
-                                    accessibilityLabel={is_password_hidden ? "Zobraziť heslo" : "Skryť heslo"}
+                                    accessibilityLabel={is_password_hidden ? t("Zobraziť heslo") : t("Skryť heslo")}
                                     style={styles.show_hide_password}
                                 >
                                     <Icon
@@ -496,7 +496,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
 
                                 <View 
                                     className="copy_password" 
-                                    accessibilityLabel="Skopírovať"
+                                    accessibilityLabel={t("Skopírovať")}
                                     style={styles.copy_password}
                                 >
                                     <Icon
@@ -516,9 +516,9 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                     autoCapitalize="none"
                                     secureTextEntry={true}
                                     textAlignVertical="top" 
-                                    placeholder="Overte heslo" 
+                                    placeholder={t("Overte heslo")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Overte heslo" 
+                                    accessibilityLabel={t("Overte heslo")} 
                                     value={password_check}
                                     onChangeText={handlePasswordCheckChange}
                                     maxLength={50}
@@ -531,7 +531,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
 
                                 <View 
                                     className="paste_password" 
-                                    accessibilityLabel="Prilepiť"
+                                    accessibilityLabel={t("Prilepiť")}
                                     style={styles.paste_password}
                                 >
                                     <Icon
@@ -557,14 +557,14 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                 className="registration_form_submit"
                                 onPress={handleRegistration}
                                 disabled={is_loading}
-                                accessibilityLabel="Vytvoriť účet"
+                                accessibilityLabel={t("Vytvoriť účet")}
 
                                 style={[
                                     styles.registration_form_submit, 
                                     { outlineStyle: "none" } as any
                                 ]}
                             >
-                                <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Vytvoriť účet</Text>
+                                <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>{t("Vytvoriť účet")}</Text>
                             </Pressable>
 
                             <View className="form_questions" style={styles.form_questions}>
@@ -574,11 +574,11 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                         justifyContent: "center",
                                     }}
                                 >
-                                    <Text style={{ color: SECONDARY_COLOR }}>Už máte účet? </Text>
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Už máte účet?")} </Text>
                                     <Pressable
                                         onPress={onChangeActiveForm}
                                         accessibilityRole="button"
-                                        accessibilityLabel="Prihlásiť sa" 
+                                        accessibilityLabel={t("Prihlásiť sa")}
                                     >
                                         {({ pressed }) => (
                                             <Text 
@@ -587,7 +587,7 @@ export default function RegistrationFormDialog({ visible, onChangeActiveForm, on
                                                     pressed && { textDecorationLine: "underline" } 
                                                 ]}
                                             >
-                                                Prihlásiť sa
+                                                {t("Prihlásiť sa")}
                                             </Text>
                                         )}
                                     </Pressable>

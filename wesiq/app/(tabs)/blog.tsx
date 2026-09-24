@@ -16,6 +16,7 @@ import { getFormattedDate } from "@/utils/time"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { LinearGradient } from "expo-linear-gradient"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -41,6 +42,8 @@ interface Article {
 }
 
 export default function BlogScreen() {
+    const { t } = useTranslation() // Initializes The Translations
+    
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -63,7 +66,7 @@ export default function BlogScreen() {
 
             // If The Response Isn't Success
             if(!articles_response.ok) {
-                Alert.alert("Chyba", "Pri hľadaní článkov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri hľadaní článkov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -71,7 +74,7 @@ export default function BlogScreen() {
 
             // If The Response Isn't Success
             if(!articles_data.success) {
-                Alert.alert("Chyba", articles_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), articles_data.message) // Shows The Alert
                 return
             }
             
@@ -83,7 +86,7 @@ export default function BlogScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri hľadaní článkov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri hľadaní článkov došlo k chybe.")) // Shows The Alert
         }
     }
     
@@ -104,15 +107,15 @@ export default function BlogScreen() {
             })
     
             if(result.action === Share.sharedAction) {
-                if(result.activityType) console.log("Zdieľané cez: ", result.activityType) // Only IOS
-                else console.log("Úspešne zdieľané")
+                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
+                else console.log(t("Úspešne zdieľané"))
             } 
             
-            else if(result.action === Share.dismissedAction) console.log("Zdieľanie zrušené") // Only IOS
+            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
         } 
 
         catch(error:any) {
-            Alert.alert("Chyba", "Nepodarilo sa otvoriť menu na zdieľanie.")
+            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
         }
     }
 
@@ -146,9 +149,9 @@ export default function BlogScreen() {
                     />
 
                     <View className="articles_amount">
-                        {articles_amount == 1 && (<Text>Našiel sa {articles_amount} článok.</Text>)}
-                        {articles_amount > 1 && articles_amount < 5 && (<Text>Našli sa {articles_amount} články.</Text>)}
-                        {articles_amount >= 5 && (<Text>Našlo sa {articles_amount} článkov.</Text>)}
+                        {articles_amount === 1 && (<Text>{t("Našiel sa {{articles_amount}} článok.", { articles_amount })}</Text>)}
+                        {articles_amount > 1 && articles_amount < 5 && (<Text>{t("Našli sa {{articles_amount}} články.", { articles_amount })}</Text>)}
+                        {articles_amount >= 5 && (<Text>{t("Našlo sa {{articles_amount}} článkov.", { articles_amount })}</Text>)}
                     </View>
 
                     <View className="search_bar_container" style={styles.search_bar_container}>
@@ -162,9 +165,9 @@ export default function BlogScreen() {
                             <TextInput
                                 className="search_bar"
                                 textAlignVertical="top" 
-                                placeholder="Nájsť článok" 
+                                placeholder={t("Nájsť článok")} 
                                 placeholderTextColor={LIGHT_BLUE_COLOR}
-                                accessibilityLabel="Nájsť článok" 
+                                accessibilityLabel={t("Nájsť článok")} 
                                 // value={}
                                 // onChangeText={}
 
@@ -179,7 +182,7 @@ export default function BlogScreen() {
                             <View className="sort_select_menu" style={styles.select_menu}>
                                 <View 
                                     className="refresh" 
-                                    accessibilityLabel="Obnoviť predvolené filtre"
+                                    accessibilityLabel={t("Obnoviť predvolené filtre")}
                                     style={styles.refresh}
                                 >
                                     <IconButton 
@@ -189,7 +192,7 @@ export default function BlogScreen() {
                                 </View>
 
                                 <View className="select" style={styles.select}>
-                                    <Text>Najnovšie články</Text>
+                                    <Text>{t("Najnovšie články")}</Text>
 
                                     <Icon
                                         icon_name="angle-down"
@@ -212,7 +215,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Najnovšie články</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Najnovšie články")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -228,7 +231,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Populárne články</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Populárne články")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -244,7 +247,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Najlepšie hodnotené</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Najlepšie hodnotené")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -260,7 +263,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (A-Z)</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Podľa abecedy (A-Z)")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -276,7 +279,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Podľa abecedy (Z-A)</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Podľa abecedy (Z-A)")}</Text>
                                     </Pressable>
                                 </View>
                             </View>
@@ -284,7 +287,7 @@ export default function BlogScreen() {
                             <View className="category_select_menu" style={styles.select_menu}>
                                 <View 
                                     className="refresh" 
-                                    accessibilityLabel="Obnoviť predvolené filtre" 
+                                    accessibilityLabel={t("Obnoviť predvolené filtre")} 
                                     style={styles.refresh}
                                 >
                                     <IconButton 
@@ -294,7 +297,7 @@ export default function BlogScreen() {
                                 </View>
 
                                 <View className="select" style={styles.select}>
-                                    <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
+                                    <Text style={{ color: SECONDARY_COLOR }}>{t("Všetky kategórie")}</Text>
 
                                     <Icon
                                         icon_name="angle-down"
@@ -316,7 +319,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Všetky kategórie</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Všetky kategórie")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -331,7 +334,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Statické prvky</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Statické prvky")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -346,7 +349,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Dynamické triky</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Dynamické triky")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -361,7 +364,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Izotonické cviky</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Izotonické cviky")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -376,7 +379,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>O rovnováhe</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("O rovnováhe")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -391,7 +394,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>O flexibilite</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("O flexibilite")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -406,7 +409,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Tlak</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Tlak")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -421,7 +424,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Ťah</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Ťah")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -436,7 +439,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Nohy</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Nohy")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -451,7 +454,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Pre začiatočníkov</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Pre začiatočníkov")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -466,7 +469,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Pre stredne pokročilých</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Pre stredne pokročilých")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -481,7 +484,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Pre pokročilých</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Pre pokročilých")}</Text>
                                     </Pressable>
 
                                     <Pressable 
@@ -496,7 +499,7 @@ export default function BlogScreen() {
                                             style={{marginRight: 8.5}}
                                         />
 
-                                        <Text style={{ color: SECONDARY_COLOR }}>Pre profesionálov</Text>
+                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Pre profesionálov")}</Text>
                                     </Pressable>
                                 </View>
                             </View>
@@ -504,7 +507,7 @@ export default function BlogScreen() {
                     </View>
 
                     <View className="articles" style={styles.articles}>
-                        {no_articles && (<Text className="no_articles" style={styles.no_articles}>{"Ospravedlňujeme sa!\nNepodarilo sa nájsť žiadne články."}</Text>)}
+                        {no_articles && (<Text className="no_articles" style={styles.no_articles}>{t("Ospravedlňujeme sa!\nNepodarilo sa nájsť žiadne články.")}</Text>)}
 
                         {articles.map((one_article:Article, index:number) => (
                             <ImageBackground
@@ -536,7 +539,7 @@ export default function BlogScreen() {
 
                                         <View 
                                             className="share" 
-                                            accessibilityLabel="Zdielať..." 
+                                            accessibilityLabel={t("Zdielať...")} 
                                             style={styles.share}
                                         >
                                             <Icon
@@ -585,7 +588,7 @@ export default function BlogScreen() {
                                                         // }
                                                     }}
                                                 >
-                                                    Tento článok nie je ešte dokončený.
+                                                    {t("Tento článok nie je ešte dokončený.")}
                                                 </Text>
                                             </View>
                                         )}
@@ -593,13 +596,19 @@ export default function BlogScreen() {
 
                                     <Pressable
                                         // onPress={one_article.html_filename ? () => goToArticle(one_article.link) : () => console.log("Tento článok nie je ešte dokončený.")}
-                                        accessibilityLabel="Zobraziť"
+                                        accessibilityLabel={t("Zobraziť")}
                                         style={styles.article_link}
                                     >
                                         <View className="article_info" style={styles.article_info}>
                                             <View 
                                                 className="rating"
-                                                accessibilityLabel={one_article.average_rating === 0 ? "Zatiaľ žiadne hodnotenia" : `Priemerné hodnotenie ${one_article.average_rating}`}
+
+                                                accessibilityLabel={
+                                                    one_article.average_rating === 0 
+                                                        ? t("Zatiaľ žiadne hodnotenia") 
+                                                        : t("Priemerné hodnotenie {{average_rating}}", { average_rating: one_article.average_rating })
+                                                }
+
                                                 style={styles.rating}
                                             >
                                                 <View className="skeleton_loading skeleton_text" style={{ flexDirection: "row" }}>
@@ -647,7 +656,7 @@ export default function BlogScreen() {
 
                                             <View 
                                                 className="visitors" 
-                                                accessibilityLabel={`${one_article.visitors} unikátnych návštevníkov`} 
+                                                accessibilityLabel={t("{{visitors}} unikátnych návštevníkov", { visitors: one_article.visitors })}
                                                 style={styles.visitors}
                                             >
                                                 <View className="skeleton_loading skeleton_text">
@@ -666,7 +675,7 @@ export default function BlogScreen() {
 
                                             <View 
                                                 className="date" 
-                                                accessibilityLabel="Dátum zverejnenia" 
+                                                accessibilityLabel={t("Dátum zverejnenia")} 
                                                 style={styles.date}
                                             >
                                                 <View className="skeleton_loading skeleton_text">

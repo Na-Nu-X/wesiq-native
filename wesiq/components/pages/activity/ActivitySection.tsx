@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions, Vibration } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Animated, Dimensions } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -7,15 +7,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
-import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime, getRemainingSecondsFromDate } from "@/utils/time"
+import { getDayName, getFormattedDate, getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { Break } from "./Break"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import { AnimatedProgressBarLabel } from "./AnimatedProgressBarLabel"
 import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/Feed"
-import Svg, { Circle } from "react-native-svg"
 import { WarmUp } from "./WarmUp"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
@@ -87,6 +86,8 @@ interface ActivitySectionProps {
 }
 
 export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onAverageActivityTimeLoad, official_tasks, onCompleteOfficialTask }:ActivitySectionProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
@@ -221,7 +222,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!loaded_training_plans_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní tréningových plánov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní tréningových plánov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -229,7 +230,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!loaded_training_plans_data.success) {
-                Alert.alert("Chyba", loaded_training_plans_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_training_plans_data.message) // Shows The Alert
                 return
             }
             
@@ -239,7 +240,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní tréningových plánov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní tréningových plánov došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -256,7 +257,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
     const getXpBoost = async ():Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Informácie o dostupnom navýšení XP nie je možné získať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Informácie o dostupnom navýšení XP nie je možné získať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -275,7 +276,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!xp_boost_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -283,7 +284,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!xp_boost_data.success) {
-                Alert.alert("Chyba", xp_boost_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), xp_boost_data.message) // Shows The Alert
                 return
             }
             
@@ -295,7 +296,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní informácie o dostupnom navýšení XP došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -308,7 +309,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
     const useXpBoost = async ():Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Navýšenie XP nie je možné uplatniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Navýšenie XP nie je možné uplatniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -327,7 +328,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!used_xp_boost_response.ok) {
-                Alert.alert("Chyba", "Pri uplatňovaní navýšenia XP došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri uplatňovaní navýšenia XP došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -335,7 +336,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!used_xp_boost_data.success) {
-                Alert.alert("Chyba", used_xp_boost_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), used_xp_boost_data.message) // Shows The Alert
                 return
             }
             
@@ -347,7 +348,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri uplatňovaní navýšenia XP došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri uplatňovaní navýšenia XP došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -419,7 +420,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!loaded_activity_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní dát o aktivite užívateľa došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní dát o aktivite užívateľa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -427,7 +428,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             // If The Response Isn't Success
             if(!loaded_activity_data.success || !loaded_activity_data.activity) {
-                Alert.alert("Chyba", loaded_activity_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_activity_data.message) // Shows The Alert
                 return
             }
             
@@ -438,7 +439,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní dát o aktivite užívateľa došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní dát o aktivite užívateľa došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -461,10 +462,10 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                         {training_plan_slide === "start_training" && (
                             <View className="start_training active" style={styles.start_training}>
                                 <View className="left" style={styles.left}>
-                                    <Text style={styles.text}>Tréningový plán</Text>
-                                    <Text style={styles.text}>Začať tréning</Text>
+                                    <Text style={styles.text}>{t("Tréningový plán")}</Text>
+                                    <Text style={styles.text}>{t("Začať tréning")}</Text>
 
-                                    <Text className="title" style={styles.title}>{selected_day_or_training_plan_key && typeof selected_day_or_training_plan_key === "number" ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day_or_training_plan_key)}` : ordered_exercises[active_exercise_index].type || "Tréning"}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
+                                    <Text className="title" style={styles.title}>{selected_day_or_training_plan_key && typeof selected_day_or_training_plan_key === "number" ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day_or_training_plan_key)}` : ordered_exercises[active_exercise_index].type || t("Tréning")}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
                                 </View>
 
                                 <View className="start_training_button">
@@ -479,10 +480,10 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                         {training_plan_slide === "finish_training" && (
                             <View className="finish_training" style={styles.finish_training}>
                                 <View className="left" style={styles.left}>
-                                    <Text style={styles.text}>Tréningový plán</Text>
-                                    <Text style={styles.text}>Dokončiť tréning</Text>
+                                    <Text style={styles.text}>{t("Tréningový plán")}</Text>
+                                    <Text style={styles.text}>{t("Dokončiť tréning")}</Text>
 
-                                    <Text className="title" style={styles.title}>{ordered_exercises[active_exercise_index].type || "Tréning"}</Text> {/* Sets Training Plan Title On The Finish Training Slide */}
+                                    <Text className="title" style={styles.title}>{ordered_exercises[active_exercise_index].type || t("Tréning")}</Text> {/* Sets Training Plan Title On The Finish Training Slide */}
                                 </View>
 
                                 <View className="finish_training_button">
@@ -525,7 +526,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                                     { color: SECONDARY_COLOR },
                                                 ]}
                                             >
-                                                {active_exercise.periods[current_set - 1] === 0 ? "Do zlyhania" : (
+                                                {active_exercise.periods[current_set - 1] === 0 ? t("Do zlyhania") : (
                                                     <>
                                                         {active_exercise.unit === "reps" && `${active_exercise.periods[current_set - 1]}x`}
                                                         {active_exercise.unit === "seconds" && String(getMinimalistFormattedTime(active_exercise.periods[current_set - 1]).trim() || 0)}
@@ -609,9 +610,9 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                     <View className="current_activity_info" style={styles.current_activity_info}>
                         <Text style={styles.current_activity_info_text}>
                             {!is_activity_started && is_xp_boost_active ? (
-                                "Navýšenie XP je aktívne"
+                                t("Navýšenie XP je aktívne")
                             ) : (
-                                !is_activity_started && (is_xp_boost_available ? "Je dostupné navýšenie XP" : "Žiadne aktívne navýšenie XP")
+                                !is_activity_started && (is_xp_boost_available ? t("Je dostupné navýšenie XP") : t("Žiadne aktívne navýšenie XP"))
                             )}
 
                             {is_activity_started && (
@@ -627,7 +628,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                             <Text> {xp_boost_amount}x</Text>
                                         </>
                                     ) : (
-                                        <Text>Žiadne aktívne navýšenie XP</Text>
+                                        <Text>{t("Žiadne aktívne navýšenie XP")}</Text>
                                     )}
                                 </>
                             )}
@@ -780,7 +781,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
             } = {
                 elapsed_time, // Stores Formatted Elapsed Time
                 gained_xp: gained_xp, // Stores Gained XP
-                type: ordered_exercises[active_exercise_index].type || "Tréning", // Stores Training Plan Title
+                type: ordered_exercises[active_exercise_index].type || t("Tréning"), // Stores Training Plan Title
                 day: typeof selected_day_or_training_plan_key === "number" ? selected_day_or_training_plan_key : null, // Stores Training Plan Day
                 training_plan_summary: null // Stores The Training Plan Summary
             }
@@ -791,7 +792,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
             try {
                 if(!logged_in_user) {
-                    Alert.alert("Chyba", "Aktivitu nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
+                    Alert.alert(t("Chyba"), t("Aktivitu nie je možné zaznamenať bez prihlásenia.")) // Shows The Alert
                     return
                 }
 
@@ -814,7 +815,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
                 // If The Response Isn't Success
                 if(!new_recorded_activity_response.ok) {
-                    Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+                    Alert.alert(t("Chyba"), t("Pri zaznamenávaní aktivity došlo k chybe.")) // Shows The Alert
                     return
                 }
 
@@ -822,13 +823,13 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
                 // If The Response Isn't Success
                 if(!new_recorded_activity_data.success) {
-                    Alert.alert("Chyba", new_recorded_activity_data.message) // Shows The Alert
+                    Alert.alert(t("Chyba"), new_recorded_activity_data.message) // Shows The Alert
                     return
                 }
             } 
             
             catch {
-                Alert.alert("Chyba", "Pri zaznamenávaní aktivity došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zaznamenávaní aktivity došlo k chybe.")) // Shows The Alert
             } 
         }
 
@@ -1103,12 +1104,12 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                     <>
                         {!logged_in_user && (
                             <View className="no_logged_in">
-                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Zdá sa, že nie ste prihlásený.</Text>
-                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Bez prihlásenia nie je možné ukladať vašu aktivitu.</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>{t("Zdá sa, že nie ste prihlásený.")}</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>{t("Bez prihlásenia nie je možné ukladať vašu aktivitu.")}</Text>
 
                                 <Pressable 
                                     // onPress={() => setActiveForm("login_form")}
-                                    accessibilityLabel="Prihlásiť sa"
+                                    accessibilityLabel={t("Prihlásiť sa")}
                                 >
                                     {({ pressed }) => (
                                         <Text
@@ -1127,11 +1128,11 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
 
                         {logged_in_user && (
                             <View className="no_training_plan" style={styles.no_training_plan}>
-                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>Zatiaľ nemáte žiaden tréningový plán.</Text>
+                                <Text style={{ color: SECONDARY_COLOR, textAlign: "center" }}>{t("Zatiaľ nemáte žiaden tréningový plán.")}</Text>
 
                                 <Pressable 
                                     // onPress={}
-                                    accessibilityLabel="Moje tréningové plány"
+                                    accessibilityLabel={t("Moje tréningové plány")}
                                 >
                                     {({ pressed }) => (
                                         <Text
@@ -1140,7 +1141,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                                 pressed && { textDecorationLine: "underline" } 
                                             ]}
                                         >
-                                            Vytvorte si prvý.
+                                            {t("Vytvorte si prvý.")}
                                         </Text>
                                     )}
                                 </Pressable>
@@ -1176,7 +1177,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                     color={BLUE_COLOR}
                                 />
 
-                                <Text className="title" style={styles.average_activity_time_title}>priemer&nbsp;/ 7&nbsp;dní</Text>
+                                <Text className="title" style={styles.average_activity_time_title}>{t("priemer / 7 dní")}</Text>
                             </View>
 
                             <Text style={styles.average_activity_time}>{activity_data && activity_data.average_activity_time_formatted ? activity_data.average_activity_time_formatted : "0"}</Text>
@@ -1198,7 +1199,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                     color={BLUE_COLOR}
                                 />
 
-                                <Text className="title" style={styles.activities_amount_title}>počet&nbsp;/ 7&nbsp;dní</Text>
+                                <Text className="title" style={styles.activities_amount_title}>{t("počet / 7 dní")}</Text>
                             </View>
 
                             <Text className="activities_amount" style={styles.activities_amount}>{activity_data && activity_data.activities_amount ? activity_data.activities_amount : "0"}</Text>
@@ -1229,8 +1230,8 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                 </>
                             ) : (
                                 <>
-                                    <Text className="no_latest_activity" style={styles.no_latest_activity}>posledná aktivita: </Text>
-                                    <Text className="none" style={styles.none}>žiadna</Text>
+                                    <Text className="no_latest_activity" style={styles.no_latest_activity}>{t("posledná aktivita:")} </Text>
+                                    <Text className="none" style={styles.none}>{t("žiadna")}</Text>
                                 </>
                             )}
                         </View>
@@ -1258,8 +1259,8 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                                 </>
                             ) : (
                                 <>
-                                    <Text className="no_longest_activity" style={styles.no_longest_activity}>najdlhšia aktivita: </Text>
-                                    <Text className="none" style={styles.none}>žiadna</Text>
+                                    <Text className="no_longest_activity" style={styles.no_longest_activity}>{t("najdlhšia aktivita:")} </Text>
+                                    <Text className="none" style={styles.none}>{t("žiadna")}</Text>
                                 </>
                             )}
                         </View>

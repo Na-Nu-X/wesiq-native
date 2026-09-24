@@ -10,6 +10,7 @@ import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import Banner from "@/components/Banner"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { UploadProgressResponse, CompressTask } from "@/components/pages/community/UploadPostFormDialog"
@@ -24,6 +25,8 @@ export interface TrackedTask {
 }
 
 export default function HomeScreen() {
+  const { t } = useTranslation() // Initializes The Translations
+
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
   const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
@@ -37,7 +40,7 @@ export default function HomeScreen() {
   const getUploadProgress = async ():Promise<void> => {
     try {
       if(!logged_in_user) {
-        Alert.alert("Chyba", "Príspevok nie je možné pridať bez prihlásenia.") // Shows The Alert
+        Alert.alert(t("Chyba"), t("Príspevok nie je možné pridať bez prihlásenia.")) // Shows The Alert
         return
       }
 
@@ -70,7 +73,7 @@ export default function HomeScreen() {
                 headers: { "Authorization": `Bearer ${user_token}` }
               })
               
-              if(!upload_progress_response.ok) throw new Error("Chyba servera")
+              if(!upload_progress_response.ok) throw new Error(t("Chyba servera"))
               return upload_progress_response.json() as Promise<UploadProgressResponse>
             })
 
@@ -120,7 +123,7 @@ export default function HomeScreen() {
               }
               
               catch {
-                console.error("Pri mazaní dokončených úloh došlo k chybe.")
+                console.error(t("Pri mazaní dokončených úloh došlo k chybe."))
               }
             }
 
@@ -150,6 +153,7 @@ export default function HomeScreen() {
           }
             
           catch {
+            console.error(t("Chyba spojenia."))
             // setButtonText("Chyba spojenia") // Sets The Button Text
           }
         }, 1500)
@@ -168,7 +172,7 @@ export default function HomeScreen() {
   // Function For Load Processing Posts
   const loadProcessingPosts = async () => {
     if(!logged_in_user) {
-      Alert.alert("Chyba", "Spracovávané príspevky nie je možné získať bez prihlásenia.") // Shows The Alert
+      Alert.alert(t("Chyba"), t("Spracovávané príspevky nie je možné získať bez prihlásenia.")) // Shows The Alert
       return
     }
 
@@ -188,7 +192,7 @@ export default function HomeScreen() {
 
       // If The Response Isn't Success
       if(!loaded_processing_posts_response.ok) {
-        Alert.alert("Chyba", "Pri načítaní spracovávaných príspevkov došlo k chybe.") // Shows The Alert
+        Alert.alert(t("Chyba"), t("Pri načítaní spracovávaných príspevkov došlo k chybe.")) // Shows The Alert
         return
       }
 
@@ -196,7 +200,7 @@ export default function HomeScreen() {
 
       // If The Response Isn't Success
       if(!loaded_processing_posts_data.success || !loaded_processing_posts_data.processing_posts) {
-        Alert.alert("Chyba", loaded_processing_posts_data.message) // Shows The Alert
+        Alert.alert(t("Chyba"), loaded_processing_posts_data.message) // Shows The Alert
         return
       }
         
@@ -204,7 +208,7 @@ export default function HomeScreen() {
     } 
     
     catch {
-      Alert.alert("Chyba", "Pri načítaní spracovávaných príspevkov došlo k chybe.") // Shows The Alert
+      Alert.alert(t("Chyba"), t("Pri načítaní spracovávaných príspevkov došlo k chybe.")) // Shows The Alert
     }
   }
 

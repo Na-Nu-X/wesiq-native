@@ -1,7 +1,5 @@
-import React, { useRef } from "react"
-import { View, Text, PanResponder, Image, Pressable, StyleSheet } from "react-native"
+import { View, Text, Image, StyleSheet } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { FontAwesome6 } from "@expo/vector-icons"
 import { DOMAIN } from "@/constants/general"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"

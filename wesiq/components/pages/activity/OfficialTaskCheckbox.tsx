@@ -1,6 +1,6 @@
 import { BLUE_COLOR, MAIN_COLOR, transparentize } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
-import React, { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Animated, Image, StyleSheet, View } from "react-native"
 
 interface OfficialTaskCheckboxProps {

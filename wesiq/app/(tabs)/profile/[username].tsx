@@ -17,6 +17,7 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import * as ImagePicker from "expo-image-picker"
 import EmojiPicker from "rn-emoji-keyboard"
 import SelectProfilePicture from "@/components/pages/profile/SelectProfilePicture"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
@@ -138,6 +139,8 @@ const RED_RARITY = "#ef4444" // Defines The Red Rarity Color
 const PURPLE_RARITY = "#8b5cf6" // Defines The Purple Rarity Color
 
 export default function ProfileScreen() {
+    const { t } = useTranslation() // Initializes The Translations
+    
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -236,7 +239,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!profile_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní profilu užívateľa došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní profilu užívateľa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -244,7 +247,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!profile_data.success || !profile_data.user) {
-                Alert.alert("Chyba", profile_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), profile_data.message) // Shows The Alert
                 return
             }
             
@@ -269,7 +272,7 @@ export default function ProfileScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní profilu užívateľa došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní profilu užívateľa došlo k chybe.")) // Shows The Alert
         }
     }
     
@@ -283,12 +286,12 @@ export default function ProfileScreen() {
         Keyboard.dismiss() // Hides The Keyboard
 
         if(!logged_in_user) {
-            Alert.alert("Chyba", "Zmeny nie je možné uložiť bez prihlásenia.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Zmeny nie je možné uložiť bez prihlásenia.")) // Shows The Alert
             return
         }
     
         if(!email_address.trim() || !is_phone_number_valid) {
-            Alert.alert("Chyba", "Vyplnte všetky potrebné údaje pre vykonanie zmien.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Vyplnte všetky potrebné údaje pre vykonanie zmien.")) // Shows The Alert
             return
         }
     
@@ -344,7 +347,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!edit_account_response.ok) {
-                Alert.alert("Chyba", "Pri vykonávaní zmien v účte došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri vykonávaní zmien v účte došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -352,7 +355,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!edit_account_data.success) {
-                Alert.alert("Chyba", edit_account_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), edit_account_data.message) // Shows The Alert
                 return
             }
             
@@ -360,7 +363,7 @@ export default function ProfileScreen() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri vykonávaní zmien v účte došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri vykonávaní zmien v účte došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -380,7 +383,7 @@ export default function ProfileScreen() {
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Sledovanie nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -403,7 +406,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!toggle_follow_response.ok) {
-                Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -411,7 +414,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!toggle_follow_data.success || !profile) {
-                Alert.alert("Chyba", toggle_follow_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_follow_data.message) // Shows The Alert
                 return
             }
 
@@ -425,12 +428,12 @@ export default function ProfileScreen() {
                     })
                 }
 
-                Alert.alert("Úspech", toggle_follow_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), toggle_follow_data.message) // Shows The Alert
             }
         }
 
         catch {
-            Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -494,7 +497,7 @@ export default function ProfileScreen() {
     const reportUser = async (user_id:number, reason:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -518,7 +521,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!reported_user_response.ok) {
-                Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -526,19 +529,19 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!reported_user_data.success) {
-                Alert.alert("Chyba", reported_user_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), reported_user_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", reported_user_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), reported_user_data.message) // Shows The Alert
                 hideAccountProperties() // Closes The Account Properties
                 return
             }
         }
         
         catch {
-            Alert.alert("Chyba", "Pri odosielaní nahlásenia došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odosielaní nahlásenia došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -546,12 +549,12 @@ export default function ProfileScreen() {
     const suspendUser = async (user_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Nahlásenie nie je možné odoslať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
             if(!["admin", "developer"].includes(logged_in_user.role)) {
-                Alert.alert("Chyba", "Užívateľa môže obmedziť len správca.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Užívateľa môže obmedziť len správca.")) // Shows The Alert
                 return
             }
 
@@ -574,7 +577,7 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!suspended_user_response.ok) {
-                Alert.alert("Chyba", "Pri pokuse o obmedzenie užívateľa došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri pokuse o obmedzenie užívateľa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -582,19 +585,19 @@ export default function ProfileScreen() {
 
             // If The Response Isn't Success
             if(!suspended_user_data.success) {
-                Alert.alert("Chyba", suspended_user_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), suspended_user_data.message) // Shows The Alert
                 return
             }
             
             else {
-                Alert.alert("Úspech", suspended_user_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), suspended_user_data.message) // Shows The Alert
                 hideAccountProperties() // Closes The Account Properties
                 return
             }
         }
         
         catch {
-            Alert.alert("Chyba", "Pri pokuse o obmedzenie užívateľa došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri pokuse o obmedzenie užívateľa došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -621,7 +624,7 @@ export default function ProfileScreen() {
                                     <View style={styles.circle_decoration_after} />
 
                                     <View className="options_container" style={styles.options_container}>
-                                        <View className="back" accessibilityLabel="Späť na úvodnú stránku">
+                                        <View className="back" accessibilityLabel={t("Späť na úvodnú stránku")}>
                                             <Icon
                                                 icon_name="chevron-left"
                                                 // onPress={}
@@ -642,7 +645,7 @@ export default function ProfileScreen() {
                                         )}
 
                                         {(logged_in_user && profile && logged_in_user.id !== profile.id) && (
-                                            <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                            <View className="show_account_properties_button" accessibilityLabel={t("Viac...")}>
                                                 <Icon
                                                     icon_name="ellipsis-vertical"
                                                     onPress={showAccountProperties}
@@ -665,7 +668,7 @@ export default function ProfileScreen() {
                                                         <Text className="username" style={styles.username}>{logged_in_user.username}</Text>
                                                     </View>
 
-                                                    <View className="show_account_properties_button" accessibilityLabel="Viac...">
+                                                    <View className="show_account_properties_button" accessibilityLabel={t("Viac...")}>
                                                         <Icon
                                                             icon_name="ellipsis-vertical"
                                                             onPress={showAccountProperties}
@@ -673,7 +676,7 @@ export default function ProfileScreen() {
                                                     </View>
                                                 </View>
 
-                                                <Text className="friend_code" style={styles.friend_code}>Friend Code - <Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text></Text>
+                                                <Text className="friend_code" style={styles.friend_code}>{t("Friend Code")} - <Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text></Text>
 
                                                 <View className="bio_container" style={styles.bio_container}>
                                                     <TextInput
@@ -682,9 +685,9 @@ export default function ProfileScreen() {
                                                         autoCapitalize="none"
                                                         autoCorrect={false}
                                                         textAlignVertical="top" 
-                                                        placeholder="Niečo o Vás" 
+                                                        placeholder={t("Niečo o Vás")} 
                                                         placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                        accessibilityLabel="Niečo o Vás" 
+                                                        accessibilityLabel={t("Niečo o Vás")} 
                                                         value={bio}
                                                         onChangeText={setBio}
                                                         maxLength={100}
@@ -731,7 +734,7 @@ export default function ProfileScreen() {
 
                                                         <View 
                                                             className="add_emoji"
-                                                            accessibilityLabel="Pridať emoji"
+                                                            accessibilityLabel={t("Pridať emoji")}
                                                         >
                                                             <Icon 
                                                                 icon_name="face-surprise"
@@ -746,17 +749,17 @@ export default function ProfileScreen() {
                                                             onClose={() => setIsEmojiPickerOpen(false)}
 
                                                             translation={{
-                                                                smileys_emotion: "Smajlíky",
-                                                                people_body: "Ľudia", 
-                                                                recently_used: "Naposledy použité",
-                                                                animals_nature: "Zvieratá",
-                                                                food_drink: "Jedlo a nápoje",
-                                                                activities: "Aktivity",
-                                                                travel_places: "Cestovanie",
-                                                                objects: "Predmety",
-                                                                symbols: "Symboly",
-                                                                flags: "Vlajky",
-                                                                search: "Hľadať...",
+                                                                smileys_emotion: t("Smajlíky"),
+                                                                people_body: t("Ľudia"), 
+                                                                recently_used: t("Naposledy použité"),
+                                                                animals_nature: t("Zvieratá"),
+                                                                food_drink: t("Jedlo a nápoje"),
+                                                                activities: t("Aktivity"),
+                                                                travel_places: t("Cestovanie"),
+                                                                objects: t("Predmety"),
+                                                                symbols: t("Symboly"),
+                                                                flags: t("Vlajky"),
+                                                                search: t("Hľadať..."),
                                                             }}
                                                         />
                                                     </View>
@@ -777,7 +780,7 @@ export default function ProfileScreen() {
                                                         <View key={one_bio_link.id || index} className="link" style={styles.link}>
                                                             <Pressable 
                                                                 // onPress={}
-                                                                accessibilityLabel="Otvoriť odkaz"
+                                                                accessibilityLabel={t("Otvoriť odkaz")}
 
                                                                 style={[
                                                                     styles.link_anchor, 
@@ -815,7 +818,7 @@ export default function ProfileScreen() {
                                                                 <Text style={{ color: SECONDARY_COLOR }}>{getDomain(one_bio_link.url)}</Text>
                                                             </Pressable>
 
-                                                            <View className="remove_link" accessibilityLabel="Odstrániť odkaz">
+                                                            <View className="remove_link" accessibilityLabel={t("Odstrániť odkaz")}>
                                                                 <Icon
                                                                     icon_name="xmark"
                                                                     // onPress={}
@@ -837,9 +840,9 @@ export default function ProfileScreen() {
                                                                 keyboardType="default"
                                                                 autoCapitalize="words"
                                                                 textAlignVertical="top" 
-                                                                placeholder="Zmeniť meno" 
+                                                                placeholder={t("Zmeniť meno")} 
                                                                 placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                accessibilityLabel="Zmeniť meno" 
+                                                                accessibilityLabel={t("Zmeniť meno")} 
                                                                 value={first_name}
                                                                 onChangeText={setFirstName}
                                                                 maxLength={20}
@@ -861,9 +864,9 @@ export default function ProfileScreen() {
                                                                 keyboardType="default"
                                                                 autoCapitalize="words"
                                                                 textAlignVertical="top" 
-                                                                placeholder="Zmeniť priezvisko" 
+                                                                placeholder={t("Zmeniť priezvisko")} 
                                                                 placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                accessibilityLabel="Zmeniť priezvisko" 
+                                                                accessibilityLabel={t("Zmeniť priezvisko")} 
                                                                 value={last_name}
                                                                 onChangeText={setLastName}
                                                                 maxLength={50}
@@ -886,9 +889,9 @@ export default function ProfileScreen() {
                                                                 className="email_address"
                                                                 keyboardType="default"
                                                                 textAlignVertical="top" 
-                                                                placeholder="Zmeniť e-mail" 
+                                                                placeholder={t("Zmeniť e-mail")} 
                                                                 placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                accessibilityLabel="Zmeniť e-mail" 
+                                                                accessibilityLabel={t("Zmeniť e-mail")} 
                                                                 value={email_address}
                                                                 onChangeText={setEmailAddress}
                                                                 maxLength={50}
@@ -909,9 +912,9 @@ export default function ProfileScreen() {
                                                                 className="phone_number"
                                                                 keyboardType="phone-pad"
                                                                 textAlignVertical="top" 
-                                                                placeholder="Zmeniť telefónne číslo" 
+                                                                placeholder={t("Zmeniť telefónne číslo")} 
                                                                 placeholderTextColor={LIGHT_BLUE_COLOR}
-                                                                accessibilityLabel="Zmeniť telefónne číslo" 
+                                                                accessibilityLabel={t("Zmeniť telefónne číslo")}
                                                                 value={phone_number}
                                                                 onChangeText={handlePhoneNumberChange}
                                                                 maxLength={25}
@@ -948,14 +951,14 @@ export default function ProfileScreen() {
                                                     className="edit_account_form_submit"
                                                     onPress={handleEditAccount}
                                                     disabled={is_loading}
-                                                    accessibilityLabel="Uložiť zmeny"
+                                                    accessibilityLabel={t("Uložiť zmeny")}
 
                                                     style={[
                                                         styles.edit_account_form_submit, 
                                                         { outlineStyle: "none" } as any
                                                     ]}
                                                 >
-                                                    <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>Uložiť zmeny</Text>
+                                                    <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>{t("Uložiť zmeny")}</Text>
                                                 </Pressable>
 
                                                 <View className="form_questions" style={styles.form_questions}>
@@ -965,11 +968,11 @@ export default function ProfileScreen() {
                                                             justifyContent: "center",
                                                         }}
                                                     >
-                                                        <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
+                                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Zabudli ste heslo?")} </Text>
                                                         <Pressable
                                                             // onPress={handleGoToPasswordReset}
                                                             accessibilityRole="button"
-                                                            accessibilityLabel="Zmeniť heslo" 
+                                                            accessibilityLabel={t("Zmeniť heslo")} 
                                                         >
                                                             {({ pressed }) => (
                                                                 <Text 
@@ -978,7 +981,7 @@ export default function ProfileScreen() {
                                                                         pressed && { textDecorationLine: "underline" } 
                                                                     ]}
                                                                 >
-                                                                    Zmeniť heslo
+                                                                    {t("Zmeniť heslo")}
                                                                 </Text>
                                                             )}
                                                         </Pressable>
@@ -1050,7 +1053,7 @@ export default function ProfileScreen() {
                                                                         <Pressable 
                                                                             key={one_link.id || index}
                                                                             // onPress={}
-                                                                            accessibilityLabel="Otvoriť odkaz"
+                                                                            accessibilityLabel={t("Otvoriť odkaz")}
 
                                                                             style={[
                                                                                 styles.profile_link_anchor, 
@@ -1097,7 +1100,7 @@ export default function ProfileScreen() {
                                                         <View className="statistics" style={styles.statistics}>
                                                             <View className="followers" style={styles.followers}>
                                                                 <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
-                                                                <Text className="label" style={styles.followers_label}>sledujú</Text>
+                                                                <Text className="label" style={styles.followers_label}>{t("sledujú")}</Text>
                                                             </View>
 
                                                             {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
@@ -1156,7 +1159,7 @@ export default function ProfileScreen() {
 
                                                             <View className="following" style={styles.following}>
                                                                 <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
-                                                                <Text className="label" style={styles.following_label}>sleduje</Text>
+                                                                <Text className="label" style={styles.following_label}>{t("sleduje")}</Text>
                                                             </View>
 
                                                             {/* {% if request.session.logged_in_user_id and logged_in_user and user and logged_in_user.id == user.id %}
@@ -1216,7 +1219,7 @@ export default function ProfileScreen() {
 
                                                             <View className="posts">
                                                                 <Text className="amount" style={styles.posts_amount}>{profile.posts.length || 0}</Text>
-                                                                <Text className="label" style={styles.posts_label}>príspevky</Text>
+                                                                <Text className="label" style={styles.posts_label}>{t("príspevky")}</Text>
                                                             </View>
                                                         </View>
 
@@ -1323,7 +1326,7 @@ export default function ProfileScreen() {
                                                             {profile.role === "developer" && (
                                                                 <View 
                                                                     className="badge developer" 
-                                                                    accessibilityLabel="Vývojár"
+                                                                    accessibilityLabel={t("Vývojár")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1342,7 +1345,7 @@ export default function ProfileScreen() {
                                                             {profile.subscription && profile.subscription.is_active && (
                                                                 <View 
                                                                     className="badge subscriber" 
-                                                                    accessibilityLabel={profile.subscription.plan === "premium" ? "Prémiový predplatiteľ" : "Základný predplatiteľ"}
+                                                                    accessibilityLabel={profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1371,7 +1374,7 @@ export default function ProfileScreen() {
                                                                         profile.total_transactions_amount >= 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Prispievateľ"
+                                                                    accessibilityLabel={t("Prispievateľ")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1432,7 +1435,7 @@ export default function ProfileScreen() {
                                                                     profile.level > 100 && "purple"
                                                                 ].filter(Boolean).join(" ")}
                                                                 
-                                                                accessibilityLabel="Level"
+                                                                accessibilityLabel={t("Level")}
 
                                                                 style={[
                                                                     styles.badge,
@@ -1488,7 +1491,7 @@ export default function ProfileScreen() {
                                                                         profile.xp > 100000 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Získané XP"
+                                                                    accessibilityLabel={t("Získané XP")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1574,7 +1577,7 @@ export default function ProfileScreen() {
                                                             {profile.max_activity_streak !== 0 && (
                                                                 <View 
                                                                     className="badge max_activity_streak" 
-                                                                    accessibilityLabel="Najdlhšia rada aktivity"
+                                                                    accessibilityLabel={t("Najdlhšia rada aktivity")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1612,7 +1615,7 @@ export default function ProfileScreen() {
                                                                         profile.years_since_registration > 5 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Roky od registrácie"
+                                                                    accessibilityLabel={t("Roky od registrácie")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1669,7 +1672,7 @@ export default function ProfileScreen() {
                                                                         profile.total_activities > 500 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Zaznamenané aktivity"
+                                                                    accessibilityLabel={t("Zaznamenané aktivity")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1731,7 +1734,7 @@ export default function ProfileScreen() {
                                                                         profile.followers.length > 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Počet sledovateľov"
+                                                                    accessibilityLabel={t("Počet sledovateľov")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1793,7 +1796,7 @@ export default function ProfileScreen() {
                                                                         profile.posts.length > 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Počet príspevkov"
+                                                                    accessibilityLabel={t("Počet príspevkov")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1855,7 +1858,7 @@ export default function ProfileScreen() {
                                                                         profile.total_received_likes > 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Získané lajky"
+                                                                    accessibilityLabel={t("Získané lajky")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -1917,7 +1920,7 @@ export default function ProfileScreen() {
                                                                         profile.post_comments.length > 100 && "purple"
                                                                     ].filter(Boolean).join(" ")}
                                                                     
-                                                                    accessibilityLabel="Získané lajky"
+                                                                    accessibilityLabel={t("Získané lajky")}
 
                                                                     style={[
                                                                         styles.badge,
@@ -2068,7 +2071,7 @@ export default function ProfileScreen() {
                                                                 color={BLUE_COLOR}
                                                             />
 
-                                                            <Text style={styles.private_account_notice_text}>Tento účet je súkromný.</Text>
+                                                            <Text style={styles.private_account_notice_text}>{t("Tento účet je súkromný.")}</Text>
                                                         </View>
                                                     ) : (
                                                         <>
@@ -2088,13 +2091,13 @@ export default function ProfileScreen() {
                                                                                 <Pressable
                                                                                     key={one_post.media[0].id || index}
                                                                                     // onPress={}
-                                                                                    accessibilityLabel="Zobraziť príspevok"
+                                                                                    accessibilityLabel={t("Zobraziť príspevok")}
                                                                                     style={styles.post_link}
                                                                                 >
                                                                                     {one_post.media[0].is_video ? (
                                                                                         <View 
                                                                                             className="thumbnail"
-                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                            accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: profile.username })}
 
                                                                                             style={{ 
                                                                                                 width: "100%", 
@@ -2116,7 +2119,7 @@ export default function ProfileScreen() {
                                                                                     ) : (
                                                                                         <View 
                                                                                             className="image"
-                                                                                            accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                            accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: profile.username })}
 
                                                                                             style={{ 
                                                                                                 width: "100%", 
@@ -2194,7 +2197,7 @@ export default function ProfileScreen() {
                                                                             logged_in_user?.id !== profile.id ? {marginTop: 0} : {}
                                                                         ]}
                                                                     >
-                                                                        Zatiaľ žiadne príspevky.
+                                                                        {t("Zatiaľ žiadne príspevky.")}
                                                                     </Text>
                                                                 )}
                                                             </View>
@@ -2206,12 +2209,12 @@ export default function ProfileScreen() {
                                                                             <Pressable
                                                                                 key={one_post.media[0].id || index}
                                                                                 // onPress={}
-                                                                                accessibilityLabel="Zobraziť príspevok"
+                                                                                accessibilityLabel={t("Zobraziť príspevok")}
                                                                             >
                                                                                 {one_post.media[0].is_video ? (
                                                                                     <View 
                                                                                         className="thumbnail"
-                                                                                        accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                        accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: profile.username })}
                                                                                         style={{ width: 150, height: 150 }}
                                                                                     >
                                                                                         <Image
@@ -2228,7 +2231,7 @@ export default function ProfileScreen() {
                                                                                 ) : (
                                                                                     <View 
                                                                                         className="image"
-                                                                                        accessibilityLabel={`Príspevok užívateľa ${profile.username}`}
+                                                                                        accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: profile.username })}
                                                                                         style={{ width: 150, height: 150 }}
                                                                                     >
                                                                                         <Image
@@ -2263,7 +2266,7 @@ export default function ProfileScreen() {
                                                                 )}
 
                                                                 {profile.saved_posts?.length === 0 && logged_in_user && logged_in_user.id === profile.id && (
-                                                                    <Text className="no_saved_posts" style={styles.no_saved_posts}>Žiadne uložené príspevky.</Text>
+                                                                    <Text className="no_saved_posts" style={styles.no_saved_posts}>{t("Žiadne uložené príspevky.")}</Text>
                                                                 )}
                                                             </View>
                                                         </>
@@ -2306,7 +2309,7 @@ export default function ProfileScreen() {
                                                                             />
                                                                         </View>
 
-                                                                        <Text style={styles.sheet_text}>Nastavenia</Text>
+                                                                        <Text style={styles.sheet_text}>{t("Nastavenia")}</Text>
                                                                     </Pressable>
                                                                 )}
 
@@ -2338,7 +2341,7 @@ export default function ProfileScreen() {
                                                                                 { color: logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
                                                                             ]}
                                                                         >
-                                                                            Obmedziť
+                                                                            {t("Obmedziť")}
                                                                         </Text>
                                                                     </Pressable>
                                                                 )}
@@ -2364,7 +2367,7 @@ export default function ProfileScreen() {
                                                                             />
                                                                         </View>
 
-                                                                        <Text style={styles.sheet_text}>Nahlásiť</Text>
+                                                                        <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
                                                                     </Pressable>
                                                                 )}
 
@@ -2386,7 +2389,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
 
-                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                                                 </Pressable>
                                                             </View>
                                                         )}
@@ -2399,7 +2402,7 @@ export default function ProfileScreen() {
                                                                         { textAlign: "center" }
                                                                     ]}
                                                                 >
-                                                                    Naozaj chcete obmedziť tento účet?
+                                                                    {t("Naozaj chcete obmedziť tento účet?")}
                                                                 </Text>
 
                                                                 <Pressable
@@ -2420,7 +2423,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
 
-                                                                    <Text style={styles.sheet_text}>Obmedziť</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Obmedziť")}</Text>
                                                                 </Pressable>
 
                                                                 <Pressable
@@ -2441,7 +2444,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
 
-                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                                                 </Pressable>
                                                             </View>
                                                         )}
@@ -2466,7 +2469,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Spam</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Spam")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2487,7 +2490,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Obťažovanie</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2508,7 +2511,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Nenávistné prejavy</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2529,7 +2532,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Dezinformácie</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2550,7 +2553,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Explicitný obsah</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2571,7 +2574,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Iné</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Iné")}</Text>
                                                                 </Pressable>
                         
                                                                 <Pressable
@@ -2592,7 +2595,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
                         
-                                                                    <Text style={styles.sheet_text}>Späť</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Späť")}</Text>
                                                                 </Pressable>
                                                             </View>
                                                         )}
@@ -2627,7 +2630,7 @@ export default function ProfileScreen() {
                                                                         thumbColor={data_saving_mode ? GREEN_COLOR : RED_COLOR}
                                                                     />
 
-                                                                    <Text style={styles.sheet_text}>Šetrenie dát</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Šetrenie dát")}</Text>
                                                                 </View>
 
                                                                 <View 
@@ -2658,7 +2661,7 @@ export default function ProfileScreen() {
                                                                         thumbColor={private_account ? GREEN_COLOR : RED_COLOR}
                                                                     />
 
-                                                                    <Text style={styles.sheet_text}>Súkromný účet</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Súkromný účet")}</Text>
                                                                 </View>
 
                                                                 <View 
@@ -2689,7 +2692,7 @@ export default function ProfileScreen() {
                                                                         thumbColor={delete_profile_picture ? GREEN_COLOR : RED_COLOR}
                                                                     />
 
-                                                                    <Text style={styles.sheet_text}>Odstrániť profilový obrázok</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Odstrániť profilový obrázok")}</Text>
                                                                 </View>
 
                                                                 <View 
@@ -2720,7 +2723,7 @@ export default function ProfileScreen() {
                                                                         thumbColor={delete_account ? GREEN_COLOR : RED_COLOR}
                                                                     />
 
-                                                                    <Text style={styles.sheet_text}>Odstrániť účet</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Odstrániť účet")}</Text>
                                                                 </View>
 
                                                                 <Pressable
@@ -2741,7 +2744,7 @@ export default function ProfileScreen() {
                                                                         />
                                                                     </View>
 
-                                                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                                                 </Pressable>
                                                             </View>
                                                         )}
@@ -2756,7 +2759,7 @@ export default function ProfileScreen() {
                             <View className="profile_page not_found" style={styles.profile_page}>
                                 <View className="profile_container" style={styles.profile_container}>
                                     <View className="options_container" style={styles.options_container}>
-                                        <View className="back" accessibilityLabel="Späť na úvodnú stránku">
+                                        <View className="back" accessibilityLabel={t("Späť na úvodnú stránku")}>
                                             <Icon
                                                 icon_name="chevron-left"
                                                 // onPress={}
@@ -2783,7 +2786,7 @@ export default function ProfileScreen() {
                                                         </View>
 
                                                         <View className="name" style={styles.name}>
-                                                            <Text className="username" style={styles.profile_username}>Neexistujúci účet</Text>
+                                                            <Text className="username" style={styles.profile_username}>{t("Neexistujúci účet")}</Text>
                                                         </View>
                                                     </View>
 
@@ -2804,12 +2807,12 @@ export default function ProfileScreen() {
                                                     <View className="statistics" style={styles.statistics}>
                                                         <View className="followers" style={styles.followers}>
                                                             <Text className="amount" style={styles.followers_amount}>0</Text>
-                                                            <Text className="label" style={styles.followers_label}>sledujú</Text>
+                                                            <Text className="label" style={styles.followers_label}>{t("sledujú")}</Text>
                                                         </View>
 
                                                         <View className="following" style={styles.following}>
                                                             <Text className="amount" style={styles.following_amount}>0</Text>
-                                                            <Text className="label" style={styles.following_label}>sleduje</Text>
+                                                            <Text className="label" style={styles.following_label}>{t("sleduje")}</Text>
                                                         </View>
                                                     </View>
                                                 </View>
@@ -2818,7 +2821,7 @@ export default function ProfileScreen() {
                                                     <View className="badges" style={styles.badges}>
                                                         <View 
                                                             className="badge level blue" 
-                                                            accessibilityLabel="Level" 
+                                                            accessibilityLabel={t("Level")} 
                                                             style={styles.badge}
                                                         >
                                                             <FontAwesome6
@@ -2842,11 +2845,11 @@ export default function ProfileScreen() {
                                                             color={BLUE_COLOR}
                                                         />
 
-                                                        <Text style={styles.private_account_notice_text}>Tento účet je súkromný.</Text>
+                                                        <Text style={styles.private_account_notice_text}>{t("Tento účet je súkromný.")}</Text>
                                                     </View>
                                                 ) : (
                                                     <View className="posts_container" style={styles.posts_container}>
-                                                        <Text className="no_posts" style={styles.no_posts}>Zatiaľ žiadne príspevky.</Text>
+                                                        <Text className="no_posts" style={styles.no_posts}>{t("Zatiaľ žiadne príspevky.")}</Text>
                                                     </View>
                                                 )}
                                             </View>

@@ -11,6 +11,7 @@ import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DynamicImage } from "./DynamicImage"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
@@ -70,6 +71,8 @@ export const DynamicVideo = ({
     onStopControlsTimer,
     controls_timeout
 }:DynamicVideoProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [aspect_ratio, setAspectRatio] = useState<number>(16 / 9) // Stores The Aspect Ratio (16 / 9 By Default)
     const thumbnail_url:string = `${DOMAIN}/media/${one_post_media.thumbnail}` // Sets The Thumbnail URL
 
@@ -126,7 +129,7 @@ export const DynamicVideo = ({
                 }, 
 
                 (error) => {
-                    console.error("Nepodarilo sa zistiť veľkosť náhľadu videa:", error)
+                    console.error(t("Nepodarilo sa zistiť veľkosť náhľadu videa:"), error)
                 }
             )
         }
@@ -315,7 +318,7 @@ export const DynamicVideo = ({
             }
             
             catch {
-                console.error("Chyba pri zmene rýchlosti videa.")
+                console.error(t("Chyba pri zmene rýchlosti videa."))
             }
         }
 
@@ -381,7 +384,7 @@ export const DynamicVideo = ({
     const recordVideoWatchTime = async (post_media_id:number, watch_time:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                console.warn("Celkový čas pozerania nie je možné zaznamenať bez prihlásenia.") // Shows The Alert
+                console.warn(t("Celkový čas pozerania nie je možné zaznamenať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -405,7 +408,7 @@ export const DynamicVideo = ({
 
             // If The Response Isn't Success
             if(!updated_video_watch_time_response.ok) {
-                console.warn("Pri zaznamenávaní času pozerania videa došlo k chybe.") // Shows The Alert
+                console.warn(t("Pri zaznamenávaní času pozerania videa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -419,7 +422,7 @@ export const DynamicVideo = ({
         } 
         
         catch {
-            console.warn("Pri zaznamenávaní času pozerania videa došlo k chybe.") // Shows The Alert
+            console.warn(t("Pri zaznamenávaní času pozerania videa došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -775,7 +778,7 @@ export const DynamicVideo = ({
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Kvalita</Text>
+                                    <Text style={styles.sheet_text}>{t("Kvalita")}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -798,7 +801,7 @@ export const DynamicVideo = ({
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Rýchlosť</Text>
+                                    <Text style={styles.sheet_text}>{t("Rýchlosť")}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -819,7 +822,7 @@ export const DynamicVideo = ({
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                 </Pressable>
                             </View>
                         )}
@@ -883,7 +886,7 @@ export const DynamicVideo = ({
                                         pressed && styles.sheet_item_pressed
                                     ]}
                                 >
-                                    <Text style={styles.sheet_text}>480p (šetrenie dát)</Text>
+                                    <Text style={styles.sheet_text}>480p ({t("šetrenie dát")})</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -904,7 +907,7 @@ export const DynamicVideo = ({
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                 </Pressable>
                             </View>
                         )}
@@ -950,7 +953,7 @@ export const DynamicVideo = ({
                                         pressed && styles.sheet_item_pressed
                                     ]}
                                 >
-                                    <Text style={styles.sheet_text}>Normálna</Text>
+                                    <Text style={styles.sheet_text}>{t("Normálna")}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -985,7 +988,7 @@ export const DynamicVideo = ({
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                 </Pressable>
                             </View>
                         )}
@@ -999,28 +1002,6 @@ export const DynamicVideo = ({
 const styles = StyleSheet.create({
     video_container: {
         position: "relative",
-
-        // &:hover {
-        //     .controls {
-        //         display: flex;
-        //         opacity: 1;
-        //     }
-        // }
-
-        // &:fullscreen {
-        //     top: 0px !important;
-        //     left: 0px !important;
-        //     width: 100vw !important;
-        //     height: 100vh !important;
-        //     margin: 0px !important;
-        //     padding: 0px !important;
-
-        //     .controls {
-        //         .buttons {
-        //             padding: 0px calc(50px);
-        //         }
-        //     }
-        // }
     },
 
     play_pause_indicator: {

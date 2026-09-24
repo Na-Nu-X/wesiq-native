@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react"
+import { useState, useRef } from "react"
 import { Pressable, StyleSheet, Animated } from "react-native"
 import { BlurView } from "expo-blur"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"

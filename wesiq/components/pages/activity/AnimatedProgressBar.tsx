@@ -1,5 +1,4 @@
-import { SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import React, { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { Animated, StyleSheet } from "react-native"
 
 interface AnimatedProgressBarProps {

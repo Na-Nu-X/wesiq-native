@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TextInput, Pressable, Platform, Alert, Activity
 import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
+import { useTranslation } from "react-i18next"
 
 interface NominatimPlace {
     display_name:string,
@@ -19,6 +20,8 @@ interface LocationContainerProps {
 }
 
 export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate, onLongitudeUpdate }:LocationContainerProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [location_results, setLocationResults] = useState<NominatimPlace[]>([]) // Stores The Location Results
     const [is_location_valid, setIsLocationValid] = useState<boolean>(false) // Stores The Information If The Location Is Valid
     const [is_location_loading, setIsLocationLoading] = useState<boolean>(false) // Stores The Information If The Location Is Loading
@@ -68,7 +71,7 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
             })
 
             if(!location_response.ok) {
-                Alert.alert("Chyba", "Pri načítaní polohy došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri načítaní polohy došlo k chybe.")) // Shows The Alert
             }
     
             const data:NominatimPlace[] = await location_response.json() // Gets The Data
@@ -87,7 +90,7 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri načítaní polohy došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri načítaní polohy došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -109,7 +112,6 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
         const matching_location:NominatimPlace|null = data.find((one_place:NominatimPlace) => one_place.display_name === searched_text) || null // Gets The Matching Location If There is Any
 
         if(matching_location) {
-            console.log("MATCH")
             onLatitudeUpdate(Number(matching_location.lat)) // Sets The Latitude
             onLongitudeUpdate(Number(matching_location.lon)) // Sets The Longitude
             
@@ -117,7 +119,6 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
         }
 
         else {
-            console.log("NEMATCH")
             onLatitudeUpdate(null) // Deletes The Latitude
             onLongitudeUpdate(null) // Deletes The Longitude
 
@@ -160,9 +161,9 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
                 <TextInput
                     className="location"
                     textAlignVertical="top" 
-                    placeholder="Miesto" 
+                    placeholder={t("Miesto")} 
                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                    accessibilityLabel="Miesto" 
+                    accessibilityLabel={t("Miesto")} 
                     value={location}
                     onChangeText={(text) => handleSearchLocation(text)}
                     maxLength={255}

@@ -1,11 +1,8 @@
-import React, { useState, useRef } from "react"
+import { useState, useRef } from "react"
 import { StyleSheet, Pressable, Image, Animated, View } from "react-native"
 import { LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
 import { ImperativeRouter, useRouter } from "expo-router"
-
-import type { LoggedInUser } from "./LoginFormDialog"
-import type { User } from "./Feed"
 
 type IconProps = {
     user_id:number,

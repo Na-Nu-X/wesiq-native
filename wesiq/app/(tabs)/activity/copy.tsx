@@ -1,25 +1,16 @@
-import { useMemo, useState } from "react"
-import { View, StyleSheet, Pressable, Text, ScrollView, Image, TextInput } from "react-native"
+import { useState } from "react"
+import { View, StyleSheet, Text, ScrollView, TextInput } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import { SafeAreaView } from "react-native-safe-area-context"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import Banner from "@/components/Banner"
-import EditTrainingPlan from "@/components/pages/manage_training_plans/EditTrainingPlan"
-import ExerciseSelection from "@/components/pages/manage_training_plans/ExerciseSelection"
-import Animated, { SharedValue, useAnimatedStyle, useSharedValue } from "react-native-reanimated"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { DOMAIN } from "@/constants/general"
-import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import { SECONDARY_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { getMinimalistFormattedTime } from "@/utils/time"
-import { MAIN_WIDTH } from "@/constants/dimensions"
-import { FontAwesome6 } from "@expo/vector-icons"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
-import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
 
 export default function CopyTrainingPlanScreen() {
   const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User

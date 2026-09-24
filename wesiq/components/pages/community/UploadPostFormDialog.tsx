@@ -11,6 +11,7 @@ import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { PostsPreview } from "./PostsPreview"
 import { LocationContainer } from "./LocationContainer"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser, LoggedInUserResponse } from "@/components/LoginFormDialog"
 
@@ -79,6 +80,8 @@ export default function UploadPostFormDialog({
     onClose, 
     onCompressTasksLoad
 }:UploadPostFormDialogProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
@@ -170,7 +173,7 @@ export default function UploadPostFormDialog({
         Keyboard.dismiss() // Hides The Keyboard
         
         if(selected_files.length === 0) {
-            Alert.alert("Chyba", "Vyberte aspoň jednu fotku alebo video.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Vyberte aspoň jednu fotku alebo video.")) // Shows The Alert
             return
         }
 
@@ -271,11 +274,11 @@ export default function UploadPostFormDialog({
     // Function For Upload The Post
     const uploadPost = async (selected_files:any, thumbnail_files:any, post_details:PostDetails):Promise<void> => {
         setIsUploading(true) // Sets The Information That The Post Is Uploading
-        setButtonText("Overuje sa...") // Sets The Button Text
+        setButtonText(t("Overuje sa...")) // Sets The Button Text
     
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Príspevok nie je možné pridať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Príspevok nie je možné pridať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -310,7 +313,7 @@ export default function UploadPostFormDialog({
     
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
 
-            setButtonText("Nahráva sa... 0%") // Sets The Button Text
+            setButtonText(t("Nahráva sa...") + " 0%") // Sets The Button Text
 
             // Uploads The Post With Progress
             const upload_post_response:Response = await uploadPostWithProgress(
@@ -322,7 +325,7 @@ export default function UploadPostFormDialog({
                 },
 
                 form_data,
-                (progress) => {setButtonText(`Nahráva sa... ${progress}%`)} // Sets The Button Text
+                (progress) => {setButtonText(`${t("Nahráva sa...")} ${progress}%`)} // Sets The Button Text
             )
     
             const upload_post_data:UploadPostResponse = await upload_post_response.json() // Gets The Upload Post Data
@@ -333,16 +336,16 @@ export default function UploadPostFormDialog({
                 }
             }
              
-            else setButtonText("Skúste znovu") // Sets The Button Text
+            else setButtonText(t("Skúste znovu")) // Sets The Button Text
         }
         
         catch {
-            setButtonText("Skúste znovu") // Sets The Button Text
+            setButtonText(t("Skúste znovu")) // Sets The Button Text
         }
         
         finally {
             setIsUploading(false) // Sets The Information That The Post Isn't Uploading
-            setButtonText("Uverejniť príspevok") // Sets The Button Text
+            setButtonText(t("Uverejniť príspevok")) // Sets The Button Text
         }
     }
   
@@ -389,7 +392,7 @@ export default function UploadPostFormDialog({
                             <View style={styles.circle_decoration_after} />
 
                             <View style={styles.top}>
-                                <View className="back" accessibilityLabel="Zavrieť">
+                                <View className="back" accessibilityLabel={t("Zavrieť")}>
                                     <Icon
                                         icon_name="chevron-left"
                                         onPress={onClose}
@@ -416,9 +419,9 @@ export default function UploadPostFormDialog({
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                     textAlignVertical="top" 
-                                    placeholder="Popis príspevku" 
+                                    placeholder={t("Popis príspevku")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Popis príspevku" 
+                                    accessibilityLabel={t("Popis príspevku")} 
                                     value={description}
                                     onChangeText={setDescription}
                                     maxLength={MAX_DESCRIPTION_LENGTH}
@@ -433,7 +436,7 @@ export default function UploadPostFormDialog({
                                     <View className="settings" style={styles.settings}>
                                         <View 
                                             className="public_visibility" 
-                                            accessibilityLabel={public_visibility ? "Zapnúť viditeľnosť len pre sledovateľov" : "Vypnúť viditeľnosť len pre sledovateľov"}
+                                            accessibilityLabel={public_visibility ? t("Zapnúť viditeľnosť len pre sledovateľov") : t("Vypnúť viditeľnosť len pre sledovateľov")}
                                             style={styles.icon}
                                         >
                                             <Icon
@@ -444,7 +447,7 @@ export default function UploadPostFormDialog({
 
                                         <View 
                                             className="allow_comments" 
-                                            accessibilityLabel={allow_comments ? "Vypnúť komentáre" : "Zapnúť komentáre"}
+                                            accessibilityLabel={allow_comments ? t("Vypnúť komentáre") : t("Zapnúť komentáre")}
                                             style={styles.icon}
                                         >
                                             <Icon
@@ -455,7 +458,7 @@ export default function UploadPostFormDialog({
 
                                         <View 
                                             className="hide_likes" 
-                                            accessibilityLabel={allow_comments ? "Zobraziť počet označení páči sa mi to" : "Skryť počet označení páči sa mi to"}
+                                            accessibilityLabel={allow_comments ? t("Zobraziť počet označení páči sa mi to") : t("Skryť počet označení páči sa mi to")}
                                             style={styles.icon}
                                         >
                                             <Icon
@@ -496,17 +499,17 @@ export default function UploadPostFormDialog({
                                     onClose={() => setIsEmojiPickerOpen(false)}
 
                                     translation={{
-                                        smileys_emotion: "Smajlíky",
-                                        people_body: "Ľudia", 
-                                        recently_used: "Naposledy použité",
-                                        animals_nature: "Zvieratá",
-                                        food_drink: "Jedlo a nápoje",
-                                        activities: "Aktivity",
-                                        travel_places: "Cestovanie",
-                                        objects: "Predmety",
-                                        symbols: "Symboly",
-                                        flags: "Vlajky",
-                                        search: "Hľadať...",
+                                        smileys_emotion: t("Smajlíky"),
+                                        people_body: t("Ľudia"), 
+                                        recently_used: t("Naposledy použité"),
+                                        animals_nature: t("Zvieratá"),
+                                        food_drink: t("Jedlo a nápoje"),
+                                        activities: t("Aktivity"),
+                                        travel_places: t("Cestovanie"),
+                                        objects: t("Predmety"),
+                                        symbols: t("Symboly"),
+                                        flags: t("Vlajky"),
+                                        search: t("Hľadať..."),
                                     }}
                                 />
 

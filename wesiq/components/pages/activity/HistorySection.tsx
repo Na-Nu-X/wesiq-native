@@ -1,18 +1,13 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
 import { useEffect, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import IconButton from "@/components/IconButton"
-import Checkbox from "expo-checkbox"
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
-import Icon from "@/components/Icon"
-
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getFormattedDate, getMinimalistFormattedTime } from "@/utils/time"
+import { useTranslation } from "react-i18next"
 
 interface LoadedActivityHistoryResponse {
     success:boolean,
@@ -36,6 +31,8 @@ export interface Activity {
 }
 
 export default function HistorySection() {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [activity_history, setActivityHistory] = useState<Activity[]>([]) // Stores The Activity History
 
     // Function For Get The Activity History
@@ -56,7 +53,7 @@ export default function HistorySection() {
 
             // If The Response Isn't Success
             if(!loaded_activity_history_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní histórie zaznamenaných aktivít došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní histórie zaznamenaných aktivít došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -64,7 +61,7 @@ export default function HistorySection() {
 
             // If The Response Isn't Success
             if(!loaded_activity_history_data.success || !loaded_activity_history_data.activity_history) {
-                Alert.alert("Chyba", loaded_activity_history_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_activity_history_data.message) // Shows The Alert
                 return
             }
             
@@ -74,7 +71,7 @@ export default function HistorySection() {
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní histórie zaznamenaných aktivít došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní histórie zaznamenaných aktivít došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -108,7 +105,7 @@ export default function HistorySection() {
                                 color={BLUE_COLOR}
                             />
 
-                            <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : "Aktivita"}</Text>
+                            <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : t("Aktivita")}</Text>
 
                             <Text 
                                 className="elapsed_time" 

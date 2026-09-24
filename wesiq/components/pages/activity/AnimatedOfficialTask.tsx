@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { View, Text, StyleSheet, Animated } from "react-native"
 import { BLUE_COLOR, GREEN_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { OfficialTaskCheckbox } from "./OfficialTaskCheckbox"
+import { useTranslation } from "react-i18next"
 
 import type { OfficialTask } from "./TasksSection"
 
@@ -13,6 +14,8 @@ interface AnimatedOfficialTaskProps {
 const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Animated View
 
 export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const animation_value = useRef(new Animated.Value(official_task.progress_percentage || 0)).current // Stores The Animation Value
 
     useEffect(() => {
@@ -66,15 +69,15 @@ export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps
 
             <OfficialTaskCheckbox is_checked={official_task.is_completed} />
 
-            {official_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 30 minút aktivity.</Text>)}
-            {official_task.data === "1_hour_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 1h aktivity.</Text>)}
-            {official_task.data === "2_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 2h aktivity.</Text>)}
-            {official_task.data === "3_hours_activity" && (<Text className="title" style={styles.title}>Zaznamenaj 3h aktivity.</Text>)}
-            {official_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title}>Prekonaj týždenný priemer času aktivity.</Text>)}
-            {official_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title}>Dokonči aktivitu podľa tréningového plánu.</Text>)}
-            {official_task.data === "2_activities" && (<Text className="title" style={styles.title}>Zaznamenaj 2 aktivity.</Text>)}
-            {official_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>Splň všetky dnešné výzvy.</Text>)}
-            {official_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>Pridaj vlastnú úlohu.</Text>)}
+            {official_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 30 minút aktivity.")}</Text>)}
+            {official_task.data === "1_hour_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 1h aktivity.")}</Text>)}
+            {official_task.data === "2_hours_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 2h aktivity.")}</Text>)}
+            {official_task.data === "3_hours_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 3h aktivity.")}</Text>)}
+            {official_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title}>{t("Prekonaj týždenný priemer času aktivity.")}</Text>)}
+            {official_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title}>{t("Dokonči aktivitu podľa tréningového plánu.")}</Text>)}
+            {official_task.data === "2_activities" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 2 aktivity.")}</Text>)}
+            {official_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>{t("Splň všetky dnešné výzvy.")}</Text>)}
+            {official_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>{t("Pridaj vlastnú úlohu.")}</Text>)}
 
             <View className="xp" style={styles.xp}>
                 <Text 

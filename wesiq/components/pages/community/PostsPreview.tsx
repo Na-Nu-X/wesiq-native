@@ -5,7 +5,7 @@ import SelectPosts from "@/components/pages/community/SelectPosts"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import * as ImagePicker from "expo-image-picker"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-import { useSharedValue, useAnimatedStyle, withSpring, runOnJS, SharedValue } from "react-native-reanimated"
+import { useSharedValue, withSpring, runOnJS, SharedValue } from "react-native-reanimated"
 import { PostPreviewItem } from "./PostPreviewItem"
 
 import type { SelectedFile } from "./UploadPostFormDialog"

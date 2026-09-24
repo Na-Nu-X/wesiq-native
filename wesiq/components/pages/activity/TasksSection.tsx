@@ -11,6 +11,7 @@ import { API_URL } from "@/constants/general"
 import { BasicResponse } from "@/components/Feed"
 import { AnimatedCustomTask } from "./AnimatedCustomTask"
 import { AnimatedOfficialTask } from "./AnimatedOfficialTask"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -58,6 +59,8 @@ interface TasksSectionProps {
 }
 
 export default function TasksSection({ elapsed_time, average_activity_time, onOfficialTasksUpdate, official_tasks, onCompleteOfficialTask }:TasksSectionProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [official_tasks_remaining_hours, setOfficialTasksRemainingHours] = useState<number>(0) // Stores The Official Tasks Remaining Hours
     const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
@@ -133,7 +136,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!official_tasks_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní oficiálnych úloh došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní oficiálnych úloh došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -141,7 +144,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!official_tasks_data.success) {
-                Alert.alert("Chyba", official_tasks_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), official_tasks_data.message) // Shows The Alert
                 return
             }
             
@@ -150,7 +153,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         }
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní oficiálnych úloh došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní oficiálnych úloh došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -321,7 +324,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!custom_tasks_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní vlastných úloh došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní vlastných úloh došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -329,7 +332,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!custom_tasks_data.success) {
-                Alert.alert("Chyba", custom_tasks_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), custom_tasks_data.message) // Shows The Alert
                 return
             }
             
@@ -339,7 +342,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní vlastných úloh došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní vlastných úloh došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -352,7 +355,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
     const toggleCompleteCustomTask = async (task_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Dokončenie úlohy nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Dokončenie úlohy nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -375,7 +378,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!toggle_complete_custom_task_response.ok) {
-                Alert.alert("Chyba", "Pri zmene stavu úlohy došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), "Pri zmene stavu úlohy došlo k chybe.") // Shows The Alert
                 return
             }
 
@@ -383,7 +386,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!toggle_complete_custom_task_data.success) {
-                Alert.alert("Chyba", toggle_complete_custom_task_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_complete_custom_task_data.message) // Shows The Alert
                 return
             }
             
@@ -404,7 +407,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri zmene stavu úlohy došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene stavu úlohy došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -412,12 +415,12 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
     const addCustomTask = async (title:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Úlohu nie je možné pridať bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Úlohu nie je možné pridať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
             if(!title.trim()) {
-                Alert.alert("Chyba", "Názov úlohy nesmie byť prázdny.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Názov úlohy nesmie byť prázdny.")) // Shows The Alert
                 return
             }
 
@@ -440,7 +443,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!new_custom_task_response.ok) {
-                Alert.alert("Chyba", "Pri pridávaní úlohy došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri pridávaní úlohy došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -448,7 +451,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!new_custom_task_data.success || !new_custom_task_data.custom_task) {
-                Alert.alert("Chyba", new_custom_task_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), new_custom_task_data.message) // Shows The Alert
                 return
             }
             
@@ -467,7 +470,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         }
         
         catch {
-            Alert.alert("Chyba", "Pri pridávaní úlohy došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri pridávaní úlohy došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -475,7 +478,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
     const deleteAllCompletedCustomTasks = async (completed_custom_tasks:CustomTask[]):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Úlohy nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Úlohy nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -500,7 +503,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!deleted_custom_tasks_response.ok) {
-                Alert.alert("Chyba", "Pri odstraňovaní úloh došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní úloh došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -508,7 +511,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!deleted_custom_tasks_data.success) {
-                Alert.alert("Chyba", deleted_custom_tasks_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), deleted_custom_tasks_data.message) // Shows The Alert
                 return
             }
             
@@ -519,7 +522,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri odstraňovaní úloh došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní úloh došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -527,7 +530,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
     const deleteCustomTask = async (custom_task_id:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Úlohu nie je možné odstrániť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Úlohu nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -550,7 +553,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!deleted_custom_task_response.ok) {
-                Alert.alert("Chyba", "Pri odstraňovaní úlohy došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní úlohy došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -558,7 +561,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
 
             // If The Response Isn't Success
             if(!deleted_custom_task_data.success) {
-                Alert.alert("Chyba", deleted_custom_task_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), deleted_custom_task_data.message) // Shows The Alert
                 return
             }
             
@@ -571,7 +574,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri odstraňovaní úlohy došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní úlohy došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -609,7 +612,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                 { color: SECONDARY_COLOR },
                             ]}
                         >
-                            Dnešné&nbsp;výzvy
+                            {t("Dnešné výzvy")}
                         </Text>
 
                         {logged_in_user && (
@@ -622,9 +625,9 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                         color={LIGHT_BLUE_COLOR}
                                     />
 
-                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>Ostáva</Text>
+                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("Ostáva")}</Text>
                                     <Text style={{ color: LIGHT_BLUE_COLOR }}>{official_tasks_remaining_hours}</Text>
-                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>hodín.</Text>
+                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("hodín.")}</Text>
                                 </View>
 
                                 <View className="tasks" style={styles.official_tasks_container}>
@@ -646,12 +649,12 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                         { color: SECONDARY_COLOR },
                                     ]}
                                 >
-                                    Pre prístup k denným výzvam sa musíte
+                                    {t("Pre prístup k denným výzvam sa musíte")}
                                 </Text>
 
                                 <Pressable 
                                     // onPress={() => setActiveForm("login_form")}
-                                    accessibilityLabel="Prihlásiť sa"
+                                    accessibilityLabel={t("Prihlásiť sa")}
                                 >
                                     {({ pressed }) => (
                                         <Text
@@ -660,7 +663,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                                 pressed && { textDecorationLine: "underline" } 
                                             ]}
                                         >
-                                            prihlásiť.
+                                            {t("prihlásiť.")}
                                         </Text>
                                     )}
                                 </Pressable>
@@ -677,7 +680,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                 {color: SECONDARY_COLOR},
                             ]}
                         >
-                            Moje&nbsp;úlohy
+                            {t("Moje úlohy")}
                         </Text>
 
                         <View className="info" style={styles.info}>
@@ -689,7 +692,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                             pressed && { textDecorationLine: "underline" } 
                                         ]}
                                     >
-                                        Vymazať dokončené
+                                        {t("Vymazať dokončené")}
                                     </Text>
                                 )}
                             </Pressable>
@@ -711,9 +714,9 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                     autoCapitalize="none"
                                     autoCorrect={false}
                                     textAlignVertical="top" 
-                                    placeholder="Pridať úlohu" 
+                                    placeholder={t("Pridať úlohu")} 
                                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel="Pridať úlohu" 
+                                    accessibilityLabel={t("Pridať úlohu")} 
                                     value={new_task_title}
                                     onChangeText={setNewTaskTitle}
                                     maxLength={100}
@@ -773,7 +776,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Vymazať</Text>
+                                    <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -794,7 +797,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                                         />
                                     </View>
 
-                                    <Text style={styles.sheet_text}>Zavrieť</Text>
+                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
                                 </Pressable>
                             </View>
                         ) : null}

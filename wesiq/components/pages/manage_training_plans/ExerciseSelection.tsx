@@ -8,8 +8,9 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { ExerciseItem } from "./ExerciseItem"
-import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -39,6 +40,8 @@ type ExerciseSelectionProps = {
 }
 
 export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLocation }:ExerciseSelectionProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [exercises, setExercises] = useState<Exercise[]>([]) // Stores The Exercises
@@ -165,7 +168,7 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
 
             // If The Response Isn't Success
             if(!loaded_exercises_response.ok) {
-                Alert.alert("Chyba", "Pri získavaní cvikov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní cvikov došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -173,7 +176,7 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
 
             // If The Response Isn't Success
             if(!loaded_exercises_data.success) {
-                Alert.alert("Chyba", loaded_exercises_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), loaded_exercises_data.message) // Shows The Alert
                 return
             }
             
@@ -191,7 +194,7 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
         } 
         
         catch {
-            Alert.alert("Chyba", "Pri získavaní cvikov došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní cvikov došlo k chybe.")) // Shows The Alert
         } 
         
         finally {
@@ -292,9 +295,9 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                 <TextInput
                     className="search_bar"
                     textAlignVertical="top" 
-                    placeholder="Nájsť cvik" 
+                    placeholder={t("Nájsť cvik")} 
                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                    accessibilityLabel="Nájsť cvik" 
+                    accessibilityLabel={t("Nájsť cvik")} 
                     value={searched_text}
                     onChangeText={searchExercises}
 

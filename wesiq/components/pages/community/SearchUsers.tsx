@@ -7,6 +7,7 @@ import { API_URL, DOMAIN } from "@/constants/general"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
@@ -45,6 +46,8 @@ interface SearchedUsersResponse {
 }
 
 export default function SearchUsers() {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [first_loaded_users, setFirstLoadedUsers] = useState<loadedUser[]>([]) // Stores The First Loaded Users
     const [displayed_users, setDisplayedUsers] = useState<loadedUser[]>(first_loaded_users) // Stores The Displayed Users
@@ -108,7 +111,7 @@ export default function SearchUsers() {
             }
             
             catch {
-                Alert.alert("Chyba", "Pri načítavaní užívateľov došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri načítavaní užívateľov došlo k chybe.")) // Shows The Alert
                 return
             }
         }
@@ -151,7 +154,7 @@ export default function SearchUsers() {
             } 
             
             catch {
-                console.error("Pri načítavaní užívateľov došlo k chybe.")
+                console.error(t("Pri načítavaní užívateľov došlo k chybe."))
                 return
             }
         }
@@ -167,7 +170,7 @@ export default function SearchUsers() {
         }
         
         catch {
-            console.error("Pri ukladaní histórie užívateľov došlo k chybe.")
+            console.error(t("Pri ukladaní histórie užívateľov došlo k chybe."))
             return
         }
     }
@@ -185,7 +188,7 @@ export default function SearchUsers() {
                 key={one_loaded_user.id}
                 // onPress={handleGoToProfile}
                 accessibilityRole="button"
-                accessibilityLabel="Zobraziť užívateľa" 
+                accessibilityLabel={t("Zobraziť užívateľa")} 
                 className="one_user"
                 style={styles.one_user}
             >
@@ -210,7 +213,7 @@ export default function SearchUsers() {
                 <Text className="username" style={styles.username}>{one_loaded_user.username}</Text>
                 <Text className="full_name" style={styles.full_name}>{one_loaded_user.first_name} {one_loaded_user.last_name}</Text>
 
-                <View className="followers_container" accessibilityLabel="Počet sledovateľov..." style={styles.followers_container}>
+                <View className="followers_container" accessibilityLabel={t("Počet sledovateľov...")} style={styles.followers_container}>
                     <Text className="followers" style={styles.followers}>{one_loaded_user.followers}</Text>
                     
                     <FontAwesome6
@@ -283,7 +286,7 @@ export default function SearchUsers() {
                 } 
                 
                 catch {
-                    console.error("Pri hľadaní užívateľov došlo k chybe.")
+                    console.error(t("Pri hľadaní užívateľov došlo k chybe."))
                     return
                 } 
                 
@@ -316,7 +319,7 @@ export default function SearchUsers() {
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert("Chyba", "Sledovanie nie je možné zmeniť bez prihlásenia.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Sledovanie nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
                 return
             }
 
@@ -339,7 +342,7 @@ export default function SearchUsers() {
 
             // If The Response Isn't Success
             if(!toggle_follow_response.ok) {
-                Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -347,7 +350,7 @@ export default function SearchUsers() {
 
             // If The Response Isn't Success
             if(!toggle_follow_data.success) {
-                Alert.alert("Chyba", toggle_follow_data.message) // Shows The Alert
+                Alert.alert(t("Chyba"), toggle_follow_data.message) // Shows The Alert
                 return
             }
             
@@ -366,12 +369,12 @@ export default function SearchUsers() {
                     return one_user // Returns The Unchanged Post
                 }))
 
-                Alert.alert("Úspech", toggle_follow_data.message) // Shows The Alert
+                Alert.alert(t("Úspech"), toggle_follow_data.message) // Shows The Alert
             }
         }
 
         catch {
-            Alert.alert("Chyba", "Pri zmene sledovania došlo k chybe.") // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene sledovania došlo k chybe.")) // Shows The Alert
         }
     }
     
@@ -389,9 +392,9 @@ export default function SearchUsers() {
                 <TextInput
                     className="search_bar"
                     textAlignVertical="top" 
-                    placeholder="Nájsť užívateľa" 
+                    placeholder={t("Nájsť užívateľa")} 
                     placeholderTextColor={LIGHT_BLUE_COLOR}
-                    accessibilityLabel="Nájsť užívateľa" 
+                    accessibilityLabel={t("Nájsť užívateľa")} 
                     value={searched_text}
                     onChangeText={getSearchedUsers}
 
@@ -426,12 +429,14 @@ export default function SearchUsers() {
 
 // Function For Get The Follow Button Properties
 export const getFollowButtonProperties = (private_account:boolean, has_follow:boolean, has_pending_follow_request:boolean) => {
+    const { t } = useTranslation() // Initializes The Translations
+    
     let action:string = "follow" // Stores The Action
-    let text:string = "Začať sledovať" // Stores The Text
+    let text:string = t("Začať sledovať") // Stores The Text
 
     if(!has_follow && !has_pending_follow_request && !private_account) {
         action = "follow"
-        text = "Začať sledovať"
+        text = t("Začať sledovať")
     } 
     
     else if(has_follow) {
@@ -441,12 +446,12 @@ export const getFollowButtonProperties = (private_account:boolean, has_follow:bo
     
     else if(!has_pending_follow_request && private_account) {
         action = "send_follow_request"
-        text = "Začať sledovať"
+        text = t("Začať sledovať")
     } 
     
     else if(has_pending_follow_request) {
         action = "cancel_follow_request"
-        text = "Zrušiť žiadosť"
+        text = t("Zrušiť žiadosť")
     }
 
     return { action, text }

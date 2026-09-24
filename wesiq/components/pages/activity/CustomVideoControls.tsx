@@ -1,12 +1,13 @@
 import { RefObject, useEffect, useRef, useState } from "react"
 import { View, StyleSheet, Text, LayoutChangeEvent, GestureResponderEvent, PanResponder, PanResponderInstance } from "react-native"
 import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR } from "@/constants/colors"
-import { BIG_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
+import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedTime } from "@/utils/time"
 import Slider from "@react-native-community/slider"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { Video } from "expo-av"
+import { useTranslation } from "react-i18next"
 
 import type { Media } from "@/components/Feed"
 import { DOMAIN } from "@/constants/general"
@@ -78,6 +79,8 @@ export const CustomVideoControls = ({
     onScrubberPositionUpdate,
     scrubber_position
 }:CustomVideoControlsProps) => {
+    const { t } = useTranslation() // Initializes The Translations
+
     const [scrubber_progress, setScrubberProgress] = useState<number>(0) // Stores The Scrubber Progress
     
     const [scrubber_time, setScrubberTime] = useState<number>(0) // Stores The Scrubber Time
@@ -179,7 +182,7 @@ export const CustomVideoControls = ({
         } 
         
         catch {
-            console.error("Pri získavaní náhľadov pre video došlo k chybe.")
+            console.error(t("Pri získavaní náhľadov pre video došlo k chybe."))
         } 
     }
 
@@ -234,7 +237,7 @@ export const CustomVideoControls = ({
             <View className="buttons" style={styles.buttons}>
                 <View 
                     className="play_pause" 
-                    accessibilityLabel={playing_video === one_post_media.id ? "Pozastaviť..." : "Prehrať..."}
+                    accessibilityLabel={playing_video === one_post_media.id ? t("Pozastaviť...") : t("Prehrať...")}
                     style={styles.play_pause}
                 >
                     <Icon
@@ -248,7 +251,7 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="step_back" 
-                    accessibilityLabel="O 5 sekúnd späť..."
+                    accessibilityLabel={t("O 5 sekúnd späť...")}
                 >
                     <Icon
                         icon_name="arrow-rotate-left"
@@ -261,7 +264,7 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="step_further" 
-                    accessibilityLabel="O 5 sekúnd ďalej..."
+                    accessibilityLabel={t("O 5 sekúnd ďalej...")}
                 >
                     <Icon
                         icon_name="arrow-rotate-right"
@@ -355,7 +358,7 @@ export const CustomVideoControls = ({
 
                             <View 
                                 className="mute_unmute" 
-                                accessibilityLabel="Hlasitosť..." 
+                                accessibilityLabel={t("Hlasitosť...")} 
                                 style={styles.mute_unmute}
                             >
                                 <Icon
@@ -371,7 +374,11 @@ export const CustomVideoControls = ({
 
                     {one_post_media.is_muted && (
                         <View className="volume_container">
-                            <View className="muted" accessibilityLabel="Video nemá zvuk" style={styles.muted}>
+                            <View 
+                                className="muted" 
+                                accessibilityLabel={t("Video nemá zvuk")} 
+                                style={styles.muted}
+                            >
                                 <FontAwesome6
                                     name="volume-xmark"
                                     color={"#999999"}
@@ -383,7 +390,7 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="show_video_settings_button" 
-                    accessibilityLabel="Nastavenia..."
+                    accessibilityLabel={t("Nastavenia...")}
                     style={styles.show_video_settings_button}
                 >
                     <Icon
@@ -397,7 +404,7 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="fullscreen" 
-                    accessibilityLabel="Rozstiahnuť..."
+                    accessibilityLabel={t("Rozstiahnuť...")}
                     style={styles.fullscreen}
                 >
                     <Icon
