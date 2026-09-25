@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, Image, Platform, Alert, ActivityIndicator, Pres
 import { MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import * as ImagePicker from "expo-image-picker"
-import { ResizeMode, Video } from "expo-av"
+// import { ResizeMode, Video } from "expo-av"
 import { FontAwesome6 } from "@expo/vector-icons"
 import Icon from "@/components/Icon"
 import { BlurView } from "expo-blur"
@@ -282,7 +282,7 @@ export const PostPreviewItem = ({
             {is_video ? (
                 <>  
                     {/* Video */}
-                    {selected_file.thumbnail_filename && thumbnail_url ? (
+                    {/* {selected_file.thumbnail_filename && thumbnail_url ? (
                         <Image 
                             source={{ uri: thumbnail_url }} 
                             style={StyleSheet.absoluteFill} 
@@ -298,7 +298,7 @@ export const PostPreviewItem = ({
                             style={{ width: "100%", height: "100%" }}
                             // filter: blur(2px);
                         />
-                    )}
+                    )} */}
 
                     {/* Checks The Video Size */}
                     {selected_file.fileSize && selected_file.fileSize > MAX_VIDEO_SIZE && (

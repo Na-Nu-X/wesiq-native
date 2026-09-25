@@ -2,6 +2,7 @@ import i18n from "i18next"
 import { initReactI18next } from "react-i18next"
 import * as Localization from "expo-localization"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { useTranslation } from "react-i18next"
 
 import en_translations from "./locales/en.json"
 import sk_translations from "./locales/sk.json"
@@ -28,21 +29,22 @@ i18n.use(initReactI18next).init({
         pt_BR: { translation: pt_BR_translations }
     },
 
-    lng: "es", 
-    // lng: Localization.getLocales()[0]?.languageCode ?? "en", 
+    lng: Localization.getLocales()[0]?.languageCode ?? "en", 
     fallbackLng: "en",
     interpolation: { escapeValue: false }
 })
 
 // Function For Load The Saved Language
 const loadSavedLanguage = async ():Promise<void> => {
+    const { t } = useTranslation() // Initializes The Translations
+
     try {
-        const saved_language = await AsyncStorage.getItem("app_language")
+        const saved_language:string|null = await AsyncStorage.getItem("app_language")
         if(saved_language) i18n.changeLanguage(saved_language)
     }
     
     catch {
-        console.error("Pri načítaní jazyka došlo k chybe.")
+        console.error(t("Pri načítaní jazyka došlo k chybe."))
     }
 }
 

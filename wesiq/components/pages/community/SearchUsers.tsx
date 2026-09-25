@@ -45,9 +45,9 @@ interface SearchedUsersResponse {
     message:string
 }
 
-export default function SearchUsers() {
-    const { t } = useTranslation() // Initializes The Translations
+const { t } = useTranslation() // Initializes The Translations
 
+export default function SearchUsers() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [first_loaded_users, setFirstLoadedUsers] = useState<loadedUser[]>([]) // Stores The First Loaded Users
     const [displayed_users, setDisplayedUsers] = useState<loadedUser[]>(first_loaded_users) // Stores The Displayed Users
@@ -429,8 +429,6 @@ export default function SearchUsers() {
 
 // Function For Get The Follow Button Properties
 export const getFollowButtonProperties = (private_account:boolean, has_follow:boolean, has_pending_follow_request:boolean) => {
-    const { t } = useTranslation() // Initializes The Translations
-    
     let action:string = "follow" // Stores The Action
     let text:string = t("Začať sledovať") // Stores The Text
 

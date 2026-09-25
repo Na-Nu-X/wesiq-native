@@ -1026,7 +1026,7 @@ export const PostContainer = ({
                                 </View>
                             )}
 
-                            {one_post_media.is_video && (
+                            {/* {one_post_media.is_video && (
                                 <DynamicVideo 
                                     logged_in_user={logged_in_user}
                                     one_post={post}
@@ -1053,7 +1053,7 @@ export const PostContainer = ({
                                     onStopControlsTimer={stopControlsTimer}
                                     controls_timeout={controls_timeout}
                                 />
-                            )}
+                            )} */}
                         </View>
                     ))}
 
