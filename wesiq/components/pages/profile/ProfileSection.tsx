@@ -13,6 +13,7 @@ import BadgesContainer from "./BadgesContainer"
 import { getFollowButtonProperties } from "../community/SearchUsers"
 import { FollowersDialog } from "./FollowersDialog"
 import { FollowingDialog } from "./FollowingDialog"
+import { FollowRequestsDialog } from "./FollowRequestsDialog"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
@@ -24,7 +25,8 @@ type ProfileSectionProps = {
     is_found:boolean,
     onProfileUpdate:(profile:Profile|null) => void,
     profile:Profile|null,
-    active_section_direction:"forward"|"back"
+    active_section_direction:"forward"|"back",
+    onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void
 }
 
 export default function ProfileSection({ 
@@ -32,12 +34,14 @@ export default function ProfileSection({
     is_found,
     onProfileUpdate,
     profile,
-    active_section_direction
+    active_section_direction,
+    onLoggedInUserUpdate
 }:ProfileSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
     const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
+    const [is_follow_requests_dialog_open, setIsFollowRequestsDialogOpen] = useState<boolean>(false) // Stores The Information If The Follow Requests Dialog Is Open
 
     const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
     const [grid_select_direction, setGridSelectDirection] = useState<"forward"|"back">("forward") // Stores The Grid Select Direction
@@ -277,68 +281,25 @@ export default function ProfileSection({
                         </View>
 
                         {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && (
-                            <View className="show_follow_requests" style={styles.show_follow_requests}>
-                                <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
+                            <>
+                                <View className="show_follow_requests" style={styles.show_follow_requests}>
+                                    <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
 
-                                <Icon
-                                    icon_name="bell"
-                                    // onPress={}
-                                    size={25}
-                                    is_regular={true}
+                                    <Icon
+                                        icon_name="bell"
+                                        onPress={() => setIsFollowRequestsDialogOpen(true)}
+                                        size={25}
+                                        is_regular={true}
+                                    />
+                                </View>
+
+                                <FollowRequestsDialog
+                                    visible={is_follow_requests_dialog_open}
+                                    onClose={() => setIsFollowRequestsDialogOpen(false)}
+                                    logged_in_user={logged_in_user}
+                                    onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => onLoggedInUserUpdate(logged_in_user)}
                                 />
-                            </View>
-
-                            // <dialog class="follow_requests_dialog">
-                            //     <div class="all_follow_requests">
-                            //         <h2>{% translate "Žiadosti o sledovanie" %} (<span class="follow_requests_amount">{{ logged_in_user.follow_requests.count|default:0 }}</span>)</h2>
-
-                            //         <a class="back" href="#" title="{% translate 'Zavrieť' %}" aria-label="{% translate 'Zavrieť' %}" target="_self"><i class="fa-solid fa-chevron-left"></i></a> <!-- https://fontawesome.com/icons/chevron-left -->
-
-                            //         <p 
-                            //             class="
-                            //                 no_follow_requests
-
-                            //                 {% if logged_in_user.follow_requests.count > 0 %}
-                            //                     hidden
-
-                            //                 {% endif %}
-                            //             "
-                            //         >
-                            //             {% translate "Žiadne žiadosti o sledovanie." %}
-                            //         </p>
-
-                            //         {% for one_follow_request in logged_in_user.follow_requests %}
-                            //             <div class="one_follow_request" data-id="{{ one_follow_request.id }}">
-                            //                 <a href="{% url 'profile_url' one_follow_request.from_user.username %}" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
-                            //                     <img 
-                            //                         class="profile_picture skeleton_loading" 
-                            //                         src="
-                            //                             {% if one_follow_request.from_user.profile_picture_name %}
-                            //                                 /../media/images/{{ one_follow_request.from_user.id }}/{{ one_follow_request.from_user.profile_picture_name }}
-
-                            //                             {% else %}
-                            //                                 {% static 'images/profile_picture.png' %} {% comment %} https://www.flaticon.com/free-icon/user_3177440 {% endcomment %}
-                                                        
-                            //                             {% endif %}
-                            //                         "
-                            //                         alt=""
-                            //                     >
-                            //                 </a>
-
-                            //                 <p class="username">{{ one_follow_request.from_user.username }}</p>
-
-                            //                 <button class="approve" title="{% translate 'Schváliť' %}" aria-label="{% translate 'Schváliť' %}">
-                            //                     <i class="fa-solid fa-check"></i> <!-- https://fontawesome.com/icons/check -->
-                            //                 </button>
-                                            
-                            //                 <button class="reject" title="{% translate 'Zamietnuť' %}" aria-label="{% translate 'Zamietnuť' %}">
-                            //                     <i class="fa-solid fa-xmark"></i> <!-- https://fontawesome.com/icons/xmark -->
-                            //                 </button>
-                            //             </div>
-                                    
-                            //         {% endfor %}
-                            //     </div>
-                            // </dialog>
+                            </>
                         )}
 
                         {logged_in_user && logged_in_user.id !== profile.id && (

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect } from "react"
 import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Animated, Easing, Platform, Keyboard, Alert } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
@@ -23,12 +23,20 @@ export interface LoggedInUser {
     private_account:boolean,
 
     follow_requests:{
+        id:number,
+
         from_user:{
+            id:number,
             first_name:string,
             last_name:string,
             username:string,
             profile_picture_name:string|null,
-            private_account:boolean
+            private_account:boolean,
+
+            subscription:{
+                plan:string,
+                is_active:boolean
+            }|null
         },
 
         status:string,

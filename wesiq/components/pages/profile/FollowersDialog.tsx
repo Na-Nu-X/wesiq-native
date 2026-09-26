@@ -59,7 +59,7 @@ export const FollowersDialog = ({
                 return
             }
 
-            const remove_follower_data:BasicResponse = await remove_follower_response.json() // Gets The Toggle Post Like Data
+            const remove_follower_data:BasicResponse = await remove_follower_response.json() // Gets The Remove Follower Data
 
             // If The Response Isn't Success
             if(!remove_follower_data.success) {

@@ -507,6 +507,7 @@ export default function ProfileScreen() {
                                                 onProfileUpdate={(profile:Profile|null) => setProfile(profile)}
                                                 profile={profile}
                                                 active_section_direction={active_section_direction}
+                                                onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                             />
                                         )}
 
@@ -1009,6 +1010,7 @@ export default function ProfileScreen() {
                                             onProfileUpdate={(profile:Profile|null) => setProfile(profile)}
                                             profile={profile}
                                             active_section_direction={active_section_direction}
+                                            onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                         />
                                     </View>
                                 </View>
