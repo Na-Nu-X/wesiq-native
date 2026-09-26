@@ -51,11 +51,17 @@ export interface Profile {
 
     followers:{
         from_user:{
+            id:number,
             first_name:string,
             last_name:string,
             username:string,
             profile_picture_name:string|null,
-            private_account:boolean
+            private_account:boolean,
+
+            subscription:{
+                plan:string,
+                is_active:boolean
+            }|null
         },
 
         status:string,
@@ -63,12 +69,21 @@ export interface Profile {
     }[],
 
     following:{
-        from_user:{
+        to_user:{
+            id:number,
             first_name:string,
             last_name:string,
             username:string,
             profile_picture_name:string|null,
-            private_account:boolean
+            private_account:boolean,
+
+            subscription:{
+                plan:string,
+                is_active:boolean
+            }|null,
+
+            has_follow:boolean,
+            has_pending_follow_request:boolean,
         },
 
         status:string,
@@ -239,7 +254,6 @@ export default function ProfileScreen() {
             
             else {
                 console.log(profile_data)
-
                 setIsFound(profile_data.is_found || false) // Sets The Information If The User Was Found
                 setProfile(profile_data.user) // Sets The Profile
                 if(profile_data.user.bio.trim()) setBio(profile_data.user.bio) // Sets The Bio

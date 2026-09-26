@@ -10,14 +10,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import Animated, { SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight, useAnimatedStyle, Easing, withTiming } from "react-native-reanimated"
 import { FontAwesome6 } from "@expo/vector-icons"
 import BadgesContainer from "./BadgesContainer"
+import { getFollowButtonProperties } from "../community/SearchUsers"
+import { FollowersDialog } from "./FollowersDialog"
+import { FollowingDialog } from "./FollowingDialog"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
 import type { BasicResponse } from "@/components/Feed"
 import type { BioLink } from "@/app/(tabs)/profile/[username]"
-import { getFollowButtonProperties } from "../community/SearchUsers"
-import { FollowersDialog } from "./FollowersDialog"
-import { FollowingDialog } from "./FollowingDialog"
 
 type ProfileSectionProps = {
     logged_in_user:LoggedInUser|null,
@@ -35,6 +35,9 @@ export default function ProfileSection({
     active_section_direction
 }:ProfileSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
+
+    const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
+    const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
 
     const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
     const [grid_select_direction, setGridSelectDirection] = useState<"forward"|"back">("forward") // Stores The Grid Select Direction
@@ -233,22 +236,38 @@ export default function ProfileSection({
                 <View className="middle">
                     <View className="follow_container" style={styles.follow_container}>
                         <View className="statistics" style={styles.statistics}>
-                            <View className="followers" style={styles.followers}>
+                            <Pressable 
+                                className="followers" 
+                                onPress={() => setIsFollowersDialogOpen(true)}
+                                style={styles.followers}
+                            >
                                 <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
                                 <Text className="label" style={styles.followers_label}>{t("sledujú")}</Text>
-                            </View>
+                            </Pressable>
 
                             <FollowersDialog 
-                            
+                                visible={is_followers_dialog_open}
+                                onClose={() => setIsFollowersDialogOpen(false)}
+                                profile={profile}
+                                logged_in_user={logged_in_user}
+                                onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
                             />
 
-                            <View className="following" style={styles.following}>
+                            <Pressable 
+                                className="following" 
+                                onPress={() => setIsFollowingDialogOpen(true)}
+                                style={styles.following}
+                            >
                                 <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
                                 <Text className="label" style={styles.following_label}>{t("sleduje")}</Text>
-                            </View>
+                            </Pressable>
 
                             <FollowingDialog 
-                            
+                                visible={is_following_dialog_open}
+                                onClose={() => setIsFollowingDialogOpen(false)}
+                                profile={profile}
+                                logged_in_user={logged_in_user}
+                                onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
                             />
 
                             <View className="posts">
@@ -361,7 +380,7 @@ export default function ProfileSection({
                                         position: "absolute",
                                         top: 0,
                                         bottom: 0,
-                                        width: "31.5%",
+                                        width: "32%",
                                         backgroundColor: transparentize(BLUE_COLOR, 0.8),
                                         borderRadius: SMALL_BORDER_RADIUS,
                                     },
@@ -991,119 +1010,6 @@ const styles = StyleSheet.create({
         color: BLUE_COLOR,
     },
 
-    // .statistics .followers_dialog,
-    // .statistics .following_dialog,
-    // .follow_requests_dialog {
-    //     &::backdrop {
-    //         background-color: transparentize($main-color, 0.5);
-    //         backdrop-filter: blur(5px);
-    //     }
-
-    //     .all_followers,
-    //     .all_followings,
-    //     .all_follow_requests {
-    //         @include position_center($position: fixed);
-    //         @include scrollbar;
-    //         display: flex;
-    //         flex-direction: column;
-    //         gap: 10px;
-    //         max-width: $secondary-width;
-    //         width: 100%;
-    //         padding: 30px 50px 50px;
-    //         border: 1px solid transparentize($blue-color, 0.5);
-    //         border-radius: $medium-border-radius;
-    //         box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
-    //         overflow: hidden;
-
-    //         &::before {
-    //             @include circle_decoration($top: -250px, $left: -50px, $width: 400px, $height: 400px);
-    //         }
-
-    //         &::after {
-    //             @include circle_decoration($bottom: -200px, $right: -50px, $width: 400px, $height: 400px);
-    //         }
-
-    //         h2 {
-    //             margin-bottom: 30px;
-    //             color: $secondary-color;
-    //             font-size: 2.5em;
-    //             text-align: center;
-    //             animation: fadeInScale 0.3s ease-out;
-
-    //             span {
-    //                 font-size: inherit;
-    //             }
-    //         }
-
-    //         .back {
-    //             @include form_back;
-    //         }
-
-    //         .no_followers,
-    //         .no_followings,
-    //         .no_follow_requests {
-    //             color: $secondary-color;
-
-    //             &.hidden {
-    //                 display: none;
-    //             }
-    //         }
-            
-    //         .one_follower,
-    //         .one_following,
-    //         .one_follow_request {
-    //             display: flex;
-    //             align-items: center;
-    //             gap: 10px;
-
-    //             a {
-    //                 .profile_picture {
-    //                     @include profile_picture($width: 38px, $height: 38px);
-    //                     display: block;
-    //                     transition: transform 0.3s ease;
-
-    //                     &:hover {
-    //                         transform: scale(1.05);
-    //                     }
-    //                 }
-    //             }
-
-    //             .username {
-    //                 @include crop_text;
-    //                 width: 250px;
-    //                 color: $secondary-color;
-    //                 text-align: left;
-    //             }
-
-    //             .approve,
-    //             .reject {
-    //                 all: unset;
-
-    //                 i {
-    //                     @include icon;
-    //                     display: block;
-    //                     font-size: 1.5em;
-    //                 }
-    //             }
-
-    //             .approve {
-    //                 margin-left: auto;
-    //             }
-    //         }
-
-    //         .one_follower,
-    //         .one_follow_request {
-    //             transition: display 0.3s ease allow-discrete, transform 0.3s ease, opacity 0.3s ease;
-
-    //             &.hidden {
-    //                 display: none;
-    //                 transform: translateX(-100%);
-    //                 opacity: 0;
-    //             }
-    //         }
-    //     }
-    // }
-
     follow_button: {
         marginLeft: "auto",
         paddingVertical: 5,
@@ -1208,7 +1114,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         flex: 1,
-        maxWidth: "31.5%",
+        maxWidth: "32%",
         // marginHorizontal: "auto",
         paddingVertical: 10,
         borderBottomWidth: 1,
@@ -1244,7 +1150,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         flex: 1,
-        maxWidth: "31.5%",
+        maxWidth: "32%",
         // marginHorizontal: "auto",
         paddingVertical: 10,
         borderBottomWidth: 1,
@@ -1318,7 +1224,7 @@ const styles = StyleSheet.create({
 
     post_link: {
         position: "relative",
-        width: "31.5%",
+        width: "32%",
         aspectRatio: 1 / 1,
         color: SECONDARY_COLOR,
         borderRadius: SMALL_BORDER_RADIUS,
