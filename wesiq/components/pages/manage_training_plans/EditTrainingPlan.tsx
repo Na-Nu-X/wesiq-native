@@ -214,13 +214,18 @@ export default function EditTrainingPlan({
 
     // Function For Schedule The Notification
     const scheduleNotification = async (seconds:number):Promise<void> => {
+        if(Platform.OS === "web") {
+            console.warn(t("Notifikácie nie je možné spúšťať vo webovej aplikácii."))
+            return
+        }
+        
         try {
             if(notification_id.current) {
                 await Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification
                 notification_id.current = null // Removes The Notification ID
             }
     
-            if (seconds <= 0) return
+            if(seconds <= 0) return
     
             // Setup The Notification And Gets Its ID
             const id:string = await Notifications.scheduleNotificationAsync({

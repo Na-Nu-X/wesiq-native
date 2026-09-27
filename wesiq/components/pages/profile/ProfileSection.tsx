@@ -26,7 +26,13 @@ type ProfileSectionProps = {
     onProfileUpdate:(profile:Profile|null) => void,
     profile:Profile|null,
     active_section_direction:"forward"|"back",
-    onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void
+    onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
+    onSetIsFollowersDialogOpen:(is_followers_dialog_open:boolean) => void,
+    is_followers_dialog_open:boolean,
+    onSetIsFollowingDialogOpen:(is_following_dialog_open:boolean) => void,
+    is_following_dialog_open:boolean,
+    onSetIsFollowRequestsDialogOpen:(is_follow_requests_dialog_open:boolean) => void
+    is_follow_requests_dialog_open:boolean
 }
 
 export default function ProfileSection({ 
@@ -35,13 +41,15 @@ export default function ProfileSection({
     onProfileUpdate,
     profile,
     active_section_direction,
-    onLoggedInUserUpdate
+    onLoggedInUserUpdate,
+    onSetIsFollowersDialogOpen,
+    is_followers_dialog_open,
+    onSetIsFollowingDialogOpen,
+    is_following_dialog_open,
+    onSetIsFollowRequestsDialogOpen,
+    is_follow_requests_dialog_open
 }:ProfileSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
-
-    const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
-    const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
-    const [is_follow_requests_dialog_open, setIsFollowRequestsDialogOpen] = useState<boolean>(false) // Stores The Information If The Follow Requests Dialog Is Open
 
     const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
     const [grid_select_direction, setGridSelectDirection] = useState<"forward"|"back">("forward") // Stores The Grid Select Direction
@@ -244,7 +252,7 @@ export default function ProfileSection({
                         <View className="statistics" style={styles.statistics}>
                             <Pressable 
                                 className="followers" 
-                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? setIsFollowersDialogOpen(true) : setIsFollowersDialogOpen(false)}
+                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? onSetIsFollowersDialogOpen(true) : onSetIsFollowersDialogOpen(false)}
                                 style={styles.followers}
                             >
                                 <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
@@ -254,7 +262,7 @@ export default function ProfileSection({
                             {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
                                 <FollowersDialog 
                                     visible={is_followers_dialog_open}
-                                    onClose={() => setIsFollowersDialogOpen(false)}
+                                    onClose={() => onSetIsFollowersDialogOpen(false)}
                                     profile={profile}
                                     logged_in_user={logged_in_user}
                                     onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
@@ -263,7 +271,7 @@ export default function ProfileSection({
 
                             <Pressable 
                                 className="following" 
-                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? setIsFollowingDialogOpen(true) : setIsFollowingDialogOpen(false)}
+                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? onSetIsFollowingDialogOpen(true) : onSetIsFollowingDialogOpen(false)}
                                 style={styles.following}
                             >
                                 <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
@@ -273,7 +281,7 @@ export default function ProfileSection({
                             {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
                                 <FollowingDialog 
                                     visible={is_following_dialog_open}
-                                    onClose={() => setIsFollowingDialogOpen(false)}
+                                    onClose={() => onSetIsFollowingDialogOpen(false)}
                                     profile={profile}
                                     logged_in_user={logged_in_user}
                                     onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
@@ -293,7 +301,7 @@ export default function ProfileSection({
 
                                     <Icon
                                         icon_name="bell"
-                                        onPress={() => setIsFollowRequestsDialogOpen(true)}
+                                        onPress={() => onSetIsFollowRequestsDialogOpen(true)}
                                         size={25}
                                         is_regular={true}
                                     />
@@ -301,7 +309,7 @@ export default function ProfileSection({
 
                                 <FollowRequestsDialog
                                     visible={is_follow_requests_dialog_open}
-                                    onClose={() => setIsFollowRequestsDialogOpen(false)}
+                                    onClose={() => onSetIsFollowRequestsDialogOpen(false)}
                                     logged_in_user={logged_in_user}
                                     onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => onLoggedInUserUpdate(logged_in_user)}
                                 />

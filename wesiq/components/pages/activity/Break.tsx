@@ -60,6 +60,11 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
 
     // Function For Schedule The Notification
     const scheduleNotification = async (seconds:number):Promise<void> => {
+        if(Platform.OS === "web") {
+            console.warn(t("Notifikácie nie je možné spúšťať vo webovej aplikácii."))
+            return
+        }
+
         try {
             if(notification_id.current) {
                 await Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification

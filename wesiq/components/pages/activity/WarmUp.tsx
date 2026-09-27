@@ -1,9 +1,8 @@
-import * as Notifications from "expo-notifications"
 import IconButton from "@/components/IconButton"
 import { BLUE_COLOR, SECONDARY_COLOR } from "@/constants/colors"
 import { getFormattedTime } from "@/utils/time"
-import React, { useEffect, useRef, useState } from "react"
-import { View, Text, Animated, StyleSheet, Easing, Platform } from "react-native"
+import { useEffect, useRef, useState } from "react"
+import { View, Text, Animated, StyleSheet, Easing } from "react-native"
 import Svg, { Circle } from "react-native-svg"
 
 interface WarmUpProps {

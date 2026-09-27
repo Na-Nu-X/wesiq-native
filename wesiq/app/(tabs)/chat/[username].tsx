@@ -51,7 +51,7 @@ interface Sender {
     }|null
 }
 
-interface Chat {
+export interface Chat {
     id:number,
     sender:Sender,
     content:string,
@@ -72,15 +72,16 @@ interface MessageReaction {
     emoji:string
 }
 
-interface ChatSocketResponse {
-    action:"new"|"edit"|"delete"|"add_reaction"|"remove_reaction",
+export interface ChatSocketResponse {
+    action:"new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification",
     chat_id:number,
     message:string,
-    formatted_time:string,
+    formatted_time?:string,
     sender_id:number,
+    sender_username?:string,
     sender_profile_picture_name:string,
-    emoji:string,
-    emoji_sender_username:string
+    emoji?:string,
+    emoji_sender_username?:string
 }
 
 export default function ChatDetailScreen() {
@@ -286,7 +287,6 @@ export default function ChatDetailScreen() {
                 // Delete Message
                 else if(data.action === "delete") {
                     const chat_id:number = data.chat_id as number // Gets The Chat ID
-
                     setChats(previous_chats => previous_chats.filter((one_chat:Chat) => one_chat.id !== chat_id)) // Sets The Chats
                 }
 

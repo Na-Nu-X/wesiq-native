@@ -178,6 +178,10 @@ export default function ProfileScreen() {
     const [private_account, setPrivateAccount] = useState<boolean>(false) // Stores The Information If The Private Account Option Is Enabled
     const [delete_profile_picture, setDeleteProfilePicture] = useState<boolean>(false) // Stores The Information If The Delete Profile Picture Option Is Enabled
     const [delete_account, setDeleteAccount] = useState<boolean>(false) // Stores The Information If The Delete Account Option Is Enabled
+
+    const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
+    const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
+    const [is_follow_requests_dialog_open, setIsFollowRequestsDialogOpen] = useState<boolean>(false) // Stores The Information If The Follow Requests Dialog Is Open
     
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -252,7 +256,6 @@ export default function ProfileScreen() {
             }
             
             else {
-                console.log(profile_data)
                 setIsFound(profile_data.is_found || false) // Sets The Information If The User Was Found
                 setProfile(profile_data.user) // Sets The Profile
                 if(profile_data.user.bio.trim()) setBio(profile_data.user.bio) // Sets The Bio
@@ -277,7 +280,12 @@ export default function ProfileScreen() {
     
     // Initializes The Load Of The Profile
     useEffect(() => {
-        if(username) getProfile(username) // Gets The Profile
+        if(username) {
+            getProfile(username) // Gets The Profile
+            setIsFollowersDialogOpen(false) // Sets The Information That The Followers Dialog Is Closed
+            setIsFollowingDialogOpen(false) // Sets The Information That The Following Dialog Is Closed
+            setIsFollowRequestsDialogOpen(false) // Sets The Information That The Follow Requests Dialog Is Closed
+        }
     }, [username])
 
     // Function For Change The Active Section
@@ -507,6 +515,12 @@ export default function ProfileScreen() {
                                                 profile={profile}
                                                 active_section_direction={active_section_direction}
                                                 onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
+                                                onSetIsFollowersDialogOpen={(is_followers_dialog_open:boolean) => setIsFollowersDialogOpen(is_followers_dialog_open)}
+                                                is_followers_dialog_open={is_followers_dialog_open}
+                                                onSetIsFollowingDialogOpen={(is_following_dialog_open:boolean) => setIsFollowingDialogOpen(is_following_dialog_open)}
+                                                is_following_dialog_open={is_following_dialog_open}
+                                                onSetIsFollowRequestsDialogOpen={(is_follow_requests_dialog_open:boolean) => setIsFollowRequestsDialogOpen(is_follow_requests_dialog_open)}
+                                                is_follow_requests_dialog_open={is_follow_requests_dialog_open}
                                             />
                                         )}
 
@@ -1010,6 +1024,12 @@ export default function ProfileScreen() {
                                             profile={profile}
                                             active_section_direction={active_section_direction}
                                             onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
+                                            onSetIsFollowersDialogOpen={(is_followers_dialog_open:boolean) => setIsFollowersDialogOpen(is_followers_dialog_open)}
+                                            is_followers_dialog_open={is_followers_dialog_open}
+                                            onSetIsFollowingDialogOpen={(is_following_dialog_open:boolean) => setIsFollowersDialogOpen(is_following_dialog_open)}
+                                            is_following_dialog_open={is_following_dialog_open}
+                                            onSetIsFollowRequestsDialogOpen={(is_follow_requests_dialog_open:boolean) => setIsFollowersDialogOpen(is_follow_requests_dialog_open)}
+                                            is_follow_requests_dialog_open={is_follow_requests_dialog_open}
                                         />
                                     </View>
                                 </View>

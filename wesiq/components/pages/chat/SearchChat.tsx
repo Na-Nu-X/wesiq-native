@@ -47,6 +47,12 @@ export const SearchChat = ({
         console.log(grouped_read_chats)
     }, [grouped_unread_chats, grouped_read_chats])
 
+    // Function For Delete Search Bar
+    const deleteSearchBar = ():void => {
+        onSearchedTextUpdate("") // Sets The Searched Text
+        onFilteredChatsUpdate([]) // Sets The Filtered Senders
+    }
+
     return (
         <View className="search_bar_container" style={styles.search_bar_container}>
             <View className="magnifying_glass_icon" style={styles.magnifying_glass_icon}>
@@ -54,7 +60,7 @@ export const SearchChat = ({
             </View>
 
             <View className="delete_search_bar" style={styles.delete_search_bar}>
-                <Icon icon_name="xmark" />
+                <Icon icon_name="xmark" onPress={deleteSearchBar} />
             </View>
 
             <TextInput
