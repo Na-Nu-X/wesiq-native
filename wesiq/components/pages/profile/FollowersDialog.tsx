@@ -162,13 +162,15 @@ export const FollowersDialog = ({
 
                                     <Text className="username" style={styles.username}>{one_follower.from_user.username}</Text>
 
-                                    <Pressable 
-                                        className="remove_follower" 
-                                        onPress={() => removeFollower(one_follower.from_user.id)}
-                                        style={styles.remove_follower}
-                                    >
-                                        <Text style={{ color: SECONDARY_COLOR }}>{t("Odstrániť")}</Text>
-                                    </Pressable>
+                                    {profile.id === logged_in_user?.id && (
+                                        <Pressable 
+                                            className="remove_follower" 
+                                            onPress={() => removeFollower(one_follower.from_user.id)}
+                                            style={styles.remove_follower}
+                                        >
+                                            <Text style={{ color: SECONDARY_COLOR }}>{t("Odstrániť")}</Text>
+                                        </Pressable>
+                                    )}
                                 </View>
                             ))}
                         </View>

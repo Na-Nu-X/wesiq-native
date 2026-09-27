@@ -15,7 +15,6 @@ import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import * as ImagePicker from "expo-image-picker"
 import { useTranslation } from "react-i18next"
-import BadgesContainer from "@/components/pages/profile/BadgesContainer"
 import EditAccountForm from "@/components/pages/profile/EditAccountForm"
 import ProfileSection from "@/components/pages/profile/ProfileSection"
 

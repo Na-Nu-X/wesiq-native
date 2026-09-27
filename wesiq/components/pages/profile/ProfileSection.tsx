@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { Pressable, Alert, StyleSheet, Image, View, Text } from "react-native"
-import * as ImagePicker from "expo-image-picker"
 import {BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { useTranslation } from "react-i18next"
@@ -14,6 +13,7 @@ import { getFollowButtonProperties } from "../community/SearchUsers"
 import { FollowersDialog } from "./FollowersDialog"
 import { FollowingDialog } from "./FollowingDialog"
 import { FollowRequestsDialog } from "./FollowRequestsDialog"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
@@ -45,6 +45,8 @@ export default function ProfileSection({
 
     const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
     const [grid_select_direction, setGridSelectDirection] = useState<"forward"|"back">("forward") // Stores The Grid Select Direction
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
 
     // Function For Toggle Follow
     const toggleFollow = async (user_to_follow_id:number|null, action:string):Promise<void> => {
@@ -242,37 +244,41 @@ export default function ProfileSection({
                         <View className="statistics" style={styles.statistics}>
                             <Pressable 
                                 className="followers" 
-                                onPress={() => setIsFollowersDialogOpen(true)}
+                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? setIsFollowersDialogOpen(true) : setIsFollowersDialogOpen(false)}
                                 style={styles.followers}
                             >
                                 <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
                                 <Text className="label" style={styles.followers_label}>{t("sledujú")}</Text>
                             </Pressable>
 
-                            <FollowersDialog 
-                                visible={is_followers_dialog_open}
-                                onClose={() => setIsFollowersDialogOpen(false)}
-                                profile={profile}
-                                logged_in_user={logged_in_user}
-                                onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
-                            />
+                            {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
+                                <FollowersDialog 
+                                    visible={is_followers_dialog_open}
+                                    onClose={() => setIsFollowersDialogOpen(false)}
+                                    profile={profile}
+                                    logged_in_user={logged_in_user}
+                                    onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
+                                />
+                            )}
 
                             <Pressable 
                                 className="following" 
-                                onPress={() => setIsFollowingDialogOpen(true)}
+                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? setIsFollowingDialogOpen(true) : setIsFollowingDialogOpen(false)}
                                 style={styles.following}
                             >
                                 <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
                                 <Text className="label" style={styles.following_label}>{t("sleduje")}</Text>
                             </Pressable>
 
-                            <FollowingDialog 
-                                visible={is_following_dialog_open}
-                                onClose={() => setIsFollowingDialogOpen(false)}
-                                profile={profile}
-                                logged_in_user={logged_in_user}
-                                onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
-                            />
+                            {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
+                                <FollowingDialog 
+                                    visible={is_following_dialog_open}
+                                    onClose={() => setIsFollowingDialogOpen(false)}
+                                    profile={profile}
+                                    logged_in_user={logged_in_user}
+                                    onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
+                                />
+                            )}
 
                             <View className="posts">
                                 <Text className="amount" style={styles.posts_amount}>{profile.posts.length || 0}</Text>
@@ -280,7 +286,7 @@ export default function ProfileSection({
                             </View>
                         </View>
 
-                        {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && (
+                        {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && logged_in_user.id === profile.id && (
                             <>
                                 <View className="show_follow_requests" style={styles.show_follow_requests}>
                                     <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
@@ -323,7 +329,7 @@ export default function ProfileSection({
 
                             <Icon 
                                 icon_name="comment-dots"
-                                // onPress={}
+                                onPress={() => router.push(`/chat/${profile.username}`)}
                                 is_regular={true}
                             />
                         </View>
@@ -1291,6 +1297,8 @@ const styles = StyleSheet.create({
     },
 
     private_account_notice: {
+        justifyContent: "center",
+        alignItems: "center",
         textAlign: "center",
         padding: 20,
         borderWidth: 1,

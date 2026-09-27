@@ -153,7 +153,7 @@ export const FollowingDialog = ({
                                     />
                                 </View>
 
-                                <Text style={styles.heading}>{t("Sleduješ")} (<Text className="followings_amount">{profile.following.length || 0}</Text>)</Text>
+                                <Text style={styles.heading}>{profile.id === logged_in_user?.id ? t("Sleduješ") : ("Sleduje")} (<Text className="followings_amount">{profile.following.length || 0}</Text>)</Text>
                             </View>
 
                             {profile.following.length === 0 && (
@@ -165,7 +165,7 @@ export const FollowingDialog = ({
                                         color: SECONDARY_COLOR,
                                     }}
                                 >
-                                    Nikoho nesleduješ.
+                                    {profile.id === logged_in_user?.id ? t("Nikoho nesleduješ.") : t("Nikoho nesleduje.")}
                                 </Text>
                             )} 
 
@@ -181,13 +181,15 @@ export const FollowingDialog = ({
 
                                     <Text className="username" style={styles.username}>{one_following.to_user.username}</Text>
 
-                                    <Pressable 
-                                        className="follow_button" 
-                                        onPress={() => toggleFollow(one_following.to_user.id, getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).action)}
-                                        style={styles.follow_button}
-                                    >
-                                        <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).text}</Text>
-                                    </Pressable>
+                                    {one_following.to_user.id !== logged_in_user?.id && (
+                                        <Pressable 
+                                            className="follow_button" 
+                                            onPress={() => toggleFollow(one_following.to_user.id, getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).action)}
+                                            style={styles.follow_button}
+                                        >
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).text}</Text>
+                                        </Pressable>
+                                    )}
                                 </View>
                             ))}
                         </View>

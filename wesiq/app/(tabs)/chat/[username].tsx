@@ -219,7 +219,7 @@ export default function ChatDetailScreen() {
 
             // Succeeded Open Of Chat Socket
             chat_socket.current.onopen = () => {
-                // markMessagesAsRead() // Marks Messages As Read
+                markMessagesAsRead() // Marks Messages As Read
             }
     
             // Response From The Server (The DOM Changes Will Be Visible To Every User In Chat)
@@ -255,11 +255,10 @@ export default function ChatDetailScreen() {
 
                     setChats(previous_chats => [new_chat, ...previous_chats]) // Sets The Chats
                 
-                    //     // If Message Isn't From Logged In User
-                    //     if(logged_in_user_id && logged_in_user_id !== data.sender_id) {
-                    //         markMessagesAsRead() // Marks Messages As Read
-                    //     }
-                    // }
+                    // If Message Isn't From Logged In User
+                    if(logged_in_user && logged_in_user.id !== data.sender_id) {
+                        markMessagesAsRead() // Marks Messages As Read
+                    }
                 }
 
                 // Edited Message

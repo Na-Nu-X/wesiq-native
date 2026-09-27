@@ -1,5 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Image, TouchableOpacity, TextInput } from "react-native"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useState } from "react"
@@ -11,24 +10,29 @@ import { API_URL } from "@/constants/general"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
+import { BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { useTranslation } from "react-i18next"
+import { ImperativeRouter, useRouter } from "expo-router"
+import { SearchChat } from "@/components/pages/chat/SearchChat"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { Chat } from "@/components/pages/chat/SearchChat"
 
-interface UnreadChatsResponse {
+interface ChatsResponse {
     success:boolean, 
-    unread_chats:UnreadChat[],
+    unread_chats:ChatData[],
+    read_chats:ChatData[],
     message:string
 }
 
-interface UnreadChat {
+export interface ChatData {
     id:number, 
-    sender:Sender
+    sender:Sender,
+    content:string
 }
 
-interface Sender {
+export interface Sender {
     id:number,
     username:string,
     profile_picture_name:string|null,
@@ -45,7 +49,13 @@ export default function ChatScreen() {
 
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
-    const [unread_chats, setUnreadChats] = useState<UnreadChat[]>([]) // Stores The Unread Chats
+    const [unread_chats, setUnreadChats] = useState<ChatData[]>([]) // Stores The Unread Chats
+    const [read_chats, setReadChats] = useState<ChatData[]>([]) // Stores The Read Chats
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
+
+    const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
+    const [filtered_chats, setFilteredChats] = useState<Chat[]>([]) // Stores The Filtered Chats
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -89,18 +99,18 @@ export default function ChatScreen() {
         getLoggedInUser() // Gets The Logged In User
     }, [])
 
-    // Function For Get The Unread Chats
-    const getUnreadChats = async ():Promise<void> => {
+    // Function For Get The Chats
+    const getChats = async ():Promise<void> => {
         try {
             if(!logged_in_user) {
-                Alert.alert(t("Chyba"), t("Nové správy nie je možné načítať bez prihlásenia.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Správy nie je možné načítať bez prihlásenia.")) // Shows The Alert
                 return
             }
 
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The GET Request To The Server
-            const unread_chats_response:Response = await fetch(`${API_URL}/get-unread-chats/`, {
+            const chats_response:Response = await fetch(`${API_URL}/get-chats/`, {
                 method: "GET",
 
                 headers: {
@@ -111,56 +121,70 @@ export default function ChatScreen() {
             })
 
             // If The Response Isn't Success
-            if(!unread_chats_response.ok) {
-                Alert.alert(t("Chyba"), t("Pri načítaní nových správ došlo k chybe.")) // Shows The Alert
+            if(!chats_response.ok) {
+                Alert.alert(t("Chyba"), t("Pri načítaní správ došlo k chybe.")) // Shows The Alert
                 return
             }
 
-            const unread_chats_data:UnreadChatsResponse = await unread_chats_response.json() // Gets The Unread Chats Data
-
-            console.log(unread_chats_data.unread_chats)
+            const chats_data:ChatsResponse = await chats_response.json() // Gets The Chats Data
 
             // If The Response Isn't Success
-            if(!unread_chats_data.success) {
-                Alert.alert(t("Chyba"), unread_chats_data.message) // Shows The Alert
+            if(!chats_data.success) {
+                Alert.alert(t("Chyba"), chats_data.message) // Shows The Alert
                 return
             }
             
             else {
-                setUnreadChats(unread_chats_data.unread_chats) // Sets The Unread Chats
+                setUnreadChats(chats_data.unread_chats) // Sets The Unread Chats
+                setReadChats(chats_data.read_chats) // Sets The Read Chats
             }
         } 
         
         catch {
-            Alert.alert(t("Chyba"), t("Pri načítaní nových správ došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri načítaní správ došlo k chybe.")) // Shows The Alert
         }
     }
 
-    // Initializes The Load Of The Unread Chats
+    // Initializes The Load Of The Chats
     useEffect(() => {
-        getUnreadChats() // Gets The Unread Chats
+        getChats() // Gets The Chats
     }, [logged_in_user])
 
-    // Groups The Senders
-    const grouped_senders = Object.values(
-        unread_chats.reduce((user, chat) => {
+    // Groups The Unread Chats By Senders
+    const grouped_unread_chats:Chat[] = Object.values(
+        unread_chats.reduce((user:Record<number, Chat>, chat:ChatData) => {
             const sender_id:number = chat.sender.id // Gets The Sender ID
 
             if(!user[sender_id]) {
                 user[sender_id] = {
                     sender: chat.sender,
-                    first_message: chat,
                     list: []
                 }
             }
 
-            user[sender_id].list.push(chat)
+            if(user[sender_id].list) user[sender_id].list.push(chat)
 
             return user
-        }, {} as Record<number, { sender:Sender, first_message:UnreadChat, list:UnreadChat[] }>)
+        }, {} as Record<number, Chat>)
     )
 
-    console.log(grouped_senders)
+    // Groups The Read Chats By Senders
+    const grouped_read_chats:Chat[] = Object.values(
+        read_chats.reduce((user:Record<number, Chat>, chat:ChatData) => {
+            const sender_id:number = chat.sender.id // Gets The Sender ID
+
+            if(!user[sender_id]) {
+                user[sender_id] = {
+                    sender: chat.sender,
+                    last_message: chat.content
+                }
+            }
+
+            user[sender_id].last_message = chat.content // Updates The Last Message
+
+            return user
+        }, {} as Record<number, Chat>)
+    )
 
     return (
         <BackgroundContainer>
@@ -197,48 +221,106 @@ export default function ChatScreen() {
                         onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    {unread_chats.length > 0 ? (
-                        <ScrollView 
-                            className="all_messages" 
-                            showsVerticalScrollIndicator={false}
-                            indicatorStyle="white"
-                            keyboardShouldPersistTaps="handled" 
-                            keyboardDismissMode="on-drag"
-                            style={styles.all_messages}
-                        >
-                            <View style={styles.circle_decoration_before} />
-                            <View style={styles.circle_decoration_after} />
+                    <ScrollView 
+                        className="all_messages_container" 
+                        showsVerticalScrollIndicator={false}
+                        indicatorStyle="white"
+                        keyboardShouldPersistTaps="handled" 
+                        keyboardDismissMode="on-drag"
+                        style={styles.all_messages_container}
+                    >
+                        <View style={styles.circle_decoration_before} />
+                        <View style={styles.circle_decoration_after} />
 
-                            <View className="search_bar_container" style={styles.search_bar_container}>
-                                <View className="magnifying_glass_icon" style={styles.magnifying_glass_icon}>
-                                    <Icon icon_name="magnifying-glass" />
-                                </View>
+                        <SearchChat 
+                            grouped_unread_chats={grouped_unread_chats} 
+                            grouped_read_chats={grouped_read_chats} 
+                            onFilteredChatsUpdate={(filtered_chats:Chat[]) => setFilteredChats(filtered_chats)}
+                            onSearchedTextUpdate={(searched_text:string) => setSearchedText(searched_text)}
+                            searched_text={searched_text}
+                        />
 
-                                <View className="delete_search_bar" style={styles.delete_search_bar}>
-                                    <Icon icon_name="xmark" />
-                                </View>
+                        {filtered_chats.length === 0 || searched_text.trim() === "" ? (
+                            <>
+                                {unread_chats.length > 0 ? (
+                                    <View 
+                                        className="all_unread_messages" 
 
-                                <TextInput
-                                    className="search_bar"
-                                    textAlignVertical="top" 
-                                    placeholder={t("Nájsť užívateľa")} 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel={t("Nájsť užívateľa")} 
-                                    // value={searched_text}
-                                    // onChangeText={getSearchedUsers}
+                                        style={[
+                                            styles.all_messages,
+                                            { marginBottom: 50 },
+                                        ]}
+                                    >
+                                        {grouped_unread_chats.map((one_item:Chat, index:number) => (
+                                            <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
+                                                <ProfilePictureLink 
+                                                    user_id={one_item.sender.id} 
+                                                    user_username={one_item.sender.username}
+                                                    user_profile_picture_name={one_item.sender.profile_picture_name || null} 
+                                                    user_subscription={one_item.sender.subscription?.is_active || false} 
+                                                    label={t("Zobraziť užívateľa")} 
+                                                />
+            
+                                                <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
+            
+                                                <View className="message_container" style={styles.message_container}>
+                                                    {one_item.list && (<Text className="unread_messages" style={styles.messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>)}
+            
+                                                    <View 
+                                                        className="chat"
+                                                        accessibilityLabel={t("Zobraziť správy")}
+                                                    >
+                                                        <Icon 
+                                                            icon_name="comment-dots"
+                                                            onPress={() => router.push(`/chat/${one_item.sender.username}`)}
+                                                            size={25}
+                                                            is_regular={true}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : (
+                                    <Text className="no_messages" style={styles.no_messages}>{t("Žiadne nové správy")}</Text>
+                                )}
 
-                                    style={[
-                                        styles.search_bar, 
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
-                            </View>
+                                {read_chats.length > 0 ? (
+                                    <View className="all_read_messages" style={styles.all_messages}>
+                                        {grouped_read_chats.map((one_item:Chat, index:number) => (
+                                            <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
+                                                <ProfilePictureLink 
+                                                    user_id={one_item.sender.id} 
+                                                    user_username={one_item.sender.username}
+                                                    user_profile_picture_name={one_item.sender.profile_picture_name || null} 
+                                                    user_subscription={one_item.sender.subscription?.is_active || false} 
+                                                    label={t("Zobraziť užívateľa")} 
+                                                />
+            
+                                                <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
 
-                            {grouped_senders.map((one_item:{
-                                sender:Sender,
-                                first_message:UnreadChat,
-                                list:UnreadChat[]
-                            }, index:number) => (
+                                                <Text className="last_message" numberOfLines={1} ellipsizeMode="tail" style={styles.last_message}>{one_item.last_message}</Text>
+            
+                                                <View className="message_container" style={styles.message_container}>
+                                                    <View 
+                                                        className="chat"
+                                                        accessibilityLabel={t("Zobraziť správy")}
+                                                    >
+                                                        <Icon 
+                                                            icon_name="comment-dots"
+                                                            onPress={() => router.push(`/chat/${one_item.sender.username}`)}
+                                                            size={25}
+                                                            is_regular={true}
+                                                        />
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        ))}
+                                    </View>
+                                ) : null}
+                            </>
+                        ) : (
+                            filtered_chats.map((one_item:Chat, index:number) => (
                                 <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
                                     <ProfilePictureLink 
                                         user_id={one_item.sender.id} 
@@ -250,8 +332,10 @@ export default function ChatScreen() {
 
                                     <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
 
+                                    {one_item.last_message && (<Text className="last_message" numberOfLines={1} ellipsizeMode="tail" style={styles.last_message}>{one_item.last_message}</Text>)}
+
                                     <View className="message_container" style={styles.message_container}>
-                                        <Text className="unread_messages" style={styles.unread_messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>
+                                        {one_item.list && (<Text className="unread_messages" style={styles.messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>)}
 
                                         <View 
                                             className="chat"
@@ -259,18 +343,16 @@ export default function ChatScreen() {
                                         >
                                             <Icon 
                                                 icon_name="comment-dots"
-                                                // onPress={}
+                                                onPress={() => router.push(`/chat/${one_item.sender.username}`)}
                                                 size={25}
                                                 is_regular={true}
                                             />
                                         </View>
                                     </View>
                                 </View>
-                            ))}
-                        </ScrollView>
-                    ) : (
-                        <Text className="no_messages" style={styles.no_messages}>{t("Žiadne nové správy")}</Text>
-                    )}
+                            ))
+                        )}
+                    </ScrollView>
                 </ScrollView>
             </SafeAreaView>
         </BackgroundContainer>
@@ -286,7 +368,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
-    all_messages: {
+    all_messages_container: {
         gap: 10,
         maxWidth: MAIN_WIDTH,
         width: "100%",
@@ -324,67 +406,13 @@ const styles = StyleSheet.create({
         zIndex: -1,
     },
 
-    search_bar_container: {
-        position: "relative",
-        maxWidth: MAIN_WIDTH,
-        width: "100%",
-        marginBottom: 20,
-        // backdrop-filter: blur(5px);
-        zIndex: 100,
-    },
-
-    magnifying_glass_icon: {
-        // @include icon;
-        pointerEvents: "none",
-        position: "absolute",
-        top: "50%",
-        left: 8.5,
-        transform: [{ translateY: "-50%" }],
-        color: BLUE_COLOR,
-        fontSize: 20,
-        // transition: color 0.3s ease
-    },
-
-    delete_search_bar: {
-        alignItems: "center",
-        justifyContent: "center",
-        position: "absolute",
-        top: "50%",
-        right: 0,
-        transform: [{ translateY: "-50%" }],
-        height: "100%",
-        width: 40,
-        zIndex: 200,
-
-        // &:hover {
-        //             .fa-xmark {
-        //                 color: $dark-blue-color;
-        //                 transition: color 0.2s ease;
-        //             }
-        //         }
-    },
-
-    search_bar: {
-        width: "100%",
-        height: 40,
-        paddingHorizontal: 40,
-        color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: DARK_BLUE_COLOR,
-        borderRadius: SMALL_BORDER_RADIUS,
-        textAlign: "center",
-        zIndex: 50,
-        // transition: border 0.2s ease, box-shadow 0.2s ease;
-
-        // &:hover,
-        // &:focus-visible {
-        //     border-color: $blue-color !important;
-        // }
-    },
-
     no_messages: {
         color: SECONDARY_COLOR,
         textAlign: "center",
+    },
+
+    all_messages: {
+        gap: 10,
     },
 
     one_message: {
@@ -407,6 +435,14 @@ const styles = StyleSheet.create({
         color: SECONDARY_COLOR,
     },
 
+    last_message: {
+        // @include crop_text;
+        flex: 1,
+        width: 250,
+        textAlign: "right",
+        color: transparentize(SECONDARY_COLOR, 0.4),
+    },
+
     message_container: {
         flexDirection: "row",
         alignItems: "center",
@@ -416,7 +452,7 @@ const styles = StyleSheet.create({
         paddingVertical: 5,
     },
 
-    unread_messages: {
+    messages: {
         fontSize: 22,
         color: transparentize(SECONDARY_COLOR, 0.4),
     },
