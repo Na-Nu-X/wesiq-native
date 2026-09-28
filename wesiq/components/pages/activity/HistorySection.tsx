@@ -97,50 +97,61 @@ export default function HistorySection() {
                     style={styles.activity_history}
                     contentContainerStyle={styles.activity_history}
                 >
-                    {activity_history.map((one_activity:Activity) => (
-                        <View key={one_activity.end_time} className="one_activity" style={styles.one_activity}>
-                            <FontAwesome6
-                                name="list"
-                                size={20}
-                                color={BLUE_COLOR}
-                            />
-
-                            <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : t("Aktivita")}</Text>
-
-                            <Text 
-                                className="elapsed_time" 
-
-                                style={{ 
-                                    width: 60,
-                                    lineHeight: 1,
-                                    color: SECONDARY_COLOR,
-                                }}
-                            >
-                                {getMinimalistFormattedTime(one_activity.elapsed_time)}
-                            </Text>
-
-                            <Text 
-                                className="gained_xp" 
-
-                                style={[
-                                    styles.gained_xp,
-                                    { width: 50 }
-                                ]}
-                            >
-                                {one_activity.gained_xp}XP
-                            </Text>
-
-                            <Text 
-                                className="date" 
-
-                                style={{ 
-                                    color: SECONDARY_COLOR,
-                                }}
-                            >
-                                {getFormattedDate(one_activity.end_time, false)}
-                            </Text>
-                        </View>
-                    ))}
+                    {activity_history.length > 0 ? (
+                        activity_history.map((one_activity:Activity) => (
+                            <View key={one_activity.end_time} className="one_activity" style={styles.one_activity}>
+                                <FontAwesome6
+                                    name="list"
+                                    size={20}
+                                    color={BLUE_COLOR}
+                                />
+    
+                                <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : t("Aktivita")}</Text>
+    
+                                <Text 
+                                    className="elapsed_time" 
+    
+                                    style={{ 
+                                        width: 60,
+                                        lineHeight: 1,
+                                        color: SECONDARY_COLOR,
+                                    }}
+                                >
+                                    {getMinimalistFormattedTime(one_activity.elapsed_time)}
+                                </Text>
+    
+                                <Text 
+                                    className="gained_xp" 
+    
+                                    style={[
+                                        styles.gained_xp,
+                                        { width: 50 }
+                                    ]}
+                                >
+                                    {one_activity.gained_xp}XP
+                                </Text>
+    
+                                <Text 
+                                    className="date" 
+    
+                                    style={{ 
+                                        color: SECONDARY_COLOR,
+                                    }}
+                                >
+                                    {getFormattedDate(one_activity.end_time, false)}
+                                </Text>
+                            </View>
+                        ))
+                    ) : (
+                        <Text 
+                            style={{
+                                textAlign: "center",
+                                color: SECONDARY_COLOR,
+                            }}
+                        >
+                            Žiadna predošlá aktivita.
+                        </Text>
+                    )}
                 </ScrollView>
             </View>
         </View>

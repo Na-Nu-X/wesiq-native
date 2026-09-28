@@ -65,7 +65,7 @@ export const FollowRequestsDialog = ({
             }
 
             // Stores The New State Of Updated Logged In User Follow Requests
-            const updated_logged_in_user_follow_requests = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.from_user.id !== follow_request_id)
+            const updated_logged_in_user_follow_requests = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.id !== follow_request_id)
         
             // Sets The Logged In User
             onLoggedInUserUpdate({
@@ -74,8 +74,7 @@ export const FollowRequestsDialog = ({
             })
         } 
         
-        catch (err) {
-            console.log(err)
+        catch {
             console.log(t("Pri potvrdení žiadosti o sledovanie došlo k chybe.")) // Shows The Alert
         }
     }
@@ -118,7 +117,7 @@ export const FollowRequestsDialog = ({
             }
 
             // Stores The New State Of Updated Logged In User Follow Requests
-            const updated_profile_followers = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.from_user.id !== follow_request_id)
+            const updated_profile_followers = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.id !== follow_request_id)
         
             // Sets The Logged In User
             onLoggedInUserUpdate({

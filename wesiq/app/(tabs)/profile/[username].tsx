@@ -9,7 +9,7 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { API_URL, DOMAIN } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, GREEN_COLOR, RED_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR, transparentize } from "@/constants/colors"
 import { isValidPhoneNumber } from "libphonenumber-js"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -146,7 +146,8 @@ export interface BioLink {
 }
 
 export default function ProfileScreen() {
-    const { t } = useTranslation() // Initializes The Translations
+    const { t, i18n } = useTranslation() // Initializes The Translations
+    const language:string = i18n.language // Gets The Language
     
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
@@ -156,7 +157,7 @@ export default function ProfileScreen() {
 
     const account_properties = useRef<BottomSheetModal>(null) // Stores The Account Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
-    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings">("main") // Stores The Active Account Properties Sheet
+    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings"|"languages">("main") // Stores The Active Account Properties Sheet
 
     const [active_section, setActiveSection] = useState<"profile"|"edit_account_form">("profile") // Stores The Information Which Section Is Active
     const [active_section_direction, setActiveSectionDirection] = useState<"forward"|"back">("forward") // Stores The Active Section Direction
@@ -424,6 +425,18 @@ export default function ProfileScreen() {
         }
     }
 
+    // Function For Change The Language
+    const changeLanguage = async (language_code:string):Promise<void> => {
+        try {
+            await i18n.changeLanguage(language_code) // Changes The Language
+            await AsyncStorage.setItem("app_language", language_code) // Stores The New Language
+        }
+        
+        catch {
+            console.error("Pri zmene jazyka došlo k chybe.")
+        }
+    }
+
     return (
         <BackgroundContainer>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
@@ -537,27 +550,51 @@ export default function ProfileScreen() {
                                                         {account_properties_sheet === "main" && (
                                                             <View style={styles.sheet_container}>
                                                                 {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                                    <Pressable
-                                                                        className="show_account_settings_button"
-                                                                        onPress={() => setAccountPropertiesSheet("account_settings")}
-                                                                        accessibilityRole="button"
+                                                                    <>
+                                                                        <Pressable
+                                                                            className="show_account_settings_button"
+                                                                            onPress={() => setAccountPropertiesSheet("account_settings")}
+                                                                            accessibilityRole="button"
 
-                                                                        style={({ pressed }) => [
-                                                                            styles.sheet_item, 
-                                                                            styles.sheet_item_border, 
-                                                                            pressed && styles.sheet_item_pressed
-                                                                        ]}
-                                                                    >
-                                                                        <View style={styles.sheet_icon}>
-                                                                            <FontAwesome6
-                                                                                name="gear"
-                                                                                size={20}
-                                                                                color={BLUE_COLOR}
-                                                                            />
-                                                                        </View>
+                                                                            style={({ pressed }) => [
+                                                                                styles.sheet_item, 
+                                                                                styles.sheet_item_border, 
+                                                                                pressed && styles.sheet_item_pressed
+                                                                            ]}
+                                                                        >
+                                                                            <View style={styles.sheet_icon}>
+                                                                                <FontAwesome6
+                                                                                    name="gear"
+                                                                                    size={20}
+                                                                                    color={BLUE_COLOR}
+                                                                                />
+                                                                            </View>
 
-                                                                        <Text style={styles.sheet_text}>{t("Nastavenia")}</Text>
-                                                                    </Pressable>
+                                                                            <Text style={styles.sheet_text}>{t("Nastavenia")}</Text>
+                                                                        </Pressable>
+
+                                                                        <Pressable
+                                                                            className="show_languages_button"
+                                                                            onPress={() => setAccountPropertiesSheet("languages")}
+                                                                            accessibilityRole="button"
+
+                                                                            style={({ pressed }) => [
+                                                                                styles.sheet_item, 
+                                                                                styles.sheet_item_border, 
+                                                                                pressed && styles.sheet_item_pressed
+                                                                            ]}
+                                                                            >
+                                                                            <View style={styles.sheet_icon}>
+                                                                                <FontAwesome6
+                                                                                    name="language"
+                                                                                    size={20}
+                                                                                    color={BLUE_COLOR}
+                                                                                />
+                                                                            </View>
+
+                                                                            <Text style={styles.sheet_text}>{t("Jazyk")}</Text>
+                                                                        </Pressable>
+                                                                    </>
                                                                 )}
 
                                                                 {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
@@ -975,6 +1012,238 @@ export default function ProfileScreen() {
 
                                                                 <Pressable
                                                                     className="back_account_settings_button"
+                                                                    onPress={() => setAccountPropertiesSheet("main")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="xmark"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                                                                </Pressable>
+                                                            </View>
+                                                        )}
+
+                                                        {account_properties_sheet === "languages" && (
+                                                            <View className="languages" style={styles.sheet_container}>
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("sk")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/sk.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "sk" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Slovenčina")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("cs")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/cs.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "cs" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Čeština")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("en")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/en.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "en" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Angličtina")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("es")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/es.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "es" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Španielčina")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("fr")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/fr.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "fr" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Francúžština")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("uk")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/uk.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "uk" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Ukrajinčina")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("ru")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/ru.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "ru" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Ruština")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("pt_BR")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/pt-br.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "pt_BR" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Portugalčina (Brazília)")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    onPress={() => changeLanguage("de")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed,
+                                                                    ]}
+                                                                >
+                                                                    <Image
+                                                                        source={require("@/assets/images/languages/de.png")}
+
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+
+                                                                    <Text style={language === "de" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Nemčina")}</Text>
+                                                                </Pressable>
+
+                                                                <Pressable
+                                                                    className="back_languages_button"
                                                                     onPress={() => setAccountPropertiesSheet("main")}
                                                                     accessibilityRole="button"
 
