@@ -4,14 +4,13 @@ import { useEffect, useRef } from "react"
 import { Animated, Image, Pressable, StyleSheet, View } from "react-native"
 
 interface CustomTaskCheckboxProps {
-    is_checked:boolean,
-    onComplete:() => void
+    is_checked:boolean
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable) // Creates The Animated Pressable
 const AnimatedImage = Animated.createAnimatedComponent(Image) // Creates The Animated Image
 
-export const CustomTaskCheckbox = ({ is_checked, onComplete }:CustomTaskCheckboxProps) => {
+export const CustomTaskCheckbox = ({ is_checked }:CustomTaskCheckboxProps) => {
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
     useEffect(() => {
@@ -43,7 +42,6 @@ export const CustomTaskCheckbox = ({ is_checked, onComplete }:CustomTaskCheckbox
     return (
         <AnimatedPressable 
             className="checkbox"
-            onPress={onComplete}
 
             style={[
                 styles.checkbox,

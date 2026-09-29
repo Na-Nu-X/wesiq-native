@@ -1,104 +1,108 @@
-import { useEffect, useRef } from "react"
-import { View, Text, Pressable, StyleSheet, Animated } from "react-native"
+import { useEffect } from "react"
+import { View, Text, StyleSheet } from "react-native"
 import { CustomTaskCheckbox } from "./CustomTaskCheckbox"
-import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedDate } from "@/utils/time"
 import { useTranslation } from "react-i18next"
+import ReAnimated, { interpolate, interpolateColor, SharedValue, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated"
 
 import type { CustomTask } from "./TasksSection"
 
+export const CUSTOM_TASK_HEIGHT:number = 50 // Defines The Custom Task Height
+export const CUSTOM_TASK_GAP:number = 10 // Defines The Custom Task Gap
+export const CUSTOM_TASK_STRIDE:number = CUSTOM_TASK_HEIGHT + CUSTOM_TASK_GAP // Defines The Custom Task Stride
+
 interface AnimatedCustomTaskProps {
     custom_task:CustomTask,
-    onToggleCompleteCustomTask:() => void,
-    onShowCustomTaskProperties:() => void
+    onShowCustomTaskProperties?:() => void,
+    is_floating?:boolean
 }
 
-const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Animated View
-
-export const AnimatedCustomTask = ({ custom_task, onToggleCompleteCustomTask, onShowCustomTaskProperties }:AnimatedCustomTaskProps) => {
+export const AnimatedCustomTask = ({ custom_task, onShowCustomTaskProperties, is_floating = false }: AnimatedCustomTaskProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
-    const animation_value = useRef(new Animated.Value(custom_task.is_completed ? 1 : 0)).current // Stores The Animation Value
+    const animation_value:SharedValue<number> = useSharedValue(custom_task.is_completed ? 1 : 0) // Stores The Animation Value
 
     useEffect(() => {
-        Animated.timing(animation_value, {
-            toValue: custom_task.is_completed ? 1 : 0,
+        animation_value.value = withTiming(custom_task.is_completed ? 1 : 0, {
             duration: 300,
-            useNativeDriver: false
-        }).start()
-    }, [custom_task.is_completed])
+        })
+    }, [animation_value, custom_task.is_completed])
 
-    // Converts A Numeric Range To Percentages
-    const animated_width = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["0%", "100%"]
-    })
+    // Animates The Progress
+    const animated_progress = useAnimatedStyle(() => {
+        const width = interpolate(animation_value.value, [0, 1], [0, 100]) // Converts A Numeric Range To Percentages
 
-    // Animates The Background Color
-    const animated_background_color = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: ["rgba(255, 207, 32, 0.1)", "rgba(82, 207, 32, 0.1)"] // Makes Color Transition For Progress From rgba(255, 207, 32, 0.1) To rgba(82, 207, 32, 0.1)
-    })
+        // Animates The Background Color
+        const background_color = interpolateColor(
+            animation_value.value,
+            [0, 1],
+            ["rgba(255, 207, 32, 0.1)", "rgba(82, 207, 32, 0.1)"] // Makes Color Transition For Progress Bar From rgba(255, 207, 32, 0.1) To rgba(82, 207, 32, 0.1)
+        )
 
-    // Animates The Border Color
-    const animated_border_color = animation_value.interpolate({
-        inputRange: [0, 1],
-        outputRange: [transparentize(BLUE_COLOR, 0.8), transparentize(GREEN_COLOR, 0.8)]
+        // // Animates The Border Color
+        // const border_color = interpolateColor(
+        //     animation_value.value,
+        //     [0, 1],
+        //     [transparentize(BLUE_COLOR, 0.8), transparentize(GREEN_COLOR, 0.8)]
+        // )
+
+        return {
+            width: `${width}%`,
+            backgroundColor: background_color,
+            // borderColor: border_color
+        }
     })
 
     return (
-        <AnimatedView 
+        <View
             className="task"
 
             style={[
-                styles.custom_task, 
-                { borderColor: animated_border_color }
+                styles.custom_task,
+                is_floating && styles.floating_custom_task,
             ]}
         >
-            <AnimatedView 
+            <ReAnimated.View  
                 style={[
                     StyleSheet.absoluteFill,
-
-                    {
-                        width: animated_width,
-                        backgroundColor: animated_background_color,
-                    }
+                    animated_progress,
                 ]} 
             />
 
-            <CustomTaskCheckbox 
-                is_checked={custom_task.is_completed} 
-                onComplete={onToggleCompleteCustomTask}
-            />
+            <View pointerEvents="none">
+                <CustomTaskCheckbox is_checked={custom_task.is_completed} />
+            </View>
 
-            <Pressable 
+            <View 
                 className="title" 
-                onPress={onToggleCompleteCustomTask}
+                pointerEvents="none"
 
                 style={{ 
                     flex: 1,
                     justifyContent: "center",
                     height: "100%",
-                    cursor: "pointer" 
                 }}
             >
                 <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: SECONDARY_COLOR }}>{custom_task.title}</Text>
-            </Pressable>
+            </View>
 
             <Text className="date" style={styles.date}>{getFormattedDate(custom_task.created_at, false)}</Text>
 
-            <View 
-                className="show_custom_task_properties_button"
-                accessibilityLabel={t("Viac...")} 
-            >
-                <Icon
-                    icon_name="ellipsis-vertical"
-                    onPress={onShowCustomTaskProperties}
-                />
-            </View>
-        </AnimatedView>
+            {!is_floating && onShowCustomTaskProperties && (
+                <View 
+                    className="show_custom_task_properties_button"
+                    accessibilityLabel={t("Viac...")} 
+                >
+                    <Icon
+                        icon_name="ellipsis-vertical"
+                        onPress={onShowCustomTaskProperties}
+                    />
+                </View>
+            )}
+        </View>
     )
 }
 
@@ -120,6 +124,12 @@ const styles = StyleSheet.create({
         //     transform: scale(0.98);
         //     opacity: 0.8;
         // }
+    },
+
+    floating_custom_task: {
+        elevation: 10,
+        zIndex: 9999,
+        overflow: "visible",
     },
 
     date: {

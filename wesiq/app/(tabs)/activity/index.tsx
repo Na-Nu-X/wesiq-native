@@ -1,4 +1,4 @@
-import { View, StyleSheet, ScrollView, Alert } from "react-native"
+import { View, StyleSheet, Alert, ScrollView } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState } from "react"
@@ -12,9 +12,11 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { useTranslation } from "react-i18next"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
+import type { CustomTask } from "@/components/pages/activity/TasksSection"
 
 interface CompletedOfficialTaskResponse {
     success: boolean,
@@ -38,6 +40,8 @@ export default function ActivityScreen() {
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
     const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
+    const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
+    const [is_dragging_custom_task, setIsDraggingCustomTask] = useState<boolean>(false) // Stores The Information If The Custom Task Is Dragging
 
     // Function For Complete Official Task
     const completeOfficialTask = async (task_data:string):Promise<void> => {
@@ -96,11 +100,6 @@ export default function ActivityScreen() {
             const complete_all_official_tasks:OfficialTask|null = official_tasks.find(one_task => one_task.data === "complete_all_official_tasks") || null // Gets The "Complete All Official Tasks" Official Task If Is Available
 
             if(completed_official_task_data.task.first_completion && completed_official_task_data.task.is_completed) {
-                // window.setTimeout(function():void {
-                //     displayMessage(`+${completed_official_task_response.gained_xp} XP`, "success") // Displays The Amount Of Gained XP For The Completed Task
-                //     success_sound.play() // Plays The Success Sound
-                // }, 100)
-
                 // All Official Tasks
                 if(complete_all_official_tasks && !complete_all_official_tasks.is_completed) {
                     const other_official_tasks:OfficialTask[] = updated_official_tasks.filter(one_task => one_task.data !== "complete_all_official_tasks") // Gets Other Official Tasks
@@ -117,56 +116,62 @@ export default function ActivityScreen() {
     }
 
     return (
-        <BackgroundContainer>
-            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
-                    logged_in_user={logged_in_user} 
-                    setActiveForm={setActiveForm} 
-                />
-
-                <ScrollView 
-                    className="content" 
-                    style={styles.content} 
-                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                    keyboardShouldPersistTaps="handled" 
-                    keyboardDismissMode="on-drag"
-                >
-                    <LoginFormDialog 
-                        visible={active_form==="login_form"}
-                        onChangeActiveForm={() => setActiveForm("registration_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <BackgroundContainer>
+                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                    <Banner 
+                        logged_in_user={logged_in_user} 
+                        setActiveForm={setActiveForm} 
                     />
 
-                    <RegistrationFormDialog
-                        visible={active_form==="registration_form"}
-                        onChangeActiveForm={() => setActiveForm("login_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
-                    />
-
-                    <View className="training_page" style={styles.training_page}>
-                        <ActivitySection 
-                            onElapsedTimeUpdate={setElapsedTime} 
-                            elapsed_time={elapsed_time} 
-                            onAverageActivityTimeLoad={setAverageActivityTime} 
-                            official_tasks={official_tasks}
-                            onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
+                    <ScrollView 
+                        className="content" 
+                        keyboardShouldPersistTaps="handled" 
+                        keyboardDismissMode="on-drag"
+                        scrollEnabled={!is_dragging_custom_task}
+                        style={styles.content} 
+                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    >
+                        <LoginFormDialog 
+                            visible={active_form==="login_form"}
+                            onChangeActiveForm={() => setActiveForm("registration_form")}
+                            onClose={() => setActiveForm(null)}
+                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
                         />
 
-                        <TasksSection 
-                            elapsed_time={elapsed_time} 
-                            average_activity_time={average_activity_time} 
-                            onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
-                            official_tasks={official_tasks}
-                            onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
+                        <RegistrationFormDialog
+                            visible={active_form==="registration_form"}
+                            onChangeActiveForm={() => setActiveForm("login_form")}
+                            onClose={() => setActiveForm(null)}
+                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
                         />
-                        
-                        <HistorySection />
-                    </View>
-                </ScrollView>
-            </SafeAreaView>
-        </BackgroundContainer>
+
+                        <View className="training_page" style={styles.training_page}>
+                            <ActivitySection 
+                                onElapsedTimeUpdate={setElapsedTime} 
+                                elapsed_time={elapsed_time} 
+                                onAverageActivityTimeLoad={setAverageActivityTime} 
+                                official_tasks={official_tasks}
+                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
+                            />
+
+                            <TasksSection 
+                                elapsed_time={elapsed_time} 
+                                average_activity_time={average_activity_time} 
+                                onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
+                                official_tasks={official_tasks}
+                                onCustomTasksUpdate={(custom_tasks:CustomTask[]) => setCustomTasks(custom_tasks)}
+                                custom_tasks={custom_tasks}
+                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
+                                onCustomTasksDragChange={setIsDraggingCustomTask}
+                            />
+                            
+                            <HistorySection />
+                        </View>
+                    </ScrollView>
+                </SafeAreaView>
+            </BackgroundContainer>
+        </GestureHandlerRootView>
     )
 }
 

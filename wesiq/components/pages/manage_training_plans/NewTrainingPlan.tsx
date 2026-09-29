@@ -8,7 +8,7 @@ import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
+import { Gesture, GestureDetector, PanGesture } from "react-native-gesture-handler"
 import { BasicResponse } from "@/components/Feed"
 import Icon from "@/components/Icon"
 import * as Notifications from "expo-notifications"
@@ -92,7 +92,7 @@ export default function NewTrainingPlan({
     // Function For Initialize The Drag Gesture
     const initializeDragGesture = (exercise:TrainingPlanExercise) => {
         // Creates The Drag Gesture (Starts After 250MS Hold)
-        const drag = Gesture.Pan()
+        const drag:PanGesture = Gesture.Pan()
             .activateAfterLongPress(250)
             .onStart((event) => {
                 exercise_scale.value = withSpring(0.95) // Shrinks The Item

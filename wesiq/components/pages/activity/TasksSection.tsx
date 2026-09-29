@@ -1,5 +1,5 @@
-import { View, Text, StyleSheet, Pressable, TextInput, ScrollView, Alert } from "react-native"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { View, Text, StyleSheet, Pressable, TextInput, Alert, TouchableOpacity } from "react-native"
+import { RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
@@ -12,6 +12,7 @@ import { BasicResponse } from "@/components/Feed"
 import { AnimatedCustomTask } from "./AnimatedCustomTask"
 import { AnimatedOfficialTask } from "./AnimatedOfficialTask"
 import { useTranslation } from "react-i18next"
+import DraggableFlatList, { RenderItemParams, ScaleDecorator, ShadowDecorator } from "react-native-draggable-flatlist"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -55,15 +56,29 @@ interface TasksSectionProps {
     average_activity_time:number,
     onOfficialTasksUpdate:(official_tasks:OfficialTask[]) => void
     official_tasks:OfficialTask[],
-    onCompleteOfficialTask:(task_data:string) => void
+    onCustomTasksUpdate:(official_tasks:CustomTask[]) => void
+    custom_tasks:CustomTask[],
+    onCompleteOfficialTask:(task_data:string) => void,
+    onCustomTasksDragChange:(is_dragging:boolean) => void
 }
 
-export default function TasksSection({ elapsed_time, average_activity_time, onOfficialTasksUpdate, official_tasks, onCompleteOfficialTask }:TasksSectionProps) {
+export default function TasksSection({ 
+    elapsed_time, 
+    average_activity_time, 
+    onOfficialTasksUpdate, 
+    official_tasks, 
+    onCustomTasksUpdate, 
+    custom_tasks, 
+    onCompleteOfficialTask,
+    onCustomTasksDragChange
+}:TasksSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [official_tasks_remaining_hours, setOfficialTasksRemainingHours] = useState<number>(0) // Stores The Official Tasks Remaining Hours
-    const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
+
+    const custom_tasks_reference:RefObject<CustomTask[]> = useRef(custom_tasks) // Stores The Custom Tasks Reference
+    custom_tasks_reference.current = custom_tasks // Sets The Custom Tasks Reference
     
     // Stores The Completed Custom Tasks
     const completed_custom_tasks:CustomTask[] = useMemo(() => {
@@ -337,7 +352,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
             }
             
             else {
-                setCustomTasks(custom_tasks_data.custom_tasks || []) // Sets The Custom Tasks
+                onCustomTasksUpdate(custom_tasks_data.custom_tasks || []) // Sets The Custom Tasks
             }
         } 
         
@@ -391,8 +406,8 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
             }
             
             else {
-                // Sets The Custom Tasks
-                setCustomTasks(previous_custom_tasks => previous_custom_tasks.map((one_task:CustomTask) => {
+                // Stores The New State Of Updated Custom Tasks
+                const updated_custom_tasks:CustomTask[] = custom_tasks.map((one_task:CustomTask) => {
                     if(one_task.id === task_id) {
                         // Inverts The Custom Task Completion
                         return {
@@ -402,7 +417,9 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                     }
 
                     return one_task // Returns The Unchanged Custom Task
-                }))
+                })
+
+                onCustomTasksUpdate(updated_custom_tasks) // Sets The Custom Tasks
             }
         } 
         
@@ -462,7 +479,7 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                 order: custom_tasks.length + 1
             }
 
-            setCustomTasks([new_custom_task, ...custom_tasks]) // Sets The Custom Tasks
+            onCustomTasksUpdate([new_custom_task, ...custom_tasks]) // Sets The Custom Tasks
             setNewTaskTitle("") // Sets The New Task Title
 
             const add_custom_task:OfficialTask|null = official_tasks.find(one_task => one_task.data === "add_custom_task") || null // Gets The "Add Custom Task" Official Task If Is Available
@@ -516,7 +533,8 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
             }
             
             else {
-                setCustomTasks(previous_custom_tasks => previous_custom_tasks.filter((one_task:CustomTask) => !completed_custom_tasks_ids.includes(one_task.id))) // Sets The Custom Tasks
+                const updated_custom_tasks:CustomTask[] = custom_tasks.filter((one_task:CustomTask) => !completed_custom_tasks_ids.includes(one_task.id)) // Stores The New State Of Updated Custom Tasks
+                onCustomTasksUpdate(updated_custom_tasks) // Sets The Custom Tasks
                 return
             }
         } 
@@ -566,7 +584,8 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
             }
             
             else {
-                setCustomTasks(previous_custom_tasks => previous_custom_tasks.filter((one_task:CustomTask) => one_task.id !== custom_task_id)) // Sets The Custom Tasks
+                const updated_custom_tasks:CustomTask[] = custom_tasks.filter((one_task:CustomTask) => one_task.id !== custom_task_id) // Stores The New State Of Updated Custom Tasks
+                onCustomTasksUpdate(updated_custom_tasks) // Sets The Custom Tasks
                 setSelectedCustomTask(null) // Sets The Selected Custom Task
                 hideCustomTaskProperties() // Closes The Custom Task Properties
                 return
@@ -589,6 +608,28 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
         setSelectedCustomTask(null) // Sets The Selected Custom Task
         custom_task_properties.current?.dismiss() // Hides The Custom Task Properties
     }
+
+    // Function For Render The Custom Task
+    const renderCustomTask = useCallback(({ item, drag, isActive }:RenderItemParams<CustomTask>) => {
+        return (
+            <ShadowDecorator>
+                <ScaleDecorator activeScale={0.98}>
+                    <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onLongPress={drag}
+                        onPress={() => toggleCompleteCustomTask(item.id)}
+                        disabled={isActive}
+                    >
+                        <AnimatedCustomTask 
+                            custom_task={item} 
+                            onShowCustomTaskProperties={() => showCustomTaskProperties(item)}
+                            is_floating={isActive}
+                        />
+                    </TouchableOpacity>
+                </ScaleDecorator>
+            </ShadowDecorator>
+        )
+    }, [custom_tasks, logged_in_user])
 
     return (
         <BottomSheetModalProvider>
@@ -700,52 +741,71 @@ export default function TasksSection({ elapsed_time, average_activity_time, onOf
                             <Text className="tasks_amount" style={styles.tasks_amount}><Text className="remaining">{completed_custom_tasks.length}</Text> / <Text className="total">{custom_tasks.length || 0}</Text></Text>
                         </View>
 
-                        <ScrollView 
+                        <DraggableFlatList
                             className="tasks"
+                            data={custom_tasks}
+                            keyExtractor={(one_task:CustomTask) => String(one_task.id)}
+                            renderItem={renderCustomTask}
+                            extraData={custom_tasks}
+                            autoscrollThreshold={40}
+                            autoscrollSpeed={100}
                             showsVerticalScrollIndicator={false}
                             indicatorStyle="white"
-                            style={styles.custom_tasks_container}
-                            contentContainerStyle={styles.custom_tasks_container}
-                        >
-                            <View className="add_task_container" style={styles.add_task_container}>
-                                <TextInput
-                                    className="new_task"
-                                    keyboardType="default"
-                                    autoCapitalize="none"
-                                    autoCorrect={false}
-                                    textAlignVertical="top" 
-                                    placeholder={t("Pridať úlohu")} 
-                                    placeholderTextColor={LIGHT_BLUE_COLOR}
-                                    accessibilityLabel={t("Pridať úlohu")} 
-                                    value={new_task_title}
-                                    onChangeText={setNewTaskTitle}
-                                    maxLength={100}
+                            keyboardShouldPersistTaps="handled"
+                            containerStyle={styles.custom_tasks_container}
 
-                                    style={[
-                                        styles.new_task, 
-                                        { outlineStyle: "none" } as any
-                                    ]}
-                                />
+                            contentContainerStyle={{
+                                paddingHorizontal: 5,
+                                paddingBottom: 5,
+                            }}
 
-                                <View className="add_task" style={styles.add_task}>
-                                    <Icon
-                                        icon_name="plus"
-                                        onPress={() => addCustomTask(new_task_title)}
-                                        size={25}
-                                        // pressed_style={{ transform: [{ scale: 1.1 }] }}
+                            ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+                            ListHeaderComponentStyle={{ marginBottom: 10 }}
+                            
+                            onDragBegin={() => onCustomTasksDragChange(true)}
+                            onRelease={() => onCustomTasksDragChange(false)}
+
+                            onDragEnd={({ data }) => {
+                                onCustomTasksDragChange(false)
+
+                                onCustomTasksUpdate(data.map((one_task:CustomTask, index:number) => ({
+                                    ...one_task,
+                                    order: index + 1
+                                })))
+                            }}
+                            
+                            ListHeaderComponent={
+                                <View className="add_task_container" style={styles.add_task_container}>
+                                    <TextInput
+                                        className="new_task"
+                                        keyboardType="default"
+                                        autoCapitalize="none"
+                                        autoCorrect={false}
+                                        textAlignVertical="top" 
+                                        placeholder={t("Pridať úlohu")} 
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+                                        accessibilityLabel={t("Pridať úlohu")} 
+                                        value={new_task_title}
+                                        onChangeText={setNewTaskTitle}
+                                        maxLength={100}
+
+                                        style={[
+                                            styles.new_task, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
                                     />
-                                </View>
-                            </View>
 
-                            {custom_tasks.map((one_task:CustomTask) => (
-                                <AnimatedCustomTask 
-                                    key={one_task.id} 
-                                    custom_task={one_task} 
-                                    onToggleCompleteCustomTask={() => toggleCompleteCustomTask(one_task.id)} 
-                                    onShowCustomTaskProperties={() => showCustomTaskProperties(one_task)}
-                                />
-                            ))}
-                        </ScrollView>
+                                    <View className="add_task" style={styles.add_task}>
+                                        <Icon
+                                            icon_name="plus"
+                                            onPress={() => addCustomTask(new_task_title)}
+                                            size={25}
+                                            // pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                        />
+                                    </View>
+                                </View>
+                            }
+                        />
                     </View>
                 </View>
 
@@ -981,11 +1041,8 @@ const styles = StyleSheet.create({
     },
 
     custom_tasks_container: {
-        gap: 10,
+        minHeight: 100, 
         maxHeight: 50 * 3 + 15 * 2,
-        // marginTop: 10,
-        paddingHorizontal: 5,
-        paddingBottom: 5,
     },
 
     add_task_container: {

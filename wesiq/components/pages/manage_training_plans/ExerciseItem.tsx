@@ -2,7 +2,7 @@ import { View, Text, Image, StyleSheet } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
-import { Gesture, GestureDetector, Directions, ComposedGesture } from "react-native-gesture-handler"
+import { Gesture, GestureDetector, Directions, ComposedGesture, PanGesture } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 
 import type { Exercise } from "./ExerciseSelection"
@@ -36,7 +36,7 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
         })
 
     // Creates The Drag Gesture (Starts After 250MS Hold)
-    const drag = Gesture.Pan()
+    const drag:PanGesture = Gesture.Pan()
         .activateAfterLongPress(250)
         .onStart((event) => {
             scale.value = withSpring(1.05) // Scales The Item
