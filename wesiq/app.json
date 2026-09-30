@@ -19,7 +19,12 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
     },
     "web": {
       "output": "static",
@@ -44,11 +49,34 @@
       "expo-image",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-localization"
+      "expo-localization",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": true,
+          "modes": [
+            "peripheral",
+            "central"
+          ]
+        }
+      ],
+      [
+        "react-native-health",
+        {
+          "healthSharePermission": "Aplikácia potrebuje prístup k dáta o tepe pre meranie aktivity."
+        }
+      ],
+      "react-native-health-connect"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c007e0da-9003-4e39-953f-bbc4e5f2a6f6"
+      }
     }
   }
 }

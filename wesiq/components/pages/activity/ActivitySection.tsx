@@ -20,6 +20,7 @@ import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormD
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 import type { Day } from "../manage_training_plans/DaySelectMenu"
+import { HeartRate } from "./HeartRate"
 
 export interface TrainingPlanExercise {
     id:number,
@@ -559,6 +560,8 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                             </>
                         )}
                     </Animated.View>
+
+                    <HeartRate is_activity_started={is_activity_started} />
 
                     <View className="bar_container" style={styles.bar_container}>
                         {active_training_plan_exercises.map((one_exercise:TrainingPlanExercise, index:number) => {

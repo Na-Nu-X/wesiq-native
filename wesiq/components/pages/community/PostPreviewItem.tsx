@@ -139,7 +139,7 @@ export const PostPreviewItem = ({
                 file_reader.readAsDataURL(file.file) // Renders The Preview
             } 
             
-            // iOS / Android
+            // iOS And Android
             else {
                 onProgress(100) // Displays The Loading Progress Percentage
             }
