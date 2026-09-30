@@ -631,6 +631,51 @@ export default function TasksSection({
         )
     }, [custom_tasks, logged_in_user])
 
+    // Function For Change The Order Of The Custom Tasks
+    const changeCustomTasksOrder = async (tasks:CustomTask[]):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Poradie úloh nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
+                return
+            }
+
+            const tasks_ids:number[] = tasks.map((one_task:CustomTask) => one_task.id) // Stores The IDs Of All Custom Tasks
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const change_custom_tasks_order_response:Response = await fetch(`${API_URL}/change-custom-tasks-order/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({ tasks_ids })
+            })
+
+            // If The Response Isn't Success
+            if(!change_custom_tasks_order_response.ok) {
+                Alert.alert(t("Chyba"), t("Pri pokuse o zmenu poradia úloh došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const change_custom_tasks_order_data:BasicResponse = await change_custom_tasks_order_response.json() // Gets The Deleted Custom Tasks Data
+
+            // If The Response Isn't Success
+            if(!change_custom_tasks_order_data.success) {
+                Alert.alert(t("Chyba"), change_custom_tasks_order_data.message) // Shows The Alert
+                return
+            }
+        } 
+        
+        catch {
+            Alert.alert(t("Chyba"), t("Pri pokuse o zmenu poradia úloh došlo k chybe.")) // Shows The Alert
+        }
+    }
+
     return (
         <BottomSheetModalProvider>
             <View 
@@ -766,12 +811,15 @@ export default function TasksSection({
                             onRelease={() => onCustomTasksDragChange(false)}
 
                             onDragEnd={({ data }) => {
-                                onCustomTasksDragChange(false)
+                                onCustomTasksDragChange(false) // Sets The Information That The Custom Task Isn't Dragging
 
+                                // Sets The Custom Tasks
                                 onCustomTasksUpdate(data.map((one_task:CustomTask, index:number) => ({
                                     ...one_task,
                                     order: index + 1
                                 })))
+
+                                changeCustomTasksOrder(data) // Changes The Custom Tasks Order
                             }}
                             
                             ListHeaderComponent={

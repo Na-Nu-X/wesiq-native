@@ -20,6 +20,7 @@ import ProfileSection from "@/components/pages/profile/ProfileSection"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
+import Back from "@/components/Back"
 
 interface ProfileResponse {
     success:boolean,
@@ -460,14 +461,7 @@ export default function ProfileScreen() {
                                     <View style={styles.circle_decoration_after} />
 
                                     <View className="options_container" style={styles.options_container}>
-                                        <View className="back" accessibilityLabel={t("Späť na úvodnú stránku")}>
-                                            <Icon
-                                                icon_name="chevron-left"
-                                                // onPress={}
-                                                size={30}
-                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                            />
-                                        </View>
+                                        <Back />
 
                                         {logged_in_user && profile && logged_in_user.id === profile.id && (
                                             <View className="toggle_settings" accessibilityLabel="">
@@ -1275,14 +1269,7 @@ export default function ProfileScreen() {
                             <View className="profile_page not_found" style={styles.profile_page}>
                                 <View className="profile_container" style={styles.profile_container}>
                                     <View className="options_container" style={styles.options_container}>
-                                        <View className="back" accessibilityLabel={t("Späť na úvodnú stránku")}>
-                                            <Icon
-                                                icon_name="chevron-left"
-                                                // onPress={}
-                                                size={30}
-                                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                            />
-                                        </View>
+                                        <Back />
                                     </View>
 
                                     <View className="profile_content" style={styles.profile_content}>

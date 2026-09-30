@@ -82,8 +82,7 @@ export default function RootLayout() {
       notification_id.current = id // Sets The Notification ID
     } 
     
-    catch (err) {
-      console.log(err)
+    catch {
       console.error(t("Pri plánovaní notifikácie došlo k chybe."))
     }
   }

@@ -33,6 +33,8 @@ export default function RootLayout() {
 
   return (
     <Tabs
+      backBehavior="history"
+
       screenOptions={{
         tabBarActiveTintColor: DARK_BLUE_COLOR,
         tabBarInactiveTintColor: BLUE_COLOR,
@@ -57,7 +59,7 @@ export default function RootLayout() {
       />
       
       <Tabs.Screen
-        name="chat/index"
+        name="chat"
 
         options={{
           title: "",
@@ -74,7 +76,7 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
-        name="activity/index"
+        name="activity"
 
         options={{
           title: "",

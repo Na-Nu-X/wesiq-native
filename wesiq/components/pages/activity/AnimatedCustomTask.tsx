@@ -72,58 +72,55 @@ export const AnimatedCustomTask = ({ custom_task, onShowCustomTaskProperties, is
                 ]} 
             />
 
-            <View pointerEvents="none">
-                <CustomTaskCheckbox is_checked={custom_task.is_completed} />
-            </View>
+            <View style={styles.custom_task_content}>
+                <View pointerEvents="none"><CustomTaskCheckbox is_checked={custom_task.is_completed} /></View>
 
-            <View 
-                className="title" 
-                pointerEvents="none"
+                <View 
+                    className="title" 
+                    pointerEvents="none"
 
-                style={{ 
-                    flex: 1,
-                    justifyContent: "center",
-                    height: "100%",
-                }}
-            >
-                <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: SECONDARY_COLOR }}>{custom_task.title}</Text>
-            </View>
+                    style={{ 
+                        flex: 1,
+                        justifyContent: "center",
+                        height: "100%",
+                    }}
+                >
+                    <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: SECONDARY_COLOR }}>{custom_task.title}</Text>
+                </View>
 
-            <Text className="date" style={styles.date}>{getFormattedDate(custom_task.created_at, false)}</Text>
+                <Text className="date" style={styles.date}>{getFormattedDate(custom_task.created_at, false)}</Text>
 
-            {!is_floating && onShowCustomTaskProperties && (
                 <View 
                     className="show_custom_task_properties_button"
                     accessibilityLabel={t("Viac...")} 
                 >
                     <Icon
                         icon_name="ellipsis-vertical"
-                        onPress={onShowCustomTaskProperties}
+                        onPress={!is_floating && onShowCustomTaskProperties ? onShowCustomTaskProperties : () => console.log("")}
                     />
                 </View>
-            )}
+            </View>
         </View>
     )
 }
 
 const styles = StyleSheet.create({
     custom_task: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
         flexShrink: 0,
         height: 50,
-        paddingHorizontal: 15,
         backgroundColor: transparentize(MAIN_COLOR, 0.5),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.8),
         borderRadius: SMALL_BORDER_RADIUS,
         overflow: "hidden",
+    },
 
-        // &.dragging {
-        //     transform: scale(0.98);
-        //     opacity: 0.8;
-        // }
+    custom_task_content: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        flex: 1,
+        paddingHorizontal: 15,
     },
 
     floating_custom_task: {
