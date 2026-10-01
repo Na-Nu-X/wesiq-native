@@ -8,6 +8,7 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/Feed"
@@ -49,11 +50,16 @@ const { t } = useTranslation() // Initializes The Translations
 
 export default function SearchUsers() {
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
+
     const [first_loaded_users, setFirstLoadedUsers] = useState<loadedUser[]>([]) // Stores The First Loaded Users
     const [displayed_users, setDisplayedUsers] = useState<loadedUser[]>(first_loaded_users) // Stores The Displayed Users
     const [loaded_users, setLoadedUsers] = useState<loadedUser[]>([]) // Stores The Loaded Users
+
     const [searched_users_history, setSearchedUsersHistory] = useState<string[]>([]) // Stores The Searched Users History From The History
     const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
+    
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Users Are Loading
 
     const search_users_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Stores The Search Users Timeout
@@ -186,7 +192,7 @@ export default function SearchUsers() {
         return (
             <Pressable 
                 key={one_loaded_user.id}
-                // onPress={handleGoToProfile}
+                onPress={() => router.push(`/profile/${one_loaded_user.username}`)}
                 accessibilityRole="button"
                 accessibilityLabel={t("Zobraziť užívateľa")} 
                 className="one_user"

@@ -4,7 +4,6 @@ import { View, StyleSheet, TextInput } from "react-native"
 import { useTranslation } from "react-i18next"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
-import { useEffect } from "react"
 
 import type { ChatData } from "@/app/(tabs)/chat"
 import type { Sender } from "@/app/(tabs)/chat"
@@ -41,11 +40,6 @@ export const SearchChat = ({
 
         onFilteredChatsUpdate([...filtered_unread_chats, ...filtered_read_chats]) // Sets The Filtered Senders
     }
-
-    useEffect(() => {
-        console.log(grouped_unread_chats)
-        console.log(grouped_read_chats)
-    }, [grouped_unread_chats, grouped_read_chats])
 
     // Function For Delete Search Bar
     const deleteSearchBar = ():void => {

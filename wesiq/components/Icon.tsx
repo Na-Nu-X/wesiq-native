@@ -16,7 +16,16 @@ type IconProps = {
 
 const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates The Animated Icon
 
-export default function Icon({ icon_name, onPress, size = 20, is_regular = false, style, pressed_style, color = BLUE_COLOR, pressed_color = DARK_BLUE_COLOR }:IconProps) {
+export default function Icon({ 
+    icon_name, 
+    onPress, 
+    size = 20, 
+    is_regular = false, 
+    style, 
+    pressed_style, 
+    color = BLUE_COLOR, 
+    pressed_color = DARK_BLUE_COLOR 
+}:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
 
