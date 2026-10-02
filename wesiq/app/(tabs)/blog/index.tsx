@@ -1,13 +1,14 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native"
+import { StyleSheet, ScrollView } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Banner from "@/components/Banner"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import { useTranslation } from "react-i18next"
 import SearchArticles from "@/components/pages/blog/SearchArticles"
 import Articles from "@/components/pages/blog/Articles"
+import { ArticlesAmount } from "@/components/pages/blog/ArticlesAmount"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -64,11 +65,7 @@ export default function BlogScreen() {
                         onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     />
 
-                    <View className="articles_amount">
-                        {articles_amount === 1 && (<Text>{t("Našiel sa {{articles_amount}} článok.", { articles_amount })}</Text>)}
-                        {articles_amount > 1 && articles_amount < 5 && (<Text>{t("Našli sa {{articles_amount}} články.", { articles_amount })}</Text>)}
-                        {articles_amount >= 5 && (<Text>{t("Našlo sa {{articles_amount}} článkov.", { articles_amount })}</Text>)}
-                    </View>
+                    <ArticlesAmount articles_amount={articles_amount} />
 
                     <SearchArticles 
                         onFilteredArticlesUpdate={(filtered_articles:Article[]) => setFilteredArticles(filtered_articles)}
@@ -76,6 +73,7 @@ export default function BlogScreen() {
                         articles={articles}
                         onSearchedTextUpdate={(searched_text:string) => setSearchedText(searched_text)}
                         searched_text={searched_text}
+                        onArticlesAmountUpdate={(articles_amount:number) => setArticlesAmount(articles_amount)}
                     />
 
                     <Articles 

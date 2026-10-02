@@ -15,10 +15,18 @@ interface SearchArticlesProps {
     filtered_articles:Article[],
     articles:Article[],
     onSearchedTextUpdate:(searched_text:string) => void,
-    searched_text:string
+    searched_text:string,
+    onArticlesAmountUpdate:(articles_amount:number) => void
 }
 
-export default function SearchArticles({ onFilteredArticlesUpdate, filtered_articles, articles, onSearchedTextUpdate, searched_text }:SearchArticlesProps) {
+export default function SearchArticles({ 
+    onFilteredArticlesUpdate, 
+    filtered_articles, 
+    articles, 
+    onSearchedTextUpdate, 
+    searched_text,
+    onArticlesAmountUpdate
+}:SearchArticlesProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const [selected_sort_option, setSelectedSortOption] = useState<string|null>(null) // Stores The Selected Sort Option
@@ -53,6 +61,7 @@ export default function SearchArticles({ onFilteredArticlesUpdate, filtered_arti
         }
 
         onFilteredArticlesUpdate(new_filtered_articles) // Sets The Filtered Articles
+        onArticlesAmountUpdate(new_filtered_articles.length) // Sets The Articles Amount
     }
 
     // Initializes The Apply Of All Filters
