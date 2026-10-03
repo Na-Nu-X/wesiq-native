@@ -70,7 +70,6 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
     
     return (
         <View 
-            key={one_article.id}
             className={one_article.link || "article"} 
             style={styles.article}
         >

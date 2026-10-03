@@ -37,7 +37,7 @@ interface AddedPostCommentResponse {
     message:string
 }
 
-interface AddedComment {
+export interface AddedComment {
     id:number,
 
     user:{
@@ -143,8 +143,6 @@ export const PostContainer = ({
 
             const loaded_post_comments_data:loadedPostCommentsResponse = await loaded_post_comments_response.json() // Gets The Loaded Post Comments Data
 
-            console.log(loaded_post_comments_data.visible_comments)
-
             // If The Response Isn't Success
             if(!loaded_post_comments_data.success) {
                 Alert.alert(t("Chyba"), loaded_post_comments_data.message) // Shows The Alert
@@ -197,13 +195,13 @@ export const PostContainer = ({
         } 
         
         finally {
-            setArePostCommentsLoading(false) // Stores The Information That Posts Aren't Loading
+            setArePostCommentsLoading(false) // Stores The Information That Post Comments Aren't Loading
         }
     }
     
     // Function For Load More Post Comments
     const loadMorePostComments = (post_id:number) => {
-        if(has_next_post_comments && !are_post_comments_loading) getPostComments(post_comments_page + 1, false, post_id) // Loads Posts
+        if(has_next_post_comments && !are_post_comments_loading) getPostComments(post_comments_page + 1, false, post_id) // Loads Post Comments
     }
 
     // Function For Generate Styled Description
@@ -1927,11 +1925,6 @@ const styles = StyleSheet.create({
         borderLeftColor: "#333333",
         borderBottomLeftRadius: MEDIUM_BORDER_RADIUS,
     },
-
-    // .one_comment .comment_container .user a .profile_picture {
-    //     width: 32px;
-    //     height: 32px;
-    // }
 
     show_more: {
         marginHorizontal: "auto",

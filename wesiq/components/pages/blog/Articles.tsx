@@ -76,7 +76,7 @@ export default function Articles({ onArticlesUpdate, articles, filtered_articles
             {no_articles && (<Text className="no_articles" style={styles.no_articles}>{t("Ospravedlňujeme sa!\nNepodarilo sa nájsť žiadne články.")}</Text>)}
 
             <View className="articles" style={styles.articles}>
-                {filtered_articles.map((one_article:Article) => (<ArticleItem one_article={one_article} />))}
+                {filtered_articles.map((one_article:Article) => (<ArticleItem key={one_article.id} one_article={one_article} />))}
             </View>
         </View>
     )
