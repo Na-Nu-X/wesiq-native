@@ -164,10 +164,11 @@ export const PostPreviewItem = ({
 
     // Function For Toggle Show / Hide Tooltip
     const toggleShowTooltip = (key:string|number) => {
+        // Sets The Tooltips
         setTooltips((previous_tooltips) => {
             const is_already_open:boolean = previous_tooltips.some((one_tooltip:string|number) => one_tooltip === key) // Checks If The Tooltip Is Already Open
 
-            if(is_already_open) return previous_tooltips.filter((one_tooltip:string|number) => one_tooltip !== key) // Hkeyes The Tooltip
+            if(is_already_open) return previous_tooltips.filter((one_tooltip:string|number) => one_tooltip !== key) // Hides The Tooltip
             else return [...previous_tooltips, key] // Shows The Tooltip
         })
     }
@@ -453,52 +454,5 @@ const styles = StyleSheet.create({
         //         transition: 0.3s transform 1s;
         //     }
         // }
-    },
-
-    tooltip_body: {
-        // --translate-y: calc(-100% - 10px);
-        // --scale: 0;
-        position: "absolute",
-        // top: -1.5,
-        bottom: 35 + 1,
-        left: "50%",
-
-        transform: [
-            { translateX: "-50%" },
-            // { translateY(var(--translate-y, 0)) },
-            // { scale(var(--scale)) }
-        ],
-
-        transformOrigin: "bottom center",
-        maxWidth: "100%",
-        width: "100%",
-        padding: 5,
-        textAlign: "center",
-        borderRadius: SMALL_BORDER_RADIUS,
-        fontSize: 15,
-        backgroundColor: transparentize(SECONDARY_COLOR, 0.8),
-        color: SECONDARY_COLOR,
-        // text-shadow: 0px 0px 5px $main-color;
-        // transition: 0.3s transform 0s;
-    },
-
-    tooltip_triangle: {
-        // --translate-y: calc(-1 * 10px);
-        // --scale: 0;
-        position: "absolute",
-        // top: -1.5,
-        bottom: 15 + 1,
-        left: "50%",
-
-        transform: [
-            { translateX: "-50%" },
-            // { translateY(var(--translate-y, 0)) },
-            // { scale(var(--scale)) }
-        ],
-
-        transformOrigin: "bottom center",
-        borderWidth: 10,
-        borderTopColor: transparentize(SECONDARY_COLOR, 0.8),
-        // transition: 0.3s transform 0s;
     },
 })

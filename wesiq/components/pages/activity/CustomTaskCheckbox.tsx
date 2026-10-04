@@ -49,7 +49,7 @@ export const CustomTaskCheckbox = ({ is_checked }:CustomTaskCheckboxProps) => {
             ]}
         >
             <AnimatedImage 
-                source={{ uri: `${DOMAIN}/static/images/check.png`}}
+                source={require("@/assets/images/check.png")}
                 resizeMode="contain"
 
                 style={[

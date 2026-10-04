@@ -14,7 +14,7 @@ import { HeartParticle } from "./HeartParticle"
 import { getFollowButtonProperties } from "./SearchUsers"
 import { DynamicImage } from "./DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-// import { DynamicVideo } from "./DynamicVideo"
+import { DynamicVideo } from "./DynamicVideo"
 import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
 import { useTranslation } from "react-i18next"
@@ -1024,7 +1024,7 @@ export const PostContainer = ({
                                 </View>
                             )}
 
-                            {/* {one_post_media.is_video && (
+                            {one_post_media.is_video && (
                                 <DynamicVideo 
                                     logged_in_user={logged_in_user}
                                     one_post={post}
@@ -1051,7 +1051,7 @@ export const PostContainer = ({
                                     onStopControlsTimer={stopControlsTimer}
                                     controls_timeout={controls_timeout}
                                 />
-                            )} */}
+                            )}
                         </View>
                     ))}
 

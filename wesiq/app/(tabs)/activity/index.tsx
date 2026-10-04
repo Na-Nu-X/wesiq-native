@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { useTranslation } from "react-i18next"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
@@ -42,6 +43,8 @@ export default function ActivityScreen() {
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
     const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
     const [is_dragging_custom_task, setIsDraggingCustomTask] = useState<boolean>(false) // Stores The Information If The Custom Task Is Dragging
+
+    const { triggerCompletedTaskMessage, AnimatedCompletedTaskMessage } = CompletedTaskMessage() // Creates The Completed Task Message
 
     // Function For Complete Official Task
     const completeOfficialTask = async (task_data:string):Promise<void> => {
@@ -100,6 +103,8 @@ export default function ActivityScreen() {
             const complete_all_official_tasks:OfficialTask|null = official_tasks.find(one_task => one_task.data === "complete_all_official_tasks") || null // Gets The "Complete All Official Tasks" Official Task If Is Available
 
             if(completed_official_task_data.task.first_completion && completed_official_task_data.task.is_completed) {
+                triggerCompletedTaskMessage(completed_official_task_data.task.gained_xp) // Triggers The Completed Task Message
+
                 // All Official Tasks
                 if(complete_all_official_tasks && !complete_all_official_tasks.is_completed) {
                     const other_official_tasks:OfficialTask[] = updated_official_tasks.filter(one_task => one_task.data !== "complete_all_official_tasks") // Gets Other Official Tasks
@@ -169,6 +174,8 @@ export default function ActivityScreen() {
                             <HistorySection />
                         </View>
                     </ScrollView>
+
+                    {AnimatedCompletedTaskMessage}
                 </SafeAreaView>
             </BackgroundContainer>
         </GestureHandlerRootView>

@@ -35,31 +35,41 @@ export const SortSelectMenu = ({ onSelectedSortOptionUpdate, selected_sort_optio
         }
     }
 
-    const handleSelectSortOption = (selected_sort_option:string|null) => {
+    const handleSelectSortOption = (selected_sort_option:string|null):void => {
         onSelectedSortOptionUpdate(selected_sort_option) // Sets The Sort
+        setIsSortSelectMenuOpen(false) // Sets The Information That The Sort Select Menu Isn't Open
+    }
+
+    const refreshSortSelectMenu = ():void => {
+        onSelectedSortOptionUpdate(null) // Sets The Sort
         setIsSortSelectMenuOpen(false) // Sets The Information That The Sort Select Menu Isn't Open
     }
 
     return (
         <View className="sort_select_menu" style={styles.sort_select_menu}>
-            <View 
-                className="refresh" 
-                accessibilityLabel={t("Obnoviť predvolené filtre")}
-                style={styles.refresh}
-            >
-                <IconButton 
-                    icon_name="arrow-rotate-right" 
-                    // onPress={} 
-                />
-            </View>
-
             <View ref={select} collapsable={false} style={{ width: "100%" }}>
                 <Pressable 
                     className="select" 
                     onPress={toggleShowSortSelectMenu}
                     style={styles.select}
                 >
-                    <Text style={{ color: LIGHT_BLUE_COLOR }}>
+                    <View 
+                        className="refresh" 
+                        accessibilityLabel={t("Obnoviť predvolené filtre")}
+                        style={styles.refresh}
+                    >
+                        <Icon 
+                            icon_name="arrow-rotate-right" 
+                            onPress={refreshSortSelectMenu} 
+                        />
+                    </View>
+
+                    <Text 
+                        style={{ 
+                            marginRight: "auto",
+                            color: LIGHT_BLUE_COLOR, 
+                        }}
+                    >
                         {selected_sort_option === null && t("Najnovšie články")}
                         {selected_sort_option === "latest" && t("Najnovšie články")}
                         {selected_sort_option === "popular" && t("Populárne články")}
@@ -199,8 +209,7 @@ const styles = StyleSheet.create({
     select: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: 5,
+        gap: 10,
         width: "100%",
         height: 50,
         paddingHorizontal: 8.5,
@@ -256,12 +265,6 @@ const styles = StyleSheet.create({
     },
 
     refresh: {
-        position: "absolute",
-        top: "50%",
-        left: 0,
-        transform: [{ translateY: "-50%" }],
-        height: "100%",
-        paddingLeft: 8.5,
         zIndex: 50,
     },
 })

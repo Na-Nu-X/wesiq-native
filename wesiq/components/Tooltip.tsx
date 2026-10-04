@@ -4,10 +4,11 @@ import { useEffect, useRef } from "react"
 import { Animated, Text, View, StyleSheet } from "react-native"
 
 type TooltipProps = {
-    text:string
+    text:string,
+    orientation?:"top"|"right"
 }
 
-export const Tooltip = ({ text }: TooltipProps) => {
+export const Tooltip = ({ text, orientation = "top" }:TooltipProps) => {
     const animated_scale = useRef(new Animated.Value(0)).current // Animates The Scale
 
     useEffect(() => {
@@ -18,13 +19,23 @@ export const Tooltip = ({ text }: TooltipProps) => {
         }).start()
     }, [animated_scale])
 
+    const is_top_oriented:boolean = orientation === "top" // Checks If The Tooltip Is Top Oriented
+
     return (
         <Animated.View style={[
-            styles.tooltip_container, 
-            { transform: [{ translateX: "-50%" }, { scale: animated_scale }] }
+            styles.tooltip_container,
+            is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
+
+            {
+                transform: [
+                    is_top_oriented ? { translateX: "-50%" } : { translateY: "-50%" },
+                    { scale: animated_scale }
+                ]
+            }
         ]}>
+            {!is_top_oriented && <View style={styles.tooltip_triangle_right} />}
             <Text style={styles.tooltip_body}>{text}</Text>
-            <View style={styles.tooltip_triangle} />
+            {is_top_oriented && <View style={styles.tooltip_triangle_top} />}
         </Animated.View>
     )
 }
@@ -32,15 +43,27 @@ export const Tooltip = ({ text }: TooltipProps) => {
 const styles = StyleSheet.create({
     tooltip_container: {
         position: "absolute",
-        bottom: 30,
-        left: "50%",
-        alignItems: "center",
-        maxWidth: "100%",
-        width: "100%",
         zIndex: 100,
     },
 
+    tooltip_container_top: {
+        bottom: 30,
+        left: "50%",
+        flexDirection: "column",
+        alignItems: "center",
+        width: "100%",
+    },
+
+    tooltip_container_right: {
+        top: "50%",
+        left: "100%",
+        flexDirection: "row",
+        alignItems: "center",
+        marginLeft: 10,
+    },
+
     tooltip_body: {
+        width: "100%",
         padding: 5,
         textAlign: "center",
         borderRadius: SMALL_BORDER_RADIUS,
@@ -50,7 +73,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
 
-    tooltip_triangle: {
+    tooltip_triangle_top: {
         width: 0,
         height: 0,
         backgroundColor: "transparent",
@@ -58,7 +81,21 @@ const styles = StyleSheet.create({
         borderTopColor: transparentize(SECONDARY_COLOR, 0.8),
         borderRightWidth: 10,
         borderRightColor: "transparent",
+        borderBottomWidth: 0,
         borderLeftWidth: 10,
         borderLeftColor: "transparent",
+    },
+
+    tooltip_triangle_right: {
+        width: 0,
+        height: 0,
+        backgroundColor: "transparent",
+        borderTopWidth: 10,
+        borderTopColor: "transparent",
+        borderRightWidth: 10,
+        borderRightColor: transparentize(SECONDARY_COLOR, 0.8),
+        borderBottomWidth: 10,
+        borderBottomColor: "transparent",
+        borderLeftWidth: 0,
     },
 })

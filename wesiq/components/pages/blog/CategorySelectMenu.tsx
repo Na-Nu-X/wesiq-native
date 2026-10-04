@@ -6,7 +6,6 @@ import { useState, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native"
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
-import IconButton from "@/components/IconButton"
 
 interface CategorySelectMenuProps {
     onSelectedCategoryOptionUpdate:(selected_category_option:string|null) => void,
@@ -35,31 +34,41 @@ export const CategorySelectMenu = ({ onSelectedCategoryOptionUpdate, selected_ca
         }
     }
 
-    const handleSelectCategoryOption = (selected_category_option:string|null) => {
+    const handleSelectCategoryOption = (selected_category_option:string|null):void => {
         onSelectedCategoryOptionUpdate(selected_category_option) // Sets The Category
+        setIsCategorySelectMenuOpen(false) // Sets The Information That The Category Select Menu Isn't Open
+    }
+
+    const refreshCategorySelectMenu = ():void => {
+        onSelectedCategoryOptionUpdate(null) // Sets The Category
         setIsCategorySelectMenuOpen(false) // Sets The Information That The Category Select Menu Isn't Open
     }
 
     return (
         <View className="category_select_menu" style={styles.category_select_menu}>
-            <View 
-                className="refresh" 
-                accessibilityLabel={t("Obnoviť predvolené filtre")}
-                style={styles.refresh}
-            >
-                <IconButton 
-                    icon_name="arrow-rotate-right" 
-                    // onPress={} 
-                />
-            </View>
-
             <View ref={select} collapsable={false} style={{ width: "100%" }}>
                 <Pressable 
                     className="select" 
                     onPress={toggleShowCategorySelectMenu}
                     style={styles.select}
                 >
-                    <Text style={{ color: LIGHT_BLUE_COLOR }}>
+                    <View 
+                        className="refresh" 
+                        accessibilityLabel={t("Obnoviť predvolené filtre")}
+                        style={styles.refresh}
+                    >
+                        <Icon 
+                            icon_name="arrow-rotate-right" 
+                            onPress={refreshCategorySelectMenu} 
+                        />
+                    </View>
+
+                    <Text 
+                        style={{ 
+                            marginRight: "auto",
+                            color: LIGHT_BLUE_COLOR, 
+                        }}
+                    >
                         {selected_category_option === null && t("Všetky kategórie")}
                         {selected_category_option === "all" && t("Všetky kategórie")}
                         {selected_category_option === "static" && t("Statické prvky")}
@@ -324,8 +333,7 @@ const styles = StyleSheet.create({
     select: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: 5,
+        gap: 10,
         width: "100%",
         height: 50,
         paddingHorizontal: 8.5,
@@ -381,12 +389,6 @@ const styles = StyleSheet.create({
     },
 
     refresh: {
-        position: "absolute",
-        top: "50%",
-        left: 0,
-        transform: [{ translateY: "-50%" }],
-        height: "100%",
-        paddingLeft: 8.5,
         zIndex: 50,
     },
 })

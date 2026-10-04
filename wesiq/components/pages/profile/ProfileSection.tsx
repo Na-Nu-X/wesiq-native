@@ -157,7 +157,7 @@ export default function ProfileSection({
                                     }`}
 
                                     source={
-                                        profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                        profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                                     }
 
                                     style={[
@@ -651,7 +651,7 @@ export default function ProfileSection({
                             >
                                 <Image 
                                     className="profile_picture"
-                                    source={{ uri: `${DOMAIN}/static/images/profile_picture.png`}} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                                    source={require("@/assets/images/profile_picture.png")} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                                     style={styles.profile_picture}
                                 />
                             </View>

@@ -5,13 +5,14 @@ import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { DOMAIN } from "@/constants/general"
 import { ImageBackground } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
 import { getFormattedDate } from "@/utils/time"
 import { BlurView } from "expo-blur"
 import { ImperativeRouter, useRouter } from "expo-router"
+import { Tooltip } from "@/components/Tooltip"
 
 import type { Article } from "@/app/(tabs)/blog"
 
@@ -28,6 +29,43 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
 
     const first_letter:string = one_article.description ? one_article.description.charAt(0) : "" // Gets The First Letter Of The Description
     const rest_of_text:string = one_article.description ? one_article.description.slice(1) : "" // Gets The Rest Of Text Of The Description
+
+    const [tooltips, setTooltips] = useState<(number)[]>([]) // Stores The Tooltips
+
+    // Function For Go To The Article
+    const goToArticle = ():void => {
+        setTooltips([]) // Sets The Tooltips
+        if(one_article.html_filename) router.push(`/blog/${one_article.link}`) // Goes To The Article Page
+    }
+
+    // Function For Show The Description
+    const showDescription = ():void => {
+        Animated.timing(slide_animation, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true
+        }).start()
+    }
+
+    // Function For Hide The Description
+    const hideDescription = ():void => {
+        Animated.timing(slide_animation, {
+            toValue: -100,
+            duration: 300,
+            useNativeDriver: true
+        }).start()
+    }
+
+    // Function For Toggle Show / Hide Tooltip
+    const toggleShowTooltip = (article_id:number) => {
+        // Sets The Tooltips
+        setTooltips((previous_tooltips) => {
+            const is_already_open:boolean = previous_tooltips.some((one_tooltip:number) => one_tooltip === article_id) // Checks If The Tooltip Is Already Open
+
+            if(is_already_open) return previous_tooltips.filter((one_tooltip:number) => one_tooltip !== article_id) // Hides The Tooltip
+            else return [...previous_tooltips, article_id] // Shows The Tooltip
+        })
+    }
 
     // Function For Share The Article
     const shareArticle = async (article_title:string, article_link:string):Promise<void> => {
@@ -48,27 +86,9 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
             else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
         } 
 
-        catch(error:any) {
+        catch {
             Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
         }
-    }
-
-    // Function For Show The Description
-    const showDescription = ():void => {
-        Animated.timing(slide_animation, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true
-        }).start()
-    }
-
-    // Function For Hide The Description
-    const hideDescription = ():void => {
-        Animated.timing(slide_animation, {
-            toValue: -100,
-            duration: 300,
-            useNativeDriver: true
-        }).start()
     }
     
     return (
@@ -77,15 +97,41 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
             style={styles.article}
         >
             <Pressable 
-                onPress={one_article.html_filename ? () => router.push(`/blog/${one_article.link}`) : () => console.log("")}
+                onPress={goToArticle}
                 onLongPress={showDescription}
                 onPressOut={hideDescription}
                 
                 style={[
                     StyleSheet.absoluteFill,
-                    { zIndex: 9999 },
+                    { zIndex: 1 },
                 ]}
             />
+
+            <View 
+                className="info" 
+                style={styles.info}
+            >
+                <View className="tooltip">
+                    <Icon
+                        icon_name="circle-info"
+                        onPress={() => toggleShowTooltip(one_article.id)}
+                    />    
+                </View>
+
+                {tooltips.includes(one_article.id) && (<Tooltip text={t("Tento článok pridal {{username}}", { username: one_article.user.username })} orientation="right" />)}
+            </View>
+
+            <View 
+                className="share" 
+                accessibilityLabel={t("Zdielať...")} 
+                style={styles.share}
+            >
+                <Icon
+                    icon_name="share-nodes"
+                    onPress={() => shareArticle(one_article.title, one_article.link)}
+                    size={30}
+                />
+            </View>
 
             <ImageBackground
                 source={one_article.image_name ? { uri: `${DOMAIN}/static/images/articles/${one_article.image_name}`} : ""}
@@ -108,25 +154,9 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                     <BlurView intensity={20} style={StyleSheet.absoluteFill} />
                     
                     <View className="top" style={styles.top}>
-                        <View className="info" style={styles.info}>
-                            {/* <div class="tooltip" data-tooltip="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}" aria-label="{% translate 'Tento článok pridal' %} {{ one_article.user.username }}">
-                                <i class="fa-solid fa-circle-info"></i> <!-- https://fontawesome.com/icons/circle-info -->
-                            </div> */}
-                        </View>
-                        
+                        <View />
                         <Text className="title" style={styles.title}>{one_article.title}</Text>
-
-                        <View 
-                            className="share" 
-                            accessibilityLabel={t("Zdielať...")} 
-                            style={styles.share}
-                        >
-                            <Icon
-                                icon_name="share-nodes"
-                                onPress={() => shareArticle(one_article.title, one_article.link)}
-                                size={30}
-                            />
-                        </View>
+                        <View />
                     </View>
 
                     <Animated.View 
@@ -360,7 +390,11 @@ const styles = StyleSheet.create({
     },
 
     info: {
-        position: "relative",
+        position: "absolute",
+        top: 55 / 2 - 10 - 5,
+        paddingVertical: 5,
+        paddingLeft: 20,
+        zIndex: 60,
 
         // .tooltip {
         //     @include tooltip($top: 50%);
@@ -387,14 +421,6 @@ const styles = StyleSheet.create({
         //         border-right-color: transparentize($secondary-color, 0.8);
         //         transform-origin: right center;
         //     }
-
-        //     .fa-circle-info {
-        //         color: $blue-color;
-
-        //         &:hover {
-        //             color: $dark-blue-color;
-        //         }
-        //     }
         // }
     },
 
@@ -406,7 +432,13 @@ const styles = StyleSheet.create({
     },
 
     share: {
+        position: "absolute",
+        top: 55 / 2 - 10 - 5,
+        right: 0,
+        paddingVertical: 5,
+        paddingHorizontal: 20,
         cursor: "pointer",
+        zIndex: 60,
     },
 
     description: {

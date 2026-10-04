@@ -87,7 +87,7 @@ export default function SelectProfilePicture({
                     }`}
 
                     source={
-                        previous_profile_picture ? { uri: previous_profile_picture } : { uri: `${DOMAIN}/static/images/profile_picture.png`} // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        previous_profile_picture ? { uri: previous_profile_picture } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
                     }
 
                     style={[

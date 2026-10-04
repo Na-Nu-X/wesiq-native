@@ -27,7 +27,6 @@ export const PostsPreview = ({
     logged_in_user
 }:PostsPreviewProps) => {
     const [post_preview_progress, setPostPreviewProgress] = useState<Record<string, number>>({}) // Stores The Post Preview Progress
-    const [tooltips, setTooltips] = useState<(string|number)[]>([]) // Stores The Tooltips
 
     const [drop_zone, setDropZone] = useState({ x: 0, y: 0, width: 0, height: 0 })
     const [dragged_file, setDraggedFile] = useState<SelectedFile|null>(null) // Stores The Dragged File

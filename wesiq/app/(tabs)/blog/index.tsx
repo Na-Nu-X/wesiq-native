@@ -21,7 +21,8 @@ export interface Article {
     categories:string[],
     visitors:number,
     creation_time:string,
-    average_rating:number
+    average_rating:number,
+    user:{ username:string }
 }
 
 export default function BlogScreen() {
