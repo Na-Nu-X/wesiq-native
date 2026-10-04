@@ -26,6 +26,7 @@ import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormD
 import type { Comment } from "@/components/Feed"
 import type { AddedComment } from "@/components/pages/community/PostContainer"
 import type { BasicResponse } from "@/components/Feed"
+import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/AnimatedExerciseStatisticsBar"
 
 interface LoadedArticleResponse {
     success:boolean,
@@ -924,35 +925,61 @@ export default function ArticleScreen() {
                                 </View>
 
                                 <View className="exercise_statistics" style={styles.exercise_statistics}>
-                                    <View 
-                                        className="bar difficulty" 
-                                        accessibilityLabel={getDifficultyLabel()}
-                                        style={styles.bar}
-                                    />
+                                    <View className="difficulty_container" style={styles.bar_container}>
+                                        <AnimatedExerciseStatisticsBar 
+                                            text={getDifficultyLabel()}
+                                            percentage={loaded_article.difficulty}
+                                            delay={300}
+                                        />
+                                    </View>
 
                                     <View 
                                         className="bar time_to_learn" 
                                         accessibilityLabel={getTimeToLearnLabel()}
                                         style={styles.bar}
-                                    />
+                                    >
+                                        <AnimatedExerciseStatisticsBar 
+                                            text={getTimeToLearnLabel()}
+                                            percentage={loaded_article.time_to_learn}
+                                            delay={600}
+                                        />
+                                    </View>
 
                                     <View 
                                         className="bar rarity" 
                                         accessibilityLabel={getRarityLabel()}
                                         style={styles.bar}
-                                    />
+                                    >
+                                        <AnimatedExerciseStatisticsBar 
+                                            text={getRarityLabel()}
+                                            percentage={loaded_article.rarity}
+                                            delay={900}
+                                        />
+                                    </View>
 
                                     <View 
                                         className="bar strength" 
                                         accessibilityLabel={t("sila")}
                                         style={styles.bar}
-                                    />
+                                    >
+                                        <AnimatedExerciseStatisticsBar 
+                                            text={t("sila")}
+                                            percentage={loaded_article.strength}
+                                            delay={1200}
+                                        />
+                                    </View>
 
                                     <View 
                                         className="bar technique" 
                                         accessibilityLabel={t("technika")}
                                         style={styles.bar}
-                                    />
+                                    >
+                                        <AnimatedExerciseStatisticsBar 
+                                            text={t("technika")}
+                                            percentage={loaded_article.technique}
+                                            delay={1500}
+                                        />
+                                    </View>
                                 </View>
 
                                 <View className="article_content" style={styles.article_content}>
@@ -1543,12 +1570,20 @@ const styles = StyleSheet.create({
     exercise_statistics: {
         gap: 10,
         maxWidth: MAIN_WIDTH,
+        width: "100%",
         marginVertical: 20,
         marginHorizontal: "auto",
         padding: 20,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.8),
         borderRadius: MEDIUM_BORDER_RADIUS,
+    },
+
+    bar_container: {
+        position: "relative",
+        flexDirection: "row",
+        alignItems: "center",
+        width: "50%",
     },
 
     bar: {
