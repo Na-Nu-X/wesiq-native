@@ -134,6 +134,14 @@ export default function RootLayout() {
       />
 
       <Tabs.Screen
+        name="blog/[article]"
+
+        options={{
+          href: null
+        }}
+      />
+
+      <Tabs.Screen
         name="profile/[username]"
 
         options={{

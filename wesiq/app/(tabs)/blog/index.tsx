@@ -5,7 +5,6 @@ import { useState } from "react"
 import Banner from "@/components/Banner"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
-import { useTranslation } from "react-i18next"
 import SearchArticles from "@/components/pages/blog/SearchArticles"
 import Articles from "@/components/pages/blog/Articles"
 import { ArticlesAmount } from "@/components/pages/blog/ArticlesAmount"
@@ -26,8 +25,6 @@ export interface Article {
 }
 
 export default function BlogScreen() {
-    const { t } = useTranslation() // Initializes The Translations
-    
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 

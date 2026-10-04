@@ -11,6 +11,7 @@ import { ImageBackground } from "expo-image"
 import { LinearGradient } from "expo-linear-gradient"
 import { getFormattedDate } from "@/utils/time"
 import { BlurView } from "expo-blur"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { Article } from "@/app/(tabs)/blog"
 
@@ -22,6 +23,8 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const slide_animation = useRef(new Animated.Value(-100)).current // Creates The Slide Animation
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
 
     const first_letter:string = one_article.description ? one_article.description.charAt(0) : "" // Gets The First Letter Of The Description
     const rest_of_text:string = one_article.description ? one_article.description.slice(1) : "" // Gets The Rest Of Text Of The Description
@@ -74,6 +77,7 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
             style={styles.article}
         >
             <Pressable 
+                onPress={one_article.html_filename ? () => router.push(`/blog/${one_article.link}`) : () => console.log("")}
                 onLongPress={showDescription}
                 onPressOut={hideDescription}
                 
@@ -159,16 +163,20 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                                 // }
                             }}
                         >
-                            <Text 
-                                style={{ 
-                                    fontSize: 40, 
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                {first_letter}
-                            </Text>
-
-                            {" " + rest_of_text}
+                            {one_article.html_filename && (
+                                <>
+                                    <Text 
+                                        style={{ 
+                                            fontSize: 40, 
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        {first_letter}
+                                    </Text>
+        
+                                    {" " + rest_of_text}
+                                </>
+                            )}
                         </Text>
 
                         {!one_article.html_filename && (
@@ -195,8 +203,7 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                         )}
                     </Animated.View>
 
-                    <Pressable
-                        // onPress={one_article.html_filename ? () => goToArticle(one_article.link) : () => console.log("Tento článok nie je ešte dokončený.")}
+                    <View
                         accessibilityLabel={t("Zobraziť")}
                         style={styles.article_link}
                     >
@@ -292,7 +299,7 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                                 </View>
                             </View>
                         </View>
-                    </Pressable>
+                    </View>
                 </LinearGradient>
             </ImageBackground>
         </View>

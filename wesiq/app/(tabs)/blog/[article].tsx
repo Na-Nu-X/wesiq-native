@@ -19,6 +19,8 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { DynamicImage } from "@/components/pages/community/DynamicImage"
+import FrontLever from "@/components/pages/articles/front_lever"
+import * as Crypto from "expo-crypto"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Comment } from "@/components/Feed"
@@ -66,9 +68,9 @@ interface AddedArticleCommentResponse {
     message:string
 }
 
-export default function ProfileScreen() {
+export default function ArticleScreen() {
     const { t } = useTranslation() // Initializes The Translations
-    
+
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -92,6 +94,25 @@ export default function ProfileScreen() {
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [article_comment_properties_sheet, setArticleCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Article Comment Properties Sheet
     const [selected_article_comment, setSelectedArticleComment] = useState<Comment|null>(null) // Stores The Selected Article Comment
+
+    // Function For Get Or Create The Device ID
+    const getOrCreateDeviceId = async ():Promise<string> => {
+        try {
+            let device_id:string|null = await AsyncStorage.getItem("device_id") // Gets The Device ID If Exists
+            
+            if(!device_id) {
+                device_id = Crypto.randomUUID() // Creates The Device ID
+                await AsyncStorage.setItem("device_id", device_id) // Sets The Device ID
+            }
+            
+            return device_id
+        } 
+        
+        catch {
+            console.error(t("Pri získavaní ID zariadenia došlo k chybe."))
+            return Crypto.randomUUID()
+        }
+    }
     
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -138,6 +159,9 @@ export default function ProfileScreen() {
     // Function For Get The Article
     const getArticle = async (article:string):Promise<void> => {
         try {
+            const device_id:string = await getOrCreateDeviceId() // Gets The Device ID
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
             // Sends The GET Request To The Server
             const loaded_article_response:Response = await fetch(`${API_URL}/get-article/${article}/`, {
                 method: "GET",
@@ -145,6 +169,8 @@ export default function ProfileScreen() {
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json",
+                    "X-Device-ID": device_id,
+                    "Authorization": `Bearer ${user_token}`
                 }
             })
 
@@ -215,6 +241,62 @@ export default function ProfileScreen() {
         }
 
         return rarity_label // Returns The Rarity Label
+    }
+
+    // Function For Add Article Rating
+    const addArticleRating = async (article_id:number, rating:number):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                console.log(t("Chyba"), t("Hodnotenie nie je možné odoslať bez prihlásenia."))
+                return
+            }
+
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The POST Request To The Server
+            const added_rating_response:Response = await fetch(`${API_URL}/add-article-rating/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    article_id,
+                    rating
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!added_rating_response.ok) {
+                console.error(t("Pri pridávaní hodnotenia došlo k chybe."))
+                return
+            }
+
+            const added_rating_data:BasicResponse = await added_rating_response.json() // Gets The Added Rating Data
+
+            // If The Response Isn't Success
+            if(!added_rating_data.success) {
+                console.error(added_rating_data.message)
+                return
+            }
+
+            // Sets The Article
+            setLoadedArticle((previous_article:LoadedArticle|null) => {
+                if(!previous_article) return null
+            
+                return {
+                    ...previous_article,
+                    given_rating: rating
+                }
+            })
+        }
+        
+        catch {
+            console.error(t("Pri pridávaní hodnotenia došlo k chybe."))
+        }
     }
 
     // Function For Get Article Comments
@@ -875,9 +957,7 @@ export default function ProfileScreen() {
 
                                 <View className="article_content" style={styles.article_content}>
                                     {loaded_article.html_filename ? (
-                                        <View>
-                                            {/* {% include "partials/articles/"|add:article.html_filename %} */}
-                                        </View>
+                                        loaded_article.html_filename === "front_lever.html" && (<FrontLever />)
                                     ) : (
                                         <Text>{t("Tento článok nie je ešte dokončený.")}</Text> 
                                     )}
@@ -900,7 +980,7 @@ export default function ProfileScreen() {
                                                 <Pressable 
                                                     key={index} 
                                                     className="full" 
-                                                    // onPress={}
+                                                    onPress={() => addArticleRating(loaded_article.id, index + 1)}
                                                     style={{ cursor: "pointer" }}
                                                 >
                                                     <FontAwesome6
@@ -915,7 +995,7 @@ export default function ProfileScreen() {
                                                 <Pressable 
                                                     key={index} 
                                                     className="empty" 
-                                                    // onPress={}
+                                                    onPress={() => addArticleRating(loaded_article.id, index + 1)}
                                                     style={{ cursor: "pointer" }}
                                                 >
                                                     <FontAwesome6
@@ -1511,7 +1591,7 @@ const styles = StyleSheet.create({
 
     article_content: {
         position: "relative",
-        maxWidth: MAIN_WIDTH,
+        maxWidth: 1580,
         marginHorizontal: "auto",
         marginBottom: 50,
         paddingVertical: 50,
@@ -1529,61 +1609,16 @@ const styles = StyleSheet.create({
         //     &::before {
         //         @include glass_accent_bar;
         //     }
-    
-        //     section {
-        //         transform: translateX(calc(-50%));
-        //         opacity: 0;
-        //         transition: transform 0.3s ease, opacity 0.3s ease;
-    
-        //         &.animate {
-        //             transform: translateX(0%);
-        //             opacity: 1;
-        //         }
-    
-        //         &:first-of-type {
-        //             p:first-of-type {
-        //                 &::first-letter {
-        //                     margin-right: 10px;
-        //                     initial-letter: 2;
-        //                 }
-        //             }
-        //         }
-        //     }
-    
-        //     h3 {
-        //         margin-bottom: 10px;
-        //         text-align: center;
-        //         font-size: 2em;
-        //     }
-    
-        //     h4 {
-        //         width: fit-content;
-        //         margin-top: 20px;
-        //         margin-bottom: 10px;
-        //         font-size: 1.5em;
-        //         border-bottom: 2px solid $secondary-color;
-        //     }
-    
-        //     p {
-        //         margin-bottom: 20px;
-        //     }
-    
-        //     ul,
-        //     ol {
-        //         margin-left: 20px;
-    
-        //         li {
-        //             margin-bottom: 10px;
-        //         }
-        //     }
     },
 
     rating: {
         flexDirection: "row",
         alignItems: "center",
+        justifyContent: "flex-end",
+        alignSelf: "center",
         gap: 5,
-        maxWidth: MAIN_WIDTH,
-        marginHorizontal: "auto",
+        maxWidth: 1580,
+        width: "100%",
         marginBottom: 50,
     },
 
