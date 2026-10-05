@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next"
 import DraggableFlatList, { RenderItemParams, ScaleDecorator, ShadowDecorator } from "react-native-draggable-flatlist"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import { calculateGainedXp } from "./ActivitySection"
 
 interface OfficialTasksResponse {
     success:boolean,
@@ -54,6 +55,8 @@ interface NewCustomTaskResponse {
 interface TasksSectionProps {
     elapsed_time:number,
     average_activity_time:number,
+    xp_boost_amount:number,
+    xp_boost_expiration_time:string|null,
     onOfficialTasksUpdate:(official_tasks:OfficialTask[]) => void
     official_tasks:OfficialTask[],
     onCustomTasksUpdate:(official_tasks:CustomTask[]) => void
@@ -65,6 +68,8 @@ interface TasksSectionProps {
 export default function TasksSection({ 
     elapsed_time, 
     average_activity_time, 
+    xp_boost_amount,
+    xp_boost_expiration_time,
     onOfficialTasksUpdate, 
     official_tasks, 
     onCustomTasksUpdate, 
@@ -184,6 +189,9 @@ export default function TasksSection({
         const _2_hours_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "2_hours_activity") || null // Gets The "2 Hours Activity" Official Task If Is Available
         const _3_hours_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "3_hours_activity") || null // Gets The "3 Hours Activity" Official Task If Is Available
         const beat_average_activity_time:OfficialTask|null = official_tasks.find(one_task => one_task.data === "beat_average_activity_time") || null // Gets The "Beat Average Activity Time" Official Task If Is Available
+        const _50_xp_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "50_xp_activity") || null // Gets The "50 XP Activity" Official Task If Is Available
+        const _100_xp_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "100_xp_activity") || null // Gets The "100 XP Activity" Official Task If Is Available
+        const _150_xp_activity:OfficialTask|null = official_tasks.find(one_task => one_task.data === "150_xp_activity") || null // Gets The "150 XP Activity" Official Task If Is Available
 
         // 30 Minutes Activity
         if(_30_minutes_activity && !_30_minutes_activity.is_completed) {
@@ -311,6 +319,87 @@ export default function TasksSection({
                 // 100% Completed
                 if(Math.floor(progress) >= 100) {
                     onCompleteOfficialTask("beat_average_activity_time") // Completes The "Beat Average Activity Time" Official Task
+                }
+            }
+        }
+
+        // 50 XP Activity
+        if(_50_xp_activity && !_50_xp_activity.is_completed) {
+            const gained_xp:number = calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100) // Calculates The Gained XP
+            const progress:number = (gained_xp / 50) * 100 // Calculates The Progress
+    
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "50_xp_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
+
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
+
+                // 100% Completed
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("50_xp_activity") // Completes The "50 XP Activity" Official Task
+                }
+            }
+        }
+
+        // 100 XP Activity
+        if(_100_xp_activity && !_100_xp_activity.is_completed) {
+            const gained_xp:number = calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100) // Calculates The Gained XP
+            const progress:number = (gained_xp / 100) * 100 // Calculates The Progress
+    
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "100_xp_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
+
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
+
+                // 100% Completed
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("100_xp_activity") // Completes The "100 XP Activity" Official Task
+                }
+            }
+        }
+
+        // 150 XP Activity
+        if(_150_xp_activity && !_150_xp_activity.is_completed) {
+            const gained_xp:number = calculateGainedXp(elapsed_time, xp_boost_expiration_time || null, xp_boost_amount, 100) // Calculates The Gained XP
+            const progress:number = (gained_xp / 150) * 100 // Calculates The Progress
+    
+            if(Math.floor(progress) <= 100) {
+                // Stores The New State Of Updated Official Tasks
+                const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
+                    if(one_task.data === "150_xp_activity") {
+                        return { 
+                            ...one_task, 
+                            progress_percentage: progress
+                        }
+                    }
+
+                    return one_task
+                })
+
+                onOfficialTasksUpdate(updated_official_tasks) // Sets The Official Tasks
+
+                // 100% Completed
+                if(Math.floor(progress) >= 100) {
+                    onCompleteOfficialTask("150_xp_activity") // Completes The "150 XP Activity" Official Task
                 }
             }
         }

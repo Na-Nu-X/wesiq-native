@@ -82,11 +82,59 @@ interface ActivitySectionProps {
     onElapsedTimeUpdate:(elapsed_time:number) => void,
     elapsed_time:number,
     onAverageActivityTimeLoad:(average_activity_time:number) => void,
+    onXpBoostAmountUpdate:(xp_boost_amount:number) => void,
+    xp_boost_amount:number,
+    onXpBoostExpirationTimeUpdate:(xp_boost_expiration_time:string|null) => void,
+    xp_boost_expiration_time:string|null,
     official_tasks:OfficialTask[],
     onCompleteOfficialTask:(task_data:string) => void
 }
 
-export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onAverageActivityTimeLoad, official_tasks, onCompleteOfficialTask }:ActivitySectionProps) {
+// Function For Calculate The Gained XP
+export const calculateGainedXp = (
+    elapsed_time_ms:number, 
+    xp_boost_expiration_time:string|null, 
+    xp_boost_amount:number = 2, 
+    base_xp_per_hour:number = 100, 
+    start_time_ms?:number,
+    end_time_ms?:number
+):number => {
+    const activity_end_time:number = end_time_ms !== undefined ? end_time_ms : Date.now() // Gets The Activity End Time Or The Current Time
+    const activity_start_time: number = start_time_ms !== undefined ? start_time_ms : (activity_end_time - elapsed_time_ms) // Gets The Activity Start Time
+
+    const xp_per_ms:number = base_xp_per_hour / (60 * 60 * 1000) // XP Amount Per 1 MS
+    let boosted_time_ms:number = 0 // Stores The Boosted Time In MS
+
+    if(xp_boost_expiration_time) {
+        const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
+
+        if(xp_boost_expiration_time_ms > activity_start_time) {
+            const xp_boost_end_time_during_activity:number = Math.min(xp_boost_expiration_time_ms, activity_end_time) // Gets The XP Boost End Time During Activity
+            boosted_time_ms = xp_boost_end_time_during_activity - activity_start_time // Sets The Boosted Time
+        }
+    }
+
+    boosted_time_ms = Math.max(0, Math.min(boosted_time_ms, elapsed_time_ms)) // Sets The Boosted Time
+    
+    const normal_time_ms:number = elapsed_time_ms - boosted_time_ms // Gets The Normal Time In MS (Without XP Boost)
+
+    const normal_xp:number = normal_time_ms * xp_per_ms // Gets The Amount Of XP For Unboosted Activity
+    const boosted_xp:number = boosted_time_ms * xp_per_ms * xp_boost_amount // Gets The Amount Of XP For Boosted Activity
+
+    return Math.round(normal_xp + boosted_xp) // Returns The Amount Of Total Gained XP
+}
+
+export default function ActivitySection({ 
+    onElapsedTimeUpdate, 
+    elapsed_time, 
+    onAverageActivityTimeLoad, 
+    onXpBoostAmountUpdate,
+    xp_boost_amount,
+    onXpBoostExpirationTimeUpdate,
+    xp_boost_expiration_time,
+    official_tasks, 
+    onCompleteOfficialTask 
+}:ActivitySectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
@@ -105,9 +153,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
     
     const [is_xp_boost_available, setIsXpBoostAvailable] = useState<boolean>(false) // Stores The Information If The XP Boost Is Available
     const [is_xp_boost_active, setIsXpBoostActive] = useState<boolean>(false) // Stores The Information If The XP Boost Is Active
-    const [xp_boost_amount, setXpBoostAmount] = useState<number>(2) // Stores The XP Boost Amount
     const [xp_boost_progress, setXpBoostProgress] = useState<number>(100) // Stores The XP Boost Progress (Remaining Time)
-    const [xp_boost_expiration_time, setXpBoostExpirationTime] = useState<string|null>() // Stores The XP Boost Expiration Time
     
     const [activity_data, setActivityData] = useState<ActivityData|null>(null) // Stores The Activity Data
     
@@ -290,7 +336,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
             }
             
             else {
-                setXpBoostExpirationTime(xp_boost_data.xp_boost_expiration_time || null) // Sets The XP Boost Expiration Time
+                onXpBoostExpirationTimeUpdate(xp_boost_data.xp_boost_expiration_time || null) // Sets The XP Boost Expiration Time
                 setIsXpBoostAvailable(xp_boost_data.is_xp_boost_available) // Sets The Information If The XP Boost Is Available
                 setIsXpBoostActive(xp_boost_data.is_xp_boost_active) // Sets The Information If The XP Boost Is Active
             }
@@ -342,7 +388,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
             }
             
             else {
-                setXpBoostExpirationTime(used_xp_boost_data.xp_boost_expiration_time) // Sets The XP Boost Expiration Time
+                onXpBoostExpirationTimeUpdate(used_xp_boost_data.xp_boost_expiration_time) // Sets The XP Boost Expiration Time
                 setIsXpBoostAvailable(false) // Sets The Information If The XP Boost Isn't Available
                 setIsXpBoostActive(true) // Sets The Information If The XP Boost Is Active
             }
@@ -378,7 +424,7 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
                     if(remaining_time <= 0) {
                         setIsXpBoostAvailable(false) // Sets The Information That The XP Boost Isn't Available
                         setIsXpBoostActive(false) // Sets The Information That The XP Boost Isn't Active
-                        setXpBoostAmount(1) // Resets XP Boost Amount
+                        onXpBoostAmountUpdate(1) // Resets XP Boost Amount
                         setXpBoostProgress(0) // Sets XP Boost Progress
                         if(xp_boost_interval) clearInterval(xp_boost_interval) // Clears The XP Boost Interval
                     } 
@@ -864,40 +910,6 @@ export default function ActivitySection({ onElapsedTimeUpdate, elapsed_time, onA
         // }
 
         stopActivity() // Stops The Activity
-    }
-
-    // Function For Calculate The Gained XP
-    const calculateGainedXp = (
-        elapsed_time_ms:number, 
-        xp_boost_expiration_time:string|null, 
-        xp_boost_amount:number = 2, 
-        base_xp_per_hour:number = 100, 
-        start_time_ms?:number,
-        end_time_ms?:number
-    ):number => {
-        const activity_end_time:number = end_time_ms !== undefined ? end_time_ms : Date.now() // Gets The Activity End Time Or The Current Time
-        const activity_start_time: number = start_time_ms !== undefined ? start_time_ms : (activity_end_time - elapsed_time_ms) // Gets The Activity Start Time
-
-        const xp_per_ms:number = base_xp_per_hour / (60 * 60 * 1000) // XP Amount Per 1 MS
-        let boosted_time_ms:number = 0 // Stores The Boosted Time In MS
-    
-        if(xp_boost_expiration_time) {
-            const xp_boost_expiration_time_ms:number = new Date(xp_boost_expiration_time).getTime() // Gets The XP Boost Expiration Time In MS
-    
-            if(xp_boost_expiration_time_ms > activity_start_time) {
-                const xp_boost_end_time_during_activity:number = Math.min(xp_boost_expiration_time_ms, activity_end_time) // Gets The XP Boost End Time During Activity
-                boosted_time_ms = xp_boost_end_time_during_activity - activity_start_time // Sets The Boosted Time
-            }
-        }
-    
-        boosted_time_ms = Math.max(0, Math.min(boosted_time_ms, elapsed_time_ms)) // Sets The Boosted Time
-        
-        const normal_time_ms:number = elapsed_time_ms - boosted_time_ms // Gets The Normal Time In MS (Without XP Boost)
-
-        const normal_xp:number = normal_time_ms * xp_per_ms // Gets The Amount Of XP For Unboosted Activity
-        const boosted_xp:number = boosted_time_ms * xp_per_ms * xp_boost_amount // Gets The Amount Of XP For Boosted Activity
-    
-        return Math.round(normal_xp + boosted_xp) // Returns The Amount Of Total Gained XP
     }
 
     // Function For Create The Training Plan Summary

@@ -40,6 +40,8 @@ export default function ActivityScreen() {
 
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
     const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time
+    const [xp_boost_amount, setXpBoostAmount] = useState<number>(2) // Stores The XP Boost Amount
+    const [xp_boost_expiration_time, setXpBoostExpirationTime] = useState<string|null>() // Stores The XP Boost Expiration Time
     const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
     const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
     const [is_dragging_custom_task, setIsDraggingCustomTask] = useState<boolean>(false) // Stores The Information If The Custom Task Is Dragging
@@ -156,6 +158,10 @@ export default function ActivityScreen() {
                                 onElapsedTimeUpdate={setElapsedTime} 
                                 elapsed_time={elapsed_time} 
                                 onAverageActivityTimeLoad={setAverageActivityTime} 
+                                onXpBoostAmountUpdate={(xp_boost_amount:number) => setXpBoostAmount(xp_boost_amount)}
+                                xp_boost_amount={xp_boost_amount}
+                                onXpBoostExpirationTimeUpdate={(xp_boost_expiration_time:string|null) => setXpBoostExpirationTime(xp_boost_expiration_time)}
+                                xp_boost_expiration_time={xp_boost_expiration_time || null}
                                 official_tasks={official_tasks}
                                 onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
                             />
@@ -163,6 +169,8 @@ export default function ActivityScreen() {
                             <TasksSection 
                                 elapsed_time={elapsed_time} 
                                 average_activity_time={average_activity_time} 
+                                xp_boost_amount={xp_boost_amount}
+                                xp_boost_expiration_time={xp_boost_expiration_time || null}
                                 onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
                                 official_tasks={official_tasks}
                                 onCustomTasksUpdate={(custom_tasks:CustomTask[]) => setCustomTasks(custom_tasks)}

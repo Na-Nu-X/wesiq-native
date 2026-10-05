@@ -78,6 +78,9 @@ export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps
             {official_task.data === "2_activities" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 2 aktivity.")}</Text>)}
             {official_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>{t("Splň všetky dnešné výzvy.")}</Text>)}
             {official_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>{t("Pridaj vlastnú úlohu.")}</Text>)}
+            {official_task.data === "50_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 50 XP za aktivitu.")}</Text>)}
+            {official_task.data === "100_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 100 XP za aktivitu.")}</Text>)}
+            {official_task.data === "150_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 150 XP za aktivitu.")}</Text>)}
 
             <View className="xp" style={styles.xp}>
                 <Text 
