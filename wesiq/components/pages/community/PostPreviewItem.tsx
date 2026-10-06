@@ -215,8 +215,8 @@ export const PostPreviewItem = ({
             if(!result.canceled && result.assets) {
                 // Accepts Only The Image Formats
                 const valid_files:ImagePicker.ImagePickerAsset[] = result.assets.filter((one_file:ImagePicker.ImagePickerAsset) => {
-                    const is_valid_type = one_file.type === "image"
-                    const is_valid_mime = one_file.mimeType
+                    const is_valid_type:boolean = one_file.type === "image"
+                    const is_valid_mime:boolean = one_file.mimeType
                         ? one_file.mimeType.startsWith("image/")
                         : true
             

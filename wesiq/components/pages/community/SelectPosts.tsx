@@ -75,8 +75,8 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
       if(!result.canceled && result.assets) {
         // Accepts Only The Image And Video Formats
         const valid_files:ImagePicker.ImagePickerAsset[] = result.assets.filter((one_file:ImagePicker.ImagePickerAsset) => {
-          const is_valid_type = one_file.type === "image" || one_file.type === "video"
-          const is_valid_mime = one_file.mimeType
+          const is_valid_type:boolean = one_file.type === "image" || one_file.type === "video"
+          const is_valid_mime:boolean = one_file.mimeType
             ? one_file.mimeType.startsWith("image/") || one_file.mimeType.startsWith("video/")
             : true
   
@@ -91,7 +91,7 @@ export default function SelectPosts({ onMediaSelection }:SelectPostsProps) {
       }
     }
 
-    catch(error) {
+    catch {
       console.warn(t("Pri výbere súborov došlo k chybe."))
       Alert.alert(t("Nepodporovaný formát"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.")) // Shows The Alert
     }
