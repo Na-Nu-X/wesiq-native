@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
@@ -14,6 +14,8 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { useTranslation } from "react-i18next"
 import AttachmentSelection from "./AttachmentSelection"
+import { DynamicImage } from "../community/DynamicImage"
+import { getReadableSize } from "@/utils/getReadableSize"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -355,6 +357,27 @@ export const ChatContainer = ({
         message_properties.current?.dismiss() // Hides The Message Properties
     }
 
+    // Defines The File Icons
+    const FILE_ICONS:{
+        audio:ImageSourcePropType,
+        pdf:ImageSourcePropType,
+        doc:ImageSourcePropType,
+        excel:ImageSourcePropType,
+        powerpoint:ImageSourcePropType,
+        archive:ImageSourcePropType,
+        text:ImageSourcePropType,
+        file:ImageSourcePropType
+    } = {
+        audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
+        pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
+        doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
+        excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
+        powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
+        archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
+        text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
+        file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
+    }
+
     return (
         <BottomSheetModalProvider>
             <View className="chat" style={styles.chat}>
@@ -435,7 +458,61 @@ export const ChatContainer = ({
                                         />
                                     </View>
 
-                                    <Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>
+                                    <View style={{ gap: 5 }}>
+                                        {one_chat.attachment && (
+                                            <>
+                                                {(one_chat.attachment.attachment_type === "image" || one_chat.attachment.attachment_type === "video") ? (
+                                                    <View style={styles.image_attachment}>
+                                                        {one_chat.attachment.attachment_type === "image" && (
+                                                            <DynamicImage 
+                                                                uri={`${DOMAIN}${one_chat.attachment.attachment_url}`} 
+                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                scale_by_aspect_ratio={true}
+                                                            />
+                                                        )}
+
+                                                        {one_chat.attachment.attachment_type === "video" && one_chat.attachment.attachment_thumbnail && (
+                                                            <DynamicImage 
+                                                                uri={`${DOMAIN}${one_chat.attachment.attachment_thumbnail}`} 
+                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                scale_by_aspect_ratio={true}
+                                                            />
+                                                        )}                                                 
+                                                    </View>
+                                                ) : (
+                                                    <View style={styles.file_attachment}>
+                                                        <Image
+                                                            source={FILE_ICONS[one_chat.attachment.attachment_type] || require("@/assets/images/files/file.png")}
+
+                                                            style={{
+                                                                width: 32,
+                                                                height: 32,
+                                                                resizeMode: "contain",
+                                                            }}
+                                                        />
+
+                                                        <View>
+                                                            <Text 
+                                                                numberOfLines={1} 
+                                                                ellipsizeMode="tail" 
+                                                                
+                                                                style={[{ 
+                                                                    maxWidth: 100,
+                                                                    color: SECONDARY_COLOR,
+                                                                }]}
+                                                            >
+                                                                {one_chat.attachment.original_filename}
+                                                            </Text>
+
+                                                            <Text className="original_size" style={{ color: SECONDARY_COLOR }}>{getReadableSize(one_chat.attachment.compressed_size)}</Text>
+                                                        </View>
+                                                    </View>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {one_chat.content && (<Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>)}
+                                    </View>
 
                                     {one_chat.is_sender && one_chat.is_read && (
                                         <View style={{ marginLeft: "auto" }}>
@@ -1062,6 +1139,8 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
+        maxWidth: "100%",      // Správa nepresiahne svojho rodiča (one_message_container)
+        overflow: "hidden",
         // backdrop-filter: blur(5px);
         // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
 
@@ -1074,12 +1153,27 @@ const styles = StyleSheet.create({
         // }
     },
 
+    image_attachment: {
+        width: 100,
+        // borderWidth: 1,
+        // borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        overflow: "hidden",
+    },
+
+    file_attachment: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+    },
+
     time_label: {
         color: LIGHT_BLUE_COLOR,
         fontSize: 15,
     },
 
     profile_picture_container: {
+        marginTop: "auto",
         padding: 2,
         borderWidth: 1,
         borderColor: LIGHT_BLUE_COLOR,

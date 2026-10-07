@@ -11,6 +11,7 @@ import { DynamicImage } from "@/components/pages/community/DynamicImage"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { useTranslation } from "react-i18next"
+import { getReadableSize } from "@/utils/getReadableSize"
 
 import type { ProcessingPost, ProcessingMedia } from "@/components/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
@@ -138,7 +139,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                             <Text className="original_filename">{one_post_media.original_filename}</Text>
                             
                             <Text className="original_size">
-                                {" "}({(one_post_media.original_size / 1000 / 1000).toFixed(2)} MB)
+                                {getReadableSize(one_post_media.original_size)}
                                 {index < processing_post.media.length - 1 && ", "}
                             </Text>
                         </Text>

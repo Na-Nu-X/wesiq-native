@@ -78,7 +78,10 @@ export interface ChatSocketResponse {
 
 export interface Attachment {
     attachment_url:string,
-    attachment_type:string
+    attachment_thumbnail:string|null,
+    attachment_type:"image"|"video"|"audio"|"pdf"|"doc"|"excel"|"powerpoint"|"archive"|"text"|"file",
+    original_filename:string,
+    compressed_size:number
 }
 
 export default function ChatDetailScreen() {
@@ -163,6 +166,8 @@ export default function ChatDetailScreen() {
             }
 
             const loaded_chat_data:LoadedChatResponse = await loaded_chat_response.json() // Gets The Loaded Chat Data
+            
+            console.log(loaded_chat_data)
 
             // If The Response Isn't Success
             if(!loaded_chat_data.success) {
