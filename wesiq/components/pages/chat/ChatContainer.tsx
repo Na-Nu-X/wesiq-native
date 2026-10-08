@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType, Platform } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
-import { FontAwesome6 } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { FontAwesome6, Ionicons } from "@expo/vector-icons"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { TextInput } from "react-native"
 import EmojiPicker from "rn-emoji-keyboard"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -16,9 +16,32 @@ import { useTranslation } from "react-i18next"
 import AttachmentSelection from "./AttachmentSelection"
 import { DynamicImage } from "../community/DynamicImage"
 import { getReadableSize } from "@/utils/getReadableSize"
+import * as ImagePicker from "expo-image-picker"
+import * as DocumentPicker from "expo-document-picker"
+import { API_URL } from "@/constants/general"
+import { File as ExpoFile, Paths } from "expo-file-system"
+import * as Sharing from "expo-sharing"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
+
+interface SentChatAttachmentResponse {
+    success:boolean,
+    sent_attachments?:SelectedAttachment[],
+    message:string
+}
+
+interface SelectedAttachment {
+    attachment_id:number,
+    attachment_url:string,
+    attachment_type:string
+}
+
+interface SelectedFile {
+    uri:string,
+    name:string,
+    type:string
+}
 
 interface ChatContainerProps {
     logged_in_user:LoggedInUser|null,
@@ -48,10 +71,35 @@ export const ChatContainer = ({
 
     const [write_message_action, setWriteMessageAction] = useState<"new"|"edit">("new") // Stores The Write Message Action
     const [selected_message_for_edit, setSelectedMessageForEdit] = useState<Chat|null>(null) // Stores The Selected Message For Edit
-
+    
     const all_messages = useRef<ScrollView|null>(null) // Sets The All Messages Reference
-
+    
     const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
+    
+    const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
+    const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Attachment Is Uploading
+    const attachment_options = useRef<BottomSheetModal>(null) // Stores The Attachment Options
+
+    // Defines The File Icons
+    const FILE_ICONS:{
+        audio:ImageSourcePropType,
+        pdf:ImageSourcePropType,
+        doc:ImageSourcePropType,
+        excel:ImageSourcePropType,
+        powerpoint:ImageSourcePropType,
+        archive:ImageSourcePropType,
+        text:ImageSourcePropType,
+        file:ImageSourcePropType
+    } = {
+        audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
+        pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
+        doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
+        excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
+        powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
+        archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
+        text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
+        file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
+    }
 
     // Initializes The Web Socket
     useEffect(() => {
@@ -239,7 +287,7 @@ export const ChatContainer = ({
         if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
             // Sends The Action
             chat_socket.current.send(JSON.stringify({
-                "action": "mark_as_read"
+                action: "mark_as_read"
             }))
         }
 
@@ -249,34 +297,281 @@ export const ChatContainer = ({
     }
 
     // Function For Send The Message
-    const sendMessage = ():void => {
+    const sendMessage = async ():Promise<void> => {
         if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
-            if(new_message.trim() !== "") {
-                // New Message
-                if(write_message_action === "new") {
+            // New Message
+            if(write_message_action === "new") {
+                // If Any Files Were Selected
+                if(selected_files.length > 0) {
+                    setIsUploading(true) // Sets The Information That The Attachment Is Uploading
+        
+                    const sent_chat_attachment_data:SelectedAttachment[] = await sendChatAttachment(selected_files) || [] // Gets The Sent Chat Attachment Data
+        
+                    // Sends The Data To The Web Socket
+                    if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
+                        sent_chat_attachment_data.forEach((one_attachment:SelectedAttachment) => {
+                            if(chat_socket.current) {
+                                // Sends The Attachment
+                                chat_socket.current.send(JSON.stringify({
+                                    action: "send_attachment",
+                                    message: new_message.trim() !== "" ? new_message : null,
+                                    attachment_id: one_attachment.attachment_id,
+                                    attachment_type: one_attachment.attachment_type,
+                                    attachment_url: one_attachment.attachment_url
+                                }))
+                            }
+                        })
+                    }
+                }
+
+                else {
                     // Sends The New Message
                     chat_socket.current.send(JSON.stringify({
-                        "action": write_message_action,
-                        "message": new_message
+                        action: write_message_action,
+                        message: new_message
                     }))
                 }
-
-                // Edit Message
-                else if(write_message_action === "edit" && selected_message_for_edit) {
-                    // Sends The Edited Message
-                    chat_socket.current.send(JSON.stringify({
-                        "action": write_message_action,
-                        "chat_id": selected_message_for_edit.id,
-                        "message": new_message
-                    }))
-                }
-
-                setNewMessage("") // Sets The New Message
             }
+
+            // Edit Message
+            else if(write_message_action === "edit" && selected_message_for_edit) {
+                // Sends The Edited Message
+                chat_socket.current.send(JSON.stringify({
+                    action: write_message_action,
+                    chat_id: selected_message_for_edit.id,
+                    message: new_message
+                }))
+            }
+
+            setNewMessage("") // Sets The New Message
         }
 
         else {
             console.warn(t("Web Socket nie je otvorený."))
+        }
+    }
+
+    // Function For Select Chat Attachment
+    const selectChatAttachment = async (gallery_or_documents:"gallery"|"documents" = "gallery"):Promise<void> => {
+        try {
+            // Gallery Selection (Images And Videos)
+            if(gallery_or_documents === "gallery") {
+                const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
+    
+                if(!permission_result.granted) {
+                    Alert.alert(t("Prístup zamietnutý"), t("Pre výber fotiek a videí musíte povoliť prístup.")) // Shows The Alert
+                    return
+                }
+    
+                // Opens The Gallery
+                const result = await ImagePicker.launchImageLibraryAsync({
+                    mediaTypes: ImagePicker.MediaTypeOptions.All,
+                    allowsMultipleSelection: true, // Multiple Selection
+                    selectionLimit: 5, // Accepts Only Maximum Of 5 Files
+                    quality: 0.8 // Compression For Faster Upload
+                })
+    
+                if(!result.canceled && result.assets) {
+                    // Accepts Only The Image And Video Formats
+                    const valid_files:ImagePicker.ImagePickerAsset[] = result.assets.filter((one_file:ImagePicker.ImagePickerAsset) => {
+                        const is_valid_type:boolean = one_file.type === "image" || one_file.type === "video"
+
+                        const is_valid_mime:boolean = one_file.mimeType
+                            ? one_file.mimeType.startsWith("image/") || one_file.mimeType.startsWith("video/")
+                            : true
+    
+                        return is_valid_type && is_valid_mime
+                    })
+    
+                    if(valid_files.length < result.assets.length) {
+                        Alert.alert(t("Chyba"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.")) // Shows The Alert
+                    }
+
+                    const MAX_FILES:number = 5 // Defines The Maximum Amount Of Files
+                    const current_max_files:number = MAX_FILES - selected_files.length // Gets The Current Maximum Amount Of Files
+
+                    const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
+
+                    const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
+                    const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
+                    const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
+                    const MIN_VIDEO_DURATION:number = 1 // 1 Second
+
+                    // Gets The New Selected Files
+                    const new_selected_files:SelectedFile[] = valid_files
+                        .filter((one_file:ImagePicker.ImagePickerAsset) => {
+                            if(one_file.type === "image" && (one_file.fileSize || 0) > MAX_IMAGE_SIZE) {
+                                Alert.alert(t("Chyba"), t("Obrázok {{ file }} je príliš veľký.", { file: one_file.fileName })) // Shows The Alert
+                                return false // Checks The Image Size
+                            }
+
+                            if(one_file.type === "video" && (one_file.fileSize || 0) > MAX_VIDEO_SIZE) {
+                                Alert.alert(t("Chyba"), t("Video {{ file }} je príliš veľké.", { file: one_file.fileName })) // Shows The Alert
+                                return false // Checks The Video Size
+                            }
+
+                            if(one_file.type === "video" && (one_file.duration || 0) > MAX_VIDEO_DURATION) {
+                                Alert.alert(t("Chyba"), t("Video {{ file }} je príliš dlhé.", { file: one_file.fileName })) // Shows The Alert
+                                return false // Checks The Video Duration
+                            }
+                            
+                            if(one_file.type === "video" && (one_file.duration || 0) < MIN_VIDEO_DURATION) {
+                                Alert.alert(t("Chyba"), t("Video {{ file }} je príliš krátke.", { file: one_file.fileName })) // Shows The Alert
+                                return false // Checks The Video Duration
+                            }
+
+                            return true
+                        })
+                        .slice(0, current_max_files)
+                        .map((one_file:ImagePicker.ImagePickerAsset) => ({
+                            uri: one_file.uri,
+                            name: one_file.fileName || `media_${Date.now()}.${one_file.uri.split(".").pop() || "jpg"}`,
+                            type: one_file.mimeType || (one_file.type === "video" ? "video/mp4" : "image/jpeg")
+                        }))
+
+                    setSelectedFiles([...selected_files, ...new_selected_files]) // Sets The Selected Files
+                }
+            } 
+            
+            // Documents Selection (PDF, Audio And Other Files)
+            else if(gallery_or_documents === "documents") {
+                // Opens The Explorer
+                const result = await DocumentPicker.getDocumentAsync({
+                    type: "*/*", // All Files
+                    multiple: true, // Multiple Selection
+                    copyToCacheDirectory: true
+                })
+    
+                if(!result.canceled && result.assets) {
+                    // Sets The Selected Files
+                    setSelectedFiles(result.assets.map((one_file:DocumentPicker.DocumentPickerAsset) => ({
+                        uri: one_file.uri,
+                        name: one_file.name,
+                        type: one_file.mimeType || "application/octet-stream"
+                    })))
+                }
+            }
+        } 
+        
+        catch {
+            console.warn(t("Pri výbere súborov došlo k chybe."))
+            Alert.alert(t("Chyba"), t("Pri výbere súborov došlo k chybe.")) // Shows The Alert
+        }
+        
+        finally {
+            setIsUploading(false) // Sets The Information That The Attachment Isn't Uploading
+        }
+    }
+
+    // Function For Send Chat Attachment
+    const sendChatAttachment = async (selected_files:SelectedFile[]):Promise<SelectedAttachment[]|undefined> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Prílohu nie je možné odoslať bez prihlásenia.")) // Shows The Alert
+                return
+            }
+    
+            const form_data:FormData = new FormData() // Creates The Form Data
+
+            for(const one_selected_file of selected_files) {
+                const file_data:any = await prepareFileForFormData(one_selected_file) // Gets The File Data
+                form_data.append("selected_files", file_data) // Appends The Selected Files To The Form Data
+            }
+    
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const sent_chat_attachment_response:Response = await fetch(`${API_URL}/send-chat-attachment/`, {
+                method: "POST",
+
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: form_data
+            })
+
+            // If The Response Isn't Success
+            if(!sent_chat_attachment_response.ok) {
+                Alert.alert(t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const sent_chat_attachment_data:SentChatAttachmentResponse = await sent_chat_attachment_response.json() // Gets The Sent Chat Attachment Data
+            return sent_chat_attachment_data.sent_attachments ? sent_chat_attachment_data.sent_attachments : [] // Returns The Sent Chat Attachment Data
+        }
+
+        catch {
+            Alert.alert(t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Function For Prepare File For Form Data
+    const prepareFileForFormData = async (file:SelectedFile):Promise<any> => {
+        const is_video:boolean = file.type === "video" // Stores The Information If The Selected File Is Video
+        const default_extension:"mp4"|"jpg" = is_video ? "mp4" : "jpg" // Sets The Default Extension
+
+        const file_name:string = file.name || `file_${Date.now()}.${default_extension}` // Sets The File Name
+        const file_type:string = file.type || (is_video ? "video/mp4" : "image/jpeg") // Sets The File Type
+
+        // Web
+        if(Platform.OS === "web") {
+            const file_response:Response = await fetch(file.uri)
+            const blob:Blob = await file_response.blob()
+
+            return new File([blob], file_name, {
+                type: file_type
+            })
+        } 
+        
+        // iOS And Android
+        else {
+            return {
+                uri: file.uri,
+                type: file_type,
+                name: file_name
+            } as any
+        }
+    }
+
+    // Function For Download The File
+    const downloadFile = async (file_url:string, filename:string):Promise<void> => {
+        try {
+            // Web
+            if(Platform.OS === "web") {
+                const link:HTMLAnchorElement = document.createElement("a") // Creates The Link
+                link.href = file_url
+                link.download = filename
+                link.target = "_blank"
+
+                document.body.appendChild(link) // Appends The Link To The Document
+                link.click() // Opens The Download Menu
+                document.body.removeChild(link) // Removes The Link From The Document
+            } 
+            
+            // iOS And Android
+            else {
+                const destination_file:ExpoFile = new ExpoFile(Paths.document, filename) // Creates The Destination File
+    
+                await ExpoFile.downloadFileAsync(file_url, destination_file)
+    
+                if(await Sharing.isAvailableAsync()) {
+                    await Sharing.shareAsync(destination_file.uri, {
+                        UTI: "public.item",
+                        mimeType: "application/octet-stream",
+                        dialogTitle: t("Uložiť súbor")
+                    })
+                }
+                
+                else {
+                    Alert.alert(t("Chyba"), t("Zdieľanie nie je dostupné."))
+                }
+            }
+        } 
+        
+        catch {
+            console.error(t("Pri sťahovaní súboru došlo k chybe."))
         }
     }
 
@@ -302,8 +597,8 @@ export const ChatContainer = ({
         if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
             if(selected_message) {
                 chat_socket.current.send(JSON.stringify({
-                    "action": "delete",
-                    "chat_id": selected_message.id,
+                    action: "delete",
+                    chat_id: selected_message.id,
                 }))
             }
         }
@@ -357,25 +652,14 @@ export const ChatContainer = ({
         message_properties.current?.dismiss() // Hides The Message Properties
     }
 
-    // Defines The File Icons
-    const FILE_ICONS:{
-        audio:ImageSourcePropType,
-        pdf:ImageSourcePropType,
-        doc:ImageSourcePropType,
-        excel:ImageSourcePropType,
-        powerpoint:ImageSourcePropType,
-        archive:ImageSourcePropType,
-        text:ImageSourcePropType,
-        file:ImageSourcePropType
-    } = {
-        audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
-        pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
-        doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
-        excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
-        powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
-        archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
-        text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
-        file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
+    // Function For Show The Attachment Options
+    const showAttachmentOptions = ():void => {
+        attachment_options.current?.present() // Shows The Attachment Options
+    }
+
+    // Function For Close The Attachment Options
+    const hideAttachmentOptions = ():void => {
+        attachment_options.current?.dismiss() // Hides The Attachment Options
     }
 
     return (
@@ -505,6 +789,13 @@ export const ChatContainer = ({
                                                             </Text>
 
                                                             <Text className="original_size" style={{ color: SECONDARY_COLOR }}>{getReadableSize(one_chat.attachment.compressed_size)}</Text>
+                                                        </View>
+                                                        
+                                                        <View accessibilityLabel={t("Stiahnuť")}>
+                                                            <Icon 
+                                                                icon_name="download" 
+                                                                onPress={() => downloadFile(one_chat.attachment.attachment_url, one_chat.attachment.original_filename)}
+                                                            />
                                                         </View>
                                                     </View>
                                                 )}
@@ -645,8 +936,9 @@ export const ChatContainer = ({
                         />
 
                         <AttachmentSelection 
-                            logged_in_user={logged_in_user} 
-                            chat_socket={chat_socket} 
+                            onShowAttachmentOptions={showAttachmentOptions}
+                            is_uploading={is_uploading}
+                            selected_files_amount={selected_files.length || 0}
                         />
 
                         <Pressable 
@@ -1032,6 +1324,82 @@ export const ChatContainer = ({
                                 )}
                             </View>
                         ) : null}
+                    </BottomSheetView>
+                </BottomSheetModal>
+
+                <BottomSheetModal
+                    ref={attachment_options}
+                    snapPoints={snap_points}
+                    enablePanDownToClose={true}
+                    containerStyle={{ zIndex: 9999 }}
+                >
+                    <BottomSheetView style={{ padding: 20 }}>
+                        <View className="attachment_options">
+                            <View style={styles.sheet_container}>
+                                <Pressable
+                                    onPress={() => {
+                                        hideAttachmentOptions() // Hides The Attachment Options
+                                        selectChatAttachment("gallery") // Sets The Selected Chat Attachment
+                                    }}
+
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <Ionicons name="images" size={24} color={BLUE_COLOR} />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>{t("Fotografie a Videá")}</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    onPress={() => {
+                                        hideAttachmentOptions() // Hides The Attachment Options
+                                        selectChatAttachment("documents") // Sets The Selected Chat Attachment
+                                    }}
+ 
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <Ionicons name="document-text" size={24} color={RED_COLOR} />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>{t("Dokumenty a Súbory")}</Text>
+                                </Pressable>
+
+                                <Pressable
+                                    className="hide_attachment_options_button"
+                                    onPress={hideAttachmentOptions}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        pressed && styles.sheet_item_pressed
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="xmark"
+                                            size={20}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                                </Pressable>
+                            </View>
+                        </View>
                     </BottomSheetView>
                 </BottomSheetModal>
             </View>
