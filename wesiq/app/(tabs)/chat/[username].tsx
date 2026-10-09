@@ -1,4 +1,4 @@
-import { StyleSheet, ScrollView, Alert } from "react-native"
+import { StyleSheet, ScrollView, Alert, View } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useState } from "react"
@@ -200,12 +200,9 @@ export default function ChatDetailScreen() {
                     setActiveForm={setActiveForm} 
                 />
 
-                <ScrollView 
+                <View 
                     className="content" 
-                    style={styles.content} 
-                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                    keyboardShouldPersistTaps="handled" 
-                    keyboardDismissMode="on-drag"
+                    style={styles.content}
                 >
                     <LoginFormDialog 
                         visible={active_form==="login_form"}
@@ -230,7 +227,7 @@ export default function ChatDetailScreen() {
                             chats={chats}
                         />
                     )}
-                </ScrollView>
+                </View>
             </SafeAreaView>
         </BackgroundContainer>
     )
@@ -242,6 +239,9 @@ const styles = StyleSheet.create({
     },
   
     content: {
+        alignItems: "center",
+        justifyContent: "center",
         flex: 1,
+        padding: 20,
     },
 })

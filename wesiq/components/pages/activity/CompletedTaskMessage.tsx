@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { Text, StyleSheet, Animated } from "react-native"
-import { Audio, AVPlaybackStatus } from "expo-av"
+// import { Audio, AVPlaybackStatus } from "expo-av"
 import { useTranslation } from "react-i18next"
 import { GREEN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { BIG_BORDER_RADIUS } from "@/constants/borders"
@@ -16,12 +16,12 @@ export const CompletedTaskMessage = () => {
     // Function For Play The Success Sound
     const playSuccessSound = async ():Promise<void> => {
         try {
-            const { sound } = await Audio.Sound.createAsync(require("@/assets/sounds/success.mp3")) // Gets The Sound
-            await sound.playAsync() // Plays The Sound
+            // const { sound } = await Audio.Sound.createAsync(require("@/assets/sounds/success.mp3")) // Gets The Sound
+            // await sound.playAsync() // Plays The Sound
 
-            sound.setOnPlaybackStatusUpdate((status:AVPlaybackStatus) => {
-                if(status.isLoaded && status.didJustFinish) sound.unloadAsync() // Removes The Loaded Sound File
-            })
+            // sound.setOnPlaybackStatusUpdate((status:AVPlaybackStatus) => {
+            //     if(status.isLoaded && status.didJustFinish) sound.unloadAsync() // Removes The Loaded Sound File
+            // })
         } 
         
         catch {

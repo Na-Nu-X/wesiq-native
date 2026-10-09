@@ -20,16 +20,18 @@ export default function AttachmentSelection({ onShowAttachmentOptions, is_upload
                 />
             )}
 
-            <Text 
-                style={[{
-                    position: "absolute",
-                    top: -5,
-                    right: -5,
-                    color: BLUE_COLOR,
-                }]}
-            >
-                {selected_files_amount}
-            </Text>
+            {selected_files_amount > 0 && (
+                <Text 
+                    style={[{
+                        position: "absolute",
+                        top: -5,
+                        right: -5,
+                        color: BLUE_COLOR,
+                    }]}
+                >
+                    {selected_files_amount}
+                </Text>
+            )}
         </View>
     )
 }

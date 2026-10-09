@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType, Platform } from "react-native"
+import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType, Platform, FlatList } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
@@ -21,6 +21,8 @@ import * as DocumentPicker from "expo-document-picker"
 import { API_URL } from "@/constants/general"
 import { File as ExpoFile, Paths } from "expo-file-system"
 import * as Sharing from "expo-sharing"
+import { LinkPreview } from "@flyerhq/react-native-link-preview"
+import { isUrlInText } from "@/utils/isUrlInText"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -72,7 +74,7 @@ export const ChatContainer = ({
     const [write_message_action, setWriteMessageAction] = useState<"new"|"edit">("new") // Stores The Write Message Action
     const [selected_message_for_edit, setSelectedMessageForEdit] = useState<Chat|null>(null) // Stores The Selected Message For Edit
     
-    const all_messages = useRef<ScrollView|null>(null) // Sets The All Messages Reference
+    const all_messages = useRef<FlatList|null>(null) // Sets The All Messages Reference
     
     const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
     
@@ -304,24 +306,16 @@ export const ChatContainer = ({
                 // If Any Files Were Selected
                 if(selected_files.length > 0) {
                     setIsUploading(true) // Sets The Information That The Attachment Is Uploading
-        
+
                     const sent_chat_attachment_data:SelectedAttachment[] = await sendChatAttachment(selected_files) || [] // Gets The Sent Chat Attachment Data
-        
-                    // Sends The Data To The Web Socket
-                    if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
-                        sent_chat_attachment_data.forEach((one_attachment:SelectedAttachment) => {
-                            if(chat_socket.current) {
-                                // Sends The Attachment
-                                chat_socket.current.send(JSON.stringify({
-                                    action: "send_attachment",
-                                    message: new_message.trim() !== "" ? new_message : null,
-                                    attachment_id: one_attachment.attachment_id,
-                                    attachment_type: one_attachment.attachment_type,
-                                    attachment_url: one_attachment.attachment_url
-                                }))
-                            }
-                        })
-                    }
+                    const sent_chat_attachment_ids:number[] = sent_chat_attachment_data.map((one_attachment:SelectedAttachment) => one_attachment.attachment_id) // Gets The Sent Chat Attachment IDs 
+
+                    // Sends The New Message With Attachments
+                    chat_socket.current.send(JSON.stringify({
+                        action: "send_attachment",
+                        message: new_message.trim() !== "" ? new_message : null,
+                        attachment_ids: sent_chat_attachment_ids
+                    }))
                 }
 
                 else {
@@ -354,6 +348,17 @@ export const ChatContainer = ({
     // Function For Select Chat Attachment
     const selectChatAttachment = async (gallery_or_documents:"gallery"|"documents" = "gallery"):Promise<void> => {
         try {
+            const MAX_FILES:number = 5 // Defines The Maximum Amount Of Files
+            const current_max_files:number = MAX_FILES - selected_files.length // Gets The Current Maximum Amount Of Files
+
+            const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
+
+            const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
+            const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
+            const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
+            const MIN_VIDEO_DURATION:number = 1 // 1 Second
+            const MAX_FILE_SIZE:number = subscription_plan === "free" ? 5 * 1000 * 1000 : 10 * 1000 * 1000 // 5MB For No Subscribers, 10MB For Subscribers
+
             // Gallery Selection (Images And Videos)
             if(gallery_or_documents === "gallery") {
                 const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
@@ -387,37 +392,31 @@ export const ChatContainer = ({
                         Alert.alert(t("Chyba"), t("Niekteré vybrané súbory boli vynechané, pretože nie sú podporovaným obrázkom alebo videom.")) // Shows The Alert
                     }
 
-                    const MAX_FILES:number = 5 // Defines The Maximum Amount Of Files
-                    const current_max_files:number = MAX_FILES - selected_files.length // Gets The Current Maximum Amount Of Files
-
-                    const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
-
-                    const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
-                    const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
-                    const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
-                    const MIN_VIDEO_DURATION:number = 1 // 1 Second
-
                     // Gets The New Selected Files
                     const new_selected_files:SelectedFile[] = valid_files
                         .filter((one_file:ImagePicker.ImagePickerAsset) => {
+                            // Checks The Image Size
                             if(one_file.type === "image" && (one_file.fileSize || 0) > MAX_IMAGE_SIZE) {
                                 Alert.alert(t("Chyba"), t("Obrázok {{ file }} je príliš veľký.", { file: one_file.fileName })) // Shows The Alert
-                                return false // Checks The Image Size
+                                return false 
                             }
 
+                            // Checks The Video Size
                             if(one_file.type === "video" && (one_file.fileSize || 0) > MAX_VIDEO_SIZE) {
                                 Alert.alert(t("Chyba"), t("Video {{ file }} je príliš veľké.", { file: one_file.fileName })) // Shows The Alert
-                                return false // Checks The Video Size
+                                return false 
                             }
 
+                            // Checks The Video Duration
                             if(one_file.type === "video" && (one_file.duration || 0) > MAX_VIDEO_DURATION) {
                                 Alert.alert(t("Chyba"), t("Video {{ file }} je príliš dlhé.", { file: one_file.fileName })) // Shows The Alert
-                                return false // Checks The Video Duration
+                                return false
                             }
                             
+                            // Checks The Video Duration
                             if(one_file.type === "video" && (one_file.duration || 0) < MIN_VIDEO_DURATION) {
                                 Alert.alert(t("Chyba"), t("Video {{ file }} je príliš krátke.", { file: one_file.fileName })) // Shows The Alert
-                                return false // Checks The Video Duration
+                                return false 
                             }
 
                             return true
@@ -425,7 +424,7 @@ export const ChatContainer = ({
                         .slice(0, current_max_files)
                         .map((one_file:ImagePicker.ImagePickerAsset) => ({
                             uri: one_file.uri,
-                            name: one_file.fileName || `media_${Date.now()}.${one_file.uri.split(".").pop() || "jpg"}`,
+                            name: one_file.fileName || `attachment_${Date.now()}.${one_file.uri.split(".").pop() || "jpg"}`,
                             type: one_file.mimeType || (one_file.type === "video" ? "video/mp4" : "image/jpeg")
                         }))
 
@@ -443,12 +442,25 @@ export const ChatContainer = ({
                 })
     
                 if(!result.canceled && result.assets) {
-                    // Sets The Selected Files
-                    setSelectedFiles(result.assets.map((one_file:DocumentPicker.DocumentPickerAsset) => ({
-                        uri: one_file.uri,
-                        name: one_file.name,
-                        type: one_file.mimeType || "application/octet-stream"
-                    })))
+                    // Gets The New Selected Files
+                    const new_selected_files:SelectedFile[] = result.assets
+                        .filter((one_file:DocumentPicker.DocumentPickerAsset) => {
+                            // Checks The File Size
+                            if((one_file.size || 0) > MAX_FILE_SIZE) {
+                                Alert.alert(t("Chyba"), t("Súbor {{ file }} je príliš veľký.", { file: one_file.name })) // Shows The Alert
+                                return false
+                            }
+
+                            return true
+                        })
+                        .slice(0, current_max_files)
+                        .map((one_file:DocumentPicker.DocumentPickerAsset) => ({
+                            uri: one_file.uri,
+                            name: one_file.name || `attachment_${Date.now()}.${one_file.uri.split(".").pop() || "jpg"}`,
+                            type: one_file.mimeType || "application/octet-stream"
+                        }))
+
+                    setSelectedFiles([...selected_files, ...new_selected_files]) // Sets The Selected Files
                 }
             }
         } 
@@ -689,23 +701,15 @@ export const ChatContainer = ({
                 </View>
 
                 <View className="middle" style={styles.middle}>
-                    <ScrollView 
+                    <FlatList 
                         ref={all_messages}
-                        className="all_messages" 
-                        showsVerticalScrollIndicator={false}
-                        indicatorStyle="white"
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                        style={styles.all_messages}
-                        contentContainerStyle={styles.all_messages}
+                        className="all_messages"
+                        data={chats} 
+                        keyExtractor={(one_chat:Chat) => one_chat.id.toString()}
 
-                        onContentSizeChange={() => {
-                            if(all_messages.current) all_messages.current.scrollToEnd({ animated: true }) // Auto Scrolls To The Bottom
-                        }}
-                    >
-                        {chats.map((one_chat:Chat, index:number) => (
+                        renderItem={({ item: one_chat }) => (
                             <View
-                                key={one_chat.id || index}
+                                key={one_chat.id}
                                 className="one_message_container"
 
                                 style={[
@@ -714,7 +718,7 @@ export const ChatContainer = ({
                                 ]}
                             >
                                 <Pressable 
-                                    key={one_chat.id || index}
+                                    key={one_chat.id}
                                     className={one_chat.is_sender ? "one_message sender" : "one_message receiver"}
                                     onPress={one_chat === selected_message_for_edit ? cancelEditMessage : null}
 
@@ -742,7 +746,7 @@ export const ChatContainer = ({
                                         />
                                     </View>
 
-                                    <View style={{ gap: 5 }}>
+                                    <View style={{ gap: 10 }}>
                                         <>
                                             {one_chat.attachments.length > 0 && (
                                                 one_chat.attachments.map((one_attachment:Attachment, index:number) => {
@@ -791,7 +795,16 @@ export const ChatContainer = ({
                                                                             {one_attachment.original_filename}
                                                                         </Text>
         
-                                                                        <Text className="original_size" style={{ color: SECONDARY_COLOR }}>{getReadableSize(one_attachment.compressed_size)}</Text>
+                                                                        <Text 
+                                                                            className="size" 
+
+                                                                            style={{ 
+                                                                                fontSize: 12, 
+                                                                                color: SECONDARY_COLOR,
+                                                                            }}
+                                                                        >
+                                                                            {getReadableSize(one_attachment.compressed_size)}
+                                                                        </Text>
                                                                     </View>
                                                                     
                                                                     <View accessibilityLabel={t("Stiahnuť")}>
@@ -807,7 +820,74 @@ export const ChatContainer = ({
                                                 })
                                             )}
 
-                                            {one_chat.content && (<Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>)}
+                                            {one_chat.content && (
+                                                isUrlInText(one_chat.content) ? (
+                                                    <LinkPreview 
+                                                        text={one_chat.content} 
+                                                        
+                                                        renderText={(text) => (
+                                                            <Text 
+                                                                style={{ 
+                                                                    color: SECONDARY_COLOR, 
+                                                                    flexShrink: 1, 
+                                                                    marginBottom: 5 
+                                                                }}
+                                                            >
+                                                                {text}
+                                                            </Text>
+                                                        )}
+                                                        
+                                                        renderTitle={(title) => (
+                                                            <Text 
+                                                                numberOfLines={2}
+                                                                ellipsizeMode="tail" 
+
+                                                                style={{ 
+                                                                    color: SECONDARY_COLOR, 
+                                                                    fontWeight: "bold",
+                                                                }}
+                                                            >
+                                                                {title}
+                                                            </Text>
+                                                        )}
+
+                                                        renderDescription={(description) => (
+                                                            <Text 
+                                                                numberOfLines={2}
+                                                                ellipsizeMode="tail" 
+
+                                                                style={{ 
+                                                                    color: "#cccccc", 
+                                                                    fontSize: 12,
+                                                                }}
+                                                            >
+                                                                {description}
+                                                            </Text>
+                                                        )}
+
+                                                        renderImage={(image_data) => (
+                                                            <DynamicImage 
+                                                                uri={image_data?.url}
+                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                scale_by_aspect_ratio={true}
+                                                            />
+                                                        )}
+                                                        
+                                                        textContainerStyle={{
+                                                            margin: 0,
+                                                            padding: 0,
+                                                        }}
+
+                                                        containerStyle={{ 
+                                                            maxWidth: "100%",
+                                                            width: 180,
+                                                            overflow: "hidden",
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>
+                                                )
+                                            )}
                                         </>
                                     </View>
 
@@ -862,15 +942,34 @@ export const ChatContainer = ({
 
                                     style={[
                                         styles.time_label,
-                                        one_chat.is_sender ? { marginLeft: 20 } : { marginRight: 20, textAlign: "right" }
+                                        // one_chat.is_sender ? { marginLeft: 20 } : { marginRight: 20, textAlign: "right" }
+                                        one_chat.is_sender ? { } : { textAlign: "right" }
                                     ]}
                                 >
                                     {one_chat.formatted_time}
                                     {one_chat.is_edited && (t(" (upravené)"))}
                                 </Text>
                             </View>
-                        ))}
-                    </ScrollView>
+                        )}
+
+                        // onEndReached={}
+                        onEndReachedThreshold={0.5}
+
+                        // ListFooterComponent={
+                        //     are_posts_loading ? (
+                        //         <View style={{ padding: 20, alignItems: "center" }}>
+                        //             <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                        //         </View>
+                        //     ) : null
+                        // }
+
+                        showsVerticalScrollIndicator={false}
+                        inverted={true} 
+                        keyboardShouldPersistTaps="handled"
+                        keyboardDismissMode="interactive"
+                        style={styles.all_messages}
+                        contentContainerStyle={{ gap: 50 }}
+                    />
                 </View>
 
                 <View className="bottom">
@@ -1419,9 +1518,7 @@ const styles = StyleSheet.create({
         maxWidth: MAIN_WIDTH,
         width: "100%",
         marginHorizontal: "auto",
-        paddingTop: 30,
-        paddingHorizontal: 50,
-        paddingBottom: 50,
+        padding: 20,
         textAlign: "center",
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
@@ -1479,8 +1576,8 @@ const styles = StyleSheet.create({
     },
 
     all_messages: {
-        flexDirection: "column-reverse",
-        gap: 50,
+        // flexDirection: "column-reverse",
+        // gap: 50,
         maxHeight: 400,
     },
 
@@ -1492,7 +1589,7 @@ const styles = StyleSheet.create({
 
     one_message_container_receiver: {
         flexDirection: "column",
-        marginRight: 20,
+        // marginRight: 20,
         marginLeft: "auto",
         textAlign: "right",
     },
@@ -1500,7 +1597,7 @@ const styles = StyleSheet.create({
     one_message_container_sender: {
         flexDirection: "column",
         marginRight: "auto",
-        marginLeft: 20,
+        // marginLeft: 20,
         textAlign: "right",
     },
 
@@ -1583,7 +1680,7 @@ const styles = StyleSheet.create({
     one_message_receiver: {
         flexDirection: "row-reverse",
         justifyContent: "flex-start",
-        marginRight: 20,
+        // marginRight: 20,
         marginLeft: "auto",
         textAlign: "right",
         borderTopLeftRadius: BIG_BORDER_RADIUS,
@@ -1609,7 +1706,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "flex-start",
         marginRight: "auto",
-        marginLeft: 20,
+        // marginLeft: 20,
         textAlign: "right",
         borderTopLeftRadius: BIG_BORDER_RADIUS,
         borderTopRightRadius: BIG_BORDER_RADIUS,
