@@ -45,7 +45,7 @@ export interface Chat {
     id:number,
     sender:Sender,
     content:string,
-    attachment:Attachment,
+    attachments:Attachment[],
     is_read:boolean,
     is_edited:boolean,
     formatted_time:string,
@@ -67,7 +67,7 @@ export interface ChatSocketResponse {
     action:"new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification",
     chat_id:number,
     message:string,
-    attachment:Attachment,
+    attachments:Attachment[],
     formatted_time?:string,
     sender_id:number,
     sender_username?:string,
@@ -81,6 +81,7 @@ export interface Attachment {
     attachment_thumbnail:string|null,
     attachment_type:"image"|"video"|"audio"|"pdf"|"doc"|"excel"|"powerpoint"|"archive"|"text"|"file",
     original_filename:string,
+    original_size:number,
     compressed_size:number
 }
 

@@ -127,7 +127,7 @@ export const ChatContainer = ({
                 if(data.action === "new") {
                     const chat_id:number = data.chat_id as number // Gets The Chat ID
                     const message_content:string = data.message as string // Gets The Message Content
-                    const attachment:Attachment|null = data.attachment as Attachment || null // Gets The Attachment
+                    const attachments:Attachment[] = data.attachments as Attachment[] // Gets The Attachment
                     const formatted_time:string = data.formatted_time as string // Gets The Formatted Time
                     const sender_id:number = data.sender_id as number // Gets The Sender's ID
                     const sender_profile_picture_name:string = data.sender_profile_picture_name as string // Gets The Sender's Profile Picture Name
@@ -142,7 +142,7 @@ export const ChatContainer = ({
                         },
 
                         content: message_content,
-                        attachment: attachment,
+                        attachments: attachments,
                         is_read: false,
                         is_edited: false,
                         formatted_time: formatted_time,
@@ -743,66 +743,72 @@ export const ChatContainer = ({
                                     </View>
 
                                     <View style={{ gap: 5 }}>
-                                        {one_chat.attachment && (
-                                            <>
-                                                {(one_chat.attachment.attachment_type === "image" || one_chat.attachment.attachment_type === "video") ? (
-                                                    <View style={styles.image_attachment}>
-                                                        {one_chat.attachment.attachment_type === "image" && (
-                                                            <DynamicImage 
-                                                                uri={`${DOMAIN}${one_chat.attachment.attachment_url}`} 
-                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                                scale_by_aspect_ratio={true}
-                                                            />
-                                                        )}
-
-                                                        {one_chat.attachment.attachment_type === "video" && one_chat.attachment.attachment_thumbnail && (
-                                                            <DynamicImage 
-                                                                uri={`${DOMAIN}${one_chat.attachment.attachment_thumbnail}`} 
-                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                                scale_by_aspect_ratio={true}
-                                                            />
-                                                        )}                                                 
-                                                    </View>
-                                                ) : (
-                                                    <View style={styles.file_attachment}>
-                                                        <Image
-                                                            source={FILE_ICONS[one_chat.attachment.attachment_type] || require("@/assets/images/files/file.png")}
-
-                                                            style={{
-                                                                width: 32,
-                                                                height: 32,
-                                                                resizeMode: "contain",
-                                                            }}
-                                                        />
-
-                                                        <View>
-                                                            <Text 
-                                                                numberOfLines={1} 
-                                                                ellipsizeMode="tail" 
-                                                                
-                                                                style={[{ 
-                                                                    maxWidth: 100,
-                                                                    color: SECONDARY_COLOR,
-                                                                }]}
-                                                            >
-                                                                {one_chat.attachment.original_filename}
-                                                            </Text>
-
-                                                            <Text className="original_size" style={{ color: SECONDARY_COLOR }}>{getReadableSize(one_chat.attachment.compressed_size)}</Text>
+                                        <>
+                                            {one_chat.attachments.length > 0 && (
+                                                one_chat.attachments.map((one_attachment:Attachment, index:number) => {
+                                                    return (
+                                                        <View key={index}>
+                                                            {(one_attachment.attachment_type === "image" || one_attachment.attachment_type === "video") ? (
+                                                                <View style={styles.image_attachment}>
+                                                                    {one_attachment.attachment_type === "image" && (
+                                                                        <DynamicImage 
+                                                                            uri={`${DOMAIN}${one_attachment.attachment_url}`} 
+                                                                            style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                            scale_by_aspect_ratio={true}
+                                                                        />
+                                                                    )}
+        
+                                                                    {one_attachment.attachment_type === "video" && one_attachment.attachment_thumbnail && (
+                                                                        <DynamicImage 
+                                                                            uri={`${DOMAIN}${one_attachment.attachment_thumbnail}`} 
+                                                                            style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                            scale_by_aspect_ratio={true}
+                                                                        />
+                                                                    )}                                                 
+                                                                </View>
+                                                            ) : (
+                                                                <View style={styles.file_attachment}>
+                                                                    <Image
+                                                                        source={FILE_ICONS[one_attachment.attachment_type] || require("@/assets/images/files/file.png")}
+        
+                                                                        style={{
+                                                                            width: 32,
+                                                                            height: 32,
+                                                                            resizeMode: "contain",
+                                                                        }}
+                                                                    />
+        
+                                                                    <View>
+                                                                        <Text 
+                                                                            numberOfLines={1} 
+                                                                            ellipsizeMode="tail" 
+                                                                            
+                                                                            style={[{ 
+                                                                                maxWidth: 100,
+                                                                                color: SECONDARY_COLOR,
+                                                                            }]}
+                                                                        >
+                                                                            {one_attachment.original_filename}
+                                                                        </Text>
+        
+                                                                        <Text className="original_size" style={{ color: SECONDARY_COLOR }}>{getReadableSize(one_attachment.compressed_size)}</Text>
+                                                                    </View>
+                                                                    
+                                                                    <View accessibilityLabel={t("Stiahnuť")}>
+                                                                        <Icon 
+                                                                            icon_name="download" 
+                                                                            onPress={() => downloadFile(one_attachment.attachment_url, one_attachment.original_filename)}
+                                                                        />
+                                                                    </View>
+                                                                </View>
+                                                            )}
                                                         </View>
-                                                        
-                                                        <View accessibilityLabel={t("Stiahnuť")}>
-                                                            <Icon 
-                                                                icon_name="download" 
-                                                                onPress={() => downloadFile(one_chat.attachment.attachment_url, one_chat.attachment.original_filename)}
-                                                            />
-                                                        </View>
-                                                    </View>
-                                                )}
-                                            </>
-                                        )}
+                                                    )
+                                                })
+                                            )}
 
-                                        {one_chat.content && (<Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>)}
+                                            {one_chat.content && (<Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>)}
+                                        </>
                                     </View>
 
                                     {one_chat.is_sender && one_chat.is_read && (
