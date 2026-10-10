@@ -12,7 +12,7 @@ import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { Break } from "./Break"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { randomColor } from "@/utils/randomColor"
-import { BasicResponse } from "@/components/Feed"
+import { BasicResponse } from "@/components/pages/community/Feed"
 import { WarmUp } from "./WarmUp"
 import { useTranslation } from "react-i18next"
 

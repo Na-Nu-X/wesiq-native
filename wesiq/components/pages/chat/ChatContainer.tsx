@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
@@ -18,6 +18,8 @@ import * as ImagePicker from "expo-image-picker"
 import * as DocumentPicker from "expo-document-picker"
 import { API_URL } from "@/constants/general"
 import { OneMessageContainer } from "./OneMessageContainer"
+import ImageViewer from "./ImageViewer"
+import { FullscreenVideoPlayer } from "./FullscreenVideoPlayer"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -84,6 +86,9 @@ export const ChatContainer = ({
     const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
     const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Attachment Is Uploading
     const attachment_options = useRef<BottomSheetModal>(null) // Stores The Attachment Options
+
+    const [viewed_image, setViewedImage] = useState<string|null>(null) // Stores The Viewed Image
+    const [viewed_video, setViewedVideo] = useState<string|null>(null) // Stores The Viewed Video
 
     // Initializes The Web Socket
     useEffect(() => {
@@ -655,6 +660,8 @@ export const ChatContainer = ({
                                 selected_message_for_edit={selected_message_for_edit}
                                 onCancelEditMessage={cancelEditMessage}
                                 onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
+                                onViewedImageUpdate={(viewed_image:string|null) => setViewedImage(viewed_image)}
+                                onViewedVideoUpdate={(viewed_video:string|null) => setViewedVideo(viewed_video)}
                             />
                         )}
 
@@ -681,6 +688,31 @@ export const ChatContainer = ({
                             {are_chats_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}
                         </Text>
                     )}
+
+                    {Platform.OS !== "web" && (
+                        <ImageViewer
+                            images={viewed_image ? [{ uri: viewed_image }] : []}
+                            imageIndex={0}
+                            visible={viewed_image !== null}
+                            onRequestClose={() => setViewedImage(null)}
+                            swipeToCloseEnabled={true}
+                            doubleTapToZoomEnabled={true}
+                        />
+                    )}
+
+                    <Modal
+                        visible={viewed_video !== null}
+                        transparent={false}
+                        animationType="slide"
+                        onRequestClose={() => setViewedVideo(null)}
+                    >
+                        {viewed_video && (
+                            <FullscreenVideoPlayer 
+                                url={viewed_video} 
+                                onClose={() => setViewedVideo(null)} 
+                            />
+                        )}
+                    </Modal>
                 </View>
 
                 <View className="bottom">

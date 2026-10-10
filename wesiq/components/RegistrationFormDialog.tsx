@@ -11,7 +11,7 @@ import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "./LoginFormDialog"
-import type { BasicResponse } from "./Feed"
+import type { BasicResponse } from "./pages/community/Feed"
 
 type RegistrationFormDialogProps = {
     visible:boolean,

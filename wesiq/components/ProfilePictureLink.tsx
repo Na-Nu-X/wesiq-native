@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { StyleSheet, Pressable, Image, Animated, View } from "react-native"
 import { LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
@@ -20,6 +20,12 @@ export default function ProfilePictureLink({ user_id, user_username, user_profil
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const router:ImperativeRouter = useRouter() // Gets The Router
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
+
+    // Initializes Reset Of The Information That There Is An Error
+    useEffect(() => {
+        setIsError(false) // Sets The Information That There Isn't An Error
+    }, [user_profile_picture_name, user_id])
 
     // Function For Handle Press In
     const handlePressIn = () => {
@@ -64,8 +70,12 @@ export default function ProfilePictureLink({ user_id, user_username, user_profil
                     }`}
 
                     source={
-                        user_profile_picture_name ? { uri: `${DOMAIN}/media/images/${user_id}/${user_profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        user_profile_picture_name && !is_error
+                            ? { uri: `${DOMAIN}/media/images/${user_id}/${user_profile_picture_name}` }
+                            : require("@/assets/images/profile_picture.png") // https://www.flaticon.com/free-icon/user_3177440
                     }
+
+                    onError={() => setIsError(true)} // Sets The Information That There Is An Error
 
                     style={[
                         styles.profile_picture,

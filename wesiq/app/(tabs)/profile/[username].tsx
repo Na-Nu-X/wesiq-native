@@ -19,7 +19,7 @@ import EditAccountForm from "@/components/pages/profile/EditAccountForm"
 import ProfileSection from "@/components/pages/profile/ProfileSection"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
 import Back from "@/components/Back"
 
 interface ProfileResponse {

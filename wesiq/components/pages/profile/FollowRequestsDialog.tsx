@@ -9,7 +9,7 @@ import ProfilePictureLink from "@/components/ProfilePictureLink"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 
-import type { BasicResponse } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 interface FollowRequestsDialogProps {

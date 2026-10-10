@@ -3,7 +3,7 @@ import { StyleSheet, ScrollView, Alert } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import UploadPostFormDialog from "@/components/pages/community/UploadPostFormDialog"
 import SearchUsers from "@/components/pages/community/SearchUsers"
-import Feed from "@/components/Feed"
+import Feed from "@/components/pages/community/Feed"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import { SafeAreaView } from "react-native-safe-area-context"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { UploadProgressResponse, CompressTask } from "@/components/pages/community/UploadPostFormDialog"
-import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components/Feed"
+import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components/pages/community/Feed"
 
 export interface TrackedTask {
   task_id:string,

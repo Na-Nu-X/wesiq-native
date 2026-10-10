@@ -6,11 +6,11 @@ import Icon from "@/components/Icon"
 import { getFormattedTime } from "@/utils/time"
 import Slider from "@react-native-community/slider"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { Video } from "expo-av"
+import { VideoPlayer } from "expo-video"
 import { useTranslation } from "react-i18next"
-
-import type { Media } from "@/components/Feed"
 import { DOMAIN } from "@/constants/general"
+
+import type { Media } from "@/components/pages/community/Feed"
 
 export interface vtt {
     start:number,
@@ -40,7 +40,7 @@ interface CustomVideoControlsProps {
     is_fullscreen:boolean,
     onToggleVideoFullscreen:() => void,
     onSetScrubberWidth:(scrubber_width:number) => void,
-    current_video:Video|null
+    current_video:VideoPlayer|null
     onStartControlsTimer:() => void,
     onStopControlsTimer:() => void,
     onIsScrubberDragged:(is_scrubber_dragged:boolean) => void,
@@ -49,6 +49,7 @@ interface CustomVideoControlsProps {
     onVttVideoScrubberPreviewImageUpdate:(sprite_sheet:string) => void,
     onScrubberPositionUpdate:(scrubber_position:number) => void,
     scrubber_position:number,
+    onElapsedTimeUpdate:(elapsed_time:number) => void
 }
 
 export const CustomVideoControls = ({ 
@@ -77,7 +78,8 @@ export const CustomVideoControls = ({
     onVttVideoScrubberPreviewUpdate,
     onVttVideoScrubberPreviewImageUpdate,
     onScrubberPositionUpdate,
-    scrubber_position
+    scrubber_position,
+    onElapsedTimeUpdate
 }:CustomVideoControlsProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -88,7 +90,7 @@ export const CustomVideoControls = ({
 
     const scrubber_width_reference = useRef<number>(0) // Stores The Scrubber Width Reference
 
-    const latest_video_reference = useRef<Video|null>(current_video) // Stores The Latest Video Reference
+    const latest_video_reference = useRef<VideoPlayer|null>(current_video) // Stores The Latest Video Reference
 
     // Initializes The Update Of The Latest Video Reference
     useEffect(() => {
@@ -121,16 +123,20 @@ export const CustomVideoControls = ({
             onPanResponderMove: (event:GestureResponderEvent):void => {
                 calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
             },
-    
+
             // Tap End (mouseup / touchend)
-            onPanResponderRelease: async (event:GestureResponderEvent):Promise<void> => {
+            onPanResponderRelease:(event:GestureResponderEvent):void => {
                 onIsScrubberDragged(false) // Sets The Information That The Scrubber Isn't Dragged
                 
                 const scrubber_progress:number|undefined = calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
 
                 if(scrubber_progress !== undefined && duration > 0) {
                     const video_time:number = scrubber_progress * duration // Gets The Video Time
-                    if(latest_video_reference.current) await latest_video_reference.current.setPositionAsync(video_time) // Sets The New Current Video Time Position
+                    
+                    if(latest_video_reference.current) {
+                        latest_video_reference.current.currentTime = video_time / 1000 // Sets The New Current Video Time Position
+                        onElapsedTimeUpdate(video_time) // Sets The Elapsed Time
+                    }
                 }
 
                 onStartControlsTimer() // Starts The Controls Timer
@@ -621,7 +627,7 @@ const styles = StyleSheet.create({
         width: 0,
         maxWidth: "100%",
         height: 5,
-        backgroundColor: DARK_BLUE_COLOR,
+        backgroundColor: BLUE_COLOR,
         borderRadius: 8 / 2,
         // transition: width 0.1s linear;
         zIndex: 50,

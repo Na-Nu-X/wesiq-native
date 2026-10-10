@@ -9,11 +9,12 @@ import { API_URL } from "@/constants/general"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useMemo } from "react"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
-import { PostContainer } from "./pages/community/PostContainer"
-import { ProcessingPostContainer } from "./pages/community/ProcessingPostContainer"
+import { PostContainer } from "./PostContainer"
+import { ProcessingPostContainer } from "./ProcessingPostContainer"
 import { useTranslation } from "react-i18next"
+import SearchPosts from "./SearchPosts"
 
-import type { LoggedInUserResponse, LoggedInUser } from "./LoginFormDialog"
+import type { LoggedInUserResponse, LoggedInUser } from "../../LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
 
 export interface BasicResponse {
@@ -175,7 +176,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const [has_next, setHasNext] = useState<boolean>(true) // Stores The Information If There Are More Posts Available
     const [are_posts_loading, setArePostsLoading] = useState(false) // Stores The Information If Posts Are Loading
     const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
-    const [search_text, setSearchText] = useState("") // Stores The Search Text
+    const [search_text, setSearchText] = useState<string>("") // Stores The Search Text
 
     const post_properties = useRef<BottomSheetModal>(null) // Stores The Post Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
@@ -691,32 +692,10 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     return (
         <BottomSheetModalProvider>
             <View className="feed" style={styles.feed}>
-                <View className="search_posts_container" style={styles.search_posts_container}>
-                    <View className="search_bar_container">
-                        <Icon icon_name="magnifying-glass" style={styles.magnifying_glass_icon} />
-
-                        <View className="delete_search_bar" style={styles.delete_search_bar}>
-                            <Icon icon_name="xmark" />
-                        </View>
-
-                        <TextInput
-                            className="search_bar"
-                            textAlignVertical="top" 
-                            placeholder={t("Nájsť príspevky") }
-                            placeholderTextColor={LIGHT_BLUE_COLOR}
-                            accessibilityLabel={t("Nájsť príspevky") }
-                            value={search_text}
-                            onChangeText={(text:string) => setSearchText(text)}
-
-                            style={[
-                                styles.search_bar, 
-                                { outlineStyle: "none" } as any
-                            ]}
-                        />
-                    </View>
-
-                    <View className="history_container" style={styles.history_container}></View>
-                </View>
+                <SearchPosts 
+                    onSearchTextUpdate={(search_text:string) => setSearchText(search_text)}
+                    search_text={search_text}
+                />
 
                 {processing_posts.length > 0 && logged_in_user && (
                     <FlatList
@@ -1816,90 +1795,6 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 25,
         zIndex: 1,
-    },
-
-    search_posts_container: {
-        position: "relative",
-        maxWidth: MAIN_WIDTH,
-        width: "100%",
-        // backdrop-filter: blur(5px);
-        zIndex: 200,
-    },
-
-    magnifying_glass_icon: {
-        // @include icon;
-        pointerEvents: "none",
-        position: "absolute",
-        top: "50%",
-        left: 8.5,
-        transform: [{ translateY: "-50%" }],
-        color: BLUE_COLOR,
-        fontSize: 20,
-        // transition: color 0.3s ease
-    },
-
-    delete_search_bar: {
-        alignItems: "center",
-        justifyContent: "center",
-        position: "absolute",
-        top: "50%",
-        right: 0,
-        transform: [{ translateY: "-50%" }],
-        height: "100%",
-        width: 40,
-        zIndex: 300,
-
-        // &:hover {
-        //             .fa-xmark {
-        //                 color: $dark-blue-color;
-        //                 transition: color 0.2s ease;
-        //             }
-        //         }
-    },
-
-    search_bar: {
-        position: "relative",
-        width: "100%",
-        height: 40,
-        paddingHorizontal: 40,
-        color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: DARK_BLUE_COLOR,
-        borderRadius: SMALL_BORDER_RADIUS,
-        textAlign: "center",
-        zIndex: 200,
-        // transition: border 0.2s ease, box-shadow 0.2s ease;
-
-        // &:hover,
-        // &:focus-visible {
-        //     border-color: $blue-color !important;
-        // }
-    },
-
-    history_container: {
-        // @include scrollbar;
-        position: "absolute",
-        top: 0,
-        width: "100%",
-        maxHeight: 40 * 3,
-        borderBottomRightRadius: SMALL_BORDER_RADIUS,
-        borderBottomLeftRadius: SMALL_BORDER_RADIUS,
-        // backdrop-filter: blur(5px);
-        opacity: 0,
-        // overflowY: "auto",
-        // transition: top 0.3s ease, border 0.3s ease, width 0.3s ease, opacity 0.5s ease;
-        zIndex: 50,
-
-        // &.active {
-        //     top: 40px;
-        //     opacity: 1;
-
-        //     .searched_post {
-        //         p {
-        //             pointer-events: all;
-        //         }
-        //     }
-        // }
     },
 
     tag: {

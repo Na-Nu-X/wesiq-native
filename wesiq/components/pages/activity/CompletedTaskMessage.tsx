@@ -1,6 +1,6 @@
 import { useRef, useState } from "react"
 import { Text, StyleSheet, Animated } from "react-native"
-// import { Audio, AVPlaybackStatus } from "expo-av"
+import { AudioPlayer, useAudioPlayer } from "expo-audio"
 import { useTranslation } from "react-i18next"
 import { GREEN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { BIG_BORDER_RADIUS } from "@/constants/borders"
@@ -13,19 +13,17 @@ export const CompletedTaskMessage = () => {
     const translateY = useRef(new Animated.Value(0)).current // Animates The Translate Y Movement
     const fade = useRef(new Animated.Value(0)).current // Animates The Fade
 
-    // Function For Play The Success Sound
-    const playSuccessSound = async ():Promise<void> => {
-        try {
-            // const { sound } = await Audio.Sound.createAsync(require("@/assets/sounds/success.mp3")) // Gets The Sound
-            // await sound.playAsync() // Plays The Sound
+    const success_sound:AudioPlayer = useAudioPlayer(require("@/assets/sounds/success.mp3")) // Gets The Sound
 
-            // sound.setOnPlaybackStatusUpdate((status:AVPlaybackStatus) => {
-            //     if(status.isLoaded && status.didJustFinish) sound.unloadAsync() // Removes The Loaded Sound File
-            // })
+    // Function For Play The Success Sound
+    const playSuccessSound = ():void => {
+        try {
+            success_sound.currentTime = 0 // Resets The Time
+            success_sound.play() // Plays The Sound
         } 
         
         catch {
-            console.error(t("Pri prehrávaní zvuku došlo k chybe."))
+            console.error(t("Pri prehrávaní zvuku došlo k chybe."));
         }
     }
 

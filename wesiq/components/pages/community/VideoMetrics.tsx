@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import { View, StyleSheet, Text } from "react-native"
-import { Media } from "@/components/Feed"
+import { Media } from "@/components/pages/community/Feed"
 import { BLUE_COLOR } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"

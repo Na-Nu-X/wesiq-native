@@ -3,13 +3,13 @@ import { View, StyleSheet, Text, Image, Platform, Alert, ActivityIndicator, Pres
 import { MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import * as ImagePicker from "expo-image-picker"
-// import { ResizeMode, Video } from "expo-av"
 import { FontAwesome6 } from "@expo/vector-icons"
 import Icon from "@/components/Icon"
 import { BlurView } from "expo-blur"
 import { Tooltip } from "@/components/Tooltip"
 import Animated, { useAnimatedStyle, withSpring, SharedValue } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
+import { useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
 
 import type { SelectedFile } from "./UploadPostFormDialog"
 
@@ -162,6 +162,13 @@ export const PostPreviewItem = ({
         })
     }, [selected_files])
 
+    // Creates The Video Player
+    const video_player:VideoPlayer = useVideoPlayer(selected_file.uri, (player) => {
+        player.loop = false
+        player.muted = true // Mutes The Video
+        player.staysActiveInBackground = false
+    })
+
     // Function For Toggle Show / Hide Tooltip
     const toggleShowTooltip = (key:string|number) => {
         // Sets The Tooltips
@@ -283,23 +290,29 @@ export const PostPreviewItem = ({
             {is_video ? (
                 <>  
                     {/* Video */}
-                    {/* {selected_file.thumbnail_filename && thumbnail_url ? (
+                    {selected_file.thumbnail_filename && thumbnail_url ? (
                         <Image 
                             source={{ uri: thumbnail_url }} 
                             style={StyleSheet.absoluteFill} 
                             resizeMode="cover"
                         />
                     ) : (
-                        <Video
-                            source={{ uri: selected_file.uri }} // Sets The Source
-                            useNativeControls={false} // Disables The Controls
-                            resizeMode={ResizeMode.COVER}
-                            isLooping={false}
-                            isMuted={true} // Mutes The Video
+                        // <Video
+                        //     source={{ uri: selected_file.uri }} // Sets The Source
+                        //     useNativeControls={false} // Disables The Controls
+                        //     resizeMode={ResizeMode.COVER}
+                        //     isLooping={false}
+                        //     isMuted={true} // Mutes The Video
+                        //     style={{ width: "100%", height: "100%" }}
+                        //     // filter: blur(2px);
+                        // />
+
+                        <VideoView
+                            player={video_player}
+                            nativeControls={false} // Disables The Controls
                             style={{ width: "100%", height: "100%" }}
-                            // filter: blur(2px);
                         />
-                    )} */}
+                    )}
 
                     {/* Checks The Video Size */}
                     {selected_file.fileSize && selected_file.fileSize > MAX_VIDEO_SIZE && (

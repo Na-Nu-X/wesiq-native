@@ -23,9 +23,9 @@ import FrontLever from "@/components/pages/articles/front_lever"
 import * as Crypto from "expo-crypto"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import type { Comment } from "@/components/Feed"
+import type { Comment } from "@/components/pages/community/Feed"
 import type { AddedComment } from "@/components/pages/community/PostContainer"
-import type { BasicResponse } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
 import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/AnimatedExerciseStatisticsBar"
 
 interface LoadedArticleResponse {

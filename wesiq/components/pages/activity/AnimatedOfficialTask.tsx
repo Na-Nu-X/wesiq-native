@@ -69,18 +69,18 @@ export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps
 
             <OfficialTaskCheckbox is_checked={official_task.is_completed} />
 
-            {official_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 30 minút aktivity.")}</Text>)}
-            {official_task.data === "1_hour_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 1h aktivity.")}</Text>)}
-            {official_task.data === "2_hours_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 2h aktivity.")}</Text>)}
-            {official_task.data === "3_hours_activity" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 3h aktivity.")}</Text>)}
-            {official_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title}>{t("Prekonaj týždenný priemer času aktivity.")}</Text>)}
-            {official_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title}>{t("Dokonči aktivitu podľa tréningového plánu.")}</Text>)}
-            {official_task.data === "2_activities" && (<Text className="title" style={styles.title}>{t("Zaznamenaj 2 aktivity.")}</Text>)}
-            {official_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title}>{t("Splň všetky dnešné výzvy.")}</Text>)}
-            {official_task.data === "add_custom_task" && (<Text className="title" style={styles.title}>{t("Pridaj vlastnú úlohu.")}</Text>)}
-            {official_task.data === "50_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 50 XP za aktivitu.")}</Text>)}
-            {official_task.data === "100_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 100 XP za aktivitu.")}</Text>)}
-            {official_task.data === "150_xp_activity" && (<Text className="title" style={styles.title}>{t("Získaj 150 XP za aktivitu.")}</Text>)}
+            {official_task.data === "30_minutes_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Zaznamenaj 30 minút aktivity.")}</Text>)}
+            {official_task.data === "1_hour_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Zaznamenaj 1h aktivity.")}</Text>)}
+            {official_task.data === "2_hours_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Zaznamenaj 2h aktivity.")}</Text>)}
+            {official_task.data === "3_hours_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Zaznamenaj 3h aktivity.")}</Text>)}
+            {official_task.data === "beat_average_activity_time" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Prekonaj týždenný priemer času aktivity.")}</Text>)}
+            {official_task.data === "complete_training_plan_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Dokonči aktivitu podľa tréningového plánu.")}</Text>)}
+            {official_task.data === "2_activities" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Zaznamenaj 2 aktivity.")}</Text>)}
+            {official_task.data === "complete_all_official_tasks" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Splň všetky dnešné výzvy.")}</Text>)}
+            {official_task.data === "add_custom_task" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Pridaj vlastnú úlohu.")}</Text>)}
+            {official_task.data === "50_xp_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Získaj 50 XP za aktivitu.")}</Text>)}
+            {official_task.data === "100_xp_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Získaj 100 XP za aktivitu.")}</Text>)}
+            {official_task.data === "150_xp_activity" && (<Text className="title" style={styles.title} numberOfLines={1} ellipsizeMode="tail">{t("Získaj 150 XP za aktivitu.")}</Text>)}
 
             <View className="xp" style={styles.xp}>
                 <Text 
@@ -122,8 +122,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
-        // @include crop_text;
-        flexGrow: 1,
+        flex: 1, 
         height: 50,
         lineHeight: 50,
         color: SECONDARY_COLOR,
@@ -132,11 +131,9 @@ const styles = StyleSheet.create({
     xp: {
         alignItems: "center",
         justifyContent: "center",
-        userSelect: "none",
-        width: 40,
+        flexShrink: 0,
         paddingLeft: 15,
-        // border-left: 1px solid $training-surface-border;
         borderLeftWidth: 1,
-        borderLeftColor: "#333333"
+        borderLeftColor: "#333333",
     },
 })

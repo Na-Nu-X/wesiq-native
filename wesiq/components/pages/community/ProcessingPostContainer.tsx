@@ -13,7 +13,7 @@ import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { useTranslation } from "react-i18next"
 import { getReadableSize } from "@/utils/getReadableSize"
 
-import type { ProcessingPost, ProcessingMedia } from "@/components/Feed"
+import type { ProcessingPost, ProcessingMedia } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
 

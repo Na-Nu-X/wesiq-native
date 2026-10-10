@@ -15,7 +15,7 @@ import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
-import type { BasicResponse } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
 import type { BioLink } from "@/app/(tabs)/profile/[username]"
 
 type EditAccountFormProps = {

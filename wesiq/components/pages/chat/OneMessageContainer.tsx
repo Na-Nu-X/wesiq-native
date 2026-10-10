@@ -1,5 +1,5 @@
 import Icon from "@/components/Icon"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { View, StyleSheet, Pressable, Image, Text, ImageSourcePropType, Platform, Alert } from "react-native"
 import { useTranslation } from "react-i18next"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -18,14 +18,18 @@ interface OneMessageContainerProps {
     one_chat:Chat,
     selected_message_for_edit:Chat|null,
     onCancelEditMessage:() => void,
-    onShowMessageProperties:(message:Chat) => void
+    onShowMessageProperties:(message:Chat) => void,
+    onViewedImageUpdate:(viewed_image:string|null) => void,
+    onViewedVideoUpdate:(viewed_video:string|null) => void
 }
 
 export const OneMessageContainer = ({ 
     one_chat,
     selected_message_for_edit,
     onCancelEditMessage,
-    onShowMessageProperties
+    onShowMessageProperties,
+    onViewedImageUpdate,
+    onViewedVideoUpdate
 }:OneMessageContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -138,19 +142,35 @@ export const OneMessageContainer = ({
                                         {(one_attachment.attachment_type === "image" || one_attachment.attachment_type === "video") ? (
                                             <View style={styles.image_attachment}>
                                                 {one_attachment.attachment_type === "image" && (
-                                                    <DynamicImage 
-                                                        uri={`${DOMAIN}${one_attachment.attachment_url}`} 
-                                                        style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                        scale_by_aspect_ratio={true}
-                                                    />
+                                                    <Pressable onPress={() => onViewedImageUpdate(`${DOMAIN}${one_attachment.attachment_url}`)}>
+                                                        <DynamicImage 
+                                                            uri={`${DOMAIN}${one_attachment.attachment_url}`} 
+                                                            style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                            scale_by_aspect_ratio={true}
+                                                        />
+                                                    </Pressable>
                                                 )}
 
                                                 {one_attachment.attachment_type === "video" && one_attachment.attachment_thumbnail && (
-                                                    <DynamicImage 
-                                                        uri={`${DOMAIN}${one_attachment.attachment_thumbnail}`} 
-                                                        style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                        scale_by_aspect_ratio={true}
-                                                    />
+                                                    <Pressable onPress={() => onViewedVideoUpdate(`${DOMAIN}${one_attachment.attachment_url}`)}>
+                                                        <View style={{ position: "relative" }}>
+                                                            <DynamicImage 
+                                                                uri={`${DOMAIN}${one_attachment.attachment_thumbnail}`} 
+                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
+                                                                scale_by_aspect_ratio={true}
+                                                            />
+
+                                                            <View style={styles.play_pause_indicator}>
+                                                                <Icon
+                                                                    icon_name="play"
+                                                                    // onPress={}
+                                                                    style={{ marginLeft: 4 }}
+                                                                    pressed_color={LIGHT_BLUE_COLOR}
+                                                                    color={LIGHT_BLUE_COLOR}
+                                                                />
+                                                            </View>
+                                                        </View>
+                                                    </Pressable>
                                                 )}                                                 
                                             </View>
                                         ) : (
@@ -387,6 +407,33 @@ const styles = StyleSheet.create({
         // borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
         overflow: "hidden",
+    },
+
+    play_pause_indicator: {
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+
+        transform: [
+            { translateX: "-50%" },
+            { translateY: "-50%" }
+        ],
+
+        alignItems: "center",
+        justifyContent: "center",
+
+        // pointerEvents: "none",
+        opacity: 1,
+        width: 40,
+        height: 40,
+        backgroundColor: transparentize(MAIN_COLOR, 0.8),
+        borderRadius: BIG_BORDER_RADIUS,
+        // transition: opacity 0.3s ease;
+        zIndex: 50,
+
+        // &.hidden {
+        //     opacity: 0;
+        // }
     },
 
     file_attachment: {

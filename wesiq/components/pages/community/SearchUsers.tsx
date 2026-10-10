@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
 
 interface loadedUser {
     id:number,

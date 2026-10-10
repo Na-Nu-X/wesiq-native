@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, RefObject, useMemo } from "react"
-import { View, Image, StyleSheet, Text, Pressable, Modal, TouchableOpacity, LayoutChangeEvent, GestureResponderEvent, PanResponder, AppState, AppStateStatus, Alert, NativeEventSubscription } from "react-native"
-import { Video, ResizeMode, AVPlaybackStatus } from "expo-av"
+import { View, Image, StyleSheet, Text, Pressable, Modal, AppState, AppStateStatus, NativeEventSubscription } from "react-native"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
@@ -12,10 +11,12 @@ import { CustomVideoControls } from "../activity/CustomVideoControls"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DynamicImage } from "./DynamicImage"
 import { useTranslation } from "react-i18next"
+import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
+import { useEventListener } from "expo"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/Feed"
-import type { Post, Media } from "@/components/Feed"
+import type { BasicResponse } from "@/components/pages/community/Feed"
+import type { Post, Media } from "@/components/pages/community/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 
 interface DynamicVideoProps {
@@ -80,10 +81,9 @@ export const DynamicVideo = ({
     const saved_position = useRef<number>(0) // Stores The Saved Video Position
     const [video_speed, setVideoSpeed] = useState<number>(1) // Stores The Video Speed
 
-    // const video = useRef<Video>(null) // Stores The Video Reference
-    const normal_video = useRef<Video>(null) // Stores The Normal Video Reference
-    const fullscreen_video = useRef<Video>(null) // Stores The Fullscreen Video Reference
-    const getCurrentVideo = ():Video|null => is_fullscreen ? fullscreen_video.current : normal_video.current // Function For Get The Current Video (Normal / Fullscreen)
+    const normal_video:RefObject<VideoPlayer|null> = useRef<VideoPlayer|null>(null) // Stores The Normal Video Reference
+    const fullscreen_video:RefObject<VideoPlayer|null> = useRef<VideoPlayer|null>(null) // Stores The Fullscreen Video Reference
+    const getCurrentVideo = ():VideoPlayer|null => is_fullscreen ? fullscreen_video.current : normal_video.current // Function For Get The Current Video (Normal / Fullscreen)
 
     const [is_muted, setIsMuted] = useState<boolean>(false) // Stores The Information If The Video Is Muted
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
@@ -118,6 +118,68 @@ export const DynamicVideo = ({
         () => ({ uri: getVideoURL(active_quality) }), 
         [one_post.user.id, one_post_media.id, active_quality]
     )
+
+    // Creates The Video Player
+    const video_player:VideoPlayer = useVideoPlayer(video_source, (player) => {
+        player.playbackRate = video_speed
+        player.loop = true
+        player.muted = is_muted
+        player.staysActiveInBackground = false
+
+        !is_fullscreen ? normal_video.current = player : fullscreen_video.current = player // Sets The Current Video (Normal / Fullscreen)
+        
+        if(saved_position.current > 0) {
+            player.currentTime = saved_position.current / 1000
+            saved_position.current = 0
+        }
+    })
+
+    // Initializes The Play Of The Video
+    useEffect(() => {
+        if(playing_video === one_post_media.id) video_player.play() // Plays The Video
+        else video_player.pause() // Pauses The Video
+    }, [playing_video])
+
+    // Initializes The Video Update (timeupdate Event Listener)
+    useEffect(() => {
+        let interval:ReturnType<typeof setInterval>|null = null // Stores The Interval
+
+        if(playing_video === one_post_media.id) {
+            // Updates The Interval Every 100 MS
+            interval = setInterval(() => {
+                if(video_player) {
+                    const current_time:number = video_player.currentTime * 1000 // Gets The Current Time
+                    setElapsedTime(current_time) // Sets The Elapsed Time
+
+                    if((!duration || duration === 0) && video_player.duration) {
+                        const total_duration:number = video_player.duration * 1000 // Gets The Total Duration
+                        setDuration(total_duration) // Sets The Duration
+                        onVideoDurationLoad(total_duration) // Sets The Duration
+                    }
+
+                    if(video_player.volume !== undefined) setVolume(video_player.volume) // Sets The Volume
+                    if(video_player.bufferedPosition !== undefined) setBufferedTime(video_player.bufferedPosition * 1000) // Sets The Buffered Time
+                }
+            }, 100)
+        } 
+        
+        else {
+            if(interval) clearInterval(interval) // Deletes The Interval
+        }
+
+        return () => {
+            if(interval) clearInterval(interval) // Deletes The Interval
+        }
+    }, [playing_video, video_player, duration])
+    
+    // Initializes The Video Duration Update
+    useEventListener(video_player, "sourceLoad", (payload:SourceLoadEventPayload) => {
+        if(payload.duration) {
+            const duration:number = payload.duration * 1000 // Gets The Duration
+            setDuration(duration) // Sets The Duration
+            onVideoDurationLoad(duration) // Sets The Duration
+        }
+    })
 
     useEffect(() => {
         if(thumbnail_url) {
@@ -192,28 +254,31 @@ export const DynamicVideo = ({
     }
 
     // Function For Play Or Pause The Video
-    const playPauseVideo = async (post_media_id:number ):Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const playPauseVideo = (post_media_id:number):void => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
         
         if(playing_video !== null && playing_video === post_media_id) {
-            if(current_video) await current_video.pauseAsync() // Pauses The Video
+            if(current_video) current_video.pause() // Pauses The Video
             onSetPlayingVideo(null) // Sets The Current Playing Video
         } 
         
         else {
-            if(current_video) await current_video.playAsync() // Plays The Video
+            if(current_video) current_video.play() // Plays The Video
             onSetPlayingVideo(post_media_id) // Sets The Current Playing Video
         }
     }
 
-    // Function For Rewind The Video 5 Seconds
-    const stepBack = async (step:number = 5):Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    // Function For Fast Forward The Video 5 Seconds
+    const stepBack = (step:number = 5):void => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         if(current_video) {
-            const new_time:number = Math.max(0, elapsed_time - step * 1000) // Gets The New Video Time
-            await current_video.setPositionAsync(new_time) // Sets The New Current Video Time Position
-
+            const current_time:number = current_video.currentTime // Gets The Current Video Time Position
+            const new_time:number = Math.max(0, current_time - step) // Gets The New Video Time
+            
+            current_video.currentTime = new_time // Sets The New Current Video Time Position
+            setElapsedTime(new_time * 1000) // Sets The Elapsed Time
+            
             // // Step Back Indicator
             // step_back_indicator.classList.add("hidden")
             // void step_back_indicator.offsetWidth
@@ -226,13 +291,17 @@ export const DynamicVideo = ({
     }
 
     // Function For Fast Forward The Video 5 Seconds
-    const stepFurther = async (step:number = 5):Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const stepFurther = (step:number = 5):void => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         if(current_video) {
-            const new_time:number = Math.max(0, elapsed_time + step * 1000) // Gets The New Video Time
-            await current_video.setPositionAsync(new_time) // Sets The New Current Video Time Position
-
+            const current_time:number = current_video.currentTime // Gets The Current Video Time Position
+            const max_duration:number = current_video.duration || (duration / 1000) // Gets The Max Duration
+            const new_time:number = Math.min(max_duration, current_time + step) // Gets The New Video Time
+            
+            current_video.currentTime = new_time // Sets The New Current Video Time Position
+            setElapsedTime(new_time * 1000) // Sets The Elapsed Time
+            
             // // Step Back Indicator
             // step_back_indicator.classList.add("hidden")
             // void step_back_indicator.offsetWidth
@@ -246,31 +315,31 @@ export const DynamicVideo = ({
 
     // Function For Mute Or Unmute The Video
     const muteUnmuteVideo = async ():Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         if(current_video) {
             const next_mute_state:boolean = !is_muted // Gets The Next Mute State
-            await current_video.setIsMutedAsync(next_mute_state) // Mutes / Unmutes The Video
-            setIsMuted(!is_muted) // Sets The Information If The Video Is Muted
+            current_video.muted = next_mute_state // Mutes / Unmutes The Video
+            setIsMuted(next_mute_state) // Sets The Information If The Video Is Muted
         }
     }
 
     // Function For Change The Video Volume
-    const changeVideoVolume = async (value:number) => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const changeVideoVolume = (value: number) => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         setVolume(value) // Sets The Volume
         
         if(current_video) {
-            await current_video.setVolumeAsync(value) // Sets The New Video Volume
+            current_video.volume = value // Sets The New Video Volume
 
             if(value === 0 && !is_muted) {
-                await current_video.setIsMutedAsync(true) // Mutes The Video
+                current_video.muted = true // Mutes The Video
                 setIsMuted(true) // Sets The Information If The Video Is Muted
             } 
             
             else if(value > 0 && is_muted) {
-                await current_video.setIsMutedAsync(false) // Unmutes The Video
+                current_video.muted = false // Unmutes The Video
                 setIsMuted(false) // Sets The Information If The Video Is Muted
             }
         }
@@ -294,12 +363,11 @@ export const DynamicVideo = ({
     }
 
     // Function For Change The Video Quality
-    const changeVideoQuality = async (quality:number) => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const changeVideoQuality = (quality: number) => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         if(current_video) {
-            const status:AVPlaybackStatus = await current_video.getStatusAsync() // Gets The Video Status
-            if(status.isLoaded) saved_position.current = status.positionMillis // Saves The Video Position
+            saved_position.current = current_video.currentTime * 1000 // Saves The Video Position
         }
     
         setActiveQuality(quality) // Sets The Active Video Quality
@@ -307,14 +375,14 @@ export const DynamicVideo = ({
     }
 
     // Function For Change The Video Speed
-    const changeVideoSpeed = async (speed:number):Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const changeVideoSpeed = (speed:number):void => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
 
         setVideoSpeed(speed) // Sets The Video Speed
 
         if(current_video) {
             try {
-                await current_video.setRateAsync(speed, true) // Changes The Video Speed
+                current_video.playbackRate = speed // Changes The Video Speed
             }
             
             catch {
@@ -326,12 +394,11 @@ export const DynamicVideo = ({
     }
 
     // Function For Toggle The Video Fullscreen
-    const toggleVideoFullscreen = async (): Promise<void> => {
-        const current_video:Video|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+    const toggleVideoFullscreen = (): void => {
+        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
         
         if(current_video) {
-            const status:AVPlaybackStatus = await current_video.getStatusAsync() // Gets The Video Status
-            if(status.isLoaded) saved_position.current = status.positionMillis // Saves The Video Position
+            saved_position.current = current_video.currentTime * 1000 // Saves The Video Position
             setIsFullscreen((previous_value:boolean) => !previous_value) // Sets The Information If The Video Is In Fullscreen Mode
         }
     }
@@ -518,54 +585,60 @@ export const DynamicVideo = ({
                     </View>
                 ) : (
                     !is_fullscreen && (
-                        <Video
-                            ref={normal_video}
-                            className="video"
-                            source={video_source}
+                        // <Video
+                        //     ref={normal_video}
+                        //     className="video"
+                        //     source={video_source}
     
-                            // @ts-ignore
-                            initialStatus={{
-                                positionMillis: saved_position.current,
-                                shouldPlay: playing_video === one_post_media.id,
-                            }}
+                        //     // @ts-ignore
+                        //     initialStatus={{
+                        //         positionMillis: saved_position.current,
+                        //         shouldPlay: playing_video === one_post_media.id,
+                        //     }}
                             
-                            // @ts-ignore
-                            selectedVideoTrack={{
-                                type: active_quality === -1 ? "auto" : "resolution",
-                                value: active_quality === -1 ? undefined : active_quality
-                            }}
+                        //     // @ts-ignore
+                        //     selectedVideoTrack={{
+                        //         type: active_quality === -1 ? "auto" : "resolution",
+                        //         value: active_quality === -1 ? undefined : active_quality
+                        //     }}
     
-                            rate={video_speed} 
-                            shouldCorrectPitch={true}
-                            shouldPlay={playing_video === one_post_media.id}
-                            useNativeControls={false}
-                            isLooping={true}
-                            isMuted={is_muted}
-                            resizeMode={ResizeMode.CONTAIN} 
+                        //     rate={video_speed} 
+                        //     shouldCorrectPitch={true}
+                        //     shouldPlay={playing_video === one_post_media.id}
+                        //     useNativeControls={false}
+                        //     isLooping={true}
+                        //     isMuted={is_muted}
+                        //     resizeMode={ResizeMode.CONTAIN} 
+                        //     style={{ width: "100%", height: "100%" }}
+                        //     videoStyle={{ width: "100%", height: "100%" }}
+    
+                        //     // onLoad={async () => {
+                        //     //     if(normal_video.current && saved_position.current > 0) {
+                        //     //         await normal_video.current.setPositionAsync(saved_position.current) // Jumps Back To The Watched Part
+                        //     //         // await normal_video.current.playAsync() // Plays The Video Again
+                        //     //         saved_position.current = 0 // Removes The Saved Video Position
+                        //     //     }
+                        //     // }}
+                            
+                        //     onPlaybackStatusUpdate={(status) => {
+                        //         if(status.isLoaded) {
+                        //             setElapsedTime(status.positionMillis) // Sets The Elapsed Time
+                        //             setVolume(status.volume) // Sets The Volume
+    
+                        //             if(status.durationMillis) {
+                        //                 setDuration(status.durationMillis) // Sets The Duration
+                        //                 onVideoDurationLoad(status.durationMillis) // Sets The Duration
+                        //             }
+    
+                        //             if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
+                        //         }
+                        //     }}
+                        // />
+
+                        <VideoView
+                            player={video_player}
+                            nativeControls={false}
                             style={{ width: "100%", height: "100%" }}
-                            videoStyle={{ width: "100%", height: "100%" }}
-    
-                            // onLoad={async () => {
-                            //     if(normal_video.current && saved_position.current > 0) {
-                            //         await normal_video.current.setPositionAsync(saved_position.current) // Jumps Back To The Watched Part
-                            //         // await normal_video.current.playAsync() // Plays The Video Again
-                            //         saved_position.current = 0 // Removes The Saved Video Position
-                            //     }
-                            // }}
-                            
-                            onPlaybackStatusUpdate={(status) => {
-                                if(status.isLoaded) {
-                                    setElapsedTime(status.positionMillis) // Sets The Elapsed Time
-                                    setVolume(status.volume) // Sets The Volume
-    
-                                    if(status.durationMillis) {
-                                        setDuration(status.durationMillis) // Sets The Duration
-                                        onVideoDurationLoad(status.durationMillis) // Sets The Duration
-                                    }
-    
-                                    if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
-                                }
-                            }}
                         />
                     )
                 )}
@@ -584,7 +657,7 @@ export const DynamicVideo = ({
                             backgroundColor: MAIN_COLOR,
                         }}
                     >
-                        <Video
+                        {/* <Video
                             ref={fullscreen_video}
                             className="video"
                             source={video_source}
@@ -632,7 +705,7 @@ export const DynamicVideo = ({
                                     if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
                                 }
                             }}
-                        />
+                        /> */}
 
                         <CustomVideoControls 
                             one_post_media={one_post_media}
@@ -661,6 +734,7 @@ export const DynamicVideo = ({
                             onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
                             onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
                             scrubber_position={scrubber_position}
+                            onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
                         />
                     </View>
 
@@ -744,6 +818,7 @@ export const DynamicVideo = ({
                     onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
                     onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
                     scrubber_position={scrubber_position}
+                    onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
                 />
             )}
 
