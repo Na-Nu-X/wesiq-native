@@ -15,8 +15,9 @@ import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormD
 
 export interface LoadedChatResponse {
     success:boolean, 
-    receiver:Receiver|null,
-    chats:Chat[]|null,
+    has_next?:boolean,
+    receiver?:Receiver,
+    chats?:Chat[],
     message:string
 }
 
@@ -96,6 +97,10 @@ export default function ChatDetailScreen() {
 
     const [receiver, setReceiver] = useState<Receiver|null>() // Stores The Receiver
     const [chats, setChats] = useState<Chat[]>([]) // Stores The Chats
+    const [page, setPage] = useState(1) // Stores The Current Page Number
+    const [has_next, setHasNext] = useState<boolean>(true) // Stores The Information If There Are More Chats Available
+    const [are_chats_loading, setAreChatsLoading] = useState(false) // Stores The Information If Chats Are Loading
+    const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
 
     // Function For Get The Logged In User
     const getLoggedInUser = async () => {
@@ -139,8 +144,12 @@ export default function ChatDetailScreen() {
         getLoggedInUser() // Gets The Logged In User
     }, [])
 
-    // Function For Get The Chat
-    const getChat = async (username:string):Promise<void> => {
+    // Function For Load The Chats
+    const loadChats = async (username:string, page:number = 1, is_refresh:boolean = false):Promise<void> => {
+        if(are_chats_loading || (!has_next && !is_refresh)) return
+
+        setAreChatsLoading(true) // Stores The Information That Chats Are Loading
+
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Užívateľa nie je možné nájsť bez prihlásenia.")) // Shows The Alert
@@ -150,7 +159,7 @@ export default function ChatDetailScreen() {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
     
             // Sends The GET Request To The Server
-            const loaded_chat_response:Response = await fetch(`${API_URL}/get-chat/${username}/`, {
+            const loaded_chat_response:Response = await fetch(`${API_URL}/get-chat/${username}/?page=${page}`, {
                 method: "GET",
 
                 headers: {
@@ -167,30 +176,51 @@ export default function ChatDetailScreen() {
             }
 
             const loaded_chat_data:LoadedChatResponse = await loaded_chat_response.json() // Gets The Loaded Chat Data
-            
-            console.log(loaded_chat_data)
 
             // If The Response Isn't Success
             if(!loaded_chat_data.success) {
+                setIsError(true) // Sets The Information That There Is An Error
                 Alert.alert(t("Chyba"), loaded_chat_data.message) // Shows The Alert
                 return
             }
-            
-            else {
+
+            if(is_refresh) {
                 setReceiver(loaded_chat_data.receiver) // Sets The Receiver
                 if(loaded_chat_data.chats) setChats(loaded_chat_data.chats) // Sets The Chats
             }
+            
+            else {
+                setChats(previous_chats => {
+                    const existing_chat_ids:Set<number> = new Set(previous_chats.map((one_chat:Chat) => one_chat.id)) // Gets The Existing Chats IDs
+                    const new_chats:Chat[] = (loaded_chat_data.chats as Chat[]).filter((one_chat:Chat) => !existing_chat_ids.has(one_chat.id)) // Gets The New Unique Chats
+                
+                    return [...previous_chats, ...new_chats] // Returns The Combined Chats
+                })
+            }
+    
+            setHasNext(loaded_chat_data.has_next || false) // Sets The Has Next
+            setPage(page) // Sets The Page
         } 
         
         catch {
+            setIsError(true) // Sets The Information That There Is An Error
             Alert.alert(t("Chyba"), t("Pri hľadaní užívateľa došlo k chybe.")) // Shows The Alert
+        }
+
+        finally {
+            setAreChatsLoading(false) // Stores The Information That Chats Aren't Loading
         }
     }
 
-    // Initializes The Load Of The Chat
+    // Initializes The Load Of The Chats
     useEffect(() => {
-        if(username && logged_in_user) getChat(username) // Gets The Chat
+        if(username && logged_in_user) loadChats(username, 1, true) // Loads The Chats
     }, [username, logged_in_user])
+
+    // Function For Load More Chats
+    const loadMoreChats = ():void => {
+        if(has_next && !are_chats_loading) loadChats(username, page + 1) // Loads The Chats
+    }
 
     return (
         <BackgroundContainer>
@@ -225,6 +255,10 @@ export default function ChatDetailScreen() {
                             receiver={receiver}
                             onSetChats={(chats:Chat[]) => setChats(chats)}
                             chats={chats}
+                            onLoadMoreChats={loadMoreChats}
+                            has_next={has_next}
+                            are_chats_loading={are_chats_loading}
+                            is_error={is_error}
                         />
                     )}
                 </View>

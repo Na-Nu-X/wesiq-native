@@ -271,8 +271,8 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
             
             else {
                 setPosts(previous_posts => {
-                    const existing_posts_ids:Set<number> = new Set(previous_posts.map(post => post.id)) // Gets The Existing Posts IDs
-                    const new_posts:Post[] = (loaded_posts_data.posts as Post[]).filter(post => !existing_posts_ids.has(post.id)) // Gets The New Unique Posts
+                    const existing_post_ids:Set<number> = new Set(previous_posts.map((one_post:Post) => one_post.id)) // Gets The Existing Post IDs
+                    const new_posts:Post[] = (loaded_posts_data.posts as Post[]).filter((one_post:Post) => !existing_post_ids.has(one_post.id)) // Gets The New Unique Posts
                 
                     return [...previous_posts, ...new_posts] // Returns The Combined Posts
                 })
@@ -314,7 +314,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }, [search_text])
 
     // Function For Load More Posts
-    const loadMorePosts = () => {
+    const loadMorePosts = ():void => {
         if(has_next && !are_posts_loading) loadPosts(page + 1) // Loads Posts
     }
 

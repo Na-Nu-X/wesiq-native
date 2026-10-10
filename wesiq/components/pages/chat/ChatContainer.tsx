@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, Image, Pressable, Alert, ImageSourcePropType, Platform, FlatList } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
 import { FontAwesome6, Ionicons } from "@expo/vector-icons"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
+import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { TextInput } from "react-native"
 import EmojiPicker from "rn-emoji-keyboard"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -14,15 +14,10 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { useTranslation } from "react-i18next"
 import AttachmentSelection from "./AttachmentSelection"
-import { DynamicImage } from "../community/DynamicImage"
-import { getReadableSize } from "@/utils/getReadableSize"
 import * as ImagePicker from "expo-image-picker"
 import * as DocumentPicker from "expo-document-picker"
 import { API_URL } from "@/constants/general"
-import { File as ExpoFile, Paths } from "expo-file-system"
-import * as Sharing from "expo-sharing"
-import { LinkPreview } from "@flyerhq/react-native-link-preview"
-import { isUrlInText } from "@/utils/isUrlInText"
+import { OneMessageContainer } from "./OneMessageContainer"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -50,7 +45,11 @@ interface ChatContainerProps {
     username:string,
     receiver:Receiver,
     onSetChats:(chats:Chat[]) => void,
-    chats:Chat[]
+    chats:Chat[],
+    onLoadMoreChats:() => void,
+    has_next:boolean,
+    are_chats_loading:boolean,
+    is_error:boolean
 }
 
 export const ChatContainer = ({ 
@@ -58,7 +57,11 @@ export const ChatContainer = ({
     username,
     receiver,
     onSetChats,
-    chats
+    chats,
+    onLoadMoreChats,
+    has_next,
+    are_chats_loading,
+    is_error
 }:ChatContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -81,27 +84,6 @@ export const ChatContainer = ({
     const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
     const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Attachment Is Uploading
     const attachment_options = useRef<BottomSheetModal>(null) // Stores The Attachment Options
-
-    // Defines The File Icons
-    const FILE_ICONS:{
-        audio:ImageSourcePropType,
-        pdf:ImageSourcePropType,
-        doc:ImageSourcePropType,
-        excel:ImageSourcePropType,
-        powerpoint:ImageSourcePropType,
-        archive:ImageSourcePropType,
-        text:ImageSourcePropType,
-        file:ImageSourcePropType
-    } = {
-        audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
-        pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
-        doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
-        excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
-        powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
-        archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
-        text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
-        file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
-    }
 
     // Initializes The Web Socket
     useEffect(() => {
@@ -547,46 +529,6 @@ export const ChatContainer = ({
         }
     }
 
-    // Function For Download The File
-    const downloadFile = async (file_url:string, filename:string):Promise<void> => {
-        try {
-            // Web
-            if(Platform.OS === "web") {
-                const link:HTMLAnchorElement = document.createElement("a") // Creates The Link
-                link.href = file_url
-                link.download = filename
-                link.target = "_blank"
-
-                document.body.appendChild(link) // Appends The Link To The Document
-                link.click() // Opens The Download Menu
-                document.body.removeChild(link) // Removes The Link From The Document
-            } 
-            
-            // iOS And Android
-            else {
-                const destination_file:ExpoFile = new ExpoFile(Paths.document, filename) // Creates The Destination File
-    
-                await ExpoFile.downloadFileAsync(file_url, destination_file)
-    
-                if(await Sharing.isAvailableAsync()) {
-                    await Sharing.shareAsync(destination_file.uri, {
-                        UTI: "public.item",
-                        mimeType: "application/octet-stream",
-                        dialogTitle: t("Uložiť súbor")
-                    })
-                }
-                
-                else {
-                    Alert.alert(t("Chyba"), t("Zdieľanie nie je dostupné."))
-                }
-            }
-        } 
-        
-        catch {
-            console.error(t("Pri sťahovaní súboru došlo k chybe."))
-        }
-    }
-
     // Function For Handle The Message Edit
     const handleEditMessage = (message:Chat):void => {
         setWriteMessageAction("edit") // Sets The Write Message Action
@@ -708,268 +650,37 @@ export const ChatContainer = ({
                         keyExtractor={(one_chat:Chat) => one_chat.id.toString()}
 
                         renderItem={({ item: one_chat }) => (
-                            <View
-                                key={one_chat.id}
-                                className="one_message_container"
-
-                                style={[
-                                    styles.one_message_container,
-                                    one_chat.is_sender ? styles.one_message_container_sender : styles.one_message_container_receiver
-                                ]}
-                            >
-                                <Pressable 
-                                    key={one_chat.id}
-                                    className={one_chat.is_sender ? "one_message sender" : "one_message receiver"}
-                                    onPress={one_chat === selected_message_for_edit ? cancelEditMessage : null}
-
-                                    style={[
-                                        styles.one_message,
-                                        one_chat.is_sender ? styles.one_message_sender : styles.one_message_receiver,
-                                        one_chat === selected_message_for_edit ? styles.edit : {}
-                                    ]}
-                                >
-                                    <View className="profile_picture_container" style={styles.profile_picture_container}>
-                                        <Image 
-                                            className={`profile_picture ${
-                                                one_chat.sender.subscription && one_chat.sender.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                            }`}
-
-                                            source={
-                                                one_chat.sender.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_chat.sender.id}/${one_chat.sender.profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                            }
-
-                                            style={[
-                                                styles.profile_picture,
-                                                one_chat.sender.subscription && one_chat.sender.subscription.is_active && styles.subscriber_profile_picture,
-                                                // { transform: [{ scale: animated_scale }] }
-                                            ]}
-                                        />
-                                    </View>
-
-                                    <View style={{ gap: 10 }}>
-                                        <>
-                                            {one_chat.attachments.length > 0 && (
-                                                one_chat.attachments.map((one_attachment:Attachment, index:number) => {
-                                                    return (
-                                                        <View key={index}>
-                                                            {(one_attachment.attachment_type === "image" || one_attachment.attachment_type === "video") ? (
-                                                                <View style={styles.image_attachment}>
-                                                                    {one_attachment.attachment_type === "image" && (
-                                                                        <DynamicImage 
-                                                                            uri={`${DOMAIN}${one_attachment.attachment_url}`} 
-                                                                            style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                                            scale_by_aspect_ratio={true}
-                                                                        />
-                                                                    )}
-        
-                                                                    {one_attachment.attachment_type === "video" && one_attachment.attachment_thumbnail && (
-                                                                        <DynamicImage 
-                                                                            uri={`${DOMAIN}${one_attachment.attachment_thumbnail}`} 
-                                                                            style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                                            scale_by_aspect_ratio={true}
-                                                                        />
-                                                                    )}                                                 
-                                                                </View>
-                                                            ) : (
-                                                                <View style={styles.file_attachment}>
-                                                                    <Image
-                                                                        source={FILE_ICONS[one_attachment.attachment_type] || require("@/assets/images/files/file.png")}
-        
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-        
-                                                                    <View>
-                                                                        <Text 
-                                                                            numberOfLines={1} 
-                                                                            ellipsizeMode="tail" 
-                                                                            
-                                                                            style={[{ 
-                                                                                maxWidth: 100,
-                                                                                color: SECONDARY_COLOR,
-                                                                            }]}
-                                                                        >
-                                                                            {one_attachment.original_filename}
-                                                                        </Text>
-        
-                                                                        <Text 
-                                                                            className="size" 
-
-                                                                            style={{ 
-                                                                                fontSize: 12, 
-                                                                                color: SECONDARY_COLOR,
-                                                                            }}
-                                                                        >
-                                                                            {getReadableSize(one_attachment.compressed_size)}
-                                                                        </Text>
-                                                                    </View>
-                                                                    
-                                                                    <View accessibilityLabel={t("Stiahnuť")}>
-                                                                        <Icon 
-                                                                            icon_name="download" 
-                                                                            onPress={() => downloadFile(one_attachment.attachment_url, one_attachment.original_filename)}
-                                                                        />
-                                                                    </View>
-                                                                </View>
-                                                            )}
-                                                        </View>
-                                                    )
-                                                })
-                                            )}
-
-                                            {one_chat.content && (
-                                                isUrlInText(one_chat.content) ? (
-                                                    <LinkPreview 
-                                                        text={one_chat.content} 
-                                                        
-                                                        renderText={(text) => (
-                                                            <Text 
-                                                                style={{ 
-                                                                    color: SECONDARY_COLOR, 
-                                                                    flexShrink: 1, 
-                                                                    marginBottom: 5 
-                                                                }}
-                                                            >
-                                                                {text}
-                                                            </Text>
-                                                        )}
-                                                        
-                                                        renderTitle={(title) => (
-                                                            <Text 
-                                                                numberOfLines={2}
-                                                                ellipsizeMode="tail" 
-
-                                                                style={{ 
-                                                                    color: SECONDARY_COLOR, 
-                                                                    fontWeight: "bold",
-                                                                }}
-                                                            >
-                                                                {title}
-                                                            </Text>
-                                                        )}
-
-                                                        renderDescription={(description) => (
-                                                            <Text 
-                                                                numberOfLines={2}
-                                                                ellipsizeMode="tail" 
-
-                                                                style={{ 
-                                                                    color: "#cccccc", 
-                                                                    fontSize: 12,
-                                                                }}
-                                                            >
-                                                                {description}
-                                                            </Text>
-                                                        )}
-
-                                                        renderImage={(image_data) => (
-                                                            <DynamicImage 
-                                                                uri={image_data?.url}
-                                                                style={{ borderRadius: MEDIUM_BORDER_RADIUS }}
-                                                                scale_by_aspect_ratio={true}
-                                                            />
-                                                        )}
-                                                        
-                                                        textContainerStyle={{
-                                                            margin: 0,
-                                                            padding: 0,
-                                                        }}
-
-                                                        containerStyle={{ 
-                                                            maxWidth: "100%",
-                                                            width: 180,
-                                                            overflow: "hidden",
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <Text style={{ color: SECONDARY_COLOR }}>{one_chat.content}</Text>
-                                                )
-                                            )}
-                                        </>
-                                    </View>
-
-                                    {one_chat.is_sender && one_chat.is_read && (
-                                        <View style={{ marginLeft: "auto" }}>
-                                            <FontAwesome6
-                                                name="check-double"
-                                                size={20}
-                                                color={transparentize(BLUE_COLOR, 0.5)}
-                                            />
-                                        </View>
-                                    )}
-
-                                    <View 
-                                        className="reactions"
-
-                                        style={[
-                                            styles.reactions,
-                                            one_chat.is_sender ? styles.sender_reactions : styles.receiver_reactions
-                                        ]}
-                                    >
-                                        {one_chat.message_reactions.map((one_reaction:MessageReaction, index:number) => (
-                                            <Text 
-                                                key={index}
-                                                className="one_reaction" 
-                                                accessibilityLabel={t("Reakciu pridal: {{username}}", { username: one_reaction.user.username })}
-                                                style={styles.one_reaction}
-                                            >
-                                                {one_reaction.emoji}
-                                            </Text>
-                                        ))}
-                                    </View>
-
-                                    <View 
-                                        className="show_message_properties_button"
-                                        accessibilityLabel={t("Viac...")} 
-                                        
-                                        style={{ 
-                                            marginLeft: "auto", 
-                                            marginRight: 10,
-                                        }}
-                                    >
-                                        <Icon
-                                            icon_name="ellipsis-vertical"
-                                            onPress={() => showMessageProperties(one_chat)}
-                                        />
-                                    </View>
-                                </Pressable>
-
-                                <Text 
-                                    numberOfLines={1} 
-
-                                    style={[
-                                        styles.time_label,
-                                        // one_chat.is_sender ? { marginLeft: 20 } : { marginRight: 20, textAlign: "right" }
-                                        one_chat.is_sender ? { } : { textAlign: "right" }
-                                    ]}
-                                >
-                                    {one_chat.formatted_time}
-                                    {one_chat.is_edited && (t(" (upravené)"))}
-                                </Text>
-                            </View>
+                            <OneMessageContainer 
+                                one_chat={one_chat}
+                                selected_message_for_edit={selected_message_for_edit}
+                                onCancelEditMessage={cancelEditMessage}
+                                onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
+                            />
                         )}
 
-                        // onEndReached={}
+                        onEndReached={onLoadMoreChats}
                         onEndReachedThreshold={0.5}
 
-                        // ListFooterComponent={
-                        //     are_posts_loading ? (
-                        //         <View style={{ padding: 20, alignItems: "center" }}>
-                        //             <ActivityIndicator size="small" color={SECONDARY_COLOR} />
-                        //         </View>
-                        //     ) : null
-                        // }
+                        ListFooterComponent={
+                            are_chats_loading ? (
+                                <View style={{ padding: 20, alignItems: "center" }}>
+                                    <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                </View>
+                            ) : null
+                        }
 
                         showsVerticalScrollIndicator={false}
                         inverted={true} 
                         keyboardShouldPersistTaps="handled"
                         keyboardDismissMode="interactive"
                         style={styles.all_messages}
-                        contentContainerStyle={{ gap: 50 }}
                     />
+
+                    {(are_chats_loading || !has_next) && !is_error && (
+                        <Text>
+                            {are_chats_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}
+                        </Text>
+                    )}
                 </View>
 
                 <View className="bottom">
@@ -1579,173 +1290,6 @@ const styles = StyleSheet.create({
         // flexDirection: "column-reverse",
         // gap: 50,
         maxHeight: 400,
-    },
-
-    one_message_container: {
-        maxWidth: "80%",
-        width: "100%",
-        gap: 5,
-    },
-
-    one_message_container_receiver: {
-        flexDirection: "column",
-        // marginRight: 20,
-        marginLeft: "auto",
-        textAlign: "right",
-    },
-
-    one_message_container_sender: {
-        flexDirection: "column",
-        marginRight: "auto",
-        // marginLeft: 20,
-        textAlign: "right",
-    },
-
-    one_message: {
-        position: "relative",
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        padding: 10,
-        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        maxWidth: "100%",      // Správa nepresiahne svojho rodiča (one_message_container)
-        overflow: "hidden",
-        // backdrop-filter: blur(5px);
-        // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-
-        // &:hover,
-        // &:focus-visible {
-        //     transform: translateY(-2px);
-        //     background: transparent;
-        //     border-color: transparentize($blue-color, 0.25);
-        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
-        // }
-    },
-
-    image_attachment: {
-        width: 100,
-        // borderWidth: 1,
-        // borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: MEDIUM_BORDER_RADIUS,
-        overflow: "hidden",
-    },
-
-    file_attachment: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 5,
-    },
-
-    time_label: {
-        color: LIGHT_BLUE_COLOR,
-        fontSize: 15,
-    },
-
-    profile_picture_container: {
-        marginTop: "auto",
-        padding: 2,
-        borderWidth: 1,
-        borderColor: LIGHT_BLUE_COLOR,
-        borderRadius: 100,
-    },
-
-    profile_picture: {
-        width: 32,
-        height: 32,
-        borderRadius: 32 / 2,
-    },
-  
-    subscriber_profile_picture: {
-        backgroundColor: transparentize(YELLOW_COLOR, 0.85),
-        borderColor: transparentize(YELLOW_COLOR, 0.5),
-        shadowColor: YELLOW_COLOR,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-
-    edit: {
-        borderColor: BLUE_COLOR,
-    },
-
-    deleted: {
-        display: "none",
-        transform: [{ translateX: "-100%" }],
-        opacity: 0,
-    },
-
-    one_message_receiver: {
-        flexDirection: "row-reverse",
-        justifyContent: "flex-start",
-        // marginRight: 20,
-        marginLeft: "auto",
-        textAlign: "right",
-        borderTopLeftRadius: BIG_BORDER_RADIUS,
-        borderTopRightRadius: BIG_BORDER_RADIUS,
-        borderBottomRightRadius: SMALL_BORDER_RADIUS,
-        borderBottomLeftRadius: BIG_BORDER_RADIUS,
-
-        // &::before {
-        //     right: 0px;
-        // }
-    },
-
-    receiver_reactions: {
-        left: -10,
-
-        transform: [
-            { translateX: "-100%" },
-            { translateY: "-50%" }
-        ],
-    },
-
-    one_message_sender: {
-        flexDirection: "row",
-        justifyContent: "flex-start",
-        marginRight: "auto",
-        // marginLeft: 20,
-        textAlign: "right",
-        borderTopLeftRadius: BIG_BORDER_RADIUS,
-        borderTopRightRadius: BIG_BORDER_RADIUS,
-        borderBottomRightRadius: BIG_BORDER_RADIUS,
-        borderBottomLeftRadius: SMALL_BORDER_RADIUS,
-
-        // &::before {
-        //     left: 0px;
-        // }
-    },
-
-    sender_reactions: {
-        right: -10,
-
-        transform: [
-            { translateX: "100%" },
-            { translateY: "-50%" }
-        ],
-
-        flexDirection: "row-reverse",
-    },
-
-    reactions: {
-        position: "absolute",
-        top: "50%",
-        flexDirection: "row",
-        gap: 5,
-        opacity: 0.8,
-    },
-
-    one_reaction: {
-        fontSize: 15,
-        // animation: idle 1s ease-in-out infinite alternate both;
-
-        // @for $i from 1 through 3 {
-        //     &:nth-child(#{$i}) {
-        //         animation-delay: ($i - 1) * 0.2s;
-        //     }
-        // }
     },
 
     write_message: {
