@@ -14,12 +14,33 @@ import * as Sharing from "expo-sharing"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
 
+// Defines The File Icons
+export const FILE_ICONS:{
+    audio:ImageSourcePropType,
+    pdf:ImageSourcePropType,
+    doc:ImageSourcePropType,
+    excel:ImageSourcePropType,
+    powerpoint:ImageSourcePropType,
+    archive:ImageSourcePropType,
+    text:ImageSourcePropType,
+    file:ImageSourcePropType
+} = {
+    audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
+    pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
+    doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
+    excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
+    powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
+    archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
+    text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
+    file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
+}
+
 interface OneMessageContainerProps {
     one_chat:Chat,
     selected_message_for_edit:Chat|null,
     onCancelEditMessage:() => void,
     onShowMessageProperties:(message:Chat) => void,
-    onViewedImageUpdate:(viewed_image:string|null) => void,
+    onViewedImagesUpdate:(viewed_images:{ images:{ uri:string }[], index:number }) => void,
     onViewedVideoUpdate:(viewed_video:string|null) => void
 }
 
@@ -28,31 +49,10 @@ export const OneMessageContainer = ({
     selected_message_for_edit,
     onCancelEditMessage,
     onShowMessageProperties,
-    onViewedImageUpdate,
+    onViewedImagesUpdate,
     onViewedVideoUpdate
 }:OneMessageContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
-
-    // Defines The File Icons
-    const FILE_ICONS:{
-        audio:ImageSourcePropType,
-        pdf:ImageSourcePropType,
-        doc:ImageSourcePropType,
-        excel:ImageSourcePropType,
-        powerpoint:ImageSourcePropType,
-        archive:ImageSourcePropType,
-        text:ImageSourcePropType,
-        file:ImageSourcePropType
-    } = {
-        audio: require("@/assets/images/files/mp3.png"), // https://www.flaticon.com/free-icon/mp3_11039890
-        pdf: require("@/assets/images/files/pdf.png"), // https://www.flaticon.com/free-icon/pdf_4726010
-        doc: require("@/assets/images/files/doc.png"), // https://www.flaticon.com/free-icon/doc_4725970
-        excel: require("@/assets/images/files/xls.png"), // https://www.flaticon.com/free-icon/xls_4726040
-        powerpoint: require("@/assets/images/files/ppt.png"), // https://www.flaticon.com/free-icon/ppt_4726016
-        archive: require("@/assets/images/files/zip.png"), // https://www.flaticon.com/free-icon/zip_4726042
-        text: require("@/assets/images/files/txt.png"), // https://www.flaticon.com/free-icon/txt_9034470
-        file: require("@/assets/images/files/file.png"), // https://www.flaticon.com/free-icon/paper_1250627
-    }
 
     // Function For Download The File
     const downloadFile = async (file_url:string, filename:string):Promise<void> => {
@@ -142,7 +142,25 @@ export const OneMessageContainer = ({
                                         {(one_attachment.attachment_type === "image" || one_attachment.attachment_type === "video") ? (
                                             <View style={styles.image_attachment}>
                                                 {one_attachment.attachment_type === "image" && (
-                                                    <Pressable onPress={() => onViewedImageUpdate(`${DOMAIN}${one_attachment.attachment_url}`)}>
+                                                    <Pressable 
+                                                        onPress={() => {
+                                                            // Gets Only The Image Attachments
+                                                            const image_attachments:Attachment[] = one_chat.attachments.filter((one_image_attachment:Attachment) => (
+                                                                one_image_attachment.attachment_type === "image"
+                                                            ))
+                                                            
+                                                            // Formats The Image Attachments
+                                                            const all_images:{
+                                                                uri:string
+                                                            }[] = image_attachments.map((one_image_attachment:Attachment) => ({
+                                                                uri: `${DOMAIN}${one_image_attachment.attachment_url}`
+                                                            }))
+                                                            
+                                                            const clicked_index:number = image_attachments.findIndex((one_image_attachment:Attachment) => one_image_attachment.attachment_url === one_attachment.attachment_url) // Gets The Clicked Index
+                                                            
+                                                            onViewedImagesUpdate({ images: all_images, index: clicked_index }) // Sets The Viewed Images
+                                                        }}
+                                                    >
                                                         <DynamicImage 
                                                             uri={`${DOMAIN}${one_attachment.attachment_url}`} 
                                                             style={{ borderRadius: MEDIUM_BORDER_RADIUS }}

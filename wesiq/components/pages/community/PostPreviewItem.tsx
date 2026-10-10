@@ -163,7 +163,7 @@ export const PostPreviewItem = ({
     }, [selected_files])
 
     // Creates The Video Player
-    const video_player:VideoPlayer = useVideoPlayer(selected_file.uri, (player) => {
+    const video_player:VideoPlayer = useVideoPlayer(selected_file.uri, (player:VideoPlayer) => {
         player.loop = false
         player.muted = true // Mutes The Video
         player.staysActiveInBackground = false

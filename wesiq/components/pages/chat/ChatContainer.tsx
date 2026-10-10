@@ -20,9 +20,11 @@ import { API_URL } from "@/constants/general"
 import { OneMessageContainer } from "./OneMessageContainer"
 import ImageViewer from "./ImageViewer"
 import { FullscreenVideoPlayer } from "./FullscreenVideoPlayer"
+import { AttachmentsPreview } from "./AttachmentsPreview"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
+import { ImageSource } from "react-native-image-viewing/dist/@types"
 
 interface SentChatAttachmentResponse {
     success:boolean,
@@ -36,7 +38,7 @@ interface SelectedAttachment {
     attachment_type:string
 }
 
-interface SelectedFile {
+export interface SelectedFile {
     uri:string,
     name:string,
     type:string
@@ -87,7 +89,7 @@ export const ChatContainer = ({
     const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Attachment Is Uploading
     const attachment_options = useRef<BottomSheetModal>(null) // Stores The Attachment Options
 
-    const [viewed_image, setViewedImage] = useState<string|null>(null) // Stores The Viewed Image
+    const [viewed_images, setViewedImages] = useState<{ images:{ uri:string }[], index:number }|null>(null) // Stores The Viewed Images
     const [viewed_video, setViewedVideo] = useState<string|null>(null) // Stores The Viewed Video
 
     // Initializes The Web Socket
@@ -341,8 +343,10 @@ export const ChatContainer = ({
             const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
 
             const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
-            const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
-            const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
+            const MAX_VIDEO_SIZE:number = 1000 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
+            // const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan
+            const MAX_VIDEO_DURATION:number = 30 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
+            // const MAX_VIDEO_DURATION:number = subscription_plan === "free" ? 60 : subscription_plan === "basic" ? 2 * 60 : 3 * 60 // 1 Minute For No Subscribers, 2 Minutes For Subscribers With Basic Plan, 3 Minutes For Subscribers With Premium Plan
             const MIN_VIDEO_DURATION:number = 1 // 1 Second
             const MAX_FILE_SIZE:number = subscription_plan === "free" ? 5 * 1000 * 1000 : 10 * 1000 * 1000 // 5MB For No Subscribers, 10MB For Subscribers
 
@@ -660,7 +664,7 @@ export const ChatContainer = ({
                                 selected_message_for_edit={selected_message_for_edit}
                                 onCancelEditMessage={cancelEditMessage}
                                 onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
-                                onViewedImageUpdate={(viewed_image:string|null) => setViewedImage(viewed_image)}
+                                onViewedImagesUpdate={(viewed_images:{ images:{ uri:string }[], index:number }) => setViewedImages(viewed_images)}
                                 onViewedVideoUpdate={(viewed_video:string|null) => setViewedVideo(viewed_video)}
                             />
                         )}
@@ -691,10 +695,10 @@ export const ChatContainer = ({
 
                     {Platform.OS !== "web" && (
                         <ImageViewer
-                            images={viewed_image ? [{ uri: viewed_image }] : []}
-                            imageIndex={0}
-                            visible={viewed_image !== null}
-                            onRequestClose={() => setViewedImage(null)}
+                            images={viewed_images ? viewed_images.images : []}
+                            imageIndex={viewed_images ? viewed_images.index : 0}
+                            visible={viewed_images !== null}
+                            onRequestClose={() => setViewedImages(null)}
                             swipeToCloseEnabled={true}
                             doubleTapToZoomEnabled={true}
                         />
@@ -716,6 +720,11 @@ export const ChatContainer = ({
                 </View>
 
                 <View className="bottom">
+                    <AttachmentsPreview 
+                        onSelectedFilesUpdate={(selected_files:SelectedFile[]) => setSelectedFiles(selected_files)}
+                        selected_files={selected_files} 
+                    />
+
                     <View className="write_message" style={styles.write_message}>
                         <TextInput
                             className="new_message"

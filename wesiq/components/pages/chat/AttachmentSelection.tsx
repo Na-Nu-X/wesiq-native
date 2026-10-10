@@ -20,7 +20,7 @@ export default function AttachmentSelection({ onShowAttachmentOptions, is_upload
                 />
             )}
 
-            {selected_files_amount > 0 && (
+            {/* {selected_files_amount > 0 && (
                 <Text 
                     style={[{
                         position: "absolute",
@@ -31,7 +31,7 @@ export default function AttachmentSelection({ onShowAttachmentOptions, is_upload
                 >
                     {selected_files_amount}
                 </Text>
-            )}
+            )} */}
         </View>
     )
 }
