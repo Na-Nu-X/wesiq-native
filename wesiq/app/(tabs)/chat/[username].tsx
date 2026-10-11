@@ -53,7 +53,37 @@ export interface Chat {
     is_sender:boolean,
     message_reactions:MessageReaction[],
     is_older_than_15_minutes:boolean,
-    is_older_than_1_day:boolean
+    is_older_than_1_day:boolean,
+    post?:Post
+}
+
+interface Post {
+    id:number,
+
+    user:{
+        id:number,
+        username:string,
+        profile_picture_name:string|null,
+
+        subscription?:{
+            is_active:boolean
+        },
+    },
+
+    description:string|null,
+    public_visibility:boolean,
+    allow_comments:boolean,
+    hide_likes:boolean,
+    likes:number,
+    comments:number,
+    created_at:string,
+
+    media:{
+        id:number,
+        file:string,
+        thumbnail:string|null,
+        is_video:boolean
+    }
 }
 
 export interface MessageReaction {
@@ -176,6 +206,8 @@ export default function ChatDetailScreen() {
             }
 
             const loaded_chat_data:LoadedChatResponse = await loaded_chat_response.json() // Gets The Loaded Chat Data
+
+            console.log(loaded_chat_data)
 
             // If The Response Isn't Success
             if(!loaded_chat_data.success) {

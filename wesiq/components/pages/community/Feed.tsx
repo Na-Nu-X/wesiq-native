@@ -772,9 +772,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                         />
 
                         {(are_posts_loading || !has_next) && !is_error && (
-                            <Text className="feed_report" style={styles.feed_report}>
-                                {are_posts_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}
-                            </Text>
+                            <Text className="feed_report" style={styles.feed_report}>{are_posts_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}</Text>
                         )}
                     </>
                 )}

@@ -14,6 +14,7 @@ import { FollowersDialog } from "./FollowersDialog"
 import { FollowingDialog } from "./FollowingDialog"
 import { FollowRequestsDialog } from "./FollowRequestsDialog"
 import { ImperativeRouter, useRouter } from "expo-router"
+import ProfilePicture from "@/components/ProfilePicture"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
@@ -147,26 +148,13 @@ export default function ProfileSection({
                 <View className="header" style={styles.profile_header}>
                     <View className="top" style={styles.top}>
                         <View className="info" style={styles.profile_info}>
-                            <View 
-                                className="profile_picture_container"
-                                style={styles.profile_picture_container}
-                            >
-                                <Image 
-                                    className={`profile_picture ${
-                                        profile.subscription && profile.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                                    }`}
-
-                                    source={
-                                        profile.profile_picture_name ? { uri: `${DOMAIN}/media/images/${profile.id}/${profile.profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                                    }
-
-                                    style={[
-                                        styles.profile_picture,
-                                        profile.subscription && profile.subscription.is_active && styles.subscriber_profile_picture,
-                                        // { transform: [{ scale: animated_scale }] }
-                                    ]}
-                                />
-                            </View>
+                            <ProfilePicture
+                                user_id={profile.id}
+                                user_profile_picture_name={profile.profile_picture_name}
+                                user_subscription={profile.subscription?.is_active || false} 
+                                width={64}
+                                height={64}
+                            />
 
                             <View className="name" style={styles.name}>
                                 <Text className="username" style={styles.profile_username}>{profile.username}</Text>
@@ -772,8 +760,7 @@ const styles = StyleSheet.create({
     },
 
     profile_picture: {
-        width: 64,
-        height: 64,
+        
         borderRadius: 64 / 2,
         cursor: "pointer",
         // transition: transform 0.3s ease;
@@ -781,16 +768,6 @@ const styles = StyleSheet.create({
         // &:hover {
         //     transform: scale(1.05);
         // }
-    },
-  
-    subscriber_profile_picture: {
-        backgroundColor: transparentize(YELLOW_COLOR, 0.85),
-        borderColor: transparentize(YELLOW_COLOR, 0.5),
-        shadowColor: YELLOW_COLOR,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
     },
 
     name: {

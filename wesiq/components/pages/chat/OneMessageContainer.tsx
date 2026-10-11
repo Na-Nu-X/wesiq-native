@@ -11,8 +11,12 @@ import { getReadableSize } from "@/utils/getReadableSize"
 import { DOMAIN } from "@/constants/general"
 import { isUrlInText } from "@/utils/isUrlInText"
 import * as Sharing from "expo-sharing"
+import ProfilePictureLink from "@/components/ProfilePictureLink"
+import ProfilePicture from "@/components/ProfilePicture"
+import { getTimeAgo } from "@/utils/time"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
+import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 // Defines The File Icons
 export const FILE_ICONS:{
@@ -41,7 +45,8 @@ interface OneMessageContainerProps {
     onCancelEditMessage:() => void,
     onShowMessageProperties:(message:Chat) => void,
     onViewedImagesUpdate:(viewed_images:{ images:{ uri:string }[], index:number }) => void,
-    onViewedVideoUpdate:(viewed_video:string|null) => void
+    onViewedVideoUpdate:(viewed_video:string|null) => void,
+    logged_in_user:LoggedInUser|null
 }
 
 export const OneMessageContainer = ({ 
@@ -50,7 +55,8 @@ export const OneMessageContainer = ({
     onCancelEditMessage,
     onShowMessageProperties,
     onViewedImagesUpdate,
-    onViewedVideoUpdate
+    onViewedVideoUpdate,
+    logged_in_user
 }:OneMessageContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -115,21 +121,11 @@ export const OneMessageContainer = ({
                     one_chat === selected_message_for_edit ? styles.edit : {}
                 ]}
             >
-                <View className="profile_picture_container" style={styles.profile_picture_container}>
-                    <Image 
-                        className={`profile_picture ${
-                            one_chat.sender.subscription && one_chat.sender.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                        }`}
-
-                        source={
-                            one_chat.sender.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_chat.sender.id}/${one_chat.sender.profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                        }
-
-                        style={[
-                            styles.profile_picture,
-                            one_chat.sender.subscription && one_chat.sender.subscription.is_active && styles.subscriber_profile_picture,
-                            // { transform: [{ scale: animated_scale }] }
-                        ]}
+                <View style={{ marginTop: "auto" }}>
+                    <ProfilePicture
+                        user_id={one_chat.sender.id}
+                        user_profile_picture_name={one_chat.sender.profile_picture_name}
+                        user_subscription={one_chat.sender.subscription?.is_active || false} 
                     />
                 </View>
 
@@ -239,6 +235,82 @@ export const OneMessageContainer = ({
                                     </View>
                                 )
                             })
+                        )}
+
+                        {one_chat.post && (
+                            <View style={styles.post_container}>
+                                <View className="header" style={styles.header}>
+                                    <View className="left">
+                                        <ProfilePictureLink 
+                                            user_id={one_chat.post.user.id} 
+                                            user_username={one_chat.post.user.username}
+                                            user_profile_picture_name={one_chat.post.user.profile_picture_name || null} 
+                                            user_subscription={one_chat.post.user.subscription?.is_active || false} 
+                                            label={t("Zobraziť užívateľa")} 
+                                        />
+                                    </View>
+
+                                    <View className="right" style={styles.right}>
+                                        <View className="top" style={styles.top}>
+                                            <Text className="username" style={styles.username}>{one_chat.post.user.username}</Text>
+                                        </View>
+
+                                        <View className="bottom" style={styles.bottom}>
+                                            <Text className="created_at" style={styles.created_at}>{getTimeAgo(one_chat.post.created_at)}</Text>
+                                        </View>
+                                    </View>
+                                </View>
+
+                                <DynamicImage
+                                    uri={one_chat.post.media.is_video && one_chat.post.media.thumbnail ? `${DOMAIN}/media/${one_chat.post.media.thumbnail}` : `${DOMAIN}/media/${one_chat.post.media.file}`}
+                                    style={{ width: 200, borderRadius: MEDIUM_BORDER_RADIUS }}
+                                    scale_by_aspect_ratio={true}
+                                />
+
+                                <View className="society" style={styles.society}>
+                                    <View 
+                                        className="likes" 
+                                        accessibilityLabel={t("Páči sa mi...")} 
+                                        style={styles.society_likes}
+                                    >
+                                        <View 
+                                            style={{ 
+                                                position: "relative", 
+                                                alignItems: "center", 
+                                                justifyContent: "center", 
+                                            }}
+                                        >
+                                            <Icon
+                                                icon_name="heart"
+                                                is_regular={true}
+                                            />
+                                        </View>
+
+                                        {logged_in_user && one_chat.post.hide_likes && one_chat.post.user.id !== logged_in_user.id 
+                                        ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>{t("Skryté")}</Text>)
+                                        : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(one_chat.post.likes)}</Text>)}
+                                    </View>
+
+                                    <View 
+                                        className="comments" 
+                                        accessibilityLabel={t("Komentáre...")}
+                                        style={styles.comments}
+                                    >
+                                        <Icon
+                                            icon_name="comment"
+                                            is_regular={true}
+                                        />
+
+                                        {one_chat.post.allow_comments 
+                                        ? (<Text className="comments_counter" style={styles.comments_counter}>{String(one_chat.post.comments)}</Text>)
+                                        : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>{t("Vypnuté")}</Text>)}
+                                    </View>
+                                </View>
+
+                                {one_chat.post.description && (
+                                    <Text className="description" style={styles.description}>{one_chat.post.description}</Text>
+                                )}
+                            </View>
                         )}
 
                         {one_chat.content && (
@@ -465,30 +537,6 @@ const styles = StyleSheet.create({
         fontSize: 15,
     },
 
-    profile_picture_container: {
-        marginTop: "auto",
-        padding: 2,
-        borderWidth: 1,
-        borderColor: LIGHT_BLUE_COLOR,
-        borderRadius: 100,
-    },
-
-    profile_picture: {
-        width: 32,
-        height: 32,
-        borderRadius: 32 / 2,
-    },
-  
-    subscriber_profile_picture: {
-        backgroundColor: transparentize(YELLOW_COLOR, 0.85),
-        borderColor: transparentize(YELLOW_COLOR, 0.5),
-        shadowColor: YELLOW_COLOR,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-
     edit: {
         borderColor: BLUE_COLOR,
     },
@@ -568,5 +616,112 @@ const styles = StyleSheet.create({
         //         animation-delay: ($i - 1) * 0.2s;
         //     }
         // }
+    },
+
+    post_container: {
+        position: "relative",
+        justifyContent: "space-between",
+        gap: 10,
+        width: "100%",
+        padding: 20,
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        // backdrop-filter: blur(5px);
+        // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+
+        // &:hover,
+        // &:focus-visible {
+        //     transform: translateY(-2px);
+        //     background: transparent;
+        //     border-color: transparentize($blue-color, 0.25);
+        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
+        // }
+    },
+
+    header: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+    },
+
+    right: {
+        flex: 1,
+        minWidth: 0,
+    },
+
+    top: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+    },
+
+    username: {
+        flex: 1,
+        fontWeight: "bold",
+        color: SECONDARY_COLOR,
+    },
+
+    bottom: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 10,
+        overflow: "hidden",
+    },
+
+    created_at: {
+        color: LIGHT_BLUE_COLOR,
+        fontSize: 15,
+    },
+
+    society: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: "#cccccc",
+    },
+
+    society_likes: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+        height: 20,
+    },
+
+    society_likes_counter: {
+        color: BLUE_COLOR,
+    },
+
+    hidden_likes_counter: {
+        color: BLUE_COLOR,
+        fontSize: 15,
+    },
+
+    comments: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 5,
+    },
+
+    comments_counter: {
+        color: BLUE_COLOR,
+    },
+
+    hidden_comments_counter: {
+        color: BLUE_COLOR,
+        fontSize: 15,
+    },
+
+    description: {
+        marginTop: 5,
+        lineHeight: 1.5,
+        fontSize: 12,
+        color: transparentize(SECONDARY_COLOR, 0.08),
     },
 })

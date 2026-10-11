@@ -75,7 +75,7 @@ export const ChatContainer = ({
 
     const message_properties = useRef<BottomSheetModal>(null) // Stores The Message Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
-    const [message_properties_sheet, setMessagePropertiesSheet] = useState<"main"|"reaction">("main") // Stores The Active Post Properties Sheet
+    const [message_properties_sheet, setMessagePropertiesSheet] = useState<"main"|"reaction">("main") // Stores The Active Message Properties Sheet
     const [selected_message, setSelectedMessage] = useState<Chat|null>(null) // Stores The Selected Message
 
     const [write_message_action, setWriteMessageAction] = useState<"new"|"edit">("new") // Stores The Write Message Action
@@ -165,7 +165,7 @@ export const ChatContainer = ({
                     // Stores The New State Of Updated Chats
                     const updated_chats:Chat[] = chats.map((one_chat:Chat) => {
                         if(one_chat.id === chat_id) {
-                            // Updates The Post Likes Amount And Stored Likes From Users
+                            // Updates The Message Content And Marks The Message As Edited
                             return {
                                 ...one_chat,
                                 content: message_content,
@@ -173,7 +173,7 @@ export const ChatContainer = ({
                             }
                         }
 
-                        return one_chat // Returns The Unchanged Post
+                        return one_chat // Returns The Unchanged Chat
                     })
 
                     onSetChats(updated_chats) // Sets The Chats
@@ -666,6 +666,7 @@ export const ChatContainer = ({
                                 onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
                                 onViewedImagesUpdate={(viewed_images:{ images:{ uri:string }[], index:number }) => setViewedImages(viewed_images)}
                                 onViewedVideoUpdate={(viewed_video:string|null) => setViewedVideo(viewed_video)}
+                                logged_in_user={logged_in_user}
                             />
                         )}
 
@@ -688,9 +689,7 @@ export const ChatContainer = ({
                     />
 
                     {(are_chats_loading || !has_next) && !is_error && (
-                        <Text>
-                            {are_chats_loading ? t("Načítavam...") : t("Videli ste všetky príspevky.")}
-                        </Text>
+                        <Text>{are_chats_loading ? t("Načítavam...") : t("Videli ste všetky správy.")}</Text>
                     )}
 
                     {Platform.OS !== "web" && (
@@ -858,7 +857,7 @@ export const ChatContainer = ({
                                             <Text style={styles.sheet_text}>{t("Reakcia")}</Text>
                                         </Pressable>
 
-                                        {/* If The Post Belongs To The Logged In User And Isn't Older Than 15 Minutes The Edit Option Will Be Shown */}
+                                        {/* If The Message Belongs To The Logged In User And Isn't Older Than 15 Minutes The Edit Option Will Be Shown */}
                                         {selected_message.is_sender && !selected_message.is_older_than_15_minutes && (
                                             <Pressable
                                                 className="edit_message_button"
@@ -883,7 +882,7 @@ export const ChatContainer = ({
                                             </Pressable>
                                         )}
 
-                                        {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                        {/* If The Message Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
                                         {selected_message.is_sender && !selected_message.is_older_than_1_day && (
                                             <Pressable
                                                 className="delete_message_button"

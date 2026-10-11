@@ -1,8 +1,7 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Pressable, Alert, StyleSheet, Animated, Image, View } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import {LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
-import { DOMAIN } from "@/constants/general"
 import { useTranslation } from "react-i18next"
 
 type SelectProfilePictureProps = {
@@ -22,6 +21,13 @@ export default function SelectProfilePicture({
 
     const [is_pressed, setIsPressed] = useState(false) // Stores The Information If The Button Is Pressed
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+
+    const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
+
+    // Initializes Reset Of The Information That There Is An Error
+    useEffect(() => {
+        setIsError(false) // Sets The Information That There Isn't An Error
+    }, [])
 
     // Function For Handle Press In
     const handlePressIn = () => {
@@ -87,8 +93,12 @@ export default function SelectProfilePicture({
                     }`}
 
                     source={
-                        previous_profile_picture ? { uri: previous_profile_picture } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
+                        previous_profile_picture && !is_error
+                            ? { uri: previous_profile_picture }
+                            : require("@/assets/images/profile_picture.png") // https://www.flaticon.com/free-icon/user_3177440
                     }
+
+                    onError={() => setIsError(true)} // Sets The Information That There Is An Error
 
                     style={[
                         styles.profile_picture,

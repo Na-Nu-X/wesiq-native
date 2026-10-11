@@ -4,7 +4,7 @@ import { LIGHT_BLUE_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colo
 import { DOMAIN } from "@/constants/general"
 import { ImperativeRouter, useRouter } from "expo-router"
 
-type IconProps = {
+interface ProfilePictureLinkProps {
     user_id:number,
     user_username:string,
     user_profile_picture_name:string|null,
@@ -16,7 +16,15 @@ type IconProps = {
 
 const AnimatedImage = Animated.createAnimatedComponent(Image) // Creates The Animated Image Element
 
-export default function ProfilePictureLink({ user_id, user_username, user_profile_picture_name, user_subscription, label = "Môj účet", width = 32, height = 32 }:IconProps) {
+export default function ProfilePictureLink({ 
+    user_id, 
+    user_username, 
+    user_profile_picture_name, 
+    user_subscription, 
+    label = "Môj účet", 
+    width = 32, 
+    height = 32 
+}:ProfilePictureLinkProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const router:ImperativeRouter = useRouter() // Gets The Router
     const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value

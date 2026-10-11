@@ -9,6 +9,7 @@ import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
+import ProfilePicture from "@/components/ProfilePicture"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse } from "@/components/pages/community/Feed"
@@ -198,23 +199,11 @@ export default function SearchUsers() {
                 className="one_user"
                 style={styles.one_user}
             >
-                <View className="profile_picture_container" style={styles.profile_picture_container}>
-                    <Image 
-                        className={`profile_picture skeleton_loading ${
-                            one_loaded_user.subscription && one_loaded_user.subscription.is_active ? "subscriber" : "" // Adds The Subscriber Class
-                        }`}
-
-                        source={
-                            one_loaded_user.profile_picture_name ? { uri: `${DOMAIN}/media/images/${one_loaded_user.id}/${one_loaded_user.profile_picture_name}` } : require("@/assets/images/profile_picture.png") // Sets Profile Picture - https://www.flaticon.com/free-icon/user_3177440
-                        }
-
-                        style={[
-                            styles.profile_picture,
-                            one_loaded_user.subscription && one_loaded_user.subscription.is_active && styles.subscriber_profile_picture,
-                            // { transform: [{ scale: animated_scale }] }
-                        ]}
-                    />
-                </View>
+                <ProfilePicture
+                    user_id={one_loaded_user.id}
+                    user_profile_picture_name={one_loaded_user.profile_picture_name}
+                    user_subscription={one_loaded_user.subscription?.is_active || false} 
+                />
 
                 <Text className="username" style={styles.username}>{one_loaded_user.username}</Text>
                 <Text className="full_name" style={styles.full_name}>{one_loaded_user.first_name} {one_loaded_user.last_name}</Text>
@@ -605,29 +594,6 @@ const styles = StyleSheet.create({
         //     transform: translateY(calc(300% + 20px));
         //     display: none;
         // }
-    },
-
-    profile_picture_container: {
-        padding: 2,
-        borderWidth: 1,
-        borderColor: LIGHT_BLUE_COLOR,
-        borderRadius: 38 / 2,
-    },
-
-    profile_picture: {
-        width: 32,
-        height: 32,
-        borderRadius: 38 / 2,
-    },
-  
-    subscriber_profile_picture: {
-        backgroundColor: transparentize(YELLOW_COLOR, 0.85),
-        borderColor: transparentize(YELLOW_COLOR, 0.5),
-        shadowColor: YELLOW_COLOR,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
     },
 
     username: {
