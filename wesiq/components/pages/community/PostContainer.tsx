@@ -18,20 +18,21 @@ import { DynamicVideo } from "./DynamicVideo"
 import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
 import { useTranslation } from "react-i18next"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { Post, Media, Comment } from "./Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
 import type { BasicResponse } from "./Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 
-interface loadedPostCommentsResponse {
+export interface loadedPostCommentsResponse {
     success:boolean,
     has_next:boolean,
     visible_comments?:Comment[],
     message:string
 }
 
-interface AddedPostCommentResponse {
+export interface AddedPostCommentResponse {
     success:boolean,
     comment?:AddedComment,
     message:string
@@ -54,7 +55,7 @@ export interface AddedComment {
     level:number
 }
 
-interface Particle {
+export interface Particle {
     id:number,
     x:number,
     y:number,
@@ -83,6 +84,8 @@ export const PostContainer = ({
     are_posts_loading 
 }:PostContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
 
     const [post_comments_page, setPostCommentsPage] = useState<number>(1) // Stores The Current Post Comments Page Number
     const [has_next_post_comments, setHasNextPostComments] = useState<boolean>(true) // Stores The Information If There Are More Post Comments Available
@@ -214,7 +217,7 @@ export const PostContainer = ({
                 <Pressable 
                     key={index}
                     className="tag"
-                    // onPress={handleGoToProfile}
+                    onPress={() => router.push(`/profile/${one_tag}`)}
                     style={styles.tag}
                 >
                     <Text>{one_tag}</Text>
@@ -230,7 +233,7 @@ export const PostContainer = ({
                 <Pressable 
                     key={index}
                     className="hashtag"
-                    // onPress={handleGoToProfile}
+                    // onPress={}
                     style={styles.hashtag}
                 >
                     {one_hashtag}

@@ -4,6 +4,7 @@ import ProfilePictureLink from "./ProfilePictureLink"
 import { DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, transparentize } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import { useTranslation } from "react-i18next"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -15,6 +16,8 @@ interface BannerProps {
 
 export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostFormDialogOpen }:BannerProps) {
     const { t } = useTranslation() // Initializes The Translations
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
 
     return (
         <View style={styles.banner}>
@@ -51,7 +54,7 @@ export default function Banner({ logged_in_user, setActiveForm, setIsUploadPostF
                             />
         
                             <Pressable
-                                // onPress={handleGoToProfile}
+                                onPress={() => router.push(`/profile/${logged_in_user.username}`)}
                                 accessibilityRole="button"
                                 accessibilityLabel={t("Môj účet")} 
                                 >

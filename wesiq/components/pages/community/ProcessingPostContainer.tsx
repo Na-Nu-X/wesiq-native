@@ -12,6 +12,7 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { AnimatedProgressBar } from "./AnimatedProgressBar"
 import { useTranslation } from "react-i18next"
 import { getReadableSize } from "@/utils/getReadableSize"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { ProcessingPost, ProcessingMedia } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
@@ -27,6 +28,8 @@ interface ProcessingPostContainerProps {
 export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShowProcessingPostProperties, logged_in_user }:ProcessingPostContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
+    const router:ImperativeRouter = useRouter() // Gets The Router
+
     const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
     const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
 
@@ -40,7 +43,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                 <Pressable 
                     key={index}
                     className="tag"
-                    // onPress={handleGoToProfile}
+                    onPress={() => router.push(`/profile/${one_tag}`)}
                     style={styles.tag}
                 >
                     <Text>{one_tag}</Text>
@@ -56,7 +59,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
                 <Pressable 
                     key={index}
                     className="hashtag"
-                    // onPress={handleGoToProfile}
+                    // onPress={}
                     style={styles.hashtag}
                 >
                     {one_hashtag}

@@ -207,8 +207,6 @@ export default function ChatDetailScreen() {
 
             const loaded_chat_data:LoadedChatResponse = await loaded_chat_response.json() // Gets The Loaded Chat Data
 
-            console.log(loaded_chat_data)
-
             // If The Response Isn't Success
             if(!loaded_chat_data.success) {
                 setIsError(true) // Sets The Information That There Is An Error

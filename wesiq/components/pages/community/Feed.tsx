@@ -174,7 +174,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const [posts, setPosts] = useState<Post[]>([]) // Stores The Posts
     const [page, setPage] = useState(1) // Stores The Current Page Number
     const [has_next, setHasNext] = useState<boolean>(true) // Stores The Information If There Are More Posts Available
-    const [are_posts_loading, setArePostsLoading] = useState(false) // Stores The Information If Posts Are Loading
+    const [are_posts_loading, setArePostsLoading] = useState<boolean>(false) // Stores The Information If Posts Are Loading
     const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
     const [search_text, setSearchText] = useState<string>("") // Stores The Search Text
 

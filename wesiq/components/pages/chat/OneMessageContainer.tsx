@@ -17,6 +17,7 @@ import { getTimeAgo } from "@/utils/time"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
+import { ImperativeRouter, useRouter } from "expo-router"
 
 // Defines The File Icons
 export const FILE_ICONS:{
@@ -59,6 +60,8 @@ export const OneMessageContainer = ({
     logged_in_user
 }:OneMessageContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
+
+    const router:ImperativeRouter = useRouter() // Gets The Router
 
     // Function For Download The File
     const downloadFile = async (file_url:string, filename:string):Promise<void> => {
@@ -261,11 +264,13 @@ export const OneMessageContainer = ({
                                     </View>
                                 </View>
 
-                                <DynamicImage
-                                    uri={one_chat.post.media.is_video && one_chat.post.media.thumbnail ? `${DOMAIN}/media/${one_chat.post.media.thumbnail}` : `${DOMAIN}/media/${one_chat.post.media.file}`}
-                                    style={{ width: 200, borderRadius: MEDIUM_BORDER_RADIUS }}
-                                    scale_by_aspect_ratio={true}
-                                />
+                                <Pressable onPress={one_chat.post ? () => router.push(`/post/${one_chat.post?.id}`) : () => console.log("")}>
+                                    <DynamicImage
+                                        uri={one_chat.post.media.is_video && one_chat.post.media.thumbnail ? `${DOMAIN}/media/${one_chat.post.media.thumbnail}` : `${DOMAIN}/media/${one_chat.post.media.file}`}
+                                        style={{ width: 200, borderRadius: MEDIUM_BORDER_RADIUS }}
+                                        scale_by_aspect_ratio={true}
+                                    />
+                                </Pressable>
 
                                 <View className="society" style={styles.society}>
                                     <View 
