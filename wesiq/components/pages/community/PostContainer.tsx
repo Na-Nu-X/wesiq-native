@@ -70,7 +70,8 @@ interface PostContainerProps {
     onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
     onShowPostProperties:(post:Post) => void,
     onShowPostCommentProperties:(comment:Comment) => void,
-    are_posts_loading:boolean
+    are_posts_loading:boolean,
+    onSharePost:(post:Post) => void
 }
 
 export const PostContainer = ({ 
@@ -81,7 +82,8 @@ export const PostContainer = ({
     onShowPostProperties, 
     onShowPostCommentProperties, 
     onLoggedInUserUpdate, 
-    are_posts_loading 
+    are_posts_loading,
+    onSharePost
 }:PostContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -1196,7 +1198,8 @@ export const PostContainer = ({
                 <View className="share" accessibilityLabel={t("Zdielať...")}>
                     <Icon
                         icon_name="share-nodes"
-                        onPress={() => sharePost(post.id, post.user.username)}
+                        // onPress={() => sharePost(post.id, post.user.username)}
+                        onPress={() => onSharePost(post)}
                         size={25}
                     />
                 </View>
