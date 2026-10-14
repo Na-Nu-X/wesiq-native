@@ -7,10 +7,12 @@ import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import { useTranslation } from "react-i18next"
 
 import type { Post, Following } from "./Feed"
+import { FontAwesome6 } from "@expo/vector-icons"
 
 interface SharePostDialogProps {
     friends:Following[],
-    onShare:(receiver_id:number, friend_username:string) => void,
+    onSharePostToChat:(friend_username:string) => void,
+    onSharePost:() => void,
     is_sending: boolean,
     share_post_dialog:RefObject<BottomSheetModal|null>,
     share_post_dialog_sheet:"main",
@@ -20,7 +22,8 @@ interface SharePostDialogProps {
 
 export const SharePostDialog = ({ 
     friends, 
-    onShare, 
+    onSharePostToChat, 
+    onSharePost,
     is_sending, 
     share_post_dialog,
     share_post_dialog_sheet,
@@ -44,6 +47,30 @@ export const SharePostDialog = ({
                     <View className="share_post_dialog">
                         {share_post_dialog_sheet === "main" && (
                             <View style={styles.sheet_container}>
+                                <Pressable
+                                    className="show_report_post_button"
+                                    onPress={onSharePost}
+                                    accessibilityRole="button"
+
+                                    style={({ pressed }) => [
+                                        styles.sheet_item, 
+                                        styles.sheet_item_border, 
+                                        pressed && styles.sheet_item_pressed,
+                                        { justifyContent: "center" },
+                                    ]}
+                                >
+                                    <View style={styles.sheet_icon}>
+                                        <FontAwesome6
+                                            name="share-nodes"
+                                            size={20}
+                                            solid={false}
+                                            color={BLUE_COLOR}
+                                        />
+                                    </View>
+
+                                    <Text style={styles.sheet_text}>{t("Zdielať inde")}</Text>
+                                </Pressable>
+
                                 <FlatList
                                     data={friends}
                                     keyExtractor={(one_friend) => one_friend.id.toString()}
@@ -60,7 +87,7 @@ export const SharePostDialog = ({
                                             
                                             <Pressable 
                                                 style={styles.send_button}
-                                                onPress={() => onShare(item.id, item.username)}
+                                                onPress={() => onSharePostToChat(item.username)}
                                                 disabled={is_sending}
                                             >
                                                 <Text style={styles.send_button_text}>{is_sending ? t("Posiela sa...") : t("Odoslať")}</Text>

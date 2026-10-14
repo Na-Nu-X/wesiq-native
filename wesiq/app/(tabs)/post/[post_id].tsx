@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { StyleSheet, ScrollView, Alert, View, Pressable, Text, Switch } from "react-native"
+import { StyleSheet, ScrollView, Alert, View, Pressable, Text, Switch, Share } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import { SafeAreaView } from "react-native-safe-area-context"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
+import { API_URL, DOMAIN } from "@/constants/general"
 import Banner from "@/components/Banner"
 import { useTranslation } from "react-i18next"
 import { useLocalSearchParams } from "expo-router"
@@ -13,9 +13,12 @@ import { PostContainer } from "@/components/pages/post/PostContainer"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, GREEN_COLOR, MAIN_COLOR, RED_COLOR, transparentize } from "@/constants/colors"
+import { SharePostDialog } from "@/components/pages/community/SharePostDialog"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse, Post, Comment } from "@/components/pages/community/Feed"
+import type { LoadedFriendsResponse, Following } from "@/components/pages/community/Feed"
+import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 interface LoadedPostResponse {
   success:boolean,
@@ -42,6 +45,13 @@ export default function HomeScreen() {
     const post_comment_properties = useRef<BottomSheetModal>(null) // Stores The Post Comment Properties
     const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
     const [selected_post_comment, setSelectedPostComment] = useState<Comment|null>(null) // Stores The Selected Post Comment
+
+    const share_post_dialog = useRef<BottomSheetModal>(null) // Stores The Share Post Dialog
+    const [share_post_dialog_sheet, setSharePostDialogSheet] = useState<"main">("main") // Stores The Share Post Dialog Sheet
+    const [friends, setFriends] = useState<Following[]>([]) // Stores The Friends (Following Users)
+    const [is_sending_post, setIsSendingPost] = useState<boolean>(false) // Stores The Information If The Post Is Sending
+
+    const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
 
     // Function For Get The Post
     const getPost = async (post_id:string):Promise<void> => {
@@ -85,6 +95,49 @@ export default function HomeScreen() {
     useEffect(() => {
         if(post_id) getPost(post_id) // Loads The Post
     }, [post_id])
+
+    // Function For Get The Friends
+    const getFriends = async ():Promise<void> => {
+        try {
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+    
+            // Sends The GET Request To The Server
+            const loaded_friends_response:Response = await fetch(`${API_URL}/get-friends/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
+            })
+    
+            // If The Response Isn't Success
+            if(!loaded_friends_response.ok) {
+                Alert.alert(t("Chyba"), t("Pri získavaní sledovaných užívateľov došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const loaded_friends_data:LoadedFriendsResponse = await loaded_friends_response.json() // Gets The Toggle Post Save Data
+
+            // If The Response Isn't Success
+            if(!loaded_friends_data.success || !loaded_friends_data.following) {
+                Alert.alert(t("Chyba"), loaded_friends_data.message) // Shows The Alert
+                return
+            }
+            
+            setFriends(loaded_friends_data.following) // Sets Friends
+        }
+        
+        catch {
+            Alert.alert(t("Chyba"), t("Pri získavaní sledovaných užívateľov došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Initializes The Get Logged In User
+    useEffect(() => {
+        getFriends() // Gets The Logged In User
+    }, [])
 
     // Function For Show The Post Properties
     const showPostProperties = (post:Post):void => {
@@ -421,6 +474,99 @@ export default function HomeScreen() {
         }
     }
 
+    // Function For Show The Share Post Dialog
+    const showSharePostDialog = (post:Post):void => {
+        setSelectedPost(post) // Sets The Selected Post
+        share_post_dialog.current?.present() // Shows The Share Post Dialog
+    }
+
+    // Function For Handle Share Post Dialog Sheet Switching
+    const handleSharePostDialogChanges = (index:number) => {
+        if(index === -1) setSharePostDialogSheet("main") // Sets The Share Post Dialog Sheet To Default
+    }
+
+    // Function For Share The Post To Chat
+    const sharePostToChat = async (post:Post, receiver_username:string):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert(t("Chyba"), t("Príspevok nie je možné zdielať bez prihlásenia.")) // Shows The Alert
+            return
+        }
+
+        setIsSendingPost(true) // Stores The Information That The Post Is Sending
+
+        const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+        const is_secure:boolean = DOMAIN.startsWith("https") // Stores The Information If The API Is Secure
+        const clean_domain:string = DOMAIN.replace(/^https?:\/\//, "") // Gets The Clean Domain
+        const web_socket_protocol:"wss"|"ws" = is_secure ? "wss" : "ws" // Gets The Web Socket Protocol
+        const web_socket_url:string = `${web_socket_protocol}://${clean_domain}/ws/chat/${receiver_username}/?token=${user_token}` // Gets The Web Socket URL
+
+        chat_socket.current = new WebSocket(web_socket_url) // Sets The Chat Socket
+
+        chat_socket.current.onopen = () => {
+            if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
+                // Sends The New Message With Shared Post
+                chat_socket.current.send(JSON.stringify({
+                    action: "share_post",
+                    post_id: post.id
+                }))
+            }
+
+            else {
+                console.warn(t("Web Socket nie je otvorený."))
+            }
+        }
+
+        // Response From The Server (The DOM Changes Will Be Visible To Every User In Chat)
+        chat_socket.current.onmessage = (event) => {
+            const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
+
+            // New Message
+            if(data.action === "new") {
+                const sender_id:number = data.sender_id as number // Gets The Sender's ID
+                const post:ChatPost|null = data.post as ChatPost || null // Gets The Post
+
+                if(sender_id === logged_in_user.id && post) {
+                    setIsSendingPost(false) // Stores The Information That The Post Isn't Sending
+                }
+            }
+        }
+
+        // Interrupted Connection
+        chat_socket.current.onclose = () => {
+            Alert.alert(t("Chyba"), t("Spojenie sa neočakávane prerušilo.")) // Shows The Alert
+        }
+
+        // Interrupted Connection
+        chat_socket.current.onerror = () => {
+            Alert.alert(t("Chyba"), t("Pri pokuse o spojenie došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Function For Share The Post
+    const sharePost = async (post_id:number, username:string):Promise<void> => {
+        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
+    
+        try {
+            const result = await Share.share({
+                message: `Wesiq - ${t("Príspevok užívateľa")} ${username}\n${link}`,
+                url: link, // Only IOS
+                title: `Wesiq - ${t("Príspevok užívateľa")} ${username}`
+            })
+    
+            if(result.action === Share.sharedAction) {
+                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
+                else console.log(t("Úspešne zdieľané"))
+            } 
+            
+            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
+        } 
+
+        catch(error:any) {
+            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
+        }
+    }
+
     return (
         <BackgroundContainer style={{ flex: 1 }}>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
@@ -467,6 +613,7 @@ export default function HomeScreen() {
                                 onShowPostCommentProperties={(comment:Comment) => showPostCommentProperties(comment)}
                                 onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                 is_post_loading={is_post_loading}
+                                onSharePost={(post:Post) => showSharePostDialog(post)} // Shows The Share Post Dialog
                             />
 
                             <BottomSheetModal
@@ -1209,6 +1356,17 @@ export default function HomeScreen() {
                                     ) : null}
                                 </BottomSheetView>
                             </BottomSheetModal>
+
+                            <SharePostDialog 
+                                friends={friends}
+                                onSharePostToChat={(friend_username:string) => sharePostToChat(post, friend_username)}
+                                onSharePost={() => sharePost(post.id, post.user.username)}
+                                is_sending={is_sending_post}
+                                share_post_dialog={share_post_dialog}
+                                share_post_dialog_sheet={share_post_dialog_sheet}
+                                selected_post={selected_post}
+                                handleSharePostDialogChanges={() => handleSharePostDialogChanges}
+                            />
                         </View>
                     </BottomSheetModalProvider>
                 )}

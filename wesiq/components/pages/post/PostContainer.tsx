@@ -33,7 +33,8 @@ interface PostContainerProps {
     onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
     onShowPostProperties:(post:Post) => void,
     onShowPostCommentProperties:(comment:Comment) => void,
-    is_post_loading:boolean
+    is_post_loading:boolean,
+    onSharePost:(post:Post) => void
 }
 
 export const PostContainer = ({ 
@@ -43,7 +44,8 @@ export const PostContainer = ({
     onShowPostProperties, 
     onShowPostCommentProperties, 
     onLoggedInUserUpdate,
-    is_post_loading
+    is_post_loading,
+    onSharePost
 }:PostContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -436,31 +438,6 @@ export const PostContainer = ({
         }
 
         else setIsCommentForumOpen(false) // Sets The Information That The Comment Forum Isn't Open
-    }
-
-    // Function For Share The Post
-    const sharePost = async (post_id:number, username:string):Promise<void> => {
-        // const link:string = interpolate(gettext("/sk/prispevok/%s"), [post_id]) // Sets The Link To The Post
-        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
-    
-        try {
-            const result = await Share.share({
-                message: `Wesiq - ${t("Príspevok užívateľa")} ${username}\n${link}`,
-                url: link, // Only IOS
-                title: `Wesiq - ${t("Príspevok užívateľa")} ${username}`
-            })
-    
-            if(result.action === Share.sharedAction) {
-                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
-                else console.log(t("Úspešne zdieľané"))
-            } 
-            
-            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
-        } 
-
-        catch(error:any) {
-            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
-        }
     }
 
     // Function For Save Or Unsave The Post
@@ -1101,7 +1078,7 @@ export const PostContainer = ({
                 <View className="share" accessibilityLabel={t("Zdielať...")}>
                     <Icon
                         icon_name="share-nodes"
-                        onPress={() => sharePost(post.id, post.user.username)}
+                        onPress={() => onSharePost(post)}
                         size={25}
                     />
                 </View>

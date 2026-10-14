@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Switch, FlatList, ActivityIndicator } from "react-native"
-import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
-import Icon from "@/components/Icon"
+import { View, StyleSheet, Text, Alert, Pressable, Switch, FlatList, ActivityIndicator, Share } from "react-native"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -17,6 +16,7 @@ import { SharePostDialog } from "./SharePostDialog"
 
 import type { LoggedInUserResponse, LoggedInUser } from "../../LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
+import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 export interface BasicResponse {
     success:boolean,
@@ -161,7 +161,7 @@ export interface ProcessingMedia {
     original_size:number,
 }
 
-interface LoadedFriendsResponse {
+export interface LoadedFriendsResponse {
     success:boolean,
     following?:Following[],
     message:string
@@ -768,59 +768,13 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }
 
     // Function For Share The Post To Chat
-    const sharePostToChat = async (post:Post, receiver_id:number, receiver_username:string):Promise<void> => {
-        // setIsSendingPost(true) // Stores The Information That The Post Is Sending
+    const sharePostToChat = async (post:Post, receiver_username:string):Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert(t("Chyba"), t("Príspevok nie je možné zdielať bez prihlásenia.")) // Shows The Alert
+            return
+        }
 
-        // try {
-        //     if(!logged_in_user) {
-        //         Alert.alert(t("Chyba"), t("Príspevok nie je možné zdielať bez prihlásenia.")) // Shows The Alert
-        //         return
-        //     }
-
-        //     const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-        //     // Sends The POST Request To The Server
-        //     const shared_post_response:Response = await fetch(`${API_URL}/share-post/`, {
-        //         method: "POST",
-
-        //         headers: {
-        //             "Content-Type": "application/json",
-        //             "Accept": "application/json",
-        //             "Authorization": `Bearer ${user_token}`
-        //         },
-
-        //         body: JSON.stringify({
-        //             post_id: post.id,
-        //             receiver_id: receiver_id
-        //         })
-        //     })
-
-        //     // If The Response Isn't Success
-        //     if(!shared_post_response.ok) {
-        //         Alert.alert(t("Chyba"), t("Príspevok sa nepodarilo odoslať.")) // Shows The Alert
-        //         return
-        //     }
-
-        //     const shared_post__data:BasicResponse = await shared_post_response.json() // Gets The Shared Post Data
-
-        //     // If The Response Isn't Success
-        //     if(!shared_post__data.success) {
-        //         Alert.alert(t("Chyba"), shared_post__data.message) // Shows The Alert
-        //         return
-        //     }
-            
-        //     else {
-        //         showSharePostDialog(post) // Shows The Share Post Dialog
-        //     }
-        // } 
-        
-        // catch {
-        //     Alert.alert(t("Chyba"), t("Príspevok sa nepodarilo odoslať.")) // Shows The Alert
-        // }
-
-        // finally {
-        //     setIsSendingPost(false) // Stores The Information That The Post Isn't Sending
-        // }
+        setIsSendingPost(true) // Stores The Information That The Post Is Sending
 
         const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
 
@@ -831,6 +785,35 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
 
         chat_socket.current = new WebSocket(web_socket_url) // Sets The Chat Socket
 
+        chat_socket.current.onopen = () => {
+            if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
+                // Sends The New Message With Shared Post
+                chat_socket.current.send(JSON.stringify({
+                    action: "share_post",
+                    post_id: post.id
+                }))
+            }
+
+            else {
+                console.warn(t("Web Socket nie je otvorený."))
+            }
+        }
+
+        // Response From The Server (The DOM Changes Will Be Visible To Every User In Chat)
+        chat_socket.current.onmessage = (event) => {
+            const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
+
+            // New Message
+            if(data.action === "new") {
+                const sender_id:number = data.sender_id as number // Gets The Sender's ID
+                const post:ChatPost|null = data.post as ChatPost || null // Gets The Post
+
+                if(sender_id === logged_in_user.id && post) {
+                    setIsSendingPost(false) // Stores The Information That The Post Isn't Sending
+                }
+            }
+        }
+
         // Interrupted Connection
         chat_socket.current.onclose = () => {
             Alert.alert(t("Chyba"), t("Spojenie sa neočakávane prerušilo.")) // Shows The Alert
@@ -840,17 +823,29 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         chat_socket.current.onerror = () => {
             Alert.alert(t("Chyba"), t("Pri pokuse o spojenie došlo k chybe.")) // Shows The Alert
         }
+    }
 
-        if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
-            // Sends The New Message With Shared Post
-            chat_socket.current.send(JSON.stringify({
-                action: "share_post",
-                post_id: post.id
-            }))
-        }
+    // Function For Share The Post
+    const sharePost = async (post_id:number, username:string):Promise<void> => {
+        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
+    
+        try {
+            const result = await Share.share({
+                message: `Wesiq - ${t("Príspevok užívateľa")} ${username}\n${link}`,
+                url: link, // Only IOS
+                title: `Wesiq - ${t("Príspevok užívateľa")} ${username}`
+            })
+    
+            if(result.action === Share.sharedAction) {
+                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
+                else console.log(t("Úspešne zdieľané"))
+            } 
+            
+            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
+        } 
 
-        else {
-            console.warn(t("Web Socket nie je otvorený."))
+        catch(error:any) {
+            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
         }
     }
 
@@ -1956,7 +1951,8 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                 {selected_post && (
                     <SharePostDialog 
                         friends={friends}
-                        onShare={(friend_id:number, friend_username) => sharePostToChat(selected_post, friend_id, friend_username)}
+                        onSharePostToChat={(friend_username:string) => sharePostToChat(selected_post, friend_username)}
+                        onSharePost={() => sharePost(selected_post.id, selected_post.user.username)}
                         is_sending={is_sending_post}
                         share_post_dialog={share_post_dialog}
                         share_post_dialog_sheet={share_post_dialog_sheet}

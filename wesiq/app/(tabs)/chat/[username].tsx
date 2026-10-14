@@ -57,7 +57,7 @@ export interface Chat {
     post?:Post
 }
 
-interface Post {
+export interface Post {
     id:number,
 
     user:{
@@ -99,6 +99,7 @@ export interface ChatSocketResponse {
     chat_id:number,
     message:string,
     attachments:Attachment[],
+    post:Post,
     formatted_time?:string,
     sender_id:number,
     sender_username?:string,
