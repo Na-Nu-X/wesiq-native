@@ -154,6 +154,14 @@ export default function RootLayout() {
           href: null
         }}
       />
+
+      <Tabs.Screen
+        name="post/[post_id]"
+
+        options={{
+          href: null
+        }}
+      />
     </Tabs>
   )
 }
