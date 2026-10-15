@@ -58,7 +58,7 @@ export default function SelectProfilePicture({
     })
 
     // Function For Handle Media Selection
-    const handleSelectMedia = async () => {
+    const handleSelectMedia = async ():Promise<void> => {
         const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
 
         if(!permission_result.granted) {

@@ -30,7 +30,9 @@ export interface Receiver {
 
     subscription: {
         is_active:boolean
-    }|null
+    }|null,
+
+    is_muted:boolean
 }
 
 interface Sender {
@@ -290,6 +292,7 @@ export default function ChatDetailScreen() {
                             has_next={has_next}
                             are_chats_loading={are_chats_loading}
                             is_error={is_error}
+                            onReceiverUpdate={(receiver:Receiver) => setReceiver(receiver)}
                         />
                     )}
                 </View>

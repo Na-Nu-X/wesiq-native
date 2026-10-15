@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal, Switch } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
@@ -53,7 +53,8 @@ interface ChatContainerProps {
     onLoadMoreChats:() => void,
     has_next:boolean,
     are_chats_loading:boolean,
-    is_error:boolean
+    is_error:boolean,
+    onReceiverUpdate:(receiver:Receiver) => void
 }
 
 export const ChatContainer = ({ 
@@ -65,7 +66,8 @@ export const ChatContainer = ({
     onLoadMoreChats,
     has_next,
     are_chats_loading,
-    is_error
+    is_error,
+    onReceiverUpdate
 }:ChatContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -751,6 +753,152 @@ export const ChatContainer = ({
         attachment_options.current?.dismiss() // Hides The Attachment Options
     }
 
+    // Function For Handle Background Selection
+    const handleSelectBackground = async (logged_in_user_id:number, receiver_id:number):Promise<void> => {
+        const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
+
+        if(!permission_result.granted) {
+            Alert.alert(t("Prístup zamietnutý"), t("Pre výber fotiek musíte povoliť prístup.")) // Shows The Alert
+            return
+        }
+
+        // Opens The Gallery
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images, // Only Images
+            allowsMultipleSelection: false, // Single Selection
+            quality: 1
+        })
+
+        if(!result.canceled && result.assets.length > 0) {
+            changeBackground(receiver_id, result.assets[0]) // Handles The Profile Picture Selection
+        }
+    }
+
+    // Function For Change The Background Of Chat
+    const changeBackground = async (receiver_id:number, image:ImagePicker.ImagePickerAsset):Promise<void> => {
+        console.log(receiver_id)
+        console.log(image)
+
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Obrázok pozadia nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
+                return
+            }
+
+            const form_data:FormData = new FormData() // Creates The Form Data
+
+            form_data.append("receiver_id", String(receiver_id)) // Appends The First Name To The Form Data
+
+            if(image.uri) {
+                const file_uri:string = image.uri // Gets The File URI
+                const file_extension:string|null = image.mimeType?.split("/")[1] || "jpeg" // Gets The File Extension
+
+                // Web
+                if(Platform.OS === "web" || file_uri.startsWith("blob:")) {
+                    const file_response:Response = await fetch(file_uri)
+                    const blob:Blob = await file_response.blob()
+
+                    form_data.append("image", blob, `file_${Date.now()}.${file_extension}`) // Appends The Image To The Form Data
+                } 
+                
+                // iOS And Android
+                else {
+                    form_data.append("image", {
+                        uri: file_uri,
+                        name: image.fileName || `file_${Date.now()}.${file_extension}`,
+                        type: image.mimeType || `image/${file_extension}`
+                    } as any)
+                }
+            }
+    
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const changed_chat_background_response:Response = await fetch(`${API_URL}/change-chat-background/`, {
+                method: "POST",
+
+                headers: {
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: form_data
+            })
+
+            // If The Response Isn't Success
+            if(!changed_chat_background_response.ok) {
+                Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const changed_chat_background_data:BasicResponse = await changed_chat_background_response.json() // Gets The Changed Chat Background Data
+
+            // If The Response Isn't Success
+            if(!changed_chat_background_data.success) {
+                Alert.alert(t("Chyba"), changed_chat_background_data.message) // Shows The Alert
+                return
+            }
+
+            console.log(changed_chat_background_data)
+        }
+
+        catch {
+            Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Function For Toggle Mute The User (Receiver)
+    const toggleMuteUser = async (receiver_id:number, action:boolean):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Stlmenie nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
+                return
+            }
+    
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const toggle_mute_user_response:Response = await fetch(`${API_URL}/toggle-mute-user/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({
+                    receiver_id,
+                    action
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!toggle_mute_user_response.ok) {
+                Alert.alert(t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const toggle_mute_user_data:BasicResponse = await toggle_mute_user_response.json() // Gets The Toggle Mute User Data
+
+            // If The Response Isn't Success
+            if(!toggle_mute_user_data.success) {
+                Alert.alert(t("Chyba"), toggle_mute_user_data.message) // Shows The Alert
+                return
+            }
+
+            // Sets The Receiver
+            onReceiverUpdate({
+                ...receiver,
+                is_muted: !receiver.is_muted
+            })
+        }
+
+        catch {
+            Alert.alert(t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
+        }
+    }
+
     return (
         <BottomSheetModalProvider>
             <View className="chat" style={styles.chat}>
@@ -966,54 +1114,6 @@ export const ChatContainer = ({
                         <View className="account_properties">
                             {account_properties_sheet === "main" && (
                                 <View style={styles.sheet_container}>
-                                    {logged_in_user && receiver && logged_in_user.id === receiver.id && (
-                                        <>
-                                            <Pressable
-                                                className="show_account_settings_button"
-                                                onPress={() => setAccountPropertiesSheet("account_settings")}
-                                                accessibilityRole="button"
-
-                                                style={({ pressed }) => [
-                                                    styles.sheet_item, 
-                                                    styles.sheet_item_border, 
-                                                    pressed && styles.sheet_item_pressed
-                                                ]}
-                                            >
-                                                <View style={styles.sheet_icon}>
-                                                    <FontAwesome6
-                                                        name="gear"
-                                                        size={20}
-                                                        color={BLUE_COLOR}
-                                                    />
-                                                </View>
-
-                                                <Text style={styles.sheet_text}>{t("Nastavenia")}</Text>
-                                            </Pressable>
-
-                                            <Pressable
-                                                className="show_languages_button"
-                                                onPress={() => setAccountPropertiesSheet("languages")}
-                                                accessibilityRole="button"
-
-                                                style={({ pressed }) => [
-                                                    styles.sheet_item, 
-                                                    styles.sheet_item_border, 
-                                                    pressed && styles.sheet_item_pressed
-                                                ]}
-                                                >
-                                                <View style={styles.sheet_icon}>
-                                                    <FontAwesome6
-                                                        name="language"
-                                                        size={20}
-                                                        color={BLUE_COLOR}
-                                                    />
-                                                </View>
-
-                                                <Text style={styles.sheet_text}>{t("Jazyk")}</Text>
-                                            </Pressable>
-                                        </>
-                                    )}
-
                                     {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
                                     {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && logged_in_user.id !== receiver.id && (
                                         <Pressable
@@ -1046,6 +1146,61 @@ export const ChatContainer = ({
                                             </Text>
                                         </Pressable>
                                     )}
+
+                                    {logged_in_user && (
+                                        <Pressable
+                                            onPress={() => handleSelectBackground(logged_in_user.id, receiver.id)}
+                                            accessibilityRole="button"
+
+                                            style={({ pressed }) => [
+                                                styles.sheet_item, 
+                                                styles.sheet_item_border, 
+                                                pressed && styles.sheet_item_pressed
+                                            ]}
+                                        >
+                                            <View style={styles.sheet_icon}>
+                                                <FontAwesome6
+                                                    name={"image"}
+                                                    size={20}
+                                                    solid={false}
+                                                    color={BLUE_COLOR}
+                                                />
+                                            </View>
+
+                                            <Text style={styles.sheet_text}>{t("Zmeniť pozadie")}</Text>
+                                        </Pressable>
+                                    )}
+
+                                    <View 
+                                        className="toggle_mute_user_container"
+
+                                        style={[
+                                            styles.sheet_item, 
+                                            styles.sheet_item_border,
+                                        ]}
+                                    >
+                                        <View style={styles.sheet_icon}>
+                                            <FontAwesome6
+                                                name={receiver.is_muted ? "face-grimace" : "face-meh"}
+                                                size={20}
+                                                color={BLUE_COLOR}
+                                            />
+                                        </View>
+
+                                        <Switch 
+                                            value={receiver.is_muted}
+                                            onValueChange={(new_value:boolean) => toggleMuteUser(receiver.id, new_value)}
+                                            
+                                            trackColor={{ 
+                                                false: transparentize(RED_COLOR, 0.8), 
+                                                true: transparentize(GREEN_COLOR, 0.8) 
+                                            }}
+                                            
+                                            thumbColor={receiver.is_muted ? GREEN_COLOR : RED_COLOR}
+                                        />
+
+                                        <Text style={styles.sheet_text}>{receiver.is_muted ? t("Zrušiť stlmenie užívateľa") : t("Stlmiť užívateľa")}</Text>
+                                    </View>
 
                                     {logged_in_user && logged_in_user.id !== receiver.id && (
                                         <Pressable
