@@ -14,10 +14,11 @@ import * as Sharing from "expo-sharing"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import ProfilePicture from "@/components/ProfilePicture"
 import { getTimeAgo } from "@/utils/time"
+import { ImperativeRouter, useRouter } from "expo-router"
+import { BlurView } from "expo-blur"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import { ImperativeRouter, useRouter } from "expo-router"
 
 // Defines The File Icons
 export const FILE_ICONS:{
@@ -124,6 +125,26 @@ export const OneMessageContainer = ({
                     one_chat === selected_message_for_edit ? styles.edit : {}
                 ]}
             >
+                <BlurView 
+                    intensity={20} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+
+                        one_chat.is_sender ? {
+                            borderTopLeftRadius: BIG_BORDER_RADIUS,
+                            borderTopRightRadius: BIG_BORDER_RADIUS,
+                            borderBottomRightRadius: BIG_BORDER_RADIUS,
+                            borderBottomLeftRadius: SMALL_BORDER_RADIUS,
+                        } : {
+                            borderTopLeftRadius: BIG_BORDER_RADIUS,
+                            borderTopRightRadius: BIG_BORDER_RADIUS,
+                            borderBottomRightRadius: SMALL_BORDER_RADIUS,
+                            borderBottomLeftRadius: BIG_BORDER_RADIUS,
+                        },
+                    ]} 
+                />
+
                 <View style={{ marginTop: "auto" }}>
                     <ProfilePicture
                         user_id={one_chat.sender.id}
@@ -482,7 +503,7 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
-        maxWidth: "100%",      // Správa nepresiahne svojho rodiča (one_message_container)
+        maxWidth: "100%",
         overflow: "hidden",
         // backdrop-filter: blur(5px);
         // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;

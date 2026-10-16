@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal, Switch } from "react-native"
+import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal, Switch, Image } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
 import { DOMAIN } from "@/constants/general"
 import { FontAwesome6, Ionicons } from "@expo/vector-icons"
-import { BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { TextInput } from "react-native"
 import EmojiPicker from "rn-emoji-keyboard"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -21,6 +21,7 @@ import { OneMessageContainer } from "./OneMessageContainer"
 import ImageViewer from "./ImageViewer"
 import { FullscreenVideoPlayer } from "./FullscreenVideoPlayer"
 import { AttachmentsPreview } from "./AttachmentsPreview"
+import { BlurView } from "expo-blur"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -57,6 +58,16 @@ interface ChatContainerProps {
     onReceiverUpdate:(receiver:Receiver) => void
 }
 
+interface ChatSettingsResponse {
+    success:boolean,
+    chat_settings:ChatSettings|null,
+    message:string
+}
+
+interface ChatSettings {
+    background_image:string
+}
+
 export const ChatContainer = ({ 
     logged_in_user,
     username,
@@ -74,6 +85,8 @@ export const ChatContainer = ({
     const account_properties = useRef<BottomSheetModal>(null) // Stores The Account Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
     const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings"|"languages">("main") // Stores The Active Account Properties Sheet
+
+    const [chat_settings, setChatSettings] = useState<ChatSettings|null>(null) // Stores The Chat Settings
 
     const [new_message, setNewMessage] = useState<string>("") // Stores The New Message
     const [is_emoji_picker_open, setIsEmojiPickerOpen] = useState(false) // Stores The Information If The Emoji Picker Is Open
@@ -291,6 +304,56 @@ export const ChatContainer = ({
             console.warn(t("Web Socket nie je otvorený."))
         }
     }
+
+    // Function For Get The Chat Settings
+    const getChatSettings = async (receiver_id:number):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Nastavenia chatu nie je možné získať bez prihlásenia.")) // Shows The Alert
+                return
+            }
+    
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const chat_settings_response:Response = await fetch(`${API_URL}/get-chat-settings/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({ receiver_id })
+            })
+
+            // If The Response Isn't Success
+            if(!chat_settings_response.ok) {
+                Alert.alert(t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const chat_settings_data:ChatSettingsResponse = await chat_settings_response.json() // Gets The Chat Settings Data
+
+            // If The Response Isn't Success
+            if(!chat_settings_data.success) {
+                Alert.alert(t("Chyba"), chat_settings_data.message) // Shows The Alert
+                return
+            }
+
+            setChatSettings(chat_settings_data.chat_settings) // Sets The Chat Settings
+        }
+
+        catch {
+            Alert.alert(t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Initializes The Load Of The Chat Settings
+    useEffect(() => {
+        getChatSettings(receiver.id) // Gets The Chat Settings
+    }, [receiver])
 
     // Function For Send The Message
     const sendMessage = async ():Promise<void> => {
@@ -753,8 +816,8 @@ export const ChatContainer = ({
         attachment_options.current?.dismiss() // Hides The Attachment Options
     }
 
-    // Function For Handle Background Selection
-    const handleSelectBackground = async (logged_in_user_id:number, receiver_id:number):Promise<void> => {
+    // Function For Handle Chat Background Image Selection
+    const handleSelectChatBackgroundImage = async (receiver_id:number):Promise<void> => {
         const permission_result = await ImagePicker.requestMediaLibraryPermissionsAsync() // Gets The Permission Result
 
         if(!permission_result.granted) {
@@ -770,15 +833,12 @@ export const ChatContainer = ({
         })
 
         if(!result.canceled && result.assets.length > 0) {
-            changeBackground(receiver_id, result.assets[0]) // Handles The Profile Picture Selection
+            changeChatBackgroundImage(receiver_id, result.assets[0]) // Handles The Profile Picture Selection
         }
     }
 
-    // Function For Change The Background Of Chat
-    const changeBackground = async (receiver_id:number, image:ImagePicker.ImagePickerAsset):Promise<void> => {
-        console.log(receiver_id)
-        console.log(image)
-
+    // Function For Change Chat Background Image
+    const changeChatBackgroundImage = async (receiver_id:number, selected_chat_background_image:ImagePicker.ImagePickerAsset):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Obrázok pozadia nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
@@ -789,24 +849,23 @@ export const ChatContainer = ({
 
             form_data.append("receiver_id", String(receiver_id)) // Appends The First Name To The Form Data
 
-            if(image.uri) {
-                const file_uri:string = image.uri // Gets The File URI
-                const file_extension:string|null = image.mimeType?.split("/")[1] || "jpeg" // Gets The File Extension
+            if(selected_chat_background_image.uri) {
+                const file_uri:string = selected_chat_background_image.uri // Gets The File URI
+                const file_extension:string|null = selected_chat_background_image.mimeType?.split("/")[1] || "jpeg" // Gets The File Extension
 
                 // Web
                 if(Platform.OS === "web" || file_uri.startsWith("blob:")) {
                     const file_response:Response = await fetch(file_uri)
                     const blob:Blob = await file_response.blob()
 
-                    form_data.append("image", blob, `file_${Date.now()}.${file_extension}`) // Appends The Image To The Form Data
+                    form_data.append("selected_chat_background_image", blob, `file_${Date.now()}.${file_extension}`) // Appends The Selected Chat Background Image To The Form Data
                 } 
                 
                 // iOS And Android
                 else {
-                    form_data.append("image", {
+                    form_data.append("selected_chat_background_image", {
                         uri: file_uri,
-                        name: image.fileName || `file_${Date.now()}.${file_extension}`,
-                        type: image.mimeType || `image/${file_extension}`
+                        name: selected_chat_background_image.fileName || `file_${Date.now()}.${file_extension}`,
                     } as any)
                 }
             }
@@ -814,7 +873,7 @@ export const ChatContainer = ({
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
 
             // Sends The POST Request To The Server
-            const changed_chat_background_response:Response = await fetch(`${API_URL}/change-chat-background/`, {
+            const changed_chat_background_image_response:Response = await fetch(`${API_URL}/change-chat-background-image/`, {
                 method: "POST",
 
                 headers: {
@@ -826,24 +885,72 @@ export const ChatContainer = ({
             })
 
             // If The Response Isn't Success
-            if(!changed_chat_background_response.ok) {
+            if(!changed_chat_background_image_response.ok) {
                 Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
                 return
             }
 
-            const changed_chat_background_data:BasicResponse = await changed_chat_background_response.json() // Gets The Changed Chat Background Data
+            const changed_chat_background_image_data:ChatSettingsResponse = await changed_chat_background_image_response.json() // Gets The Changed Chat Background Image Data
 
             // If The Response Isn't Success
-            if(!changed_chat_background_data.success) {
-                Alert.alert(t("Chyba"), changed_chat_background_data.message) // Shows The Alert
+            if(!changed_chat_background_image_data.success) {
+                Alert.alert(t("Chyba"), changed_chat_background_image_data.message) // Shows The Alert
                 return
             }
 
-            console.log(changed_chat_background_data)
+            setChatSettings(changed_chat_background_image_data.chat_settings) // Sets The Chat Settings
         }
 
         catch {
             Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
+        }
+    }
+
+    // Function For Delete The Chat Background Image
+    const deleteChatBackgroundImage = async (receiver_id:number, background_image:string):Promise<void> => {
+        try {
+            if(!logged_in_user) {
+                Alert.alert(t("Chyba"), t("Obrázok pozadia chatu nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
+                return
+            }
+    
+            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+            // Sends The POST Request To The Server
+            const deleted_chat_background_image_response:Response = await fetch(`${API_URL}/delete-chat-background-image/`, {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                },
+
+                body: JSON.stringify({ 
+                    receiver_id,
+                    background_image
+                })
+            })
+
+            // If The Response Isn't Success
+            if(!deleted_chat_background_image_response.ok) {
+                Alert.alert(t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
+                return
+            }
+
+            const deleted_chat_background_image_data:BasicResponse = await deleted_chat_background_image_response.json() // Gets The Deleted Chat Background Image Data
+
+            // If The Response Isn't Success
+            if(!deleted_chat_background_image_data.success) {
+                Alert.alert(t("Chyba"), deleted_chat_background_image_data.message) // Shows The Alert
+                return
+            }
+
+            setChatSettings(null) // Sets The Chat Settings
+        }
+
+        catch {
+            Alert.alert(t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -904,6 +1011,36 @@ export const ChatContainer = ({
             <View className="chat" style={styles.chat}>
                 <View style={styles.circle_decoration_before} />
                 <View style={styles.circle_decoration_after} />
+
+                <BlurView 
+                    intensity={10} 
+
+                    style={{
+                        position: "absolute",
+                        top: 0,
+                        left: 0,
+                        width: "100%",
+                        height: 20 + 42 + 20,
+                        zIndex: 100,
+                    }} 
+                />
+
+                {chat_settings?.background_image && (
+                    <Image
+                        className="middle"
+                        source={{ uri: `${DOMAIN}${chat_settings.background_image}` }}
+                        resizeMode="cover"
+
+                        style={[
+                            StyleSheet.absoluteFill,
+
+                            {
+                                maxWidth: MAIN_WIDTH,
+                                width: "100%",
+                            }
+                        ]}
+                    />
+                )}
 
                 <View className="top" style={styles.top}>
                     <View className="receiver" style={styles.receiver}>
@@ -1006,6 +1143,15 @@ export const ChatContainer = ({
                     />
 
                     <View className="write_message" style={styles.write_message}>
+                        <BlurView 
+                            intensity={10} 
+
+                            style={[
+                                StyleSheet.absoluteFill,
+                                { borderRadius: BIG_BORDER_RADIUS },
+                            ]} 
+                        />
+
                         <TextInput
                             className="new_message"
                             textAlignVertical="top" 
@@ -1148,27 +1294,52 @@ export const ChatContainer = ({
                                     )}
 
                                     {logged_in_user && (
-                                        <Pressable
-                                            onPress={() => handleSelectBackground(logged_in_user.id, receiver.id)}
-                                            accessibilityRole="button"
+                                        <>
+                                            <Pressable
+                                                onPress={() => handleSelectChatBackgroundImage(receiver.id)}
+                                                accessibilityRole="button"
 
-                                            style={({ pressed }) => [
-                                                styles.sheet_item, 
-                                                styles.sheet_item_border, 
-                                                pressed && styles.sheet_item_pressed
-                                            ]}
-                                        >
-                                            <View style={styles.sheet_icon}>
-                                                <FontAwesome6
-                                                    name={"image"}
-                                                    size={20}
-                                                    solid={false}
-                                                    color={BLUE_COLOR}
-                                                />
-                                            </View>
+                                                style={({ pressed }) => [
+                                                    styles.sheet_item, 
+                                                    styles.sheet_item_border, 
+                                                    pressed && styles.sheet_item_pressed
+                                                ]}
+                                            >
+                                                <View style={styles.sheet_icon}>
+                                                    <FontAwesome6
+                                                        name={"image"}
+                                                        size={20}
+                                                        solid={false}
+                                                        color={BLUE_COLOR}
+                                                    />
+                                                </View>
 
-                                            <Text style={styles.sheet_text}>{t("Zmeniť pozadie")}</Text>
-                                        </Pressable>
+                                                <Text style={styles.sheet_text}>{t("Zmeniť pozadie")}</Text>
+                                            </Pressable>
+                                            
+                                            {chat_settings?.background_image && (
+                                                <Pressable
+                                                    onPress={() => deleteChatBackgroundImage(receiver.id, chat_settings.background_image)}
+                                                    accessibilityRole="button"
+
+                                                    style={({ pressed }) => [
+                                                        styles.sheet_item, 
+                                                        styles.sheet_item_border, 
+                                                        pressed && styles.sheet_item_pressed
+                                                    ]}
+                                                >
+                                                    <View style={styles.sheet_icon}>
+                                                        <FontAwesome6
+                                                            name={"trash"}
+                                                            size={20}
+                                                            color={BLUE_COLOR}
+                                                        />
+                                                    </View>
+
+                                                    <Text style={styles.sheet_text}>{t("Odstrániť pozadie")}</Text>
+                                                </Pressable>
+                                            )}
+                                        </>
                                     )}
 
                                     <View 
@@ -1855,7 +2026,7 @@ export const ChatContainer = ({
                                         hideAttachmentOptions() // Hides The Attachment Options
                                         selectChatAttachment("documents") // Sets The Selected Chat Attachment
                                     }}
- 
+
                                     accessibilityRole="button"
 
                                     style={({ pressed }) => [
@@ -1946,6 +2117,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         marginBottom: 30 - 12 - 5,
+        zIndex: 200,
     },
 
     receiver: {
@@ -1975,6 +2147,8 @@ const styles = StyleSheet.create({
     write_message: {
         position: "relative",
         marginTop: 8,
+        overflow: "hidden",
+        zIndex: 200,
     },
 
     new_message: {
@@ -1985,10 +2159,12 @@ const styles = StyleSheet.create({
         paddingRight: 30 + 10 + 10,
         paddingLeft: 38 + 6 + 10 + 15 + 10 + 20 + 10,
         textAlign: "left",
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         color: SECONDARY_COLOR,
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: BIG_BORDER_RADIUS,
+        zIndex: 100,
         // transition: padding 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 
         // &:empty::before {
