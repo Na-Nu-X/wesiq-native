@@ -424,7 +424,7 @@ export default function ProfileSection({
                                                 ) : (
                                                     <Pressable
                                                         key={one_post.media[0].id || index}
-                                                        // onPress={}
+                                                        onPress={() => router.push(`/post/${one_post.id}`)}
                                                         accessibilityLabel={t("Zobraziť príspevok")}
                                                         style={styles.post_link}
                                                     >
@@ -551,7 +551,7 @@ export default function ProfileSection({
                                             {profile.saved_posts.map((one_post, index:number) => (
                                                 <Pressable
                                                     key={one_post.media[0].id || index}
-                                                    // onPress={}
+                                                    onPress={() => router.push(`/post/${one_post.id}`)}
                                                     accessibilityLabel={t("Zobraziť príspevok")}
                                                     style={styles.post_link}
                                                 >

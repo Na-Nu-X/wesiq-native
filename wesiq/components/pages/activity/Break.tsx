@@ -28,7 +28,7 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
 
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
-    const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The RemainingTime
+    const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The Remaining Time
     const [max_remaining_time, setMaxRemainingTime] = useState<number>(time) // Stores The Max Remaining Time
 
     const animated_time = useRef(new Animated.Value(time)).current // Animates The Time

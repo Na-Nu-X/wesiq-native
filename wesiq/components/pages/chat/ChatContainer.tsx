@@ -22,6 +22,7 @@ import ImageViewer from "./ImageViewer"
 import { FullscreenVideoPlayer } from "./FullscreenVideoPlayer"
 import { AttachmentsPreview } from "./AttachmentsPreview"
 import { BlurView } from "expo-blur"
+import Back from "@/components/Back"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
@@ -357,6 +358,8 @@ export const ChatContainer = ({
 
     // Function For Send The Message
     const sendMessage = async ():Promise<void> => {
+        if(!new_message.trim() && selected_files.length === 0) return
+
         if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
             // New Message
             if(write_message_action === "new") {
@@ -1043,6 +1046,8 @@ export const ChatContainer = ({
                 )}
 
                 <View className="top" style={styles.top}>
+                    <Back />
+
                     <View className="receiver" style={styles.receiver}>
                         <ProfilePictureLink 
                             user_id={receiver.id} 
@@ -1061,7 +1066,11 @@ export const ChatContainer = ({
                         </View>
                     </View>
 
-                    <View className="show_account_properties_button" accessibilityLabel={t("Viac...")}>
+                    <View 
+                        className="show_account_properties_button" 
+                        accessibilityLabel={t("Viac...")} 
+                        style={{ marginLeft: "auto" }}
+                    >
                         <Icon
                             icon_name="ellipsis-vertical"
                             onPress={showAccountProperties}
@@ -2115,7 +2124,7 @@ const styles = StyleSheet.create({
     top: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        gap: 20,
         marginBottom: 30 - 12 - 5,
         zIndex: 200,
     },
@@ -2206,6 +2215,7 @@ const styles = StyleSheet.create({
         top: 24,
         left: 6 + 38 + 10,
         transform: [{ translateY: "-50%" }],
+        zIndex: 200,
     },
 
     send: {
@@ -2216,6 +2226,7 @@ const styles = StyleSheet.create({
         width: 30,
         height: 30,
         color: BLUE_COLOR,
+        zIndex: 200,
         // transition: transform 0.2s ease, color 0.3s ease;
 
         // &:hover {

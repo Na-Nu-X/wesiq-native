@@ -10,6 +10,9 @@ import { FontAwesome6 } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { useTranslation } from "react-i18next"
+import { ImperativeRouter, useRouter } from "expo-router"
+
+import type { BasicResponse } from "./pages/community/Feed"
 
 export interface LoggedInUser {
     id:number,
@@ -76,12 +79,15 @@ interface LoginResponse {
 export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:LoginFormDialogProps) {
     const { t } = useTranslation() // Initializes The Translations
 
+    const router:ImperativeRouter = useRouter() // Gets The Router
+
     const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier
     const [password, setPassword] = useState<string>("") // Stores The Password
     const [is_password_hidden, setIsPasswordHidden] = useState<boolean>(true) // Stores The Information If The Password Is Hidden
     const [is_authentication_loading, setIsAuthenticationLoading] = useState<boolean>(true) // Stores The Information If The Authentication Is Loading
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
     const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const [form_report, setFormReport] = useState<string>("") // Stores The Form Report
 
     const spin_animation_value:Animated.Value = useRef(new Animated.Value(0)).current // Stores The Spin Animation Value
 
@@ -225,6 +231,51 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
         }
     }
 
+    // Function For Get The Password Reset Code
+    const getPasswordResetCode = async ():Promise<void> => {
+        if(!identifier.trim()) {
+            setFormReport(t("Zadajte používateľské meno alebo e-mail."))
+            return
+        }
+
+        try {
+            // Sends The POST Request To The Server
+            const get_password_reset_code_response:Response = await fetch(`${API_URL}/get-password-reset-code/`, {
+                method: "POST",
+        
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+
+                body: JSON.stringify({ identifier })
+            })
+
+            // If The Response Isn't Success
+            if(!get_password_reset_code_response.ok) {
+                Alert.alert(t("Pri odosielaní overovacieho kódu došlo k chybe.")) // Shows The Alert
+                return
+            }
+    
+            const get_password_reset_code_data:BasicResponse = await get_password_reset_code_response.json() // Gets The Password Reset Data
+
+            // If The Response Isn't Success
+            if(!get_password_reset_code_data.success) {
+                Alert.alert(t("Chyba"), get_password_reset_code_data.message) // Shows The Alert
+                return
+            }
+            
+            Alert.alert(t("Úspech"), get_password_reset_code_data.message) // Shows The Alert
+            await AsyncStorage.setItem("identifier", identifier) // Saves The Identifier To The Async Storage
+            await AsyncStorage.setItem("password_reset_start_time", JSON.stringify(Date.now())) // Saves The Password Reset Start Time To The Async Storage
+            router.push("/password-reset") // Goes To The Password Reset Page
+        }
+        
+        catch {
+            Alert.alert(t("Chyba"), t("Pri odosielaní overovacieho kódu došlo k chybe.")) // Shows The Alert
+        }
+    }
+
     return (
         <Modal
             className="login_form_dialog"
@@ -340,7 +391,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                 </View>
                             </View>
 
-                            <Text className="form_report" style={styles.form_report}></Text>
+                            <Text className="form_report" style={styles.form_report}>{form_report}</Text>
 
                             <Pressable 
                                 className="login_form_submit"
@@ -447,7 +498,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
                                 >
                                     <Text style={{ color: SECONDARY_COLOR }}>Zabudli ste heslo? </Text>
                                     <Pressable
-                                        // onPress={handleGoToPasswordReset}
+                                        onPress={getPasswordResetCode}
                                         accessibilityRole="button"
                                         accessibilityLabel={t("Zmeniť heslo")} 
                                     >

@@ -19,19 +19,6 @@ export default function AttachmentSelection({ onShowAttachmentOptions, is_upload
                     onPress={onShowAttachmentOptions}
                 />
             )}
-
-            {/* {selected_files_amount > 0 && (
-                <Text 
-                    style={[{
-                        position: "absolute",
-                        top: -5,
-                        right: -5,
-                        color: BLUE_COLOR,
-                    }]}
-                >
-                    {selected_files_amount}
-                </Text>
-            )} */}
         </View>
     )
 }
@@ -42,5 +29,6 @@ const styles = StyleSheet.create({
         top: 24,
         left: 6 + 38 + 10 + 20 + 10,
         transform: [{ translateY: "-50%" }],
+        zIndex: 200,
     },
 })
