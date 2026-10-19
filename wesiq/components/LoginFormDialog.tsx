@@ -253,7 +253,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
 
             // If The Response Isn't Success
             if(!get_password_reset_code_response.ok) {
-                Alert.alert(t("Pri odosielaní overovacieho kódu došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odosielaní overovacieho kódu došlo k chybe.")) // Shows The Alert
                 return
             }
     

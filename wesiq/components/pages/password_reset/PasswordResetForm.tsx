@@ -240,7 +240,18 @@ export default function PasswordResetForm({ time, max_remaining_time, onShowLogi
                 <View style={styles.circle_decoration_before} />
                 <View style={styles.circle_decoration_after} />
     
-                <Back />
+                <View
+                    style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 20,
+                        marginBottom: 30,
+                    }}
+                >
+                    <Back />
+
+                    <Text className="heading" style={styles.heading}>{t("Obnova hesla")}</Text>
+                </View>
     
                 <View className="timer" style={styles.timer}>
                     <Svg width="100" height="100" viewBox="0 0 100 100">
@@ -470,6 +481,15 @@ const styles = StyleSheet.create({
         borderRadius: 400 / 2,
         backgroundColor: transparentize(BLUE_COLOR, 0.95),
         zIndex: -1,
+    },
+
+    heading: {
+        flex: 1,
+        marginRight: 18.75 + 20,
+        textAlign: "center",
+        color: SECONDARY_COLOR,
+        fontSize: 30,
+        // animation: fadeInScale 0.3s ease-out;
     },
 
     timer: {

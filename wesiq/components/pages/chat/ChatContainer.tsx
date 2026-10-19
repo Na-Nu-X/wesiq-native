@@ -331,7 +331,7 @@ export const ChatContainer = ({
 
             // If The Response Isn't Success
             if(!chat_settings_response.ok) {
-                Alert.alert(t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -347,7 +347,7 @@ export const ChatContainer = ({
         }
 
         catch {
-            Alert.alert(t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri získavaní nastavení chatu došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -568,7 +568,7 @@ export const ChatContainer = ({
 
             // If The Response Isn't Success
             if(!sent_chat_attachment_response.ok) {
-                Alert.alert(t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -577,7 +577,7 @@ export const ChatContainer = ({
         }
 
         catch {
-            Alert.alert(t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Úspech"), t("Pri odosielaní prílohy došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -889,7 +889,7 @@ export const ChatContainer = ({
 
             // If The Response Isn't Success
             if(!changed_chat_background_image_response.ok) {
-                Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -905,7 +905,7 @@ export const ChatContainer = ({
         }
 
         catch {
-            Alert.alert(t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene pozadia došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -937,7 +937,7 @@ export const ChatContainer = ({
 
             // If The Response Isn't Success
             if(!deleted_chat_background_image_response.ok) {
-                Alert.alert(t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -953,7 +953,7 @@ export const ChatContainer = ({
         }
 
         catch {
-            Alert.alert(t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri odstraňovaní obrázku pozadia chatu došlo k chybe.")) // Shows The Alert
         }
     }
 
@@ -985,7 +985,7 @@ export const ChatContainer = ({
 
             // If The Response Isn't Success
             if(!toggle_mute_user_response.ok) {
-                Alert.alert(t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
+                Alert.alert(t("Chyba"), t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
                 return
             }
 
@@ -1005,7 +1005,7 @@ export const ChatContainer = ({
         }
 
         catch {
-            Alert.alert(t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
+            Alert.alert(t("Chyba"), t("Pri zmene stlmenia užívateľa došlo k chybe.")) // Shows The Alert
         }
     }
 

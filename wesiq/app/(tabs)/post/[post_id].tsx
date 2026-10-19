@@ -582,21 +582,20 @@ export default function HomeScreen() {
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >
-                <LoginFormDialog 
-                    visible={active_form==="login_form"}
-                    onChangeActiveForm={() => setActiveForm("registration_form")}
-                    onClose={() => setActiveForm(null)}
-                    onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                />
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-                <RegistrationFormDialog
-                    visible={active_form==="registration_form"}
-                    onChangeActiveForm={() => setActiveForm("login_form")}
-                    onClose={() => setActiveForm(null)}
-                    onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                />
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-                {post && (
                     <BottomSheetModalProvider>
                         <View
                             style={{
@@ -616,760 +615,763 @@ export default function HomeScreen() {
                                 onSharePost={(post:Post) => showSharePostDialog(post)} // Shows The Share Post Dialog
                             />
 
-                            <BottomSheetModal
-                                ref={post_properties}
-                                snapPoints={snap_points}
-                                enablePanDownToClose={true}
-                                onChange={handlePostPropertiesChanges}
-                                containerStyle={{ zIndex: 9999 }}
-                            >
-                                <BottomSheetView style={{ padding: 20 }}>
-                                    {selected_post ? (
-                                        <View className="post_properties">
-                                            {post_properties_sheet === "main" && (
-                                                <View style={styles.sheet_container}>
-                                                    {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
-                                                    {logged_in_user && selected_post.user.id !== logged_in_user.id && (
-                                                        <Pressable
-                                                            className="show_report_post_button"
-                                                            onPress={() => setPostPropertiesSheet("report")}
-                                                            accessibilityRole="button"
+                            {post && (
+                                <>
+                                    <BottomSheetModal
+                                        ref={post_properties}
+                                        snapPoints={snap_points}
+                                        enablePanDownToClose={true}
+                                        onChange={handlePostPropertiesChanges}
+                                        containerStyle={{ zIndex: 9999 }}
+                                    >
+                                        <BottomSheetView style={{ padding: 20 }}>
+                                            {selected_post ? (
+                                                <View className="post_properties">
+                                                    {post_properties_sheet === "main" && (
+                                                        <View style={styles.sheet_container}>
+                                                            {/* If The Post Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                                            {logged_in_user && selected_post.user.id !== logged_in_user.id && (
+                                                                <Pressable
+                                                                    className="show_report_post_button"
+                                                                    onPress={() => setPostPropertiesSheet("report")}
+                                                                    accessibilityRole="button"
 
-                                                            style={({ pressed }) => [
-                                                                styles.sheet_item, 
-                                                                styles.sheet_item_border, 
-                                                                pressed && styles.sheet_item_pressed
-                                                            ]}
-                                                        >
-                                                            <View style={styles.sheet_icon}>
-                                                                <FontAwesome6
-                                                                    name="flag"
-                                                                    size={20}
-                                                                    solid={false}
-                                                                    color={BLUE_COLOR}
-                                                                />
-                                                            </View>
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="flag"
+                                                                            size={20}
+                                                                            solid={false}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
 
-                                                            <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
-                                                        </Pressable>
-                                                    )}
+                                                                    <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
+                                                                </Pressable>
+                                                            )}
 
-                                                    {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
-                                                    {logged_in_user && selected_post.user.id === logged_in_user.id && (
-                                                        <Pressable
-                                                            className="show_post_settings_button"
-                                                            onPress={() => setPostPropertiesSheet("settings")}
-                                                            accessibilityRole="button"
+                                                            {/* If The Post Belongs To The Logged In User The Settings Option Will Be Shown */}
+                                                            {logged_in_user && selected_post.user.id === logged_in_user.id && (
+                                                                <Pressable
+                                                                    className="show_post_settings_button"
+                                                                    onPress={() => setPostPropertiesSheet("settings")}
+                                                                    accessibilityRole="button"
 
-                                                            style={({ pressed }) => [
-                                                                styles.sheet_item, 
-                                                                styles.sheet_item_border, 
-                                                                pressed && styles.sheet_item_pressed
-                                                            ]}
-                                                        >
-                                                            <View style={styles.sheet_icon}>
-                                                                <FontAwesome6
-                                                                    name="pen"
-                                                                    size={20}
-                                                                    color={BLUE_COLOR}
-                                                                />
-                                                            </View>
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="pen"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
 
-                                                            <Text style={styles.sheet_text}>{t("Upraviť")}</Text>
-                                                        </Pressable>
-                                                    )}
+                                                                    <Text style={styles.sheet_text}>{t("Upraviť")}</Text>
+                                                                </Pressable>
+                                                            )}
 
-                                                    {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
-                                                    {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
-                                                        <Pressable
-                                                            className="delete_post_button"
-                                                            onPress={() => setPostPropertiesSheet("delete")}
-                                                            accessibilityRole="button"
+                                                            {/* If The Post Belongs To The Logged In User Or The Logged In User Is Developer Or Admin The Delete Option Will Be Shown */}
+                                                            {logged_in_user && (selected_post.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                                <Pressable
+                                                                    className="delete_post_button"
+                                                                    onPress={() => setPostPropertiesSheet("delete")}
+                                                                    accessibilityRole="button"
 
-                                                            style={({ pressed }) => [
-                                                                styles.sheet_item, 
-                                                                styles.sheet_item_border, 
-                                                                pressed && styles.sheet_item_pressed
-                                                            ]}
-                                                        >
-                                                            <View style={styles.sheet_icon}>
-                                                                <FontAwesome6
-                                                                    name="eraser"
-                                                                    size={20}
-                                                                    color={BLUE_COLOR}
-                                                                />
-                                                            </View>
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="eraser"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
 
-                                                            <Text 
-                                                                style={[
-                                                                    styles.sheet_text,
-                                                                    { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR } // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.sheet_text,
+                                                                            { color: selected_post.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR } // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                                        ]}
+                                                                    >
+                                                                        Vymazať
+                                                                    </Text>
+                                                                </Pressable>
+                                                            )}
+
+                                                            <Pressable
+                                                                className="hide_post_properties_button"
+                                                                onPress={hidePostProperties}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
                                                                 ]}
                                                             >
-                                                                Vymazať
-                                                            </Text>
-                                                        </Pressable>
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                                                            </Pressable>
+                                                        </View>
                                                     )}
 
-                                                    <Pressable
-                                                        className="hide_post_properties_button"
-                                                        onPress={hidePostProperties}
-                                                        accessibilityRole="button"
+                                                    {post_properties_sheet === "report" && (
+                                                        <View className="report" style={styles.sheet_container}>
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "spam")}
+                                                                accessibilityRole="button"
 
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-
-                                            {post_properties_sheet === "report" && (
-                                                <View className="report" style={styles.sheet_container}>
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "spam")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Spam")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "harassment")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "hate_speech")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "misinformation")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "explicit_content")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportPost(selected_post.id, "other")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Iné")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        className="back_report_button"
-                                                        onPress={() => setPostPropertiesSheet("main")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Späť")}</Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-
-                                            {post_properties_sheet === "settings" && (
-                                                <View className="post_settings" style={styles.sheet_container}>
-                                                    <View 
-                                                        className="public_visibility_container"
-
-                                                        style={[
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border,
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name={!selected_post.user.private_account && selected_post.public_visibility ? "eye" : "eye-low-vision"}
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Switch 
-                                                            className={selected_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
-                                                            disabled={selected_post.user.private_account} // Disables The Checkbox
-                                                            value={selected_post.user.private_account ? false : selected_post.public_visibility} // Checks The Public Visibility Checkbox
-                                                            onValueChange={(new_value:boolean) => editPostSettings(selected_post.id, "public_visibility", new_value)}
-                                                            
-                                                            trackColor={{ 
-                                                                false: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
-                                                                true: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
-                                                            }}
-                                                            
-                                                            thumbColor={
-                                                                selected_post.user.private_account 
-                                                                    ? "#333333" 
-                                                                    : (selected_post.public_visibility ? GREEN_COLOR : RED_COLOR)
-                                                            }
-                                                        />
-                                                    </View>
-
-                                                    <View 
-                                                        className="allow_comments_container"
-
-                                                        style={[
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border,
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name={selected_post.allow_comments ? "comment" : "comment-slash"}
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Switch 
-                                                            className="allow_comments"
-                                                            value={selected_post.allow_comments} // Checks The Allow Comments Checkbox
-                                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "allow_comments", new_value)}
-                                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
-                                                            thumbColor={selected_post.allow_comments ? GREEN_COLOR : RED_COLOR}
-                                                        />
-                                                    </View>
-
-                                                    <View 
-                                                        className="hide_likes_container"
-
-                                                        style={[
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border,
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="heart"
-                                                                size={20}
-                                                                solid={!selected_post.hide_likes}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Switch 
-                                                            className="hide_likes" 
-                                                            value={!selected_post.hide_likes} // Checks The Hide Likes Checkbox
-                                                            onValueChange={(new_value) => editPostSettings(selected_post.id, "hide_likes", !new_value)}
-                                                            trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
-                                                            thumbColor={!selected_post.hide_likes ? GREEN_COLOR : RED_COLOR}
-                                                        />
-                                                    </View>
-
-                                                    <Pressable
-                                                        className="back_post_settings_button"
-                                                        onPress={() => setPostPropertiesSheet("main")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-
-                                            {post_properties_sheet === "delete" && (
-                                                <View className="delete_post" style={styles.sheet_container}>
-                                                    <Text 
-                                                        style={[
-                                                            styles.sheet_text, 
-                                                            { textAlign: "center" }
-                                                        ]}
-                                                    >
-                                                        {t("Naozaj chcete vymazať Váš príspevok?")}
-                                                    </Text>
-
-                                                    <Pressable
-                                                        onPress={() => deletePost(selected_post.id)}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="eraser"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable 
-                                                        onPress={() => setPostPropertiesSheet("main")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-                                        </View>
-                                    ) : null}
-                                </BottomSheetView>
-                            </BottomSheetModal>
-
-                            <BottomSheetModal
-                                ref={post_comment_properties}
-                                snapPoints={snap_points}
-                                enablePanDownToClose={true}
-                                onChange={handlePostCommentPropertiesChanges}
-                                containerStyle={{ zIndex: 9999 }}
-                            >
-                                <BottomSheetView style={{ padding: 20 }}>
-                                    {selected_post_comment ? (
-                                        <View className="comment_properties">
-                                            {post_comment_properties_sheet === "main" && (
-                                                <View style={styles.sheet_container}>
-                                                    {/* If The Comment Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
-                                                    {logged_in_user && selected_post_comment.user.id !== logged_in_user.id && (
-                                                        <Pressable
-                                                            className="show_report_comment_button"
-                                                            onPress={() => setPostCommentPropertiesSheet("report")}
-                                                            accessibilityRole="button"
-
-                                                            style={({ pressed }) => [
-                                                                styles.sheet_item, 
-                                                                styles.sheet_item_border, 
-                                                                pressed && styles.sheet_item_pressed
-                                                            ]}
-                                                        >
-                                                            <View style={styles.sheet_icon}>
-                                                                <FontAwesome6
-                                                                    name="flag"
-                                                                    size={20}
-                                                                    solid={false}
-                                                                    color={BLUE_COLOR}
-                                                                />
-                                                            </View>
-
-                                                            <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
-                                                        </Pressable>
-                                                    )}
-
-                                                    {/* If The Comment Belongs To The Logged In User The Delete Option Will Be Shown */}
-                                                    {logged_in_user && (selected_post_comment.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
-                                                        <Pressable
-                                                            className="delete_comment_button"
-                                                            onPress={() => setPostCommentPropertiesSheet("delete")}
-                                                            accessibilityRole="button"
-
-                                                            style={({ pressed }) => [
-                                                                styles.sheet_item, 
-                                                                styles.sheet_item_border, 
-                                                                pressed && styles.sheet_item_pressed
-                                                            ]}
-                                                        >
-                                                            <View style={styles.sheet_icon}>
-                                                                <FontAwesome6
-                                                                    name="eraser"
-                                                                    size={20}
-                                                                    color={BLUE_COLOR}
-                                                                />
-                                                            </View>
-
-                                                            <Text 
-                                                                style={[
-                                                                    styles.sheet_text,
-                                                                    // Shows The Red Text If The Logged In User Is Developer Or Admin
-                                                                    { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
                                                                 ]}
                                                             >
-                                                                {t("Vymazať")}
-                                                            </Text>
-                                                        </Pressable>
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Spam")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "harassment")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "hate_speech")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "misinformation")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "explicit_content")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportPost(selected_post.id, "other")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Iné")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                className="back_report_button"
+                                                                onPress={() => setPostPropertiesSheet("main")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Späť")}</Text>
+                                                            </Pressable>
+                                                        </View>
                                                     )}
 
-                                                    <Pressable
-                                                        className="hide_comment_properties_button"
-                                                        onPress={hidePostCommentProperties}
-                                                        accessibilityRole="button"
+                                                    {post_properties_sheet === "settings" && (
+                                                        <View className="post_settings" style={styles.sheet_container}>
+                                                            <View 
+                                                                className="public_visibility_container"
 
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
+                                                                style={[
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border,
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name={!selected_post.user.private_account && selected_post.public_visibility ? "eye" : "eye-low-vision"}
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Switch 
+                                                                    className={selected_post.user.private_account ? "disabled_public_visibility" : "public_visibility"} // Adds The Disabled Public Visibility Class
+                                                                    disabled={selected_post.user.private_account} // Disables The Checkbox
+                                                                    value={selected_post.user.private_account ? false : selected_post.public_visibility} // Checks The Public Visibility Checkbox
+                                                                    onValueChange={(new_value:boolean) => editPostSettings(selected_post.id, "public_visibility", new_value)}
+                                                                    
+                                                                    trackColor={{ 
+                                                                        false: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(RED_COLOR, 0.8), 
+                                                                        true: selected_post.user.private_account ? transparentize(MAIN_COLOR, 0.8) : transparentize(GREEN_COLOR, 0.8) 
+                                                                    }}
+                                                                    
+                                                                    thumbColor={
+                                                                        selected_post.user.private_account 
+                                                                            ? "#333333" 
+                                                                            : (selected_post.public_visibility ? GREEN_COLOR : RED_COLOR)
+                                                                    }
+                                                                />
+                                                            </View>
+
+                                                            <View 
+                                                                className="allow_comments_container"
+
+                                                                style={[
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border,
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name={selected_post.allow_comments ? "comment" : "comment-slash"}
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Switch 
+                                                                    className="allow_comments"
+                                                                    value={selected_post.allow_comments} // Checks The Allow Comments Checkbox
+                                                                    onValueChange={(new_value) => editPostSettings(selected_post.id, "allow_comments", new_value)}
+                                                                    trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                                    thumbColor={selected_post.allow_comments ? GREEN_COLOR : RED_COLOR}
+                                                                />
+                                                            </View>
+
+                                                            <View 
+                                                                className="hide_likes_container"
+
+                                                                style={[
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border,
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="heart"
+                                                                        size={20}
+                                                                        solid={!selected_post.hide_likes}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Switch 
+                                                                    className="hide_likes" 
+                                                                    value={!selected_post.hide_likes} // Checks The Hide Likes Checkbox
+                                                                    onValueChange={(new_value) => editPostSettings(selected_post.id, "hide_likes", !new_value)}
+                                                                    trackColor={{ false: transparentize(RED_COLOR, 0.8), true: transparentize(GREEN_COLOR, 0.8) }}
+                                                                    thumbColor={!selected_post.hide_likes ? GREEN_COLOR : RED_COLOR}
+                                                                />
+                                                            </View>
+
+                                                            <Pressable
+                                                                className="back_post_settings_button"
+                                                                onPress={() => setPostPropertiesSheet("main")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                                                            </Pressable>
                                                         </View>
+                                                    )}
 
-                                                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                                    </Pressable>
+                                                    {post_properties_sheet === "delete" && (
+                                                        <View className="delete_post" style={styles.sheet_container}>
+                                                            <Text 
+                                                                style={[
+                                                                    styles.sheet_text, 
+                                                                    { textAlign: "center" }
+                                                                ]}
+                                                            >
+                                                                {t("Naozaj chcete vymazať Váš príspevok?")}
+                                                            </Text>
+
+                                                            <Pressable
+                                                                onPress={() => deletePost(selected_post.id)}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="eraser"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable 
+                                                                onPress={() => setPostPropertiesSheet("main")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
+                                                            </Pressable>
+                                                        </View>
+                                                    )}
                                                 </View>
-                                            )}
+                                            ) : null}
+                                        </BottomSheetView>
+                                    </BottomSheetModal>
 
-                                            {post_comment_properties_sheet === "report" && (
-                                                <View className="report" style={styles.sheet_container}>
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "spam")}
-                                                        accessibilityRole="button"
+                                    <BottomSheetModal
+                                        ref={post_comment_properties}
+                                        snapPoints={snap_points}
+                                        enablePanDownToClose={true}
+                                        onChange={handlePostCommentPropertiesChanges}
+                                        containerStyle={{ zIndex: 9999 }}
+                                    >
+                                        <BottomSheetView style={{ padding: 20 }}>
+                                            {selected_post_comment ? (
+                                                <View className="comment_properties">
+                                                    {post_comment_properties_sheet === "main" && (
+                                                        <View style={styles.sheet_container}>
+                                                            {/* If The Comment Doesn't Belong To The Logged In User The Report Option Will Be Shown */}
+                                                            {logged_in_user && selected_post_comment.user.id !== logged_in_user.id && (
+                                                                <Pressable
+                                                                    className="show_report_comment_button"
+                                                                    onPress={() => setPostCommentPropertiesSheet("report")}
+                                                                    accessibilityRole="button"
 
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="flag"
+                                                                            size={20}
+                                                                            solid={false}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text style={styles.sheet_text}>{t("Nahlásiť")}</Text>
+                                                                </Pressable>
+                                                            )}
+
+                                                            {/* If The Comment Belongs To The Logged In User The Delete Option Will Be Shown */}
+                                                            {logged_in_user && (selected_post_comment.user.id === logged_in_user.id || logged_in_user.role === "developer" || logged_in_user.role === "admin") && (
+                                                                <Pressable
+                                                                    className="delete_comment_button"
+                                                                    onPress={() => setPostCommentPropertiesSheet("delete")}
+                                                                    accessibilityRole="button"
+
+                                                                    style={({ pressed }) => [
+                                                                        styles.sheet_item, 
+                                                                        styles.sheet_item_border, 
+                                                                        pressed && styles.sheet_item_pressed
+                                                                    ]}
+                                                                >
+                                                                    <View style={styles.sheet_icon}>
+                                                                        <FontAwesome6
+                                                                            name="eraser"
+                                                                            size={20}
+                                                                            color={BLUE_COLOR}
+                                                                        />
+                                                                    </View>
+
+                                                                    <Text 
+                                                                        style={[
+                                                                            styles.sheet_text,
+                                                                            // Shows The Red Text If The Logged In User Is Developer Or Admin
+                                                                            { color: selected_post_comment.user.id !== logged_in_user.id && (logged_in_user.role === "developer" || logged_in_user.role === "admin") ? RED_COLOR : BLUE_COLOR }
+                                                                        ]}
+                                                                    >
+                                                                        {t("Vymazať")}
+                                                                    </Text>
+                                                                </Pressable>
+                                                            )}
+
+                                                            <Pressable
+                                                                className="hide_comment_properties_button"
+                                                                onPress={hidePostCommentProperties}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                                                            </Pressable>
                                                         </View>
+                                                    )}
 
-                                                        <Text style={styles.sheet_text}>{t("Spam")}</Text>
-                                                    </Pressable>
+                                                    {post_comment_properties_sheet === "report" && (
+                                                        <View className="report" style={styles.sheet_container}>
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "spam")}
+                                                                accessibilityRole="button"
 
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "harassment")}
-                                                        accessibilityRole="button"
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
 
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
+                                                                <Text style={styles.sheet_text}>{t("Spam")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "harassment")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "hate_speech")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "misinformation")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "explicit_content")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                onPress={() => reportComment(selected_post_comment.id, "other")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="list"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Iné")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable
+                                                                className="back_report_button"
+                                                                onPress={() => setPostCommentPropertiesSheet("main")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Späť")}</Text>
+                                                            </Pressable>
                                                         </View>
+                                                    )}
 
-                                                        <Text style={styles.sheet_text}>{t("Obťažovanie")}</Text>
-                                                    </Pressable>
+                                                    {post_comment_properties_sheet === "delete" && (
+                                                        <View className="delete_comment" style={styles.sheet_container}>
+                                                            <Text 
+                                                                style={[
+                                                                    styles.sheet_text, 
+                                                                    { textAlign: "center" }
+                                                                ]}
+                                                            >
+                                                                {t("Naozaj chcete vymazať Váš komentár?")}
+                                                            </Text>
 
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "hate_speech")}
-                                                        accessibilityRole="button"
+                                                            <Pressable
+                                                                onPress={() => deleteComment(selected_post_comment.id)}
+                                                                accessibilityRole="button"
 
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    styles.sheet_item_border, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="eraser"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
+                                                            </Pressable>
+
+                                                            <Pressable 
+                                                                onPress={() => setPostCommentPropertiesSheet("main")}
+                                                                accessibilityRole="button"
+
+                                                                style={({ pressed }) => [
+                                                                    styles.sheet_item, 
+                                                                    pressed && styles.sheet_item_pressed
+                                                                ]}
+                                                            >
+                                                                <View style={styles.sheet_icon}>
+                                                                    <FontAwesome6
+                                                                        name="xmark"
+                                                                        size={20}
+                                                                        color={BLUE_COLOR}
+                                                                    />
+                                                                </View>
+
+                                                                <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
+                                                            </Pressable>
                                                         </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Nenávistné prejavy")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "misinformation")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Dezinformácie")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "explicit_content")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Explicitný obsah")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        onPress={() => reportComment(selected_post_comment.id, "other")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="list"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Iné")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable
-                                                        className="back_report_button"
-                                                        onPress={() => setPostCommentPropertiesSheet("main")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Späť")}</Text>
-                                                    </Pressable>
+                                                    )}
                                                 </View>
-                                            )}
+                                            ) : null}
+                                        </BottomSheetView>
+                                    </BottomSheetModal>
 
-                                            {post_comment_properties_sheet === "delete" && (
-                                                <View className="delete_comment" style={styles.sheet_container}>
-                                                    <Text 
-                                                        style={[
-                                                            styles.sheet_text, 
-                                                            { textAlign: "center" }
-                                                        ]}
-                                                    >
-                                                        {t("Naozaj chcete vymazať Váš komentár?")}
-                                                    </Text>
-
-                                                    <Pressable
-                                                        onPress={() => deleteComment(selected_post_comment.id)}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            styles.sheet_item_border, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="eraser"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Vymazať")}</Text>
-                                                    </Pressable>
-
-                                                    <Pressable 
-                                                        onPress={() => setPostCommentPropertiesSheet("main")}
-                                                        accessibilityRole="button"
-
-                                                        style={({ pressed }) => [
-                                                            styles.sheet_item, 
-                                                            pressed && styles.sheet_item_pressed
-                                                        ]}
-                                                    >
-                                                        <View style={styles.sheet_icon}>
-                                                            <FontAwesome6
-                                                                name="xmark"
-                                                                size={20}
-                                                                color={BLUE_COLOR}
-                                                            />
-                                                        </View>
-
-                                                        <Text style={styles.sheet_text}>{t("Zrušiť")}</Text>
-                                                    </Pressable>
-                                                </View>
-                                            )}
-                                        </View>
-                                    ) : null}
-                                </BottomSheetView>
-                            </BottomSheetModal>
-
-                            <SharePostDialog 
-                                friends={friends}
-                                onSharePostToChat={(friend_username:string) => sharePostToChat(post, friend_username)}
-                                onSharePost={() => sharePost(post.id, post.user.username)}
-                                is_sending={is_sending_post}
-                                share_post_dialog={share_post_dialog}
-                                share_post_dialog_sheet={share_post_dialog_sheet}
-                                selected_post={selected_post}
-                                handleSharePostDialogChanges={() => handleSharePostDialogChanges}
-                            />
+                                    <SharePostDialog 
+                                        friends={friends}
+                                        onSharePostToChat={(friend_username:string) => sharePostToChat(post, friend_username)}
+                                        onSharePost={() => sharePost(post.id, post.user.username)}
+                                        is_sending={is_sending_post}
+                                        share_post_dialog={share_post_dialog}
+                                        share_post_dialog_sheet={share_post_dialog_sheet}
+                                        selected_post={selected_post}
+                                        handleSharePostDialogChanges={() => handleSharePostDialogChanges}
+                                    />
+                                </>
+                            )}
                         </View>
                     </BottomSheetModalProvider>
-                )}
                 </ScrollView>
             </SafeAreaView>
         </BackgroundContainer>
