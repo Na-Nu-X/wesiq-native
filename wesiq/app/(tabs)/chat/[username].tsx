@@ -27,11 +27,13 @@ export interface Receiver {
     last_name:string|null
     username:string,
     profile_picture_name:string|null,
+    private_account:boolean,
 
     subscription: {
         is_active:boolean
     }|null,
 
+    has_follow:boolean,
     is_muted:boolean
 }
 

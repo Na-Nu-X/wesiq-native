@@ -824,505 +824,968 @@ export const PostContainer = ({
             console.error(t("Nepodarilo sa otvoriť mapy."))
         }
     }
+
+    const is_not_owner_or_following:boolean = !!(post && logged_in_user && logged_in_user.id !== post.user.id && !post.user.has_follow) // Gets The Information If The Logged In User Is Not Owner Or Following Of The Post
+    const is_private_account:boolean = !!(post && is_not_owner_or_following && post.user.private_account) // Gets The Information If The Author Of The Post Has Private Account
+    const is_private_post:boolean = !!(post && is_not_owner_or_following && !post.public_visibility) // Gets The Information If The Post Is Private
     
     return (
         post ? (
-            <View className="post_container" key={post.id} style={styles.post_container}>
-                <View className="header" style={styles.header}>
-                    <View className="left">
-                        <ProfilePictureLink 
-                            user_id={post.user.id} 
-                            user_username={post.user.username}
-                            user_profile_picture_name={post.user.profile_picture_name || null} 
-                            user_subscription={post.user.subscription?.is_active || false} 
-                            label={t("Zobraziť užívateľa")} 
-                            width={45} 
-                            height={45} 
-                        />
-                    </View>
-
-                    <View className="right" style={styles.right}>
-                        <View className="top" style={styles.top}>
-                            <Text className="username" style={styles.username}>{post.user.username}</Text>
-
-                            <View 
-                                className="followers_container" 
-                                accessibilityLabel={t("Počet sledovateľov...")}
-                                style={styles.followers_container} 
-                            >
-                                <Text className="followers" style={styles.followers}>{post.user.followers.length}</Text>
-                                <Icon icon_name="user" />
+            <>
+                {is_private_account ? (
+                    // Private Account Notice
+                    <View className="post_container">
+                        <View className="header" style={styles.header}>
+                            <View className="left">
+                                <ProfilePictureLink 
+                                    user_id={post.user.id} 
+                                    user_username={post.user.username}
+                                    user_profile_picture_name={post.user.profile_picture_name || null} 
+                                    user_subscription={post.user.subscription?.is_active || false} 
+                                    label={t("Zobraziť užívateľa")} 
+                                    width={45} 
+                                    height={45} 
+                                />
                             </View>
+            
+                            <View className="right" style={styles.right}>
+                                <View className="top" style={styles.top}>
+                                    <Text className="username" style={styles.username}>{post.user.username}</Text>
 
-                            {logged_in_user && logged_in_user.id !== post.user.id && (
-                                <Pressable
-                                    className="follow_button" 
-                                    onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+                                    <View 
+                                        className="followers_container" 
+                                        accessibilityLabel={t("Počet sledovateľov...")}
+                                        style={styles.followers_container} 
+                                    >
+                                        <Text className="followers" style={styles.followers}>{post.user.followers.length}</Text>
+                                        <Icon icon_name="user" />
+                                    </View>
+
+                                    {logged_in_user && logged_in_user.id !== post.user.id && (
+                                        <Pressable
+                                            className="follow_button" 
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+
+                                            style={[
+                                                styles.follow_button, 
+                                                { outlineStyle: "none" } as any
+                                            ]}
+                                        >
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                        </Pressable>
+                                    )}
+                                </View>
+            
+                                <View className="bottom" style={styles.bottom}>
+                                    {post.location && (
+                                        post.coordinates ? (
+                                            <Pressable
+                                                className="location"
+                                                onPress={handleOpenMaps}
+                                                accessibilityRole="button"
+                                                accessibilityLabel={t("Otvoriť mapy")} 
+                                                style={styles.location}
+                                            >
+                                                <Text numberOfLines={1} ellipsizeMode="tail">
+                                                    {post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
+                                                        <Text key={index}>
+                                                            <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
+
+                                                            {post.location && index < post.location.split("<span></span>").filter(Boolean).length - 1 && (
+                                                                <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
+                                                            )}
+                                                        </Text>
+                                                    ))}
+                                                </Text>
+                                            </Pressable>
+                                        ) : (
+                                            <Text className="location" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, color: LIGHT_BLUE_COLOR }}>{post.location}</Text>
+                                        )
+                                    )}
+
+                                    <Text className="created_at" style={styles.created_at}>{getTimeAgo(post.created_at)}</Text>
+                                </View>
+                            </View>
+                        </View>
+            
+                        <View className="private_account_notice">
+                            <FontAwesome6
+                                name="lock"
+                                size={45}
+                                color={BLUE_COLOR}
+                                style={{ textAlign: "center" }}
+                            />
+            
+                            <Text 
+                                style={{
+                                    marginTop: 10,
+                                    textAlign: "center",
+                                    color: SECONDARY_COLOR,
+                                }}
+                            >
+                                {t("Účet autora príspevku je súkromný.")}
+                            </Text>
+                        </View>
+            
+                        <View className="society" style={styles.society}>
+                            <View 
+                                className="likes" 
+                                accessibilityLabel={t("Páči sa mi...")} 
+                                style={styles.society_likes}
+                            >
+                                <View 
+                                    style={{ 
+                                        position: "relative", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                    }}
+                                >
+                                    <Icon
+                                        icon_name="heart"
+                                        size={25}
+                                        is_regular={true}
+                                    />
+                                </View>
+            
+                                <Text 
+                                    className="likes_counter"
 
                                     style={[
-                                        styles.follow_button, 
-                                        { outlineStyle: "none" } as any
+                                        styles.society_likes_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
                                     ]}
                                 >
-                                    <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
-                                </Pressable>
-                            )}
-
-                            <View className="show_post_properties_button" accessibilityLabel="Viac...">
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View 
+                                className="comments" 
+                                accessibilityLabel={t("Komentáre...")}
+                                style={styles.comments}
+                            >
                                 <Icon
-                                    icon_name="ellipsis-vertical"
-                                    onPress={() => onShowPostProperties(post)}
+                                    icon_name="comment"
+                                    size={25}
+                                    is_regular={true}
+                                />
+            
+                                <Text 
+                                    className="comments_counter"
+
+                                    style={[
+                                        styles.comments_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
+                                    ]}
+                                >
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View className="share" accessibilityLabel={t("Zdielať...")}>
+                                <Icon
+                                    icon_name="share-nodes"
+                                    size={25}
+                                />
+                            </View>
+            
+                            <View 
+                                className="views" 
+                                accessibilityLabel={t("Počet videní...")}
+                                style={styles.views}
+                            >
+                                <Icon
+                                    icon_name="eye"
+                                    size={25}
+                                    is_regular={true}
+                                />
+            
+                                <Text 
+                                    className="views_counter"
+
+                                    style={[
+                                        styles.views_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
+                                    ]}
+                                >
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View className="save" accessibilityLabel={t("Uložiť...")}>
+                                <Icon
+                                    icon_name="bookmark"
+                                    size={25}
+                                    is_regular={true}
                                 />
                             </View>
                         </View>
-
-                        <View className="bottom" style={styles.bottom}>
-                            {post.location && (
-                                post.coordinates ? (
-                                    <Pressable
-                                        className="location"
-                                        onPress={handleOpenMaps}
-                                        accessibilityRole="button"
-                                        accessibilityLabel={t("Otvoriť mapy")} 
-                                        style={styles.location}
-                                    >
-                                        <Text numberOfLines={1} ellipsizeMode="tail">
-                                            {post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
-                                                <Text key={index}>
-                                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
-
-                                                    {post.location && index < post.location.split("<span></span>").filter(Boolean).length - 1 && (
-                                                        <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
-                                                    )}
-                                                </Text>
-                                            ))}
-                                        </Text>
-                                    </Pressable>
-                                ) : (
-                                    <Text className="location" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, color: LIGHT_BLUE_COLOR }}>{post.location}</Text>
-                                )
-                            )}
-
-                            <Text className="created_at" style={styles.created_at}>{getTimeAgo(post.created_at)}</Text>
-                        </View>
                     </View>
-                </View>
-
-                <GestureDetector gesture={swipe_gesture}>
-                    <View className="media" style={styles.media}>
-                        {post.media.map((one_post_media:Media, index:number) => (
-                            <View 
-                                className="one_post" 
-                                key={one_post_media.id || index} 
-
-                                style={[
-                                    styles.one_post, 
-                                    { display: index === active_post_media_index ? "flex" : "none" }
-                                ]}
-                            >
-                                {is_post_loading && (
-                                    <BlurView intensity={40} tint="dark" style={styles.loading}>
-                                        <ActivityIndicator size="small" color={SECONDARY_COLOR} />
-                                        {/* <Text style={{ marginTop: 10, color: SECONDARY_COLOR }}>Načítavam...</Text> */}
-                                    </BlurView>
-                                )}
-
-                                {!one_post_media.is_video && (
-                                    <View className="image">
-                                        <DynamicImage 
-                                            key={one_post_media.id || index}
-                                            uri={`${DOMAIN}/media/${one_post_media.file}`} 
-                                            scale_by_aspect_ratio={true}
-                                        />
-                                    </View>
-                                )}
-
-                                {one_post_media.is_video && (
-                                    <DynamicVideo 
-                                        logged_in_user={logged_in_user}
-                                        one_post={post}
-                                        one_post_media={one_post_media}
-                                        onSetPlayingVideo={setPlayingVideo}
-                                        playing_video={playing_video}
-                                        data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
-                                        is_volume_slider_sliding={is_volume_slider_sliding}
-                                        onVideoDurationLoad={(video_duration:number) => handleVideoDurationLoad(video_duration, post.id, one_post_media.id)}
-                                        onSetIsVideoInitialized={(is_video_initialized:boolean) => setIsVideoInitialized(is_video_initialized)}
-                                        is_video_initialized={is_video_initialized}
-                                        onShowControls={(show_controls:boolean) => setShowControls(show_controls)}
-                                        show_controls={show_controls}
-                                        onIsScrubberDragged={setIsScrubberDragged}
-                                        is_scrubber_dragged={is_scrubber_dragged}
-                                        onVttVideoScrubberPreviewUpdate={setVttVideoScrubberPreview}
-                                        video_scrubber_preview={video_scrubber_preview}
-                                        onVttVideoScrubberPreviewImageUpdate={setVttVideoScrubberPreviewImage}
-                                        video_scrubber_preview_image={video_scrubber_preview_image}
-                                        onScrubberPositionUpdate={(scrubber_position:number) => setScrubberPosition(scrubber_position)}
-                                        scrubber_position={scrubber_position}
-                                        onSetScrubberWidth={(scrubber_width:number) => setScrubberWidth(scrubber_width)}
-                                        scrubber_width={scrubber_width}
-                                        onStopControlsTimer={stopControlsTimer}
-                                        controls_timeout={controls_timeout}
-                                    />
-                                )}
+                ) : is_private_post ? (
+                    // Private Post Notice
+                    <View className="post_container">
+                        <View className="header" style={styles.header}>
+                            <View className="left">
+                                <ProfilePictureLink 
+                                    user_id={post.user.id} 
+                                    user_username={post.user.username}
+                                    user_profile_picture_name={post.user.profile_picture_name || null} 
+                                    user_subscription={post.user.subscription?.is_active || false} 
+                                    label={t("Zobraziť užívateľa")} 
+                                    width={45} 
+                                    height={45} 
+                                />
                             </View>
-                        ))}
+            
+                            <View className="right" style={styles.right}>
+                                <View className="top" style={styles.top}>
+                                    <Text className="username" style={styles.username}>{post.user.username}</Text>
+            
+                                    <View 
+                                        className="followers_container" 
+                                        accessibilityLabel={t("Počet sledovateľov...")}
+                                        style={styles.followers_container} 
+                                    >
+                                        <Text className="followers" style={styles.followers}>{post.user.followers.length}</Text>
+                                        <Icon icon_name="user" />
+                                    </View>
 
-                        <View className="particles" style={styles.particles}></View>
-
-                        {!show_controls && (
-                            <View 
-                                className="post_bars"
-
-                                style={[
-                                    styles.post_bars,
-                                    post.media.length === 0 && { display: "none" }
-                                ]}
-                            >
-                                {post.media.length > 1 && (
-                                    post.media.map((_, index:number) => (
-                                        <Pressable 
-                                            key={index} 
-                                            className="bar" 
-                                            onPress={() => changePostMedia(post.id, index, max_active_post_media_index)}
+                                    {logged_in_user && logged_in_user.id !== post.user.id && (
+                                        <Pressable
+                                            className="follow_button" 
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
 
                                             style={[
-                                                styles.bar, 
-                                                { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                                styles.follow_button, 
+                                                { outlineStyle: "none" } as any
                                             ]}
+                                        >
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                        </Pressable>
+                                    )}
+                                </View>
+            
+                                <View className="bottom" style={styles.bottom}>
+                                    {post.location && (
+                                        post.coordinates ? (
+                                            <Pressable
+                                                className="location"
+                                                onPress={handleOpenMaps}
+                                                accessibilityRole="button"
+                                                accessibilityLabel={t("Otvoriť mapy")} 
+                                                style={styles.location}
+                                            >
+                                                <Text numberOfLines={1} ellipsizeMode="tail">
+                                                    {post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
+                                                        <Text key={index}>
+                                                            <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
+
+                                                            {post.location && index < post.location.split("<span></span>").filter(Boolean).length - 1 && (
+                                                                <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
+                                                            )}
+                                                        </Text>
+                                                    ))}
+                                                </Text>
+                                            </Pressable>
+                                        ) : (
+                                            <Text className="location" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, color: LIGHT_BLUE_COLOR }}>{post.location}</Text>
+                                        )
+                                    )}
+
+                                    <Text className="created_at" style={styles.created_at}>{getTimeAgo(post.created_at)}</Text>
+                                </View>
+                            </View>
+                        </View>
+            
+                        <View className="private_post_notice">
+                            <FontAwesome6
+                                name="lock"
+                                size={45}
+                                color={BLUE_COLOR}
+                                style={{ textAlign: "center" }}
+                            />
+            
+                            <Text 
+                                style={{
+                                    marginTop: 10,
+                                    textAlign: "center",
+                                    color: SECONDARY_COLOR,
+                                }}
+                            >
+                                {t("Príspevok je viditeľný iba pre sledovateľov.")}
+                            </Text>
+                        </View>
+            
+                        <View className="society" style={styles.society}>
+                            <View 
+                                className="likes" 
+                                accessibilityLabel={t("Páči sa mi...")} 
+                                style={styles.society_likes}
+                            >
+                                <View 
+                                    style={{ 
+                                        position: "relative", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                    }}
+                                >
+                                    <Icon
+                                        icon_name="heart"
+                                        size={25}
+                                        is_regular={true}
+                                    />
+                                </View>
+            
+                                <Text 
+                                    className="likes_counter"
+
+                                    style={[
+                                        styles.society_likes_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
+                                    ]}
+                                >
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View 
+                                className="comments" 
+                                accessibilityLabel={t("Komentáre...")}
+                                style={styles.comments}
+                            >
+                                <Icon
+                                    icon_name="comment"
+                                    size={25}
+                                    is_regular={true}
+                                />
+            
+                                <Text 
+                                    className="comments_counter"
+
+                                    style={[
+                                        styles.comments_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
+                                    ]}
+                                >
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View className="share" accessibilityLabel={t("Zdielať...")}>
+                                <Icon
+                                    icon_name="share-nodes"
+                                    size={25}
+                                />
+                            </View>
+            
+                            <View 
+                                className="views" 
+                                accessibilityLabel={t("Počet videní...")}
+                                style={styles.views}
+                            >
+                                <Icon
+                                    icon_name="eye"
+                                    size={25}
+                                    is_regular={true}
+                                />
+            
+                                <Text 
+                                    className="views_counter"
+
+                                    style={[
+                                        styles.views_counter, 
+
+                                        {
+                                            color: "transparent",
+                                            textShadowColor: BLUE_COLOR,
+
+                                            textShadowOffset: { 
+                                                width: 0, 
+                                                height: 0,
+                                            },
+
+                                            textShadowRadius: 8,
+                                            userSelect: "none",
+                                        }
+                                    ]}
+                                >
+                                    123
+                                </Text>
+                            </View>
+            
+                            <View className="save" accessibilityLabel={t("Uložiť...")}>
+                                <Icon
+                                    icon_name="bookmark"
+                                    size={25}
+                                    is_regular={true}
+                                />
+                            </View>
+                        </View>
+                    </View>
+                ) : (
+                    // Standard Post
+                    <View className="post_container" style={styles.post_container}>
+                        <View className="header" style={styles.header}>
+                            <View className="left">
+                                <ProfilePictureLink 
+                                    user_id={post.user.id} 
+                                    user_username={post.user.username}
+                                    user_profile_picture_name={post.user.profile_picture_name || null} 
+                                    user_subscription={post.user.subscription?.is_active || false} 
+                                    label={t("Zobraziť užívateľa")} 
+                                    width={45} 
+                                    height={45} 
+                                />
+                            </View>
+
+                            <View className="right" style={styles.right}>
+                                <View className="top" style={styles.top}>
+                                    <Text className="username" style={styles.username}>{post.user.username}</Text>
+
+                                    <View 
+                                        className="followers_container" 
+                                        accessibilityLabel={t("Počet sledovateľov...")}
+                                        style={styles.followers_container} 
+                                    >
+                                        <Text className="followers" style={styles.followers}>{post.user.followers.length}</Text>
+                                        <Icon icon_name="user" />
+                                    </View>
+
+                                    {logged_in_user && logged_in_user.id !== post.user.id && (
+                                        <Pressable
+                                            className="follow_button" 
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+
+                                            style={[
+                                                styles.follow_button, 
+                                                { outlineStyle: "none" } as any
+                                            ]}
+                                        >
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                        </Pressable>
+                                    )}
+
+                                    <View className="show_post_properties_button" accessibilityLabel="Viac...">
+                                        <Icon
+                                            icon_name="ellipsis-vertical"
+                                            onPress={() => onShowPostProperties(post)}
                                         />
-                                    ))
+                                    </View>
+                                </View>
+
+                                <View className="bottom" style={styles.bottom}>
+                                    {post.location && (
+                                        post.coordinates ? (
+                                            <Pressable
+                                                className="location"
+                                                onPress={handleOpenMaps}
+                                                accessibilityRole="button"
+                                                accessibilityLabel={t("Otvoriť mapy")} 
+                                                style={styles.location}
+                                            >
+                                                <Text numberOfLines={1} ellipsizeMode="tail">
+                                                    {post.location.split("<span></span>").filter(Boolean).map((one_part:string, index:number) => (
+                                                        <Text key={index}>
+                                                            <Text style={{ color: LIGHT_BLUE_COLOR }}>{one_part.trim()}</Text>
+
+                                                            {post.location && index < post.location.split("<span></span>").filter(Boolean).length - 1 && (
+                                                                <Text style={{ color: LIGHT_BLUE_COLOR }}> • </Text>
+                                                            )}
+                                                        </Text>
+                                                    ))}
+                                                </Text>
+                                            </Pressable>
+                                        ) : (
+                                            <Text className="location" numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, color: LIGHT_BLUE_COLOR }}>{post.location}</Text>
+                                        )
+                                    )}
+
+                                    <Text className="created_at" style={styles.created_at}>{getTimeAgo(post.created_at)}</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <GestureDetector gesture={swipe_gesture}>
+                            <View className="media" style={styles.media}>
+                                {post.media.map((one_post_media:Media, index:number) => (
+                                    <View 
+                                        className="one_post" 
+                                        key={one_post_media.id || index} 
+
+                                        style={[
+                                            styles.one_post, 
+                                            { display: index === active_post_media_index ? "flex" : "none" }
+                                        ]}
+                                    >
+                                        {is_post_loading && (
+                                            <BlurView intensity={40} tint="dark" style={styles.loading}>
+                                                <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                                {/* <Text style={{ marginTop: 10, color: SECONDARY_COLOR }}>Načítavam...</Text> */}
+                                            </BlurView>
+                                        )}
+
+                                        {!one_post_media.is_video && (
+                                            <View className="image">
+                                                <DynamicImage 
+                                                    key={one_post_media.id || index}
+                                                    uri={`${DOMAIN}/media/${one_post_media.file}`} 
+                                                    scale_by_aspect_ratio={true}
+                                                />
+                                            </View>
+                                        )}
+
+                                        {one_post_media.is_video && (
+                                            <DynamicVideo 
+                                                logged_in_user={logged_in_user}
+                                                one_post={post}
+                                                one_post_media={one_post_media}
+                                                onSetPlayingVideo={setPlayingVideo}
+                                                playing_video={playing_video}
+                                                data_saving_mode={logged_in_user && logged_in_user.data_saving_mode ? logged_in_user.data_saving_mode : false}
+                                                is_volume_slider_sliding={is_volume_slider_sliding}
+                                                onVideoDurationLoad={(video_duration:number) => handleVideoDurationLoad(video_duration, post.id, one_post_media.id)}
+                                                onSetIsVideoInitialized={(is_video_initialized:boolean) => setIsVideoInitialized(is_video_initialized)}
+                                                is_video_initialized={is_video_initialized}
+                                                onShowControls={(show_controls:boolean) => setShowControls(show_controls)}
+                                                show_controls={show_controls}
+                                                onIsScrubberDragged={setIsScrubberDragged}
+                                                is_scrubber_dragged={is_scrubber_dragged}
+                                                onVttVideoScrubberPreviewUpdate={setVttVideoScrubberPreview}
+                                                video_scrubber_preview={video_scrubber_preview}
+                                                onVttVideoScrubberPreviewImageUpdate={setVttVideoScrubberPreviewImage}
+                                                video_scrubber_preview_image={video_scrubber_preview_image}
+                                                onScrubberPositionUpdate={(scrubber_position:number) => setScrubberPosition(scrubber_position)}
+                                                scrubber_position={scrubber_position}
+                                                onSetScrubberWidth={(scrubber_width:number) => setScrubberWidth(scrubber_width)}
+                                                scrubber_width={scrubber_width}
+                                                onStopControlsTimer={stopControlsTimer}
+                                                controls_timeout={controls_timeout}
+                                            />
+                                        )}
+                                    </View>
+                                ))}
+
+                                <View className="particles" style={styles.particles}></View>
+
+                                {!show_controls && (
+                                    <View 
+                                        className="post_bars"
+
+                                        style={[
+                                            styles.post_bars,
+                                            post.media.length === 0 && { display: "none" }
+                                        ]}
+                                    >
+                                        {post.media.length > 1 && (
+                                            post.media.map((_, index:number) => (
+                                                <Pressable 
+                                                    key={index} 
+                                                    className="bar" 
+                                                    onPress={() => changePostMedia(post.id, index, max_active_post_media_index)}
+
+                                                    style={[
+                                                        styles.bar, 
+                                                        { backgroundColor: index === active_post_media_index ? DARK_BLUE_COLOR : BLUE_COLOR }
+                                                    ]}
+                                                />
+                                            ))
+                                        )}
+                                    </View>
                                 )}
+                            </View>
+                        </GestureDetector>
+
+                        {video_scrubber_preview && is_scrubber_dragged && (
+                            <View 
+                                style={{ 
+                                    position: "relative", 
+                                    bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20,
+
+                                    left: Math.min(
+                                        Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
+                                        scrubber_width - video_scrubber_preview.w
+                                    ),
+                                }}
+                            >
+                                <View 
+                                    className="video_scrubber_preview"
+
+                                    style={[
+                                        styles.video_scrubber_preview,
+
+                                        {
+                                            width: video_scrubber_preview.w,
+                                            height: video_scrubber_preview.h,
+                                        }
+                                    ]}
+                                >
+                                    <DynamicImage 
+                                        uri={`${DOMAIN}/${video_scrubber_preview_image}`}
+
+                                        style={{ 
+                                            position: "absolute",
+                                            left: -video_scrubber_preview.x,
+                                            top: -video_scrubber_preview.y,
+                                        }}
+                                    />
+                                </View>
+                            
+                                <View 
+                                    className="triangle" 
+
+                                    style={[
+                                        styles.triangle,
+
+                                        {
+                                            top: video_scrubber_preview.h + 10,
+                                            left: (video_scrubber_preview.w / 2) - 10,
+                                        }
+                                    ]} 
+                                />
+                            </View>
+                        )}
+
+                        <View className="society" style={styles.society}>
+                            <View 
+                                className="likes" 
+                                accessibilityLabel={t("Páči sa mi...")} 
+                                style={styles.society_likes}
+                            >
+                                <View 
+                                    style={{ 
+                                        position: "relative", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                    }}
+                                >
+                                    <Icon
+                                        icon_name="heart"
+                                        size={25}
+                                        onPress={() => togglePostLike(post.id)}
+                                        is_regular={!Boolean(logged_in_user && post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
+                                        color={Boolean(logged_in_user && post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
+                                        pressed_color={RED_COLOR}
+                                    />
+
+                                    {particles.map((one_particle:Particle) => (
+                                        <HeartParticle
+                                            key={one_particle.id}
+                                            x={one_particle.x}
+                                            y={one_particle.y}
+                                            is_regular={one_particle.is_regular}
+                                            onComplete={() => removeParticle(one_particle.id)}
+                                        />
+                                    ))}
+                                </View>
+
+                                {logged_in_user && post.hide_likes && post.user.id !== logged_in_user.id 
+                                ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>{t("Skryté")}</Text>)
+                                : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(post.likes)}</Text>)}
+                            </View>
+
+                            <View 
+                                className="comments" 
+                                accessibilityLabel={t("Komentáre...")}
+                                style={styles.comments}
+                            >
+                                <Icon
+                                    icon_name="comment"
+                                    onPress={() => toggleShowComments(post)}
+                                    size={25}
+                                    is_regular={true}
+                                />
+
+                                {post.allow_comments 
+                                ? (<Text className="comments_counter" style={styles.comments_counter}>{String(post.comments_amount)}</Text>)
+                                : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>{t("Vypnuté")}</Text>)}
+                            </View>
+
+                            <View className="share" accessibilityLabel={t("Zdielať...")}>
+                                <Icon
+                                    icon_name="share-nodes"
+                                    onPress={() => onSharePost(post)}
+                                    size={25}
+                                />
+                            </View>
+
+                            <View 
+                                className="views" 
+                                accessibilityLabel={t("Počet videní...")}
+                                style={styles.views}
+                            >
+                                <Icon
+                                    icon_name="eye"
+                                    size={25}
+                                    is_regular={true}
+                                />
+
+                                <Text className="views_counter" style={styles.views_counter}>{String(post.views)}</Text>
+                            </View>
+
+                            {logged_in_user && post.user.id === logged_in_user.id && is_video_initialized && (() => {
+                                const current_media:Media = post.media[active_post_media_index] ?? post.media[0] // Gets The Current Media
+                                if(!current_media) return null
+
+                                const is_video:boolean = current_media.is_video === true // Gets The Information If The Media Is Video
+                                const has_metrics:boolean = current_media.average_watch_time !== null && current_media.video_views !== null // Gets The Information If The Media Has Metrics
+
+                                if(!is_video || !has_metrics) return null
+
+                                return (
+                                    <View key={current_media.id || active_post_media_index}>
+                                        <View className="show_video_metrics" accessibilityLabel={t("Štatistiky...")}>
+                                            <Icon
+                                                icon_name="chart-simple"
+                                                onPress={() => setIsVideoMetricsOpen(previous => !previous)}
+                                                size={25}
+                                            />
+                                        </View>
+                                    </View>
+                                )
+                            })()}
+
+                            <View className={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? "save active" : "save"} accessibilityLabel="Uložiť...">
+                                <View className="save" accessibilityLabel={t("Uložiť...")}>
+                                    <Icon
+                                        icon_name="bookmark"
+                                        onPress={() => togglePostSave(post.id)}
+                                        size={25}
+                                        is_regular={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? false : true} // Shows The Empty Or Filled Bookmark Icon
+                                        color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : BLUE_COLOR}
+                                        pressed_color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
+                                    />
+                                </View>
+                            </View>
+                        </View>
+
+                        {post.description && (
+                            <Text className="description" style={styles.description}>
+                            {post.tagged_users.map(one_tagged_user => one_tagged_user.username).length > 0 || post.added_hashtags.length > 0 
+                            ? (generateStyledDescription(post.description, JSON.stringify(post.tagged_users.map(one_tagged_user => one_tagged_user.username)), JSON.stringify(post.added_hashtags))) // Generates The Styled Description
+                            : (post.description)}
+                            </Text>
+                        )}
+
+                        {logged_in_user && post.user.id === logged_in_user.id && (() => {
+                            const current_media:Media = post.media[active_post_media_index] || post.media[0] // Gets The Current Media
+                            if(!current_media) return null
+
+                            const is_video:boolean = current_media.is_video === true // Gets The Information If The Media Is Video
+                            const has_metrics:boolean = current_media.average_watch_time !== null && current_media.video_views !== null // Gets The Information If The Media Has Metrics
+
+                            if(!is_video || !has_metrics) return null
+
+                            return (
+                                <View key={current_media.id || active_post_media_index}>
+                                    <VideoMetrics
+                                        one_post_media={current_media}
+                                        is_video_metrics_open={is_video_metrics_open}
+                                    />
+                                </View>
+                            )
+                        })()}
+
+                        {post.allow_comments && post.comments && is_comment_forum_open && (
+                            <View className="comment_forum" style={styles.comment_forum}>
+                                <ScrollView 
+                                    className="all_comments" 
+                                    showsVerticalScrollIndicator={false}
+                                    indicatorStyle="white"
+                                    style={styles.all_comments}
+                                >
+                                    {post.comments.length > 0 && loadComments()} {/* Loads The Comments */}
+
+                                    {has_next_post_comments && (
+                                        <Pressable 
+                                            className="show_more hidden" 
+                                            onPress={() => loadMorePostComments(post.id)} 
+                                            style={styles.show_more}
+                                        >
+                                            <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("Zobraziť viac")}</Text>
+                                        </Pressable>
+                                    )}
+                                </ScrollView>
+
+                                <View className="write_comment_form" style={styles.write_comment_form}>
+                                    <TextInput
+                                        className="comment"
+                                        textAlignVertical="top" 
+
+                                        placeholder={
+                                            selected_parent_comment 
+                                            ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
+                                            : t("Napísať komentár")
+                                        }
+                                            
+                                        placeholderTextColor={LIGHT_BLUE_COLOR}
+
+                                        accessibilityLabel={
+                                            selected_parent_comment 
+                                            ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
+                                            : t("Napísať komentár")
+                                        }
+
+                                        value={comment}
+                                        onChangeText={setComment}
+                                        maxLength={MAX_COMMENT_LENGTH}
+
+                                        style={[
+                                            styles.write_comment_form_comment, 
+                                            { outlineStyle: "none" } as any
+                                        ]}
+                                    />
+
+                                    {logged_in_user && (
+                                        <View 
+                                            style={{ 
+                                                position: "absolute",
+                                                top: 6,
+                                                left: 6,
+                                            }}
+                                        >
+                                            <ProfilePictureLink 
+                                                user_id={logged_in_user.id} 
+                                                user_username={logged_in_user.username}
+                                                user_profile_picture_name={logged_in_user.profile_picture_name || null} 
+                                                user_subscription={logged_in_user.subscription?.is_active || false} 
+                                                label={t("Môj účet")} 
+                                            />
+                                        </View>
+                                    )}
+
+                                    <View 
+                                        className="add_emoji"
+                                        accessibilityLabel={t("Pridať emoji")}
+                                        style={styles.add_emoji}
+                                    >
+                                        <Icon 
+                                            icon_name="face-surprise"
+                                            is_regular={true}
+                                            onPress={() => setIsEmojiPickerOpen(true)}
+                                        />
+                                    </View>
+
+                                    <EmojiPicker
+                                        onEmojiSelected={handleEmojiSelect}
+                                        open={is_emoji_picker_open}
+                                        onClose={() => setIsEmojiPickerOpen(false)}
+
+                                        translation={{
+                                            smileys_emotion: t("Smajlíky"),
+                                            people_body: t("Ľudia"), 
+                                            recently_used: t("Naposledy použité"),
+                                            animals_nature: t("Zvieratá"),
+                                            food_drink: t("Jedlo a nápoje"),
+                                            activities: t("Aktivity"),
+                                            travel_places: t("Cestovanie"),
+                                            objects: t("Predmety"),
+                                            symbols: t("Symboly"),
+                                            flags: t("Vlajky"),
+                                            search: t("Hľadať..."),
+                                        }}
+                                    />
+
+                                    <Pressable 
+                                        className="send" 
+                                        accessibilityLabel={t("Odoslať komentár")}
+                                        accessibilityRole="button"
+                                        onPress={() => addComment(post.id, comment, selected_parent_comment ? selected_parent_comment.id : null)}
+                                        style={styles.send}
+                                    >
+                                        <Svg 
+                                            width={30} 
+                                            height={30} 
+                                            fill="none" 
+                                            viewBox="0 0 24 24" 
+                                            strokeWidth={1.5} 
+                                            stroke={BLUE_COLOR}
+                                        >
+                                            <Path 
+                                                strokeLinecap="round" 
+                                                strokeLinejoin="round" 
+                                                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
+                                            />
+                                        </Svg>
+                                    </Pressable>
+                                </View>
                             </View>
                         )}
                     </View>
-                </GestureDetector>
-
-                {video_scrubber_preview && is_scrubber_dragged && (
-                    <View 
-                        style={{ 
-                            position: "relative", 
-                            bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20,
-
-                            left: Math.min(
-                                Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
-                                scrubber_width - video_scrubber_preview.w
-                            ),
-                        }}
-                    >
-                        <View 
-                            className="video_scrubber_preview"
-
-                            style={[
-                                styles.video_scrubber_preview,
-
-                                {
-                                    width: video_scrubber_preview.w,
-                                    height: video_scrubber_preview.h,
-                                }
-                            ]}
-                        >
-                            <DynamicImage 
-                                uri={`${DOMAIN}/${video_scrubber_preview_image}`}
-
-                                style={{ 
-                                    position: "absolute",
-                                    left: -video_scrubber_preview.x,
-                                    top: -video_scrubber_preview.y,
-                                }}
-                            />
-                        </View>
-                    
-                        <View 
-                            className="triangle" 
-
-                            style={[
-                                styles.triangle,
-
-                                {
-                                    top: video_scrubber_preview.h + 10,
-                                    left: (video_scrubber_preview.w / 2) - 10,
-                                }
-                            ]} 
-                        />
-                    </View>
                 )}
-
-                <View className="society" style={styles.society}>
-                    <View 
-                        className="likes" 
-                        accessibilityLabel={t("Páči sa mi...")} 
-                        style={styles.society_likes}
-                    >
-                        <View 
-                            style={{ 
-                                position: "relative", 
-                                alignItems: "center", 
-                                justifyContent: "center", 
-                            }}
-                        >
-                            <Icon
-                                icon_name="heart"
-                                size={25}
-                                onPress={() => togglePostLike(post.id)}
-                                is_regular={!Boolean(logged_in_user && post.likes_from_users.includes(logged_in_user.id))} // Shows The Empty Or Filled Heart Icon
-                                color={Boolean(logged_in_user && post.likes_from_users.includes(logged_in_user.id)) ? RED_COLOR : BLUE_COLOR} // Shows The Red Or Blue Colored Heart Icon
-                                pressed_color={RED_COLOR}
-                            />
-
-                            {particles.map((one_particle:Particle) => (
-                                <HeartParticle
-                                    key={one_particle.id}
-                                    x={one_particle.x}
-                                    y={one_particle.y}
-                                    is_regular={one_particle.is_regular}
-                                    onComplete={() => removeParticle(one_particle.id)}
-                                />
-                            ))}
-                        </View>
-
-                        {logged_in_user && post.hide_likes && post.user.id !== logged_in_user.id 
-                        ? (<Text className="hidden_likes_counter" style={styles.hidden_likes_counter}>{t("Skryté")}</Text>)
-                        : (<Text className="likes_counter" style={styles.society_likes_counter}>{String(post.likes)}</Text>)}
-                    </View>
-
-                    <View 
-                        className="comments" 
-                        accessibilityLabel={t("Komentáre...")}
-                        style={styles.comments}
-                    >
-                        <Icon
-                            icon_name="comment"
-                            onPress={() => toggleShowComments(post)}
-                            size={25}
-                            is_regular={true}
-                        />
-
-                        {post.allow_comments 
-                        ? (<Text className="comments_counter" style={styles.comments_counter}>{String(post.comments_amount)}</Text>)
-                        : (<Text className="hidden_comments_counter" style={styles.hidden_comments_counter}>{t("Vypnuté")}</Text>)}
-                    </View>
-
-                    <View className="share" accessibilityLabel={t("Zdielať...")}>
-                        <Icon
-                            icon_name="share-nodes"
-                            onPress={() => onSharePost(post)}
-                            size={25}
-                        />
-                    </View>
-
-                    <View 
-                        className="views" 
-                        accessibilityLabel={t("Počet videní...")}
-                        style={styles.views}
-                    >
-                        <Icon
-                            icon_name="eye"
-                            size={25}
-                            is_regular={true}
-                        />
-
-                        <Text className="views_counter" style={styles.views_counter}>{String(post.views)}</Text>
-                    </View>
-
-                    {logged_in_user && post.user.id === logged_in_user.id && is_video_initialized && (() => {
-                        const current_media:Media = post.media[active_post_media_index] ?? post.media[0] // Gets The Current Media
-                        if(!current_media) return null
-
-                        const is_video:boolean = current_media.is_video === true // Gets The Information If The Media Is Video
-                        const has_metrics:boolean = current_media.average_watch_time !== null && current_media.video_views !== null // Gets The Information If The Media Has Metrics
-
-                        if(!is_video || !has_metrics) return null
-
-                        return (
-                            <View key={current_media.id || active_post_media_index}>
-                                <View className="show_video_metrics" accessibilityLabel={t("Štatistiky...")}>
-                                    <Icon
-                                        icon_name="chart-simple"
-                                        onPress={() => setIsVideoMetricsOpen(previous => !previous)}
-                                        size={25}
-                                    />
-                                </View>
-                            </View>
-                        )
-                    })()}
-
-                    <View className={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? "save active" : "save"} accessibilityLabel="Uložiť...">
-                        <View className="save" accessibilityLabel={t("Uložiť...")}>
-                            <Icon
-                                icon_name="bookmark"
-                                onPress={() => togglePostSave(post.id)}
-                                size={25}
-                                is_regular={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? false : true} // Shows The Empty Or Filled Bookmark Icon
-                                color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : BLUE_COLOR}
-                                pressed_color={logged_in_user && logged_in_user.saved_posts.includes(post.id) ? YELLOW_COLOR : DARK_BLUE_COLOR}
-                            />
-                        </View>
-                    </View>
-                </View>
-
-                {post.description && (
-                    <Text className="description" style={styles.description}>
-                    {post.tagged_users.map(one_tagged_user => one_tagged_user.username).length > 0 || post.added_hashtags.length > 0 
-                    ? (generateStyledDescription(post.description, JSON.stringify(post.tagged_users.map(one_tagged_user => one_tagged_user.username)), JSON.stringify(post.added_hashtags))) // Generates The Styled Description
-                    : (post.description)}
-                    </Text>
-                )}
-
-                {logged_in_user && post.user.id === logged_in_user.id && (() => {
-                    const current_media:Media = post.media[active_post_media_index] || post.media[0] // Gets The Current Media
-                    if(!current_media) return null
-
-                    const is_video:boolean = current_media.is_video === true // Gets The Information If The Media Is Video
-                    const has_metrics:boolean = current_media.average_watch_time !== null && current_media.video_views !== null // Gets The Information If The Media Has Metrics
-
-                    if(!is_video || !has_metrics) return null
-
-                    return (
-                        <View key={current_media.id || active_post_media_index}>
-                            <VideoMetrics
-                                one_post_media={current_media}
-                                is_video_metrics_open={is_video_metrics_open}
-                            />
-                        </View>
-                    )
-                })()}
-
-                {post.allow_comments && post.comments && is_comment_forum_open && (
-                    <View className="comment_forum" style={styles.comment_forum}>
-                        <ScrollView 
-                            className="all_comments" 
-                            showsVerticalScrollIndicator={false}
-                            indicatorStyle="white"
-                            style={styles.all_comments}
-                        >
-                            {post.comments.length > 0 && loadComments()} {/* Loads The Comments */}
-
-                            {has_next_post_comments && (
-                                <Pressable 
-                                    className="show_more hidden" 
-                                    onPress={() => loadMorePostComments(post.id)} 
-                                    style={styles.show_more}
-                                >
-                                    <Text style={{ color: LIGHT_BLUE_COLOR }}>{t("Zobraziť viac")}</Text>
-                                </Pressable>
-                            )}
-                        </ScrollView>
-
-                        <View className="write_comment_form" style={styles.write_comment_form}>
-                            <TextInput
-                                className="comment"
-                                textAlignVertical="top" 
-
-                                placeholder={
-                                    selected_parent_comment 
-                                    ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
-                                    : t("Napísať komentár")
-                                }
-                                    
-                                placeholderTextColor={LIGHT_BLUE_COLOR}
-
-                                accessibilityLabel={
-                                    selected_parent_comment 
-                                    ? t("Odpoveď užívateľovi {{username}}", { username: selected_parent_comment.user.username}) 
-                                    : t("Napísať komentár")
-                                }
-
-                                value={comment}
-                                onChangeText={setComment}
-                                maxLength={MAX_COMMENT_LENGTH}
-
-                                style={[
-                                    styles.write_comment_form_comment, 
-                                    { outlineStyle: "none" } as any
-                                ]}
-                            />
-
-                            {logged_in_user && (
-                                <View 
-                                    style={{ 
-                                        position: "absolute",
-                                        top: 6,
-                                        left: 6,
-                                    }}
-                                >
-                                    <ProfilePictureLink 
-                                        user_id={logged_in_user.id} 
-                                        user_username={logged_in_user.username}
-                                        user_profile_picture_name={logged_in_user.profile_picture_name || null} 
-                                        user_subscription={logged_in_user.subscription?.is_active || false} 
-                                        label={t("Môj účet")} 
-                                    />
-                                </View>
-                            )}
-
-                            <View 
-                                className="add_emoji"
-                                accessibilityLabel={t("Pridať emoji")}
-                                style={styles.add_emoji}
-                            >
-                                <Icon 
-                                    icon_name="face-surprise"
-                                    is_regular={true}
-                                    onPress={() => setIsEmojiPickerOpen(true)}
-                                />
-                            </View>
-
-                            <EmojiPicker
-                                onEmojiSelected={handleEmojiSelect}
-                                open={is_emoji_picker_open}
-                                onClose={() => setIsEmojiPickerOpen(false)}
-
-                                translation={{
-                                    smileys_emotion: t("Smajlíky"),
-                                    people_body: t("Ľudia"), 
-                                    recently_used: t("Naposledy použité"),
-                                    animals_nature: t("Zvieratá"),
-                                    food_drink: t("Jedlo a nápoje"),
-                                    activities: t("Aktivity"),
-                                    travel_places: t("Cestovanie"),
-                                    objects: t("Predmety"),
-                                    symbols: t("Symboly"),
-                                    flags: t("Vlajky"),
-                                    search: t("Hľadať..."),
-                                }}
-                            />
-
-                            <Pressable 
-                                className="send" 
-                                accessibilityLabel={t("Odoslať komentár")}
-                                accessibilityRole="button"
-                                onPress={() => addComment(post.id, comment, selected_parent_comment ? selected_parent_comment.id : null)}
-                                style={styles.send}
-                            >
-                                <Svg 
-                                    width={30} 
-                                    height={30} 
-                                    fill="none" 
-                                    viewBox="0 0 24 24" 
-                                    strokeWidth={1.5} 
-                                    stroke={BLUE_COLOR}
-                                >
-                                    <Path 
-                                        strokeLinecap="round" 
-                                        strokeLinejoin="round" 
-                                        d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" 
-                                    />
-                                </Svg>
-                            </Pressable>
-                        </View>
-                    </View>
-                )}
-            </View>
+            </>
         ) : (
-            <View className="post_container">
+            // No Found Post Notice
+            <View className="post_container" style={styles.post_container}>
                 <View className="header" style={styles.header}>
                     <View className="left">
-                        <Image 
-                            source={require("@/assets/images/profile_picture.png")} // https://www.flaticon.com/free-icon/user_3177440
-                            width={45} 
-                            height={45} 
-                        />
+                        <View className="profile_picture_container" style={styles.profile_picture_container}>
+                            <Image 
+                                source={require("@/assets/images/profile_picture.png")} // https://www.flaticon.com/free-icon/user_3177440
+                                style={{ width: 45, height: 45 }}
+                                width={45} 
+                                height={45} 
+                            />
+                        </View>
                     </View>
 
                     <View className="right" style={styles.right}>
@@ -1350,10 +1813,12 @@ export const PostContainer = ({
                         name="magnifying-glass"
                         size={45}
                         color={BLUE_COLOR}
+                        style={{ textAlign: "center" }}
                     />
 
                     <Text 
                         style={{
+                            marginTop: 10,
                             textAlign: "center",
                             color: SECONDARY_COLOR,
                         }}
@@ -1391,7 +1856,28 @@ export const PostContainer = ({
                             />
                         </View>
 
-                        <Text className="likes_counter" style={styles.society_likes_counter}>123</Text>
+                        <Text 
+                            className="likes_counter"
+
+                            style={[
+                                styles.society_likes_counter, 
+
+                                {
+                                    color: "transparent",
+                                    textShadowColor: BLUE_COLOR,
+
+                                    textShadowOffset: { 
+                                        width: 0, 
+                                        height: 0,
+                                    },
+
+                                    textShadowRadius: 8,
+                                    userSelect: "none",
+                                }
+                            ]}
+                        >
+                            123
+                        </Text>
                     </View>
 
                     <View 
@@ -1405,7 +1891,28 @@ export const PostContainer = ({
                             is_regular={true}
                         />
 
-                        <Text className="comments_counter" style={styles.comments_counter}>123</Text>
+                        <Text 
+                            className="comments_counter"
+
+                            style={[
+                                styles.comments_counter, 
+
+                                {
+                                    color: "transparent",
+                                    textShadowColor: BLUE_COLOR,
+
+                                    textShadowOffset: { 
+                                        width: 0, 
+                                        height: 0,
+                                    },
+
+                                    textShadowRadius: 8,
+                                    userSelect: "none",
+                                }
+                            ]}
+                        >
+                            123
+                        </Text>
                     </View>
 
                     <View className="share" accessibilityLabel={t("Zdielať...")}>
@@ -1426,7 +1933,28 @@ export const PostContainer = ({
                             is_regular={true}
                         />
 
-                        <Text className="views_counter" style={styles.views_counter}>123</Text>
+                        <Text 
+                            className="views_counter"
+
+                            style={[
+                                styles.views_counter, 
+
+                                {
+                                    color: "transparent",
+                                    textShadowColor: BLUE_COLOR,
+
+                                    textShadowOffset: { 
+                                        width: 0, 
+                                        height: 0,
+                                    },
+
+                                    textShadowRadius: 8,
+                                    userSelect: "none",
+                                }
+                            ]}
+                        >
+                            123
+                        </Text>
                     </View>
 
                     <View className="save" accessibilityLabel={t("Uložiť...")}>
@@ -1439,61 +1967,6 @@ export const PostContainer = ({
                 </View>
             </View>
         )
-
-        // <div class="post_container">
-        //     <div class="header">
-        //         <div class="left">
-        //             <a href="#" title="{% translate 'Zobraziť užívateľa' %}" aria-label="{% translate 'Zobraziť užívateľa' %}">
-        //                 <img class="profile_picture" src="{% static 'images/profile_picture.png' %}" alt=""> <!-- https://www.flaticon.com/free-icon/user_3177440 -->
-        //             </a>
-        //         </div>
-                
-        //         <div class="right">
-        //             <div class="top">
-        //                 <p class="username">{% translate "Neexistujúci účet" %}</p>
-
-        //                 <div class="followers_container" title="{% translate 'Počet sledovateľov...' %}" aria-label="{% translate 'Počet sledovateľov...' %}">
-        //                     <p class="followers">0</p>
-        //                     <i class="fa-solid fa-user"></i> <!-- https://fontawesome.com/icons/user -->
-        //                 </div>
-        //             </div>
-
-        //             <div class="bottom">
-        //                 <p class="created_at">1.1. 2100</p>
-        //             </div>
-        //         </div>
-        //     </div>
-
-        //     <div class="no_found_post_notice">
-        //         <i class="fa-solid fa-magnifying-glass"></i> <!-- https://fontawesome.com/icons/magnifying-glass -->
-        //         <p>{% translate "Ospravedlňujeme sa!<br>Hľadaný príspevok sa nenašiel." %}</p>
-        //     </div>
-
-        //     <div class="society">
-        //         <div class="likes">
-        //             <i class="fa-heart fa-regular"></i> <!-- https://fontawesome.com/icons/heart -->
-        //             <p class="likes_counter" style="filter: blur(5px);">123</p>
-        //         </div>
-
-        //         <div class="comments">
-        //             <i class="fa-regular fa-comment"></i> <!-- https://fontawesome.com/icons/comment -->
-        //             <p class="comments_counter" style="filter: blur(5px);">123</p>
-        //         </div>
-
-        //         <div class="share" data-author="{{ post.user.username }}" title="{% translate 'Zdielať...' %}" aria-label="{% translate 'Zdielať...' %}">
-        //             <i class="fa-solid fa-share-nodes"></i> <!-- https://fontawesome.com/icons/share-nodes -->
-        //         </div>
-
-        //         <div class="views">
-        //             <i class="fa-regular fa-eye"></i> <!-- https://fontawesome.com/icons/eye -->
-        //             <p class="views_counter" style="filter: blur(5px);">123</p>
-        //         </div>
-
-        //         <div class="save">
-        //             <i class="fa-bookmark fa-regular"></i> <!-- https://fontawesome.com/icons/bookmark -->
-        //         </div>
-        //     </div>
-        // </div>
     )
 }
 
@@ -1526,6 +1999,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         gap: 10,
         width: "100%",
+    },
+
+    profile_picture_container: {
+        padding: 2,
+        borderWidth: 1,
+        borderColor: LIGHT_BLUE_COLOR,
+        borderRadius: 100,
     },
 
     right: {

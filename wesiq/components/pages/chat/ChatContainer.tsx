@@ -1079,70 +1079,111 @@ export const ChatContainer = ({
                 </View>
 
                 <View className="middle" style={styles.middle}>
-                    <FlatList 
-                        ref={all_messages}
-                        className="all_messages"
-                        data={chats} 
-                        keyExtractor={(one_chat:Chat) => one_chat.id.toString()}
-
-                        renderItem={({ item: one_chat }) => (
-                            <OneMessageContainer 
-                                one_chat={one_chat}
-                                selected_message_for_edit={selected_message_for_edit}
-                                onCancelEditMessage={cancelEditMessage}
-                                onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
-                                onViewedImagesUpdate={(viewed_images:{ images:{ uri:string }[], index:number }) => setViewedImages(viewed_images)}
-                                onViewedVideoUpdate={(viewed_video:string|null) => setViewedVideo(viewed_video)}
-                                logged_in_user={logged_in_user}
+                    {logged_in_user && receiver.private_account && !receiver.has_follow && chats.length === 0 ? (
+                        <View className="private_account_notice">
+                            <FontAwesome6
+                                name="lock"
+                                size={45}
+                                color={BLUE_COLOR}
+                                style={{ textAlign: "center" }}
                             />
-                        )}
+            
+                            <Text 
+                                style={{
+                                    marginTop: 10,
+                                    textAlign: "center",
+                                    color: SECONDARY_COLOR,
+                                }}
+                            >
+                                {t("Účet používateľa je súkromný.")}
+                            </Text>
+                        </View>
+                    ) : (
+                        <>
+                            {(are_chats_loading || !has_next) && !is_error && chats.length > 0 && (
+                                <Text 
+                                    style={{ 
+                                        textAlign: "center", 
+                                        color: SECONDARY_COLOR,
+                                    }}
+                                >
+                                    {are_chats_loading ? t("Načítavam...") : t("Videli ste všetky správy.")}
+                                </Text>
+                            )}
 
-                        onEndReached={onLoadMoreChats}
-                        onEndReachedThreshold={0.5}
+                            {chats.length === 0 && (
+                                <Text 
+                                    style={{ 
+                                        textAlign: "center", 
+                                        color: SECONDARY_COLOR,
+                                    }}
+                                >
+                                    {are_chats_loading ? t("Načítavam...") : t("Žiadne správy.")}
+                                </Text>
+                            )}
 
-                        ListFooterComponent={
-                            are_chats_loading ? (
-                                <View style={{ padding: 20, alignItems: "center" }}>
-                                    <ActivityIndicator size="small" color={SECONDARY_COLOR} />
-                                </View>
-                            ) : null
-                        }
+                            <FlatList 
+                                ref={all_messages}
+                                className="all_messages"
+                                data={chats} 
+                                keyExtractor={(one_chat:Chat) => one_chat.id.toString()}
 
-                        showsVerticalScrollIndicator={false}
-                        inverted={true} 
-                        keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode="interactive"
-                        style={styles.all_messages}
-                    />
+                                renderItem={({ item: one_chat }) => (
+                                    <OneMessageContainer 
+                                        one_chat={one_chat}
+                                        selected_message_for_edit={selected_message_for_edit}
+                                        onCancelEditMessage={cancelEditMessage}
+                                        onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
+                                        onViewedImagesUpdate={(viewed_images:{ images:{ uri:string }[], index:number }) => setViewedImages(viewed_images)}
+                                        onViewedVideoUpdate={(viewed_video:string|null) => setViewedVideo(viewed_video)}
+                                        logged_in_user={logged_in_user}
+                                    />
+                                )}
 
-                    {(are_chats_loading || !has_next) && !is_error && (
-                        <Text>{are_chats_loading ? t("Načítavam...") : t("Videli ste všetky správy.")}</Text>
-                    )}
+                                onEndReached={onLoadMoreChats}
+                                onEndReachedThreshold={0.5}
 
-                    {Platform.OS !== "web" && (
-                        <ImageViewer
-                            images={viewed_images ? viewed_images.images : []}
-                            imageIndex={viewed_images ? viewed_images.index : 0}
-                            visible={viewed_images !== null}
-                            onRequestClose={() => setViewedImages(null)}
-                            swipeToCloseEnabled={true}
-                            doubleTapToZoomEnabled={true}
-                        />
-                    )}
+                                ListFooterComponent={
+                                    are_chats_loading ? (
+                                        <View style={{ padding: 20, alignItems: "center" }}>
+                                            <ActivityIndicator size="small" color={SECONDARY_COLOR} />
+                                        </View>
+                                    ) : null
+                                }
 
-                    <Modal
-                        visible={viewed_video !== null}
-                        transparent={false}
-                        animationType="slide"
-                        onRequestClose={() => setViewedVideo(null)}
-                    >
-                        {viewed_video && (
-                            <FullscreenVideoPlayer 
-                                url={viewed_video} 
-                                onClose={() => setViewedVideo(null)} 
+                                showsVerticalScrollIndicator={false}
+                                inverted={true} 
+                                keyboardShouldPersistTaps="handled"
+                                keyboardDismissMode="interactive"
+                                style={styles.all_messages}
                             />
-                        )}
-                    </Modal>
+
+                            {Platform.OS !== "web" && (
+                                <ImageViewer
+                                    images={viewed_images ? viewed_images.images : []}
+                                    imageIndex={viewed_images ? viewed_images.index : 0}
+                                    visible={viewed_images !== null}
+                                    onRequestClose={() => setViewedImages(null)}
+                                    swipeToCloseEnabled={true}
+                                    doubleTapToZoomEnabled={true}
+                                />
+                            )}
+
+                            <Modal
+                                visible={viewed_video !== null}
+                                transparent={false}
+                                animationType="slide"
+                                onRequestClose={() => setViewedVideo(null)}
+                            >
+                                {viewed_video && (
+                                    <FullscreenVideoPlayer 
+                                        url={viewed_video} 
+                                        onClose={() => setViewedVideo(null)} 
+                                    />
+                                )}
+                            </Modal>
+                        </>
+                    )}
                 </View>
 
                 <View className="bottom">
@@ -2148,8 +2189,6 @@ const styles = StyleSheet.create({
     },
 
     all_messages: {
-        // flexDirection: "column-reverse",
-        // gap: 50,
         maxHeight: 400,
     },
 
