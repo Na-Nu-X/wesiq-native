@@ -1,14 +1,18 @@
-import React from "react"
+import React, { useId } from "react"
 import { StyleSheet, View, ViewProps } from "react-native"
 import { Image } from "expo-image"
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg"
 import { MAIN_COLOR, BLUE_COLOR } from "@/constants/colors"
 
 type Props = ViewProps & {
-  children?: React.ReactNode
+  children?:React.ReactNode
 }
 
 export default function BackgroundContainer({ children, style, ...props }:Props) {
+    const unique_id:string = useId().replace(/:/g, "") // Gets The Unique ID
+    const main_gradient_id:string = `main_gradient_${unique_id}` // Gets The Main Gradient ID
+    const top_glow_id:string = `top_glow_${unique_id}` // Gets The Main Gradient ID
+
     return (
         <View style={[styles.container, style]} {...props}>
             <Image
@@ -20,7 +24,7 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
             <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
                 <Defs>
                     <RadialGradient
-                        id="main_gradient"
+                        id={main_gradient_id}
                         cx="50%"
                         cy="40%"
                         rx="60%"
@@ -33,7 +37,7 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
                     </RadialGradient>
             
                     <RadialGradient
-                        id="top_glow"
+                        id={top_glow_id}
                         cx="50%"
                         cy="-20%"
                         rx="100%"
@@ -45,9 +49,9 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
                         <Stop offset="55%" stopColor={BLUE_COLOR} stopOpacity="0" />
                     </RadialGradient>
                 </Defs>
-            
-                <Rect width="100%" height="100%" fill="url(#main_gradient)" />
-                <Rect width="100%" height="100%" fill="url(#top_glow)" />
+
+                <Rect width="100%" height="100%" fill={`url(#${main_gradient_id})`} />
+                <Rect width="100%" height="100%" fill={`url(#${top_glow_id})`} />
             </Svg>
 
             {children}

@@ -1132,6 +1132,7 @@ export const ChatContainer = ({
                                     <OneMessageContainer 
                                         one_chat={one_chat}
                                         selected_message_for_edit={selected_message_for_edit}
+                                        onHandleEditMessage={(message:Chat) => handleEditMessage(message)}
                                         onCancelEditMessage={cancelEditMessage}
                                         onShowMessageProperties={(message:Chat) => showMessageProperties(message)}
                                         onViewedImagesUpdate={(viewed_images:{ images:{ uri:string }[], index:number }) => setViewedImages(viewed_images)}

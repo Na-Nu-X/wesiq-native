@@ -693,6 +693,7 @@ const styles = StyleSheet.create({
 
     form_report: {
         alignSelf: "center",
+        color: RED_COLOR,
         // font-size: 0.9em;
     },
 

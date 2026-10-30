@@ -11,6 +11,7 @@ import { getMinimalistFormattedTime } from "@/utils/time"
 import PasswordResetForm from "@/components/pages/password_reset/PasswordResetForm"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useTranslation } from "react-i18next"
+import { useLocalSearchParams } from "expo-router"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -22,6 +23,8 @@ export default function PasswordResetScreen() {
     
     const MAX_REMAINING_TIME:number = 300 // Stores The Maximum Remaining Time In Seconds
     const [remaining_time, setRemainingTime] = useState<number>(0) // Stores The Remaining Time
+
+    const { code } = useLocalSearchParams<{ code:string }>() // Gets The Code
 
     // Function For Get The Remaining Time
     const getRemainingTime = async ():Promise<void> => {
@@ -38,13 +41,8 @@ export default function PasswordResetScreen() {
     }, [])
 
     return (
-        <BackgroundContainer>
+        <BackgroundContainer style={{ flex: 1 }}>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
-                    logged_in_user={logged_in_user} 
-                    setActiveForm={setActiveForm} 
-                />
-
                 <ScrollView 
                     className="content" 
                     style={styles.content} 
@@ -71,6 +69,7 @@ export default function PasswordResetScreen() {
                             time={remaining_time} 
                             max_remaining_time={MAX_REMAINING_TIME} 
                             onShowLoginForm={() => setActiveForm("login_form")} 
+                            code={code || null}
                         />
                     )}
                 </ScrollView>

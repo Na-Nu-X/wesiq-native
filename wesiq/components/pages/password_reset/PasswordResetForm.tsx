@@ -18,12 +18,18 @@ import type { BasicResponse } from "../community/Feed"
 interface PasswordResetFormProps {
     time:number, // Time In Seconds
     max_remaining_time:number,
-    onShowLoginForm:() => void
+    onShowLoginForm:() => void,
+    code:string|null
 }
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle) // Creates The Animated Circle
 
-export default function PasswordResetForm({ time, max_remaining_time, onShowLoginForm }:PasswordResetFormProps) {
+export default function PasswordResetForm({ 
+    time, 
+    max_remaining_time, 
+    onShowLoginForm, 
+    code 
+}:PasswordResetFormProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const router:ImperativeRouter = useRouter() // Gets The Router
@@ -41,6 +47,11 @@ export default function PasswordResetForm({ time, max_remaining_time, onShowLogi
 
     const RADIUS:number = 40 // Defines The Radius
     const CIRCUMFERENCE:number = 2 * Math.PI * RADIUS // Defines The Circumference
+
+    // Initializes The Fill Of The Password Reset Code
+    useEffect(() => {
+        if(code) handleOtpInputChange(code, 0) // Handles The OTP Input Change
+    }, [code])
 
     // Initializes The Timer
     useEffect(() => {
@@ -112,7 +123,7 @@ export default function PasswordResetForm({ time, max_remaining_time, onShowLogi
 
             const next_index:number = Math.min(index + pasted_password_reset_code.length, 5) // Gets The Next Index
 
-            otp_inputs.current[next_index].focus() // Adds Focus To The Next Input
+            otp_inputs.current[next_index]?.focus() // Adds Focus To The Next Input
             return
         }
 
@@ -120,11 +131,11 @@ export default function PasswordResetForm({ time, max_remaining_time, onShowLogi
 
         new_password_reset_code[index] = numeric_text // Adds The Character
         setPasswordResetCode(new_password_reset_code) // Sets The Password Reset Code
-        if(numeric_text && index < 5) otp_inputs.current[index + 1].focus() // Adds Focus To The Next Input
+        if(numeric_text && index < 5) otp_inputs.current[index + 1]?.focus() // Adds Focus To The Next Input
     }
 
     const handleKeyPress = (event:TextInputKeyPressEvent, index:number):void => {
-        if(event.nativeEvent.key === "Backspace" && !password_reset_code[index] && index > 0) otp_inputs.current[index - 1].focus() // Adds Focus To The Previous Input
+        if(event.nativeEvent.key === "Backspace" && !password_reset_code[index] && index > 0) otp_inputs.current[index - 1]?.focus() // Adds Focus To The Previous Input
     }
 
     // Function For Generate The Password
