@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { View, StyleSheet, Modal, Text, KeyboardAvoidingView, TextInput, Pressable, Platform, Keyboard, Alert } from "react-native"
-import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR, YELLOW_COLOR } from "@/constants/colors"
+import { MAIN_COLOR, SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, RED_COLOR } from "@/constants/colors"
 import { BlurView } from "expo-blur"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"

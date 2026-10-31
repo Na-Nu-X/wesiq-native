@@ -30,7 +30,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
 
     const router:ImperativeRouter = useRouter() // Gets The Router
 
-    const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
+    const [active_post_media, setActivePostMedia] = useState<Record<string, number>>({}) // Stores The Active Post Media
     const [processing_post_report, setProcessingPostReport] = useState<string>("Čakajte! Príspevok sa spracováva.") // Stores The Processing Post Report Message
 
     // Function For Generate Styled Description
@@ -71,7 +71,7 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
     }
 
     // Function For Change The Active Post Media
-    const changePostMedia = (post_id:number, new_index:number, max_index:number):void => {
+    const changePostMedia = (post_id:string, new_index:number, max_index:number):void => {
         if(new_index >= 0 && new_index <= max_index) {
             // Sets The Active Post Media
             setActivePostMedia(previous_active_post_media => ({
@@ -215,11 +215,14 @@ export const ProcessingPostContainer = ({ processing_post, tracked_tasks, onShow
             <GestureDetector gesture={swipe_gesture}>
                 <View className="media" style={styles.media}>
                     {processing_post.media.map((one_post_media: ProcessingMedia, index: number) => {
-                        const current_progress = tracked_tasks.find(
-                            (one_task: TrackedTask) => 
-                                one_task.post_id === processing_post.id && 
-                                one_task.post_media_id === one_post_media.id
-                        )?.progress ?? 0;
+                        // Gets The Matching Task
+                        const matching_task:TrackedTask|null = tracked_tasks.find(
+                            (one_task:TrackedTask) => one_task.post_id === processing_post.id && Number(one_task.post_media_id) === Number(one_post_media.id)
+                        ) || null
+
+                        const current_progress:number = matching_task ? matching_task.progress : 0 // Gets The Current Progress
+
+                        if(current_progress === 100) setProcessingPostReport(t("Príspevok bol úspešne pridaný."))
 
                         return (
                             <View 

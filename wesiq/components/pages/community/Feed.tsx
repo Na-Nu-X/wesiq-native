@@ -33,7 +33,7 @@ interface LoadedPostsResponse {
 export interface Post {
     user:User,
 
-    id:number,
+    id:string,
     description:string|null,
 
     tagged_users:{
@@ -127,7 +127,7 @@ export interface LoadedProcessingPostsResponse {
 export interface ProcessingPost {
     user:User,
 
-    id:number,
+    id:string,
     description:string|null,
 
     tagged_users:{
@@ -296,7 +296,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
             
             else {
                 setPosts(previous_posts => {
-                    const existing_post_ids:Set<number> = new Set(previous_posts.map((one_post:Post) => one_post.id)) // Gets The Existing Post IDs
+                    const existing_post_ids:Set<string> = new Set(previous_posts.map((one_post:Post) => one_post.id)) // Gets The Existing Post IDs
                     const new_posts:Post[] = (loaded_posts_data.posts as Post[]).filter((one_post:Post) => !existing_post_ids.has(one_post.id)) // Gets The New Unique Posts
                 
                     return [...previous_posts, ...new_posts] // Returns The Combined Posts
@@ -439,7 +439,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }
 
     // Function For Report The Post
-    const reportPost = async (post_id:number, reason:string) => {
+    const reportPost = async (post_id:string, reason:string) => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
@@ -491,7 +491,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }
 
     // Function For Edit The Post Settings
-    const editPostSettings = async (post_id:number, setting:string, action:boolean):Promise<void> => {
+    const editPostSettings = async (post_id:string, setting:string, action:boolean):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné upraviť bez prihlásenia.")) // Shows The Alert
@@ -561,7 +561,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }
 
     // Function For Delete The Post
-    const deletePost = async (post_id:number):Promise<void> => {
+    const deletePost = async (post_id:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
@@ -826,7 +826,7 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     }
 
     // Function For Share The Post
-    const sharePost = async (post_id:number, username:string):Promise<void> => {
+    const sharePost = async (post_id:string, username:string):Promise<void> => {
         const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
     
         try {

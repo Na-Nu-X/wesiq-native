@@ -18,252 +18,279 @@ import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components
 
 export interface TrackedTask {
   task_id:string,
-  post_id:number,
+  post_id:string,
   post_media_id:number,
   progress:number,
   state:"PENDING"|"PROGRESS"|"SUCCESS"|"FAILURE",
 }
 
 export default function HomeScreen() {
-  const { t } = useTranslation() // Initializes The Translations
+    const { t } = useTranslation() // Initializes The Translations
 
-  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
-  const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
-  const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
+    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
+    const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
-  const [tracked_tasks, setTrackedTasks] = useState<TrackedTask[]>([]) // Stores The Tracked Tasks
-  const [compress_tasks, setCompressTasks] = useState<CompressTask[]>([]) // Stores The Currently Being Compressed Tasks
+    const [tracked_tasks, setTrackedTasks] = useState<TrackedTask[]>([]) // Stores The Tracked Tasks
+    const [compress_tasks, setCompressTasks] = useState<CompressTask[]>([]) // Stores The Currently Being Compressed Tasks
 
-  const [processing_posts, setProcessingPosts] = useState<ProcessingPost[]>([]) // Stores The Processing Posts
+    const [processing_posts, setProcessingPosts] = useState<ProcessingPost[]>([]) // Stores The Processing Posts
 
-  // Function For Get The Upload Progress For Each Post Media
-  const getUploadProgress = async ():Promise<void> => {
-    try {
-      if(!logged_in_user) {
-        Alert.alert(t("Chyba"), t("Príspevok nie je možné pridať bez prihlásenia.")) // Shows The Alert
-        return
-      }
+    // Function For Load The Stored Tasks
+    const loadStoredTasks = async ():Promise<void> => {
+        try {
+            const stored_processing_posts_json:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Stored Processing Posts In JSON Format
 
-      if(compress_tasks.length > 0) {
-        const all_task_ids:string[] = compress_tasks.map((one_task:CompressTask) => one_task.task_id) // Stores All UUIDs Of Tasks (Uploaded Files)
+            if(stored_processing_posts_json) {
+                const stored_processing_posts:CompressTask[] = JSON.parse(stored_processing_posts_json) // Gets The Stored Processing Posts
 
-        // Creates The New Tracked Tasks
-        const new_tracked_tasks:TrackedTask[] = compress_tasks.map((one_task:CompressTask) => ({
-            task_id: one_task.task_id,
-            post_id: one_task.post_id,
-            post_media_id: one_task.post_media_id,
-            progress: 0,
-            state: "PENDING"
-        }))
+                setCompressTasks(stored_processing_posts) // Sets The Compress Tasks
 
-        // Sets The Tracked Tasks
-        setTrackedTasks((previous_tracked_tasks:TrackedTask[]) => {
-            const existing_ids:Set<string> = new Set(previous_tracked_tasks.map((one_task:TrackedTask) => one_task.task_id)) // Gets The Existing IDs
-            const unique_new_tasks = new_tracked_tasks.filter((one_task:TrackedTask) => !existing_ids.has(one_task.task_id)) // Gets The Unique New Tasks
-            return [...previous_tracked_tasks, ...unique_new_tasks]
-        })
+                // Sets The Tracked Tasks
+                setTrackedTasks(stored_processing_posts.map((one_task:CompressTask) => ({
+                    task_id: one_task.task_id,
+                    post_id: String(one_task.post_id),
+                    post_media_id: Number(one_task.post_media_id),
+                    progress: 0,
+                    state: "PENDING"
+                })))
+            }
+        } 
+        
+        catch {
+            console.error(t("Pri načítavaní uložených príspevkov na spracovanie došlo k chybe."))
+        }
+    }
 
-        // Checks The Progress Of Uploaded Posts
-        const check_upload_progress_interval = setInterval(async () => {
-          try {
+    // Initializes The Load Of The Stored Tasks
+    useEffect(() => {
+        loadStoredTasks() // Loads The Stored Tasks
+    }, [])
+
+    // Initializes The Load Of The Upload Progress For Each Post Media
+    useEffect(() => {
+        if(compress_tasks.length === 0) return
+    
+        let is_mounted:boolean = true // Stores The Information If The User Is On The Screen
+    
+        // Gets The Upload Progress Every 1,5 Seconds
+        const get_upload_progress_interval:number = setInterval(async () => {
+            try {
+                const all_task_ids:string[] = compress_tasks.map(one_task => one_task.task_id) // Stores All UUIDs Of Tasks (Uploaded Files)
+
+                const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+
+                const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {
+                    const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
+                        headers: { "Authorization": `Bearer ${user_token}` }
+                    })
+                    
+                    if(!upload_progress_response.ok) throw new Error(t("Chyba servera"))
+                    return upload_progress_response.json() as Promise<UploadProgressResponse>
+                })
+    
+                const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises) // Gets The Tasks Results
+
+                if(!is_mounted) return
+    
+                let any_task_finished:boolean = false  // Stores The Finished Task IDs
+                let finished_task_ids:string[] = [] // Stores The Finished Task IDs
+    
+                // Sets The Tracked Tasks
+                setTrackedTasks((previous_tracked_tasks:TrackedTask[]) => {
+                    return previous_tracked_tasks.map((one_task:TrackedTask) => {
+                        const task_index:number = all_task_ids.indexOf(one_task.task_id) // Gets The Task Index
+                        
+                        if(task_index === -1 || !tasks_results[task_index]) return one_task // Returns The Unchanged Task
+
+                        // Gets The Upload Progress
+                        const upload_progress:{
+                            task_id:string,
+                            state:"PENDING"|"PROGRESS"|"SUCCESS"|"FAILURE",
+                            progress:number
+                        } = tasks_results[task_index].upload_progress 
+
+                        const state:"PENDING"|"PROGRESS"|"SUCCESS"|"FAILURE" = upload_progress.state.toUpperCase() as TrackedTask["state"] // Gets The State
+
+                        let progress:number = one_task.progress // Gets The Progress
+                        if(state === "SUCCESS") progress = 100 // Sets The Progress
+                        else if(upload_progress.progress !== undefined) progress = upload_progress.progress // Sets The Progress
+    
+                        if(state === "SUCCESS" || state === "FAILURE") {
+                            any_task_finished = true,
+                            finished_task_ids.push(one_task.task_id)
+                        }
+    
+                        // Returns The Task
+                        return { 
+                            ...one_task, 
+                            progress, 
+                            state 
+                        }
+                    })
+                })
+    
+                if(any_task_finished && finished_task_ids.length > 0) {
+                    // Sets The Compress Tasks
+                    setCompressTasks((previous_compress_tasks:CompressTask[]) => {
+                        const active_processing_posts:CompressTask[] = previous_compress_tasks.filter((one_task:CompressTask) => !finished_task_ids.includes(one_task.task_id)) // Gets The Active Processing Posts
+                        
+                        if(active_processing_posts.length === 0) {
+                            AsyncStorage.removeItem("processing_posts") // Removes Processing Posts From The Async Storage
+                        } 
+                        
+                        else {
+                            AsyncStorage.setItem("processing_posts", JSON.stringify(active_processing_posts)) // Saves Processing Posts To The Async Storage
+                        }
+                        
+                        return active_processing_posts // Returns The Active Processing Posts
+                    })
+                    
+                    loadProcessingPosts() // Loads The Processing Posts
+                }
+    
+            } 
+            
+            catch {
+                console.error(t("Pri získavaní pokroku procesu nahrávania príspevku došlo k chybe."))
+            }
+        }, 1500)
+    
+        return () => {
+            is_mounted = false // Sets The Information That The User Isn't On The Screen
+            clearInterval(get_upload_progress_interval) // Deletes The Upload Progress Interval
+        }
+    }, [compress_tasks])
+
+    // Function For Load The Processing Posts
+    const loadProcessingPosts = async ():Promise<void> => {
+        if(!logged_in_user) {
+            Alert.alert(t("Chyba"), t("Spracovávané príspevky nie je možné získať bez prihlásenia.")) // Shows The Alert
+            return
+        }
+
+        try {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
 
-            const upload_progress_response_promises:Promise<UploadProgressResponse>[] = all_task_ids.map(async (one_task_id:string):Promise<UploadProgressResponse> => {    
-              const upload_progress_response:Response = await fetch(`${API_URL}/get-upload-progress/${one_task_id}/`, {
-                headers: { "Authorization": `Bearer ${user_token}` }
-              })
-              
-              if(!upload_progress_response.ok) throw new Error(t("Chyba servera"))
-              return upload_progress_response.json() as Promise<UploadProgressResponse>
+            // Sends The GET Request To The Server
+            const loaded_processing_posts_response:Response = await fetch(`${API_URL}/get-processing-posts/`, {
+                method: "GET",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json",
+                    "Authorization": `Bearer ${user_token}`
+                }
             })
 
-            const tasks_results:UploadProgressResponse[] = await Promise.all(upload_progress_response_promises)
+            // If The Response Isn't Success
+            if(!loaded_processing_posts_response.ok) {
+                console.log(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
+                return
+            }
 
-            loadProcessingPosts() // Loads Processing Posts
+            const loaded_processing_posts_data:LoadedProcessingPostsResponse = await loaded_processing_posts_response.json() // Gets The Loaded Processing Posts Data
 
-            // Sets The Tracked Tasks
-            setTrackedTasks((previous_tracked_tasks:TrackedTask[]) => previous_tracked_tasks.map((one_task:TrackedTask) => {
-              const task_index:number = all_task_ids.indexOf(one_task.task_id) // Gets The Task Index
-              
-              if(task_index !== -1 && tasks_results[task_index]) {
-                const upload_progress = tasks_results[task_index].upload_progress // Gets The Upload Progress
-                const state:"PENDING"|"PROGRESS"|"SUCCESS"|"FAILURE" = upload_progress.state.toUpperCase() as TrackedTask["state"] // Gets The State
+            // If The Response Isn't Success
+            if(!loaded_processing_posts_data.success || !loaded_processing_posts_data.processing_posts) {
+                console.log(loaded_processing_posts_data.message)
+                return
+            }
                 
-                let progress = one_task.progress // Gets The Progress
-                if(state === "SUCCESS") progress = 100 // Sets The Progress
-                else if(upload_progress.progress !== undefined) progress = upload_progress.progress // Sets The Progress
+            setProcessingPosts(loaded_processing_posts_data.processing_posts) // Sets The Processing Posts
+        } 
         
-                return {
-                  ...one_task,
-                  progress: progress,
-                  state: state
-                }
-              }
-          
-              return one_task // Returns The Unchanged Task
-            }))
-
-            // Gets The Finished Task IDs
-            const finished_task_ids:string[] = all_task_ids.filter((task_id:string, index:number) => {
-              const state:string = tasks_results[index].upload_progress.state.toUpperCase() // Gets The State
-              return state === "SUCCESS" || state === "FAILURE" // Returns Completed Tasks
-            })
-
-            if(finished_task_ids.length > 0) {
-              try {
-                const stored_processing_posts_json:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Stored Processing Posts In JSON Format
-                
-                if(stored_processing_posts_json) {
-                  const stored_processing_posts:CompressTask[] = JSON.parse(stored_processing_posts_json) // Gets The Stored Processing Posts
-                  const active_processing_posts:CompressTask[] = stored_processing_posts.filter(one_task => !finished_task_ids.includes(one_task.task_id)) // Gets The Active Processing Posts
-
-                  if(active_processing_posts.length === 0) await AsyncStorage.removeItem("processing_posts") // Removes Processing Posts From The Async Storage
-                  else await AsyncStorage.setItem("processing_posts", JSON.stringify(active_processing_posts)) // Saves Processing Posts To The Async Storage
-                }
-              }
-              
-              catch {
-                console.error(t("Pri mazaní dokončených úloh došlo k chybe."))
-              }
-            }
-
-            const all_tasks_finished:boolean = tasks_results.every((one_task:UploadProgressResponse) => one_task.upload_progress.state.toUpperCase() === "SUCCESS") // If Every Tasks Has Been Succeeded
-            const any_task_failed:boolean = tasks_results.some((one_task:UploadProgressResponse) => one_task.upload_progress.state.toUpperCase() === "FAILURE") // If Any Task Has Failed
-
-            // let total_progress:number = 0 // Stores The Total Progress
-
-            // tasks_results.forEach(one_task => {
-            //   if(one_task.upload_progress) {
-            //     if(one_task.upload_progress.state.toUpperCase() === "SUCCESS") {
-            //       total_progress += 100
-            //     }
-
-            //     else if(one_task.upload_progress.progress !== undefined) total_progress += one_task.upload_progress.progress
-            //   }
-            // })
-
-            if(all_tasks_finished) {
-              clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-            }
-
-            else if(any_task_failed) {
-              clearInterval(check_upload_progress_interval) // Deletes The Upload Progress Interval
-              // setButtonText("Chyba pri spracovaní") // Sets The Button Text
-            }
-          }
-            
-          catch {
-            console.error(t("Chyba spojenia."))
-            // setButtonText("Chyba spojenia") // Sets The Button Text
-          }
-        }, 1500)
-      }
-    }
-    
-    catch {
-        // setButtonText("Skúste znovu") // Sets The Button Text
-    }
-  }
-
-  useEffect(() => {
-    getUploadProgress() // Gets The Upload Progress For Each Post Media
-  }, [compress_tasks])
-
-  // Function For Load Processing Posts
-  const loadProcessingPosts = async () => {
-    if(!logged_in_user) {
-      Alert.alert(t("Chyba"), t("Spracovávané príspevky nie je možné získať bez prihlásenia.")) // Shows The Alert
-      return
-    }
-
-    try {
-      const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-
-      // Sends The GET Request To The Server
-      const loaded_processing_posts_response:Response = await fetch(`${API_URL}/get-processing-posts/`, {
-        method: "GET",
-
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${user_token}`
+        catch {
+            console.log(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
         }
-      })
-
-      // If The Response Isn't Success
-      if(!loaded_processing_posts_response.ok) {
-        Alert.alert(t("Chyba"), t("Pri načítaní spracovávaných príspevkov došlo k chybe.")) // Shows The Alert
-        return
-      }
-
-      const loaded_processing_posts_data:LoadedProcessingPostsResponse = await loaded_processing_posts_response.json() // Gets The Loaded Processing Posts Data
-
-      // If The Response Isn't Success
-      if(!loaded_processing_posts_data.success || !loaded_processing_posts_data.processing_posts) {
-        Alert.alert(t("Chyba"), loaded_processing_posts_data.message) // Shows The Alert
-        return
-      }
-        
-      setProcessingPosts(loaded_processing_posts_data.processing_posts) // Sets The Processing Posts
-    } 
-    
-    catch {
-      Alert.alert(t("Chyba"), t("Pri načítaní spracovávaných príspevkov došlo k chybe.")) // Shows The Alert
     }
-  }
 
-  // Initializes The Load Of Processing Posts
-  useEffect(() => {
-    if(logged_in_user) loadProcessingPosts() // Loads Processing Posts
-  }, [logged_in_user])
+    // Initializes The Load Of Processing Posts
+    useEffect(() => {
+        if(logged_in_user) loadProcessingPosts() // Loads Processing Posts
+    }, [logged_in_user])
 
-  return (
-    <BackgroundContainer style={{ flex: 1 }}>
-      <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-        <Banner 
-          logged_in_user={logged_in_user} 
-          setActiveForm={setActiveForm} 
-          setIsUploadPostFormDialogOpen={setIsUploadPostFormDialogOpen} 
-        />
+    // Function For Store The Compress Tasks
+    const storeCompressTasks = async (new_compress_tasks:CompressTask[]):Promise<void> => {
+        try {
+            const stored_processing_posts_json:string|null = await AsyncStorage.getItem("processing_posts") // Gets The Stored Processing Posts In JSON Format
+            const stored_processing_posts:CompressTask[] = stored_processing_posts_json ? JSON.parse(stored_processing_posts_json) : [] // Gets The Stored Processing Posts
+            const combined_tasks:CompressTask[] = [...stored_processing_posts, ...new_compress_tasks] // Gets The Combined Tasks
+    
+            await AsyncStorage.setItem("processing_posts", JSON.stringify(combined_tasks)) // Saves Processing Posts To The Async Storage
+            setCompressTasks(combined_tasks) // Sets The Compress Tasks
+            
+            // Sets The Tracked Tasks
+            setTrackedTasks((previous_tracked_tasks:TrackedTask[]) => {
+                const existing_ids:Set<string> = new Set(previous_tracked_tasks.map((one_tracked_task:TrackedTask) => one_tracked_task.task_id)) // Gets The Existing IDs
+                
+                // Gets The New Tracked Tasks
+                const new_tracked_tasks = new_compress_tasks
+                    .filter((one_task:CompressTask) => !existing_ids.has(one_task.task_id))
+                    .map((one_task:CompressTask) => ({ 
+                        task_id: one_task.task_id,
+                        post_id: String(one_task.post_id),
+                        post_media_id: Number(one_task.post_media_id),
+                        progress: 0, 
+                        state: "PENDING" as const 
+                    }))
 
-        <ScrollView 
-          className="content" 
-          style={styles.content} 
-          contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled" 
-          keyboardDismissMode="on-drag"
-        >
-          <LoginFormDialog 
-            visible={active_form==="login_form"}
-            onChangeActiveForm={() => setActiveForm("registration_form")}
-            onClose={() => setActiveForm(null)}
-            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-          />
+                return [...previous_tracked_tasks, ...new_tracked_tasks] // Returns The Combined Tasks
+            })
+        } 
+        
+        catch {
+            console.error(t("Pri ukladaní úloh o nahrávaní príspevkov došlo k chybe."))
+        }
+    }
 
-          <RegistrationFormDialog
-            visible={active_form==="registration_form"}
-            onChangeActiveForm={() => setActiveForm("login_form")}
-            onClose={() => setActiveForm(null)}
-            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-          />
+    return (
+        <BackgroundContainer style={{ flex: 1 }}>
+            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                <Banner 
+                    logged_in_user={logged_in_user} 
+                    setActiveForm={setActiveForm} 
+                    setIsUploadPostFormDialogOpen={setIsUploadPostFormDialogOpen} 
+                />
 
-          <UploadPostFormDialog 
-            visible={is_upload_post_form_dialog_open}
-            onClose={() => setIsUploadPostFormDialogOpen(false)}
-            onCompressTasksLoad={(compress_tasks:CompressTask[]) => setCompressTasks(compress_tasks)}
-          />
+                <ScrollView 
+                    className="content" 
+                    style={styles.content} 
+                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    keyboardShouldPersistTaps="handled" 
+                    keyboardDismissMode="on-drag"
+                >
+                    <LoginFormDialog 
+                        visible={active_form==="login_form"}
+                        onChangeActiveForm={() => setActiveForm("registration_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-          <SearchUsers />
+                    <RegistrationFormDialog
+                        visible={active_form==="registration_form"}
+                        onChangeActiveForm={() => setActiveForm("login_form")}
+                        onClose={() => setActiveForm(null)}
+                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    />
 
-          <Feed 
-            tracked_tasks={tracked_tasks} 
-            processing_posts={processing_posts}
-            onProcessingPostsUpdate={(processing_posts:ProcessingPost[]) => setProcessingPosts(processing_posts)}
-          />
-        </ScrollView>
-      </SafeAreaView>
-    </BackgroundContainer>
-  )
+                    <UploadPostFormDialog 
+                        visible={is_upload_post_form_dialog_open}
+                        onClose={() => setIsUploadPostFormDialogOpen(false)}
+                        onCompressTasksLoad={(compress_tasks:CompressTask[]) => storeCompressTasks(compress_tasks)}
+                    />
+
+                    <SearchUsers />
+
+                    <Feed 
+                        tracked_tasks={tracked_tasks} 
+                        processing_posts={processing_posts}
+                        onProcessingPostsUpdate={(processing_posts:ProcessingPost[]) => setProcessingPosts(processing_posts)}
+                    />
+                </ScrollView>
+            </SafeAreaView>
+        </BackgroundContainer>
+    )
 }
 
 const styles = StyleSheet.create({

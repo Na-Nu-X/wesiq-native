@@ -71,7 +71,14 @@ export default function ProfilePictureLink({
             accessibilityRole="button"
             accessibilityLabel={label} 
         >
-            <View className="profile_picture_container" style={styles.profile_picture_container}>
+            <View 
+                className="profile_picture_container" 
+                
+                style={[
+                    styles.profile_picture_container,
+                    user_subscription && styles.subscriber_profile_picture,
+                ]}
+            >
                 <AnimatedImage 
                     className={`profile_picture skeleton_loading ${
                         user_subscription ? "subscriber" : "" // Adds The Subscriber Class
@@ -88,8 +95,7 @@ export default function ProfilePictureLink({
                     style={[
                         styles.profile_picture,
                         { width: width, height: height },
-                        user_subscription && styles.subscriber_profile_picture,
-                        { transform: [{ scale: animated_scale }] }
+                        { transform: [{ scale: animated_scale }] },
                     ]}
                 />
             </View>

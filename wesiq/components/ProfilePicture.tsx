@@ -28,7 +28,14 @@ export default function ProfilePicture({
     }, [user_profile_picture_name, user_id])
 
     return (
-        <View className="profile_picture_container" style={styles.profile_picture_container}>
+        <View 
+            className="profile_picture_container" 
+            
+            style={[
+                styles.profile_picture_container,
+                user_subscription && styles.subscriber_profile_picture,
+            ]}
+        >
             <AnimatedImage 
                 className={`profile_picture ${
                     user_subscription ? "subscriber" : "" // Adds The Subscriber Class
@@ -45,7 +52,6 @@ export default function ProfilePicture({
                 style={[
                     styles.profile_picture,
                     { width: width, height: height },
-                    user_subscription && styles.subscriber_profile_picture,
                 ]}
             />
         </View>
