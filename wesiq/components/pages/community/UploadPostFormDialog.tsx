@@ -12,8 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { PostsPreview } from "./PostsPreview"
 import { LocationContainer } from "./LocationContainer"
 import { useTranslation } from "react-i18next"
-
-import type { LoggedInUser, LoggedInUserResponse } from "@/components/LoginFormDialog"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 export interface UploadPostResponse {
     success:boolean,
@@ -82,7 +81,7 @@ export default function UploadPostFormDialog({
 }:UploadPostFormDialogProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
 
     const [selected_files, setSelectedFiles] = useState<SelectedFile[]>([]) // Stores The Selected Files
     const [thumbnail_files, setThumbnailFiles] = useState<ImagePicker.ImagePickerAsset[]>([]) // Stores The Thumbnail Files
@@ -105,49 +104,6 @@ export default function UploadPostFormDialog({
     const [is_uploading, setIsUploading] = useState<boolean>(false) // Stores The Information If The Post Is Uploading
 
     const MAX_DESCRIPTION_LENGTH:number = 500 // Defines The Maximum Description Length
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-    
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Handle The Emoji Select
     const handleEmojiSelect = (emoji:{ emoji:string }) => {

@@ -185,7 +185,7 @@ export default function HomeScreen() {
 
             // If The Response Isn't Success
             if(!loaded_processing_posts_response.ok) {
-                console.log(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
+                console.error(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
                 return
             }
 
@@ -193,7 +193,7 @@ export default function HomeScreen() {
 
             // If The Response Isn't Success
             if(!loaded_processing_posts_data.success || !loaded_processing_posts_data.processing_posts) {
-                console.log(loaded_processing_posts_data.message)
+                console.error(loaded_processing_posts_data.message)
                 return
             }
                 
@@ -201,7 +201,7 @@ export default function HomeScreen() {
         } 
         
         catch {
-            console.log(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
+            console.error(t("Pri načítaní spracovávaných príspevkov došlo k chybe."))
         }
     }
 

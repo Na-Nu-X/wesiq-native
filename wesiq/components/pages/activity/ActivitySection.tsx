@@ -15,12 +15,12 @@ import { randomColor } from "@/utils/randomColor"
 import { BasicResponse } from "@/components/pages/community/Feed"
 import { WarmUp } from "./WarmUp"
 import { useTranslation } from "react-i18next"
+import { HeartRate } from "./HeartRate"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
 import type { Day } from "../manage_training_plans/DaySelectMenu"
-import { HeartRate } from "./HeartRate"
 
 export interface TrainingPlanExercise {
     id:number,
@@ -137,7 +137,7 @@ export default function ActivitySection({
 }:ActivitySectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
     const [active_exercise_index, setActiveExerciseIndex] = useState<number>(0) // Stores The Active Exercise Index
@@ -205,49 +205,6 @@ export default function ActivitySection({
     }, [active_training_plan_exercises])
 
     const MIN_RED:number = 82 // Final Progress Bar Color rgb(82, 207, 32)
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-    
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Get The All Exercises From All Training Plans
     const getTrainingPlansExercises = async ():Promise<void> => {
@@ -836,8 +793,6 @@ export default function ActivitySection({
             }
 
             if(exercises_duration) new_activity_data.training_plan_summary = createTrainingPlanSummary() // Creates The Training Plan Summary
-
-            console.log(new_activity_data)
 
             try {
                 if(!logged_in_user) {

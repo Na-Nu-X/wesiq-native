@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useLocalSearchParams } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { ChatContainer } from "@/components/pages/chat/ChatContainer"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -124,7 +125,7 @@ export interface Attachment {
 export default function ChatDetailScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
 
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -136,48 +137,6 @@ export default function ChatDetailScreen() {
     const [has_next, setHasNext] = useState<boolean>(true) // Stores The Information If There Are More Chats Available
     const [are_chats_loading, setAreChatsLoading] = useState(false) // Stores The Information If Chats Are Loading
     const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Load The Chats
     const loadChats = async (username:string, page:number = 1, is_refresh:boolean = false):Promise<void> => {

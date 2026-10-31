@@ -21,12 +21,13 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import { DynamicImage } from "@/components/pages/community/DynamicImage"
 import FrontLever from "@/components/pages/articles/front_lever"
 import * as Crypto from "expo-crypto"
+import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/AnimatedExerciseStatisticsBar"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Comment } from "@/components/pages/community/Feed"
 import type { AddedComment } from "@/components/pages/community/PostContainer"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/AnimatedExerciseStatisticsBar"
 
 interface LoadedArticleResponse {
     success:boolean,
@@ -72,7 +73,7 @@ interface AddedArticleCommentResponse {
 export default function ArticleScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const { article } = useLocalSearchParams<{ article:string }>() // Gets The Searched Article
@@ -114,48 +115,6 @@ export default function ArticleScreen() {
             return Crypto.randomUUID()
         }
     }
-    
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Get The Article
     const getArticle = async (article:string):Promise<void> => {
@@ -189,7 +148,6 @@ export default function ArticleScreen() {
                 return
             }
             
-            console.log(loaded_article_data)
             setLoadedArticle(loaded_article_data.article) // Sets The Loaded Article
         } 
         
@@ -248,7 +206,7 @@ export default function ArticleScreen() {
     const addArticleRating = async (article_id:number, rating:number):Promise<void> => {
         try {
             if(!logged_in_user) {
-                console.log(t("Chyba"), t("Hodnotenie nie je možné odoslať bez prihlásenia."))
+                console.warn(t("Chyba"), t("Hodnotenie nie je možné odoslať bez prihlásenia."))
                 return
             }
 
@@ -361,8 +319,6 @@ export default function ArticleScreen() {
     
             setHasNextArticleComments(loaded_article_comments_data.has_next || false) // Sets The Has Next Article Comments
             setArticleCommentsPage(page) // Sets The Article Comments Page
-
-            console.log(loaded_article_comments_data.visible_comments)
         } 
         
         catch {

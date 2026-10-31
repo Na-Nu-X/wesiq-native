@@ -17,10 +17,11 @@ import * as ImagePicker from "expo-image-picker"
 import { useTranslation } from "react-i18next"
 import EditAccountForm from "@/components/pages/profile/EditAccountForm"
 import ProfileSection from "@/components/pages/profile/ProfileSection"
-
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/pages/community/Feed"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import Back from "@/components/Back"
+
+import type { BasicResponse } from "@/components/pages/community/Feed"
+import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 interface ProfileResponse {
     success:boolean,
@@ -150,7 +151,7 @@ export default function ProfileScreen() {
     const { t, i18n } = useTranslation() // Initializes The Translations
     const language:string = i18n.language // Gets The Language
     
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [is_found, setIsFound] = useState<boolean>(false) // Stores The Information If The User Was Found
@@ -184,48 +185,6 @@ export default function ProfileScreen() {
     const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
     const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
     const [is_follow_requests_dialog_open, setIsFollowRequestsDialogOpen] = useState<boolean>(false) // Stores The Information If The Follow Requests Dialog Is Open
-    
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Get The Profile
     const getProfile = async (username:string):Promise<void> => {

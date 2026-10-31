@@ -52,7 +52,7 @@ export const FollowRequestsDialog = ({
 
             // If The Response Isn't Success
             if(!approve_follow_request_response.ok) {
-                console.log(t("Pri potvrdení žiadosti o sledovanie došlo k chybe.")) // Shows The Alert
+                console.error(t("Pri potvrdení žiadosti o sledovanie došlo k chybe."))
                 return
             }
 
@@ -60,7 +60,7 @@ export const FollowRequestsDialog = ({
 
             // If The Response Isn't Success
             if(!approve_follow_request_data.success) {
-                console.log(approve_follow_request_data.message) // Shows The Alert
+                console.error(approve_follow_request_data.message)
                 return
             }
 
@@ -75,7 +75,7 @@ export const FollowRequestsDialog = ({
         } 
         
         catch {
-            console.log(t("Pri potvrdení žiadosti o sledovanie došlo k chybe.")) // Shows The Alert
+            console.error(t("Pri potvrdení žiadosti o sledovanie došlo k chybe."))
         }
     }
 

@@ -18,8 +18,8 @@ import Svg, { Circle } from "react-native-svg"
 import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 import { generateKey } from "@/utils/generateKey"
 import { useTranslation } from "react-i18next"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { TrainingPlanExercise } from "../activity/ActivitySection"
 import type { TrainingPlanSlide } from "./EditTrainingPlan"
 
@@ -56,7 +56,7 @@ export default function NewTrainingPlan({
 
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
 
     const [training_plan_title, setTrainingPlanTitle] = useState<string>("") // Stores The Training Plan Slide
 
@@ -127,49 +127,6 @@ export default function NewTrainingPlan({
         shadowRadius: 30,
         elevation: exercise_scale.value > 1 ? 10 : 0,
     }))
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-    
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Schedule The Notification
     const scheduleNotification = async (seconds:number):Promise<void> => {

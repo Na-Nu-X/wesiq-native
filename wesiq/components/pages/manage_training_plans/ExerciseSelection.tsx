@@ -12,8 +12,6 @@ import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
-
 interface LoadedExercisesResponse {
     success:boolean, 
     exercises:Exercise[],
@@ -41,8 +39,6 @@ type ExerciseSelectionProps = {
 
 export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLocation }:ExerciseSelectionProps) {
     const { t } = useTranslation() // Initializes The Translations
-
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
 
     const [exercises, setExercises] = useState<Exercise[]>([]) // Stores The Exercises
     const [are_exercises, setAreExercisesLoading] = useState<boolean>(false) // Stores The Information If Exercises Are Loading
@@ -107,49 +103,6 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
         shadowRadius: 30,
         elevation: scale.value > 1 ? 10 : 0,
     }))
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-    
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Get The Exercises
     const getExercises = async ():Promise<void> => {

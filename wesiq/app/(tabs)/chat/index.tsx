@@ -15,8 +15,8 @@ import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
 import { SearchChat } from "@/components/pages/chat/SearchChat"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Chat } from "@/components/pages/chat/SearchChat"
 
 interface ChatsResponse {
@@ -45,7 +45,7 @@ export interface Sender {
 export default function ChatScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
 
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
@@ -56,48 +56,6 @@ export default function ChatScreen() {
 
     const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
     const [filtered_chats, setFilteredChats] = useState<Chat[]>([]) // Stores The Filtered Chats
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Get The Chats
     const getChats = async ():Promise<void> => {

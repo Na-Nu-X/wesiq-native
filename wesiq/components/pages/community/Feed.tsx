@@ -13,8 +13,9 @@ import { ProcessingPostContainer } from "./ProcessingPostContainer"
 import { useTranslation } from "react-i18next"
 import SearchPosts from "./SearchPosts"
 import { SharePostDialog } from "./SharePostDialog"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUserResponse, LoggedInUser } from "../../LoginFormDialog"
+import type { LoggedInUser } from "../../LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
 import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
@@ -186,7 +187,7 @@ interface FeedProps {
 export default function Feed({ tracked_tasks, processing_posts, onProcessingPostsUpdate }:FeedProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
 
     const [posts, setPosts] = useState<Post[]>([]) // Stores The Posts
     const [page, setPage] = useState(1) // Stores The Current Page Number
@@ -214,48 +215,6 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const [is_sending_post, setIsSendingPost] = useState<boolean>(false) // Stores The Information If The Post Is Sending
 
     const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
-
-    // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
-                setLoggedInUser(null) // Removes The Logged In User
-                return null
-            }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getLoggedInUser() // Gets The Logged In User
-    }, [])
 
     // Function For Load Posts
     const loadPosts = async (page:number = 1, is_refresh:boolean = false) => {

@@ -174,7 +174,7 @@ export default function HomeScreen() {
     }
 
     // Function For Report The Post
-    const reportPost = async (post_id:number, reason:string) => {
+    const reportPost = async (post_id:string, reason:string) => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Nahlásenie nie je možné odoslať bez prihlásenia.")) // Shows The Alert
@@ -226,7 +226,7 @@ export default function HomeScreen() {
     }
 
     // Function For Edit The Post Settings
-    const editPostSettings = async (post_id:number, setting:string, action:boolean):Promise<void> => {
+    const editPostSettings = async (post_id:string, setting:string, action:boolean):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné upraviť bez prihlásenia.")) // Shows The Alert
@@ -291,7 +291,7 @@ export default function HomeScreen() {
     }
 
     // Function For Delete The Post
-    const deletePost = async (post_id:number):Promise<void> => {
+    const deletePost = async (post_id:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné odstrániť bez prihlásenia.")) // Shows The Alert
@@ -544,7 +544,7 @@ export default function HomeScreen() {
     }
 
     // Function For Share The Post
-    const sharePost = async (post_id:number, username:string):Promise<void> => {
+    const sharePost = async (post_id:string, username:string):Promise<void> => {
         const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
     
         try {
@@ -559,7 +559,7 @@ export default function HomeScreen() {
                 else console.log(t("Úspešne zdieľané"))
             } 
             
-            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
+            else if(result.action === Share.dismissedAction) console.warn(t("Zdieľanie zrušené")) // Only IOS
         } 
 
         catch(error:any) {
