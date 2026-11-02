@@ -4,13 +4,14 @@ import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLU
 import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedTime } from "@/utils/time"
-import Slider from "@react-native-community/slider"
+import { Slider } from "@miblanchard/react-native-slider"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { VideoPlayer } from "expo-video"
 import { useTranslation } from "react-i18next"
 import { DOMAIN } from "@/constants/general"
 
 import type { Media } from "@/components/pages/community/Feed"
+import { Platform } from "expo"
 
 export interface vtt {
     start:number,
@@ -91,6 +92,12 @@ export const CustomVideoControls = ({
     const scrubber_width_reference = useRef<number>(0) // Stores The Scrubber Width Reference
 
     const latest_video_reference = useRef<VideoPlayer|null>(current_video) // Stores The Latest Video Reference
+
+    // 1. Pridaj si lokálny stav len pre vizuálny pohyb slidera
+    const [localVolume, setLocalVolume] = useState(volume);
+
+    // ... (ak sa zmení globálne volume zvonku, zosynchronizuj ho)
+    useEffect(() => { setLocalVolume(volume) }, [volume]);
 
     // Initializes The Update Of The Latest Video Reference
     useEffect(() => {
@@ -255,43 +262,62 @@ export const CustomVideoControls = ({
                     />
                 </View>
 
-                <View 
-                    className="step_back" 
-                    accessibilityLabel={t("O 5 sekúnd späť...")}
-                >
-                    <Icon
-                        icon_name="arrow-rotate-left"
-                        onPress={() => onStepBack(5)}
-                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                        color={SECONDARY_COLOR}
-                        pressed_color={SECONDARY_COLOR}
-                    />
-                </View>
+                {Platform.OS === "web" && (
+                    <>
+                        <View 
+                            className="step_back" 
+                            accessibilityLabel={t("O 5 sekúnd späť...")}
+                        >
+                            <Icon
+                                icon_name="arrow-rotate-left"
+                                onPress={() => onStepBack(5)}
+                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                color={SECONDARY_COLOR}
+                                pressed_color={SECONDARY_COLOR}
+                            />
+                        </View>
+
+                        <View 
+                            className="step_further" 
+                            accessibilityLabel={t("O 5 sekúnd ďalej...")}
+                        >
+                            <Icon
+                                icon_name="arrow-rotate-right"
+                                onPress={() => onStepFurther(5)}
+                                pressed_style={{ transform: [{ scale: 1.1 }] }}
+                                color={SECONDARY_COLOR}
+                                pressed_color={SECONDARY_COLOR}
+                            />
+                        </View>
+                    </>
+                )}
 
                 <View 
-                    className="step_further" 
-                    accessibilityLabel={t("O 5 sekúnd ďalej...")}
-                >
-                    <Icon
-                        icon_name="arrow-rotate-right"
-                        onPress={() => onStepFurther(5)}
-                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                        color={SECONDARY_COLOR}
-                        pressed_color={SECONDARY_COLOR}
-                    />
-                </View>
+                    className="timer" 
 
-                <View className="timer" style={styles.timer}>
+                    style={[
+                        styles.timer,
+                        Platform.OS === "web" ? { paddingLeft: 10 } : { paddingLeft: 0 },
+                    ]}
+                >
                     <Text 
                         className="elapsed"
 
-                        style={{
-                            width: 40,
-                            // width: "4ch"
-                            textAlign: "center",
-                            fontSize: 15,
-                            color: SECONDARY_COLOR,
-                        }}
+                        style={[
+                            {
+                                // width: "4ch"
+                                textAlign: "center",
+                                color: SECONDARY_COLOR,
+                            },
+
+                            Platform.OS === "web" ? { 
+                                width: 40,
+                                fontSize: 15,
+                            } : { 
+                                width: 30,
+                                fontSize: 12,
+                            },
+                        ]}
                     >
                         {!is_scrubber_dragged ? (
                             `${getFormattedTime("minutes", elapsed_time / 1000)}:${getFormattedTime("seconds", elapsed_time / 1000, true)}`
@@ -301,13 +327,17 @@ export const CustomVideoControls = ({
                     </Text>
 
                     <Text
-                        style={{
-                            width: 40,
-                            // width: "4ch"
-                            textAlign: "center",
-                            fontSize: 15,
-                            color: SECONDARY_COLOR,
-                        }}
+                        style={[
+                            {
+                                // width: 40,
+                                width: 10,
+                                // width: "4ch"
+                                textAlign: "center",
+                                color: SECONDARY_COLOR,
+                            },
+
+                            Platform.OS === "web" ? { fontSize: 15 } : { fontSize: 12 },
+                        ]}
                     >
                         /
                     </Text>
@@ -315,13 +345,21 @@ export const CustomVideoControls = ({
                     <Text 
                         className="total"
                         
-                        style={{
-                            width: 40,
-                            // width: "4ch"
-                            textAlign: "center",
-                            fontSize: 15,
-                            color: SECONDARY_COLOR,
-                        }}
+                        style={[
+                            {
+                                // width: "4ch"
+                                textAlign: "center",
+                                color: SECONDARY_COLOR,
+                            },
+                            
+                            Platform.OS === "web" ? { 
+                                width: 40,
+                                fontSize: 15,
+                            } : { 
+                                width: 30,
+                                fontSize: 12,
+                            },
+                        ]}
                     >
                         {`${getFormattedTime("minutes", duration / 1000)}:${getFormattedTime("seconds", duration / 1000, true)}`}
                     </Text>
@@ -332,32 +370,49 @@ export const CustomVideoControls = ({
                         <>
                             <View style={{ flexDirection: "row", alignItems: "center" }}>
                                 <Slider
-                                    className="volume"
                                     minimumValue={0}
                                     maximumValue={1}
                                     step={0.01}
-                                    value={is_muted ? 0 : volume}
-                                    onValueChange={onChangeVideoVolume}
+                                    value={is_muted ? 0 : localVolume}
+                                    onValueChange={(value:number[]) => setLocalVolume(value[0])} 
                                     onSlidingStart={() => { is_volume_slider_sliding.current = true }}
-                                    onSlidingComplete={() => { is_volume_slider_sliding.current = false }}
+
+                                    onSlidingComplete={(value:number[]) => { 
+                                        is_volume_slider_sliding.current = false // Sets The Information That The Volume Slider Isn't Sliding
+                                        onChangeVideoVolume(value[0]) // Changes The Video Volume
+                                    }}
+                              
                                     minimumTrackTintColor={DARK_BLUE_COLOR}
                                     maximumTrackTintColor={BLUE_COLOR}
                                     thumbTintColor={DARK_BLUE_COLOR}
+                                    thumbTouchSize={{ width: 50, height: 50 }}
 
-                                    // @ts-ignore
                                     thumbStyle={{ 
                                         width: 15,
                                         height: 15,
                                         borderRadius: 15 / 2,
                                     }}
-
-                                    style={[
-                                        styles.volume, 
-                                        { width: 100, height: 40 }
-                                    ]}
+                                    
+                                    trackStyle={{
+                                        height: 5,
+                                        borderRadius: 5 / 2,
+                                    }}
+                                    
+                                    containerStyle={{ 
+                                        justifyContent: "center",
+                                        width: 80,
+                                        height: 40,
+                                    }}
                                 />
 
-                                <Text className="volume_label" style={styles.volume_label}>
+                                <Text 
+                                    className="volume_label" 
+
+                                    style={[
+                                        styles.volume_label,
+                                        Platform.OS === "web" ? { fontSize: 15 } : { fontSize: 12 },
+                                    ]}
+                                >
                                     {is_muted ? "0%" : `${Math.round(volume * 100)}%`}
                                 </Text>
                             </View>
@@ -397,7 +452,7 @@ export const CustomVideoControls = ({
                 <View 
                     className="show_video_settings_button" 
                     accessibilityLabel={t("Nastavenia...")}
-                    style={styles.show_video_settings_button}
+                    style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
                         icon_name="gear"
@@ -411,7 +466,7 @@ export const CustomVideoControls = ({
                 <View 
                     className="fullscreen" 
                     accessibilityLabel={t("Rozstiahnuť...")}
-                    style={styles.fullscreen}
+                    style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
                         icon_name={is_fullscreen ? "compress" : "expand"}
@@ -492,7 +547,7 @@ const styles = StyleSheet.create({
     },
 
     play_pause: {
-        width: 13.5,
+        width: 15,
     },
 
     timer: {
@@ -539,7 +594,7 @@ const styles = StyleSheet.create({
     },
 
     mute_unmute: {
-        width: 22.5,
+        width: 25,
         textAlign: "right",
         // transition: transform 0.3s ease;
 
@@ -560,27 +615,23 @@ const styles = StyleSheet.create({
         // }
     },
 
-    show_video_settings_button: {
-        marginLeft: 10,
-    },
-
-    fullscreen: {
-        marginLeft: 10,
-    },
-
     scrubber_hitbox: {
         position: "absolute",
         bottom: -10 + (5 / 2),
-        width: "100%",
+        left: 12.5,
+        right: 12.5,
+        // width: "100%",
         height: 20,
-        marginHorizontal: "auto",
+        // marginHorizontal: "auto",
         paddingVertical: 5,
     },
 
     scrubber: {
         position: "absolute",
         bottom: 0,
-        width: "100%",
+        left: 12.5,
+        right: 12.5,
+        // width: "100%",
         height: 5,
         backgroundColor: LIGHT_BLUE_COLOR,
         borderRadius: 8 / 2,
@@ -611,9 +662,14 @@ const styles = StyleSheet.create({
     scrubber_thumb: {
         position: "absolute",
         top: "50%",
-        transform: [{ translateY: "-50%" }],
-        width: 10,
-        height: 10,
+
+        transform: [
+            { translateX: "-50%" },
+            { translateY: "-50%" }
+        ],
+
+        width: 15,
+        height: 15,
         marginLeft: 0,
         backgroundColor: DARK_BLUE_COLOR,
         borderRadius: "50%",

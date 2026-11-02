@@ -23,7 +23,7 @@ export interface UploadPostResponse {
 export interface CompressTask {
     task_id:string,
     post_media_id:number,
-    post_id:number
+    post_id:string
 }
 
 interface RNMediaAsset {

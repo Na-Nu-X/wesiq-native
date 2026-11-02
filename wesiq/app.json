@@ -80,7 +80,7 @@
       [
         "react-native-health",
         {
-          "healthSharePermission": "Aplikácia potrebuje prístup k dáta o tepe pre meranie aktivity."
+          "healthSharePermission": "Aplikácia potrebuje prístup k dátam o tepe pre meranie aktivity."
         }
       ],
       "react-native-health-connect",
@@ -102,7 +102,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff" 
+      "backgroundColor": "#ff0000"
     }
   }
 }

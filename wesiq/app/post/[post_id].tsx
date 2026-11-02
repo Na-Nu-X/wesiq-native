@@ -14,11 +14,12 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, GREEN_COLOR, MAIN_COLOR, RED_COLOR, transparentize } from "@/constants/colors"
 import { SharePostDialog } from "@/components/pages/community/SharePostDialog"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { BasicResponse, Post, Comment } from "@/components/pages/community/Feed"
 import type { LoadedFriendsResponse, Following } from "@/components/pages/community/Feed"
-import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
+import type { ChatSocketResponse, Post as ChatPost } from "@/app/chat/[username]"
 
 interface LoadedPostResponse {
   success:boolean,
@@ -29,9 +30,10 @@ interface LoadedPostResponse {
 export default function HomeScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const { post_id } = useLocalSearchParams<{ post_id:string }>() // Gets The Post ID
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [post, setPost] = useState<Post|null>(null) // Stores The Post

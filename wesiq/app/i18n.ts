@@ -36,15 +36,13 @@ i18n.use(initReactI18next).init({
 
 // Function For Load The Saved Language
 const loadSavedLanguage = async ():Promise<void> => {
-    const { t } = useTranslation() // Initializes The Translations
-
     try {
         const saved_language:string|null = await AsyncStorage.getItem("app_language")
         if(saved_language) i18n.changeLanguage(saved_language)
     }
     
     catch {
-        console.error(t("Pri načítaní jazyka došlo k chybe."))
+        console.error(i18n.t("Pri načítaní jazyka došlo k chybe."))
     }
 }
 

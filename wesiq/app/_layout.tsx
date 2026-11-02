@@ -12,32 +12,50 @@ import * as Notifications from "expo-notifications"
 import { useTranslation } from "react-i18next"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
-
-export const unstable_settings = {
-    anchor: "(tabs)"
-}
+import type { ChatSocketResponse } from "./chat/[username]"
 
 SplashScreen.preventAutoHideAsync()
+
+// Function For Render The App Content
+function AppContent() {
+    const color_scheme:ColorSchemeName|null = useColorScheme() // Gets The Color Scheme
+    const { is_loading } = useLoggedInUser() // Gets The Information If The Logged In User Is Loading
+
+    // Initializes The Hide Of The Splash Screen
+    useEffect(() => {
+        if(!is_loading) SplashScreen.hideAsync() // Hides The Splash Screen
+    }, [is_loading])
+
+    if(is_loading) return null
+
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <Stack
+                screenOptions={{
+                    contentStyle: {
+                        backgroundColor: color_scheme === "dark" ? "#000000" : "#ffffff",
+                    },
+                }}
+            >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="blog/[article]" options={{ headerShown: false }} />
+                <Stack.Screen name="chat/[username]" options={{ headerShown: false }} />
+                <Stack.Screen name="post/[post_id]" options={{ headerShown: false }} />
+                <Stack.Screen name="profile/[username]" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
+                
+                <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
+            </Stack>
+            
+            <StatusBar style={color_scheme === "dark" ? "light" : "dark"} />
+        </GestureHandlerRootView>
+    )
+}
 
 export default function RootLayout() {
     const { t } = useTranslation() // Initializes The Translations
 
-    const color_scheme:ColorSchemeName = useColorScheme()
-
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
-
-    const { is_loading } = useLoggedInUser()
-
-    useEffect(() => {
-        if(!is_loading) {
-            SplashScreen.hideAsync()
-        }
-    }, [is_loading])
-
-    if(is_loading) {
-        return null
-    }
 
     // Initializes The Notification Permission Request
     useEffect(() => {
@@ -157,21 +175,7 @@ export default function RootLayout() {
 
     return (
         <LoggedInUserProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-                <Stack
-                    screenOptions={{
-                        contentStyle: {
-                            backgroundColor: color_scheme === "dark" ? "#000000" : "#ffffff",
-                        },
-                    }}
-                >
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
-                    <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
-                </Stack>
-                
-                <StatusBar style={color_scheme === "dark" ? "light" : "dark"} />
-            </GestureHandlerRootView>
+            <AppContent />
         </LoggedInUserProvider>
     )
 }

@@ -14,9 +14,9 @@ import Animated, { SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight } from
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile } from "@/app/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { BioLink } from "@/app/(tabs)/profile/[username]"
+import type { BioLink } from "@/app/profile/[username]"
 
 type EditAccountFormProps = {
     logged_in_user:LoggedInUser,

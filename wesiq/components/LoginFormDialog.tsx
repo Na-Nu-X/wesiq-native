@@ -11,6 +11,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { BasicResponse } from "./pages/community/Feed"
 
@@ -22,7 +23,7 @@ export interface LoggedInUser {
     role:"user"|"admin"|"developer"
     profile_picture_name:string,
     friend_code:string,
-    saved_posts:number[],
+    saved_posts:string[],
     private_account:boolean,
 
     follow_requests:{
@@ -79,6 +80,8 @@ interface LoginResponse {
 export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, onUserLogin }:LoginFormDialogProps) {
     const { t } = useTranslation() // Initializes The Translations
 
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const router:ImperativeRouter = useRouter() // Gets The Router
 
     const [identifier, setIdentifier] = useState<string>("") // Stores The Identifier
@@ -86,7 +89,6 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
     const [is_password_hidden, setIsPasswordHidden] = useState<boolean>(true) // Stores The Information If The Password Is Hidden
     const [is_authentication_loading, setIsAuthenticationLoading] = useState<boolean>(true) // Stores The Information If The Authentication Is Loading
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
     const [form_report, setFormReport] = useState<string>("") // Stores The Form Report
 
     const spin_animation_value:Animated.Value = useRef(new Animated.Value(0)).current // Stores The Spin Animation Value

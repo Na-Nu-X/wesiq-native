@@ -7,9 +7,8 @@ import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import SearchArticles from "@/components/pages/blog/SearchArticles"
 import Articles from "@/components/pages/blog/Articles"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { ArticlesAmount } from "@/components/pages/blog/ArticlesAmount"
-
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 
 export interface Article {
     id:number,
@@ -26,7 +25,8 @@ export interface Article {
 }
 
 export default function BlogScreen() {
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [articles, setArticles] = useState<Article[]>([]) // Stores The Articles

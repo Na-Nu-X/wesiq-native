@@ -577,7 +577,7 @@ export const DynamicVideo = ({
                             <Icon
                                 icon_name="download"
                                 onPress={initializeVideo}
-                                size={40}
+                                size={30}
                                 pressed_color={LIGHT_BLUE_COLOR}
                                 color={LIGHT_BLUE_COLOR}
                             />

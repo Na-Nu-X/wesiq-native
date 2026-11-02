@@ -8,12 +8,13 @@ import Banner from "@/components/Banner"
 import { SECONDARY_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { getMinimalistFormattedTime } from "@/utils/time"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
 
 export default function CopyTrainingPlanScreen() {
-  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+  const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
   const [training_plans_exercises, setTrainingPlansExercises] = useState<TrainingPlanExercise[]>([]) // Stores The Training Plans Exercises

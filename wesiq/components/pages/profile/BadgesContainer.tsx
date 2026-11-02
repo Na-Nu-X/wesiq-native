@@ -4,7 +4,7 @@ import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { useTranslation } from "react-i18next"
 
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile } from "@/app/profile/[username]"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 
 type BadgesContainerProps = {

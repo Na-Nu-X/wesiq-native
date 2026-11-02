@@ -19,6 +19,7 @@ import { VideoMetrics } from "./VideoMetrics"
 import { BlurView } from "expo-blur"
 import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
+import { VideoScrubberPreview } from "./VideoScrubberPreview"
 
 import type { Post, Media, Comment } from "./Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
@@ -100,7 +101,7 @@ export const PostContainer = ({
     const [selected_parent_comment, setSelectedParentComment] = useState<Comment|null>(null) // Stores The Selected Parent Comment
     const [expanded_comments, setExpandedComments] = useState<number[]>([]) // Stores The IDs Of Expanded Post Comments (Visible Replies)
 
-    const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
+    const [active_post_media, setActivePostMedia] = useState<Record<string, number>>({}) // Stores The Active Post Media
     const [playing_video, setPlayingVideo] = useState<number|null>(null) // Stores The Current Playing Video ID
     const is_volume_slider_sliding = useRef<boolean>(false) // Stores The Information If The Volume Slider Is Sliding
 
@@ -121,7 +122,7 @@ export const PostContainer = ({
     const [scrubber_width, setScrubberWidth] = useState<number>(0) // Stores The Scrubber Width
 
     // Function For Get Post Comments
-    const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:number) => {
+    const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:string) => {
         if(are_post_comments_loading || (!has_next_post_comments && !is_refresh)) return
 
         setArePostCommentsLoading(true) // Stores The Information That Posts Are Loading
@@ -205,7 +206,7 @@ export const PostContainer = ({
     }
     
     // Function For Load More Post Comments
-    const loadMorePostComments = (post_id:number) => {
+    const loadMorePostComments = (post_id:string) => {
         if(has_next_post_comments && !are_post_comments_loading) getPostComments(post_comments_page + 1, false, post_id) // Loads Post Comments
     }
 
@@ -402,7 +403,7 @@ export const PostContainer = ({
     }
 
     // Function For Toggle Post Like
-    const togglePostLike = async (post_id:number):Promise<void> => {
+    const togglePostLike = async (post_id:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Označenie páči sa mi to nie je možné zmeniť bez prihlásenia.")) // Shows The Alert
@@ -504,7 +505,7 @@ export const PostContainer = ({
     }
 
     // Function For Save Or Unsave The Post
-    const togglePostSave = async (post_id:number):Promise<void> => {
+    const togglePostSave = async (post_id:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné uložiť bez prihlásenia.")) // Shows The Alert
@@ -647,7 +648,7 @@ export const PostContainer = ({
     }
 
     // Function For Add Comment
-    const addComment = async (post_id:number, comment:string, parent_id:number|null):Promise<void> => {
+    const addComment = async (post_id:string, comment:string, parent_id:number|null):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Komentár nie je možné pridať bez prihlásenia.")) // Shows The Alert
@@ -806,7 +807,7 @@ export const PostContainer = ({
     }
 
     // Function For Change The Active Post Media
-    const changePostMedia = (post_id:number, new_index:number, max_index:number):void => {
+    const changePostMedia = (post_id:string, new_index:number, max_index:number):void => {
         if(new_index >= 0 && new_index <= max_index) {
             stopControlsTimer() // Stops The Controls Timer
             setShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
@@ -827,7 +828,7 @@ export const PostContainer = ({
     }
 
     // Function For Handle The Video Duration Load
-    const handleVideoDurationLoad = (video_duration:number, post_id:number, post_media_id:number):void => {
+    const handleVideoDurationLoad = (video_duration:number, post_id:string, post_media_id:number):void => {
         // Stores The New State Of Updated Posts
         const updated_posts:Post[] = posts.map((one_post:Post) => {
             if(one_post.id === post_id) {
@@ -924,14 +925,14 @@ export const PostContainer = ({
                         {logged_in_user && logged_in_user.id !== post.user.id && (
                             <Pressable
                                 className="follow_button" 
-                                onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+                                onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
 
                                 style={[
                                     styles.follow_button, 
                                     { outlineStyle: "none" } as any
                                 ]}
                             >
-                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
                             </Pressable>
                         )}
 
@@ -1066,53 +1067,12 @@ export const PostContainer = ({
             </GestureDetector>
 
             {video_scrubber_preview && is_scrubber_dragged && (
-                <View 
-                    style={{ 
-                        position: "relative", 
-                        bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20,
-
-                        left: Math.min(
-                            Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
-                            scrubber_width - video_scrubber_preview.w
-                        ),
-                    }}
-                >
-                    <View 
-                        className="video_scrubber_preview"
-
-                        style={[
-                            styles.video_scrubber_preview,
-
-                            {
-                                width: video_scrubber_preview.w,
-                                height: video_scrubber_preview.h,
-                            }
-                        ]}
-                    >
-                        <DynamicImage 
-                            uri={`${DOMAIN}/${video_scrubber_preview_image}`}
-
-                            style={{ 
-                                position: "absolute",
-                                left: -video_scrubber_preview.x,
-                                top: -video_scrubber_preview.y,
-                            }}
-                        />
-                    </View>
-                
-                    <View 
-                        className="triangle" 
-
-                        style={[
-                            styles.triangle,
-
-                            {
-                                top: video_scrubber_preview.h + 10,
-                                left: (video_scrubber_preview.w / 2) - 10,
-                            }
-                        ]} 
-                    />
-                </View>
+                <VideoScrubberPreview 
+                    video_scrubber_preview={video_scrubber_preview}
+                    video_scrubber_preview_image={video_scrubber_preview_image}
+                    scrubber_position={scrubber_position}
+                    scrubber_width={scrubber_width}
+                />
             )}
 
             <View className="society" style={styles.society}>
@@ -1126,6 +1086,9 @@ export const PostContainer = ({
                             position: "relative", 
                             alignItems: "center", 
                             justifyContent: "center", 
+                            height: 30,
+                            width: 30,
+                            overflow: "visible",
                         }}
                     >
                         <Icon
@@ -1183,11 +1146,22 @@ export const PostContainer = ({
                     accessibilityLabel={t("Počet videní...")}
                     style={styles.views}
                 >
-                    <Icon
-                        icon_name="eye"
-                        size={25}
-                        is_regular={true}
-                    />
+                    <View 
+                        style={{ 
+                            position: "relative", 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                            height: 30,
+                            width: 30,
+                            overflow: "visible",
+                        }}
+                    >
+                        <Icon
+                            icon_name="eye"
+                            size={25}
+                            is_regular={true}
+                        />
+                    </View>
 
                     <Text className="views_counter" style={styles.views_counter}>{String(post.views)}</Text>
                 </View>
@@ -1637,31 +1611,6 @@ const styles = StyleSheet.create({
         // }
     },
 
-    video_scrubber_preview: {
-        position: "absolute",
-        width: 160,
-        height: 90,
-        borderWidth: 1,
-        borderColor: "#cccccc",
-        borderRadius: SMALL_BORDER_RADIUS,
-        opacity: 0.9,
-        overflow: "hidden",
-        zIndex: 200,
-    },
-    
-    triangle: {
-        position: "absolute",
-        width: 0,
-        height: 0,
-        backgroundColor: "transparent",
-        borderTopWidth: 10,
-        borderRightWidth: 10,
-        borderRightColor: "transparent",
-        borderLeftWidth: 10,
-        borderLeftColor: "transparent",
-        borderTopColor: "#cccccc",
-    },
-
     society: {
         flexDirection: "row",
         alignItems: "center",
@@ -1676,7 +1625,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 5,
-        height: 20,
     },
 
     society_likes_counter: {
@@ -1709,7 +1657,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 5,
-        height: 20,
         marginLeft: "auto",
     },
 

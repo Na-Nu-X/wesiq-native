@@ -63,7 +63,7 @@ export const PostContainer = ({
     const [selected_parent_comment, setSelectedParentComment] = useState<Comment|null>(null) // Stores The Selected Parent Comment
     const [expanded_comments, setExpandedComments] = useState<number[]>([]) // Stores The IDs Of Expanded Post Comments (Visible Replies)
 
-    const [active_post_media, setActivePostMedia] = useState<Record<number, number>>({}) // Stores The Active Post Media
+    const [active_post_media, setActivePostMedia] = useState<Record<string, number>>({}) // Stores The Active Post Media
     const [playing_video, setPlayingVideo] = useState<number|null>(null) // Stores The Current Playing Video ID
     const is_volume_slider_sliding = useRef<boolean>(false) // Stores The Information If The Volume Slider Is Sliding
 
@@ -84,7 +84,7 @@ export const PostContainer = ({
     const [scrubber_width, setScrubberWidth] = useState<number>(0) // Stores The Scrubber Width
 
     // Function For Get Post Comments
-    const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:number) => {
+    const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:string) => {
         if(are_post_comments_loading || (!has_next_post_comments && !is_refresh) || !post) return
 
         setArePostCommentsLoading(true) // Stores The Information That Posts Are Loading
@@ -152,7 +152,7 @@ export const PostContainer = ({
     }
     
     // Function For Load More Post Comments
-    const loadMorePostComments = (post_id:number) => {
+    const loadMorePostComments = (post_id:string) => {
         if(has_next_post_comments && !are_post_comments_loading) getPostComments(post_comments_page + 1, false, post_id) // Loads Post Comments
     }
 
@@ -351,7 +351,7 @@ export const PostContainer = ({
     }
 
     // Function For Toggle Post Like
-    const togglePostLike = async (post_id:number):Promise<void> => {
+    const togglePostLike = async (post_id:string):Promise<void> => {
         if(!post) return
 
         try {
@@ -446,7 +446,7 @@ export const PostContainer = ({
     }
 
     // Function For Save Or Unsave The Post
-    const togglePostSave = async (post_id:number):Promise<void> => {
+    const togglePostSave = async (post_id:string):Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Príspevok nie je možné uložiť bez prihlásenia.")) // Shows The Alert
@@ -583,7 +583,7 @@ export const PostContainer = ({
     }
 
     // Function For Add Comment
-    const addComment = async (post_id:number, comment:string, parent_id:number|null):Promise<void> => {
+    const addComment = async (post_id:string, comment:string, parent_id:number|null):Promise<void> => {
         if(!post) return
 
         try {
@@ -730,7 +730,7 @@ export const PostContainer = ({
     }
 
     // Function For Change The Active Post Media
-    const changePostMedia = (post_id:number, new_index:number, max_index:number):void => {
+    const changePostMedia = (post_id:string, new_index:number, max_index:number):void => {
         if(new_index >= 0 && new_index <= max_index) {
             stopControlsTimer() // Stops The Controls Timer
             setShowControls(true) // Sets The Information That The Custom Video Controls Are Visible
@@ -751,7 +751,7 @@ export const PostContainer = ({
     }
 
     // Function For Handle The Video Duration Load
-    const handleVideoDurationLoad = (video_duration:number, post_id:number, post_media_id:number):void => {
+    const handleVideoDurationLoad = (video_duration:number, post_id:string, post_media_id:number):void => {
         if(!post) return
 
         // Sets The Post
@@ -864,14 +864,14 @@ export const PostContainer = ({
                                     {logged_in_user && logged_in_user.id !== post.user.id && (
                                         <Pressable
                                             className="follow_button" 
-                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
 
                                             style={[
                                                 styles.follow_button, 
                                                 { outlineStyle: "none" } as any
                                             ]}
                                         >
-                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
                                         </Pressable>
                                     )}
                                 </View>
@@ -1089,14 +1089,14 @@ export const PostContainer = ({
                                     {logged_in_user && logged_in_user.id !== post.user.id && (
                                         <Pressable
                                             className="follow_button" 
-                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
 
                                             style={[
                                                 styles.follow_button, 
                                                 { outlineStyle: "none" } as any
                                             ]}
                                         >
-                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
                                         </Pressable>
                                     )}
                                 </View>
@@ -1314,14 +1314,14 @@ export const PostContainer = ({
                                     {logged_in_user && logged_in_user.id !== post.user.id && (
                                         <Pressable
                                             className="follow_button" 
-                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
+                                            onPress={() => toggleFollow(post.user.id, getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).action)}
 
                                             style={[
                                                 styles.follow_button, 
                                                 { outlineStyle: "none" } as any
                                             ]}
                                         >
-                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, post.user.private_account, post.user.has_follow, post.user.has_pending_follow_request).text}</Text>
                                         </Pressable>
                                     )}
 
@@ -1459,11 +1459,11 @@ export const PostContainer = ({
                             <View 
                                 style={{ 
                                     position: "relative", 
-                                    bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20,
+                                    bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20 + 2.5,
 
                                     left: Math.min(
-                                        Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
-                                        scrubber_width - video_scrubber_preview.w
+                                        Math.max(7, scrubber_position - (video_scrubber_preview.w / 2) + 10 + 3), 
+                                        scrubber_width + 20 - video_scrubber_preview.w
                                     ),
                                 }}
                             >
@@ -1516,6 +1516,9 @@ export const PostContainer = ({
                                         position: "relative", 
                                         alignItems: "center", 
                                         justifyContent: "center", 
+                                        height: 30,
+                                        width: 30,
+                                        overflow: "visible",
                                     }}
                                 >
                                     <Icon
@@ -1573,11 +1576,22 @@ export const PostContainer = ({
                                 accessibilityLabel={t("Počet videní...")}
                                 style={styles.views}
                             >
-                                <Icon
-                                    icon_name="eye"
-                                    size={25}
-                                    is_regular={true}
-                                />
+                                <View 
+                                    style={{ 
+                                        position: "relative", 
+                                        alignItems: "center", 
+                                        justifyContent: "center", 
+                                        height: 30,
+                                        width: 30,
+                                        overflow: "visible",
+                                    }}
+                                >
+                                    <Icon
+                                        icon_name="eye"
+                                        size={25}
+                                        is_regular={true}
+                                    />
+                                </View>
 
                                 <Text className="views_counter" style={styles.views_counter}>{String(post.views)}</Text>
                             </View>
@@ -2269,7 +2283,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 5,
-        height: 20,
     },
 
     society_likes_counter: {
@@ -2302,7 +2315,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 5,
-        height: 20,
         marginLeft: "auto",
     },
 

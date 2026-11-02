@@ -16,8 +16,8 @@ import { getMinimalistFormattedTime } from "@/utils/time"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Exercise } from "@/components/pages/manage_training_plans/ExerciseSelection"
 import type { TrainingPlanExercise } from "@/components/pages/activity/ActivitySection"
 import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu"
@@ -25,7 +25,8 @@ import type { Day } from "@/components/pages/manage_training_plans/DaySelectMenu
 export default function EditTrainingPlanScreen() {
   const { t } = useTranslation() // Initializes The Translations
 
-  const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+  const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
   const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
   const [drop_zone, setDropZone] = useState({ x: 0, y: 0, width: 0, height: 0 })

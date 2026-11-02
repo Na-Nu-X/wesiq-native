@@ -7,12 +7,11 @@ import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useLocalSearchParams } from "expo-router"
+import { Stack, useLocalSearchParams } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { ChatContainer } from "@/components/pages/chat/ChatContainer"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import { GestureHandlerRootView } from "react-native-gesture-handler"
 
 export interface LoadedChatResponse {
     success:boolean, 
@@ -217,48 +216,52 @@ export default function ChatDetailScreen() {
     }
 
     return (
-        <BackgroundContainer>
-            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
-                    logged_in_user={logged_in_user} 
-                    setActiveForm={setActiveForm} 
-                />
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <BackgroundContainer>
+                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
+                    <Stack.Screen options={{ gestureEnabled: false }} />
 
-                <View 
-                    className="content" 
-                    style={styles.content}
-                >
-                    <LoginFormDialog 
-                        visible={active_form==="login_form"}
-                        onChangeActiveForm={() => setActiveForm("registration_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                    <Banner 
+                        logged_in_user={logged_in_user} 
+                        setActiveForm={setActiveForm} 
                     />
 
-                    <RegistrationFormDialog
-                        visible={active_form==="registration_form"}
-                        onChangeActiveForm={() => setActiveForm("login_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
-
-                    {receiver && chats && (
-                        <ChatContainer 
-                            logged_in_user={logged_in_user}
-                            username={username}
-                            receiver={receiver}
-                            onSetChats={(chats:Chat[]) => setChats(chats)}
-                            chats={chats}
-                            onLoadMoreChats={loadMoreChats}
-                            has_next={has_next}
-                            are_chats_loading={are_chats_loading}
-                            is_error={is_error}
-                            onReceiverUpdate={(receiver:Receiver) => setReceiver(receiver)}
+                    <View 
+                        className="content" 
+                        style={styles.content}
+                    >
+                        <LoginFormDialog 
+                            visible={active_form==="login_form"}
+                            onChangeActiveForm={() => setActiveForm("registration_form")}
+                            onClose={() => setActiveForm(null)}
+                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                         />
-                    )}
-                </View>
-            </SafeAreaView>
-        </BackgroundContainer>
+
+                        <RegistrationFormDialog
+                            visible={active_form==="registration_form"}
+                            onChangeActiveForm={() => setActiveForm("login_form")}
+                            onClose={() => setActiveForm(null)}
+                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
+                        />
+
+                        {receiver && chats && (
+                            <ChatContainer 
+                                logged_in_user={logged_in_user}
+                                username={username}
+                                receiver={receiver}
+                                onSetChats={(chats:Chat[]) => setChats(chats)}
+                                chats={chats}
+                                onLoadMoreChats={loadMoreChats}
+                                has_next={has_next}
+                                are_chats_loading={are_chats_loading}
+                                is_error={is_error}
+                                onReceiverUpdate={(receiver:Receiver) => setReceiver(receiver)}
+                            />
+                        )}
+                    </View>
+                </SafeAreaView>
+            </BackgroundContainer>
+        </GestureHandlerRootView>
     )
 }
 

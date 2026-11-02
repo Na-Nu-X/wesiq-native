@@ -1,22 +1,17 @@
 import { useEffect, useState } from "react"
-import { View, StyleSheet, Text, ScrollView, TextInput, Alert } from "react-native"
+import { StyleSheet, ScrollView } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import { SafeAreaView } from "react-native-safe-area-context"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
-import Banner from "@/components/Banner"
-import { SECONDARY_COLOR } from "@/constants/colors"
-import Icon from "@/components/Icon"
-import { getMinimalistFormattedTime } from "@/utils/time"
 import PasswordResetForm from "@/components/pages/password_reset/PasswordResetForm"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useTranslation } from "react-i18next"
 import { useLocalSearchParams } from "expo-router"
-
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 export default function PasswordResetScreen() {
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [is_remaining_time_loaded, setIsRemainingTimeLoaded] = useState<boolean>(false) // Stores The Information If The Remaining Time Is Loaded

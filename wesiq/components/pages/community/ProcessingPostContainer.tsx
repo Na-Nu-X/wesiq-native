@@ -16,7 +16,7 @@ import { ImperativeRouter, useRouter } from "expo-router"
 
 import type { ProcessingPost, ProcessingMedia } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { TrackedTask } from "@/app/(tabs)"
+import type { TrackedTask } from "@/app/(tabs)/blog"
 
 interface ProcessingPostContainerProps {
     processing_post:ProcessingPost,

@@ -14,6 +14,7 @@ import { API_URL } from "@/constants/general"
 import { useTranslation } from "react-i18next"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
@@ -35,7 +36,8 @@ interface CompletedOfficialTaskResponse {
 export default function ActivityScreen() {
     const { t } = useTranslation() // Initializes The Translations
     
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time

@@ -11,8 +11,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import Banner from "@/components/Banner"
 import { useTranslation } from "react-i18next"
+import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { UploadProgressResponse, CompressTask } from "@/components/pages/community/UploadPostFormDialog"
 import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components/pages/community/Feed"
 
@@ -27,7 +27,8 @@ export interface TrackedTask {
 export default function HomeScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
-    const [logged_in_user, setLoggedInUser] = useState<LoggedInUser|null>(null) // Stores The Logged In User
+    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+
     const [is_upload_post_form_dialog_open, setIsUploadPostFormDialogOpen] = useState<boolean>(false) // Stores The Information If The Upload Post Form Dialog Is Open
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 

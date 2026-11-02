@@ -10,7 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { getFollowButtonProperties } from "../community/SearchUsers"
 
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile } from "@/app/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -184,10 +184,10 @@ export const FollowingDialog = ({
                                     {one_following.to_user.id !== logged_in_user?.id && (
                                         <Pressable 
                                             className="follow_button" 
-                                            onPress={() => toggleFollow(one_following.to_user.id, getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).action)}
+                                            onPress={() => toggleFollow(one_following.to_user.id, getFollowButtonProperties(t, one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).action)}
                                             style={styles.follow_button}
                                         >
-                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).text}</Text>
+                                            <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, one_following.to_user.private_account, one_following.to_user.has_follow, one_following.to_user.has_pending_follow_request).text}</Text>
                                         </Pressable>
                                     )}
                                 </View>

@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
 import ProfilePicture from "@/components/ProfilePicture"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { TFunction } from "i18next"
 
 import type { BasicResponse } from "@/components/pages/community/Feed"
 
@@ -47,9 +48,9 @@ interface SearchedUsersResponse {
     message:string
 }
 
-const { t } = useTranslation() // Initializes The Translations
-
 export default function SearchUsers() {
+    const { t } = useTranslation() // Initializes The Translations
+
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
 
     const router:ImperativeRouter = useRouter() // Gets The Router
@@ -153,42 +154,67 @@ export default function SearchUsers() {
                 onPress={() => router.push(`/profile/${one_loaded_user.username}`)}
                 accessibilityRole="button"
                 accessibilityLabel={t("Zobraziť užívateľa")} 
-                className="one_user"
-                style={styles.one_user}
+
+                style={{ 
+                    gap: 10,
+                    width: "100%",
+                }}
             >
-                <ProfilePicture
-                    user_id={one_loaded_user.id}
-                    user_profile_picture_name={one_loaded_user.profile_picture_name}
-                    user_subscription={one_loaded_user.subscription?.is_active || false} 
-                />
-
-                <Text className="username" style={styles.username}>{one_loaded_user.username}</Text>
-                <Text className="full_name" style={styles.full_name}>{one_loaded_user.first_name} {one_loaded_user.last_name}</Text>
-
-                <View className="followers_container" accessibilityLabel={t("Počet sledovateľov...")} style={styles.followers_container}>
-                    <Text className="followers" style={styles.followers}>{one_loaded_user.followers}</Text>
-                    
-                    <FontAwesome6
-                        name="user"
-                        size={20}
-                        solid={true}
-                        color={BLUE_COLOR}
+                <View
+                    className="one_user"
+                    style={styles.one_user}
+                >
+                    <ProfilePicture
+                        user_id={one_loaded_user.id}
+                        user_profile_picture_name={one_loaded_user.profile_picture_name}
+                        user_subscription={one_loaded_user.subscription?.is_active || false} 
                     />
+
+                    <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_loaded_user.username}</Text>
+                    <Text className="full_name" numberOfLines={1} ellipsizeMode="tail" style={styles.full_name}>{one_loaded_user.first_name} {one_loaded_user.last_name}</Text>
+
+                    <View className="followers_container" accessibilityLabel={t("Počet sledovateľov...")} style={styles.followers_container}>
+                        <Text className="followers" style={styles.followers}>{one_loaded_user.followers}</Text>
+                        
+                        <FontAwesome6
+                            name="user"
+                            size={20}
+                            solid={true}
+                            color={BLUE_COLOR}
+                        />
+                    </View>
                 </View>
 
-                {logged_in_user && logged_in_user.id !== one_loaded_user.id && (
-                    <Pressable
-                        className="follow_button" 
-                        onPress={() => toggleFollow(one_loaded_user.id, getFollowButtonProperties(one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).action)}
+                <View
+                    style={{ 
+                        maxWidth: 300,
+                        marginLeft: "auto",
+                    }}
+                >
+                    {logged_in_user && logged_in_user.id !== one_loaded_user.id && (
+                        <Pressable
+                            className="follow_button" 
+                            onPress={() => toggleFollow(one_loaded_user.id, getFollowButtonProperties(t, one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).action)}
 
-                        style={[
-                            styles.follow_button, 
-                            { outlineStyle: "none" } as any
-                        ]}
-                    >
-                        <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).text}</Text>
-                    </Pressable>
-                )}
+                            style={[
+                                styles.follow_button, 
+                                { outlineStyle: "none" } as any
+                            ]}
+                        >
+                            <Text 
+                                numberOfLines={1} 
+                                ellipsizeMode="tail" 
+                                
+                                style={{ 
+                                    textAlign: "center", 
+                                    color: SECONDARY_COLOR 
+                                }}
+                            >
+                                {getFollowButtonProperties(t, one_loaded_user.private_account, one_loaded_user.has_follow, one_loaded_user.has_pending_follow_request).text}
+                            </Text>
+                        </Pressable>
+                    )}
+                </View>
             </Pressable>
         )
     }
@@ -380,7 +406,12 @@ export default function SearchUsers() {
 }
 
 // Function For Get The Follow Button Properties
-export const getFollowButtonProperties = (private_account:boolean, has_follow:boolean, has_pending_follow_request:boolean) => {
+export const getFollowButtonProperties = (
+    t:TFunction,
+    private_account:boolean, 
+    has_follow:boolean, 
+    has_pending_follow_request:boolean
+) => {
     let action:string = "follow" // Stores The Action
     let text:string = t("Začať sledovať") // Stores The Text
 
@@ -480,7 +511,7 @@ const styles = StyleSheet.create({
         maxWidth: MAIN_WIDTH,
         // width: calc(100% + 10px);
         width: "100%",
-        maxHeight: 3 * 56 + 24 + 10,
+        maxHeight: 3 * 56 + 24 + 10 + 20,
         marginTop: 18,
         marginHorizontal: "auto",
         padding: 5,
@@ -518,7 +549,7 @@ const styles = StyleSheet.create({
         // @include scrollbar;
         alignItems: "center",
         justifyContent: "center",
-        gap: 10,
+        gap: 20,
         height: "100%",
         padding: 15,
     },

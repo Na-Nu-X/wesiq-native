@@ -25,7 +25,7 @@ import { BlurView } from "expo-blur"
 import Back from "@/components/Back"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/(tabs)/chat/[username]"
+import type { Receiver, Chat, MessageReaction, ChatSocketResponse, Attachment } from "@/app/chat/[username]"
 import type { BasicResponse } from "../community/Feed"
 
 interface SentChatAttachmentResponse {

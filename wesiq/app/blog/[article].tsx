@@ -24,7 +24,6 @@ import * as Crypto from "expo-crypto"
 import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/AnimatedExerciseStatisticsBar"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
 import type { Comment } from "@/components/pages/community/Feed"
 import type { AddedComment } from "@/components/pages/community/PostContainer"
 import type { BasicResponse } from "@/components/pages/community/Feed"

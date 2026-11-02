@@ -16,8 +16,8 @@ import { SharePostDialog } from "./SharePostDialog"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUser } from "../../LoginFormDialog"
-import type { TrackedTask } from "@/app/(tabs)"
-import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
+import type { TrackedTask } from "@/app/(tabs)/blog"
+import type { ChatSocketResponse, Post as ChatPost } from "@/app/chat/[username]"
 
 export interface BasicResponse {
     success:boolean,

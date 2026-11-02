@@ -17,9 +17,9 @@ import { ImperativeRouter, useRouter } from "expo-router"
 import ProfilePicture from "@/components/ProfilePicture"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile } from "@/app/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { BioLink } from "@/app/(tabs)/profile/[username]"
+import type { BioLink } from "@/app/profile/[username]"
 
 type ProfileSectionProps = {
     logged_in_user:LoggedInUser|null,
@@ -307,14 +307,14 @@ export default function ProfileSection({
                         {logged_in_user && logged_in_user.id !== profile.id && (
                             <Pressable
                                 className="follow_button" 
-                                onPress={() => toggleFollow(profile.id, getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).action)}
+                                onPress={() => toggleFollow(profile.id, getFollowButtonProperties(t, profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).action)}
 
                                 style={[
                                     styles.follow_button, 
                                     { outlineStyle: "none" } as any
                                 ]}
                             >
-                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).text}</Text>
+                                <Text style={{ color: SECONDARY_COLOR }}>{getFollowButtonProperties(t, profile.private_account, profile.has_follow || false, profile.has_pending_follow_request || false).text}</Text>
                             </Pressable>
                         )}
                     </View>
