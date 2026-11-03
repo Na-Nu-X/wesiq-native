@@ -334,10 +334,10 @@ export default function NewTrainingPlanScreen() {
   return (
     <BackgroundContainer>
       <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-        <Banner 
+        {/* <Banner 
           logged_in_user={logged_in_user} 
           setActiveForm={setActiveForm} 
-        />
+        /> */}
 
         <ScrollView 
           className="content" 
@@ -346,7 +346,7 @@ export default function NewTrainingPlanScreen() {
           keyboardShouldPersistTaps="handled" 
           keyboardDismissMode="on-drag"
         >
-          <LoginFormDialog 
+          {/* <LoginFormDialog 
             visible={active_form==="login_form"}
             onChangeActiveForm={() => setActiveForm("registration_form")}
             onClose={() => setActiveForm(null)}
@@ -358,7 +358,7 @@ export default function NewTrainingPlanScreen() {
             onChangeActiveForm={() => setActiveForm("login_form")}
             onClose={() => setActiveForm(null)}
             onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-          />
+          /> */}
 
           <NewTrainingPlan 
             onTrainingPlanExercisesUpdate={(training_plan_exercises:TrainingPlanExercise[]) => setTrainingPlanExercises(training_plan_exercises)}

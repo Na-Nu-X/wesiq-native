@@ -1084,48 +1084,6 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 
-    official_task_checkbox: {
-        position: "relative",
-        flexShrink: 0,
-        width: 15,
-        height: 15,
-        borderRadius: 2,
-        // outline: 1px solid transparentize($blue-color, 0.8);
-        backgroundColor: transparentize(MAIN_COLOR, 0.5),
-
-        // &.checked {
-        //     outline: 1px solid darken($green-color, 10%);
-
-        //     checkbox_icon {
-        //         transform: scale(1.5);
-        //         opacity: 1;
-        //         transition: transform 0.3s ease, opacity 0.3s ease;
-        //     }
-        // }
-    },
-
-    official_task_checkbox_icon: {
-        position: "absolute",
-        width: 15,
-        height: 15,
-        // background-image: url("../../../../static/images/check.png"); // https://www.flaticon.com/free-icon/check_16750043
-        resizeMode: "contain",
-        transform: [{ scale: 0 }],
-        opacity: 0,
-        // transition: transform 0.2s ease, opacity 0.2s ease;
-    },
-
-    xp: {
-        alignItems: "center",
-        justifyContent: "center",
-        userSelect: "none",
-        width: 40,
-        paddingLeft: 15,
-        // border-left: 1px solid $training-surface-border;
-        borderLeftWidth: 1,
-        borderLeftColor: "#333333"
-    },
-
     no_logged_in: {
         textAlign: "center",
     },

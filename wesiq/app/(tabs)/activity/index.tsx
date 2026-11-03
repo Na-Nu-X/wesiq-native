@@ -128,10 +128,10 @@ export default function ActivityScreen() {
         <GestureHandlerRootView style={{ flex: 1 }}>
             <BackgroundContainer>
                 <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    <Banner 
+                    {/* <Banner 
                         logged_in_user={logged_in_user} 
                         setActiveForm={setActiveForm} 
-                    />
+                    /> */}
 
                     <ScrollView 
                         className="content" 
@@ -141,7 +141,7 @@ export default function ActivityScreen() {
                         style={styles.content} 
                         contentContainerStyle={{ padding: 20, flexGrow: 1 }}
                     >
-                        <LoginFormDialog 
+                        {/* <LoginFormDialog 
                             visible={active_form==="login_form"}
                             onChangeActiveForm={() => setActiveForm("registration_form")}
                             onClose={() => setActiveForm(null)}
@@ -153,7 +153,7 @@ export default function ActivityScreen() {
                             onChangeActiveForm={() => setActiveForm("login_form")}
                             onClose={() => setActiveForm(null)}
                             onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
-                        />
+                        /> */}
 
                         <View className="training_page" style={styles.training_page}>
                             <ActivitySection 

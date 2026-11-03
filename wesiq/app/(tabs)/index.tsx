@@ -248,11 +248,11 @@ export default function HomeScreen() {
     return (
         <BackgroundContainer style={{ flex: 1 }}>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
+                {/* <Banner 
                     logged_in_user={logged_in_user} 
                     setActiveForm={setActiveForm} 
                     setIsUploadPostFormDialogOpen={setIsUploadPostFormDialogOpen} 
-                />
+                /> */}
 
                 <ScrollView 
                     className="content" 
@@ -261,7 +261,7 @@ export default function HomeScreen() {
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >
-                    <LoginFormDialog 
+                    {/* <LoginFormDialog 
                         visible={active_form==="login_form"}
                         onChangeActiveForm={() => setActiveForm("registration_form")}
                         onClose={() => setActiveForm(null)}
@@ -273,7 +273,7 @@ export default function HomeScreen() {
                         onChangeActiveForm={() => setActiveForm("login_form")}
                         onClose={() => setActiveForm(null)}
                         onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
+                    /> */}
 
                     <UploadPostFormDialog 
                         visible={is_upload_post_form_dialog_open}
@@ -281,7 +281,7 @@ export default function HomeScreen() {
                         onCompressTasksLoad={(compress_tasks:CompressTask[]) => storeCompressTasks(compress_tasks)}
                     />
 
-                    <SearchUsers />
+                    {/* <SearchUsers /> */}
 
                     <Feed 
                         tracked_tasks={tracked_tasks} 

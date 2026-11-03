@@ -572,10 +572,10 @@ export default function HomeScreen() {
     return (
         <BackgroundContainer style={{ flex: 1 }}>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
+                {/* <Banner 
                     logged_in_user={logged_in_user} 
                     setActiveForm={setActiveForm} 
-                />
+                /> */}
 
                 <ScrollView 
                     className="content" 

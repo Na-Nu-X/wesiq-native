@@ -1149,7 +1149,7 @@ export const ChatContainer = ({
                                         <View style={{ padding: 20, alignItems: "center" }}>
                                             <ActivityIndicator size="small" color={SECONDARY_COLOR} />
                                         </View>
-                                    ) : null
+                                    ) : <></>
                                 }
 
                                 showsVerticalScrollIndicator={false}

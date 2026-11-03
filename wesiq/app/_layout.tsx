@@ -11,6 +11,7 @@ import { ColorSchemeName, Platform } from "react-native"
 import * as Notifications from "expo-notifications"
 import { useTranslation } from "react-i18next"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import Purchases from "react-native-purchases"
 
 import type { ChatSocketResponse } from "./chat/[username]"
 
@@ -38,11 +39,12 @@ function AppContent() {
                 }}
             >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
+                <Stack.Screen name="subscribe" options={{ headerShown: false }} />
                 <Stack.Screen name="blog/[article]" options={{ headerShown: false }} />
                 <Stack.Screen name="chat/[username]" options={{ headerShown: false }} />
                 <Stack.Screen name="post/[post_id]" options={{ headerShown: false }} />
                 <Stack.Screen name="profile/[username]" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
                 
                 <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
             </Stack>
@@ -55,7 +57,17 @@ function AppContent() {
 export default function RootLayout() {
     const { t } = useTranslation() // Initializes The Translations
 
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
+
     const notification_id = useRef<string|null>(null) // Stores The Notification ID
+
+    // Initializes The Subscription Buyer Load For Revenuecat
+    useEffect(() => {
+        if(logged_in_user) {
+            if(Platform.OS === "ios") Purchases.configure({ apiKey: "apple_revenuecat_api_key", appUserID: logged_in_user.id.toString() }) // iOS
+            else if(Platform.OS === "android") Purchases.configure({ apiKey: "google_revenuecat_api_key", appUserID: logged_in_user.id.toString() }) // Android
+        }
+    }, [logged_in_user])
 
     // Initializes The Notification Permission Request
     useEffect(() => {

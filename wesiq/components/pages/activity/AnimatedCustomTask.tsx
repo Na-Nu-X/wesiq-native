@@ -73,7 +73,9 @@ export const AnimatedCustomTask = ({ custom_task, onShowCustomTaskProperties, is
             />
 
             <View style={styles.custom_task_content}>
-                <View pointerEvents="none"><CustomTaskCheckbox is_checked={custom_task.is_completed} /></View>
+                <View pointerEvents="none">
+                    <CustomTaskCheckbox is_checked={custom_task.is_completed} />
+                </View>
 
                 <View 
                     className="title" 

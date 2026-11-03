@@ -37,10 +37,10 @@ export default function BlogScreen() {
     return (
         <BackgroundContainer>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                <Banner 
+                {/* <Banner 
                     logged_in_user={logged_in_user} 
                     setActiveForm={setActiveForm} 
-                />
+                /> */}
 
                 <ScrollView 
                     className="content" 
@@ -49,7 +49,7 @@ export default function BlogScreen() {
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >
-                    <LoginFormDialog 
+                    {/* <LoginFormDialog 
                         visible={active_form==="login_form"}
                         onChangeActiveForm={() => setActiveForm("registration_form")}
                         onClose={() => setActiveForm(null)}
@@ -61,7 +61,7 @@ export default function BlogScreen() {
                         onChangeActiveForm={() => setActiveForm("login_form")}
                         onClose={() => setActiveForm(null)}
                         onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
+                    /> */}
 
                     <ArticlesAmount articles_amount={articles_amount} />
 

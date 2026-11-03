@@ -80,7 +80,7 @@ export const SharePostDialog = ({
                                             <ProfilePicture
                                                 user_id={item.id}
                                                 user_profile_picture_name={item.profile_picture_name}
-                                                user_subscription={item.subscription?.is_active || false} 
+                                                user_subscription={item.subscription?.is_active || false}
                                             />
 
                                             <Text>{item.username}</Text>

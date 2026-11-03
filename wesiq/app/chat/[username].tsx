@@ -221,10 +221,10 @@ export default function ChatDetailScreen() {
                 <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
                     <Stack.Screen options={{ gestureEnabled: false }} />
 
-                    <Banner 
+                    {/* <Banner 
                         logged_in_user={logged_in_user} 
                         setActiveForm={setActiveForm} 
-                    />
+                    /> */}
 
                     <View 
                         className="content" 

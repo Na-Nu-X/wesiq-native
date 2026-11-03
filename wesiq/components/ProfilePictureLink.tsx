@@ -21,7 +21,7 @@ export default function ProfilePictureLink({
     user_username, 
     user_profile_picture_name, 
     user_subscription, 
-    label = "Môj účet", 
+    label, 
     width = 32, 
     height = 32 
 }:ProfilePictureLinkProps) {

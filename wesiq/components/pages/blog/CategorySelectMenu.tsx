@@ -18,7 +18,7 @@ export const CategorySelectMenu = ({ onSelectedCategoryOptionUpdate, selected_ca
     const [is_category_select_menu_open, setIsCategorySelectMenuOpen] = useState<boolean>(false) // Stores The Information If The Category Select Menu Is Open
     
     const [button_layout, setButtonLayout] = useState<{ x:number, y:number, width:number, height:number }|null>(null) // Stores The Button Layout
-    const select = useRef<View>(null) // Stores The Select Reference
+    const select = useRef<React.ElementRef<typeof View>>(null) // Stores The Select Reference
 
     // Function For Toggle Show Category Select Menu
     const toggleShowCategorySelectMenu = ():void => {
