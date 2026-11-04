@@ -1,11 +1,12 @@
 
-import { Alert, Image, Pressable, StyleSheet, Text, View } from "react-native"
+import { Alert, Image, StyleSheet, Text, View } from "react-native"
 import { useTranslation } from "react-i18next"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useEffect, useState } from "react"
 import Purchases, { PurchasesError, PurchasesOfferings, PurchasesPackage } from "react-native-purchases"
-import { BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import AnimatedSubscriptionButton from "./AnimatedSubscriptionButton"
 
 export default function SubscriptionPlans() {
     const { t } = useTranslation() // Initializes The Translations
@@ -139,14 +140,11 @@ export default function SubscriptionPlans() {
                     </View>
                 </View>
 
-                <Pressable
-                    className={logged_in_user ? "subscribe" : "subscribe disabled"}
-                    onPress={() => basic_subscription ? handlePurchase(basic_subscription) : null}
-                    accessibilityRole="button"
-                    disabled={!logged_in_user}
-                >
-                    <Text style={{ color: SECONDARY_COLOR }}>{t("Predplatiť")}</Text>
-                </Pressable>
+                <AnimatedSubscriptionButton 
+                    logged_in_user={logged_in_user}
+                    subscription_type="basic"
+                    onBasicSubscriptionPurchase={() => handlePurchase(basic_subscription)}
+                />
             </View>
 
             <View className="premium" style={styles.premium}>
@@ -228,15 +226,11 @@ export default function SubscriptionPlans() {
                     </View>
                 </View>
 
-                <Pressable
-                    className={logged_in_user ? "subscribe" : "subscribe disabled"}
-                    onPress={() => premium_subscription ? handlePurchase(premium_subscription) : null}
-                    accessibilityRole="button"
-                    disabled={!logged_in_user}
-                    style={logged_in_user && logged_in_user.subscription.plan === "basic" ? styles.subscribe : styles.premium_subscribe}
-                >
-                    <Text style={{ color: SECONDARY_COLOR }}>{t("Predplatiť")}</Text>
-                </Pressable>
+                <AnimatedSubscriptionButton 
+                    logged_in_user={logged_in_user}
+                    subscription_type="premium"
+                    onPremiumSubscriptionPurchase={() => handlePurchase(premium_subscription)}
+                />
             </View>
         </View>
     )
@@ -245,8 +239,10 @@ export default function SubscriptionPlans() {
 const styles = StyleSheet.create({
     subscription_plans: {
         flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
         gap: 20,
-        marginTop: 50,
+        flex: 1,
     },
 
     basic: {
@@ -386,8 +382,8 @@ const styles = StyleSheet.create({
         textAlign: "center",
         // background: linear-gradient(135deg, transparentize($blue-color, 0.35), transparentize($dark-blue-color, 0.55));
         color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: BLUE_COLOR,
+        // borderWidth: 1,
+        // borderColor: BLUE_COLOR,
         borderRadius: MEDIUM_BORDER_RADIUS,
         // transition: transform 0.3s ease;
         
@@ -403,6 +399,35 @@ const styles = StyleSheet.create({
         // &.disabled {
         //     cursor: not-allowed;
         // }
+    },
+
+    glow_container: {
+        position: "relative",
+        alignItems: "center",
+        justifyContent: "center",
+        alignSelf: "center",
+        width: "90%",
+        height: 50,
+        marginVertical: 10,
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        overflow: "hidden",
+    },
+
+    gradient_container: {
+        position: "absolute",
+        width: 600,
+        height: 600,
+    },
+
+    inner_glow_container: {
+        position: "absolute",
+        top: 2,
+        bottom: 2,
+        left: 2,
+        right: 2,
+        backgroundColor: transparentize(MAIN_COLOR, 0.1),
+        borderRadius: MEDIUM_BORDER_RADIUS,
+        overflow: "hidden",
     },
 })
 

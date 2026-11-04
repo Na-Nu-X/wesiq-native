@@ -1,11 +1,12 @@
 import React, { useId } from "react"
-import { StyleSheet, View, ViewProps } from "react-native"
+import { View, StyleSheet, ViewProps } from "react-native"
 import { Image } from "expo-image"
-import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg"
+import Svg, { Defs, RadialGradient, Stop, Rect } from "react-native-svg"
 import { MAIN_COLOR, BLUE_COLOR } from "@/constants/colors"
+import { AnimatedBackground } from "./AnimatedBackground"
 
 type Props = ViewProps & {
-  children?:React.ReactNode
+    children?:React.ReactNode
 }
 
 export default function BackgroundContainer({ children, style, ...props }:Props) {
@@ -54,13 +55,15 @@ export default function BackgroundContainer({ children, style, ...props }:Props)
                 <Rect width="100%" height="100%" fill={`url(#${top_glow_id})`} />
             </Svg>
 
+            <AnimatedBackground />
+
             {children}
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+    container: {
+        flex: 1,
+    },
 })

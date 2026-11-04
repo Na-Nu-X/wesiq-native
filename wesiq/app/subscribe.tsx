@@ -5,7 +5,7 @@ import { useState } from "react"
 import Banner from "@/components/Banner"
 import { useTranslation } from "react-i18next"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import SubscriptionPlans from "@/components/SubscriptionPlans"
+import SubscriptionPlans from "@/components/pages/subscribe/SubscriptionPlans"
 
 export default function ArticleScreen() {
     const { t } = useTranslation() // Initializes The Translations
