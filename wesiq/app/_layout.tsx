@@ -41,6 +41,9 @@ function AppContent() {
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
                 <Stack.Screen name="subscribe" options={{ headerShown: false }} />
+                <Stack.Screen name="activity/new" options={{ headerShown: false }} />
+                <Stack.Screen name="activity/edit" options={{ headerShown: false }} />
+                <Stack.Screen name="activity/copy" options={{ headerShown: false }} />
                 <Stack.Screen name="blog/[article]" options={{ headerShown: false }} />
                 <Stack.Screen name="chat/[username]" options={{ headerShown: false }} />
                 <Stack.Screen name="post/[post_id]" options={{ headerShown: false }} />

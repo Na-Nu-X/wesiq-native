@@ -14,8 +14,8 @@ import { AnimatedOfficialTask } from "./AnimatedOfficialTask"
 import { useTranslation } from "react-i18next"
 import DraggableFlatList, { RenderItemParams, ScaleDecorator, ShadowDecorator } from "react-native-draggable-flatlist"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-
 import { calculateGainedXp } from "./ActivitySection"
+import { BlurView } from "expo-blur"
 
 interface OfficialTasksResponse {
     success:boolean,
@@ -737,6 +737,15 @@ export default function TasksSection({
                     {/* <audio class="success_sound" src="{% static 'audio/success.mp3' %}" type="audio/mpeg"></audio> <!-- https://pixabay.com/ --> */}
 
                     <View className="official_tasks" style={styles.official_tasks}>
+                        <BlurView 
+                            intensity={10} 
+                            
+                            style={[
+                                StyleSheet.absoluteFill,
+                                { borderRadius: MEDIUM_BORDER_RADIUS },
+                            ]} 
+                        />
+
                         <Text 
                             className="section_title" 
 
@@ -805,6 +814,15 @@ export default function TasksSection({
                     </View>
 
                     <View className="custom_tasks" style={styles.custom_tasks}>
+                        <BlurView 
+                            intensity={10} 
+                            
+                            style={[
+                                StyleSheet.absoluteFill,
+                                { borderRadius: MEDIUM_BORDER_RADIUS },
+                            ]} 
+                        />
+
                         <Text 
                             className="section_title" 
 

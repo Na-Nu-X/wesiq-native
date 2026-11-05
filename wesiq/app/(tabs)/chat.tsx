@@ -2,9 +2,6 @@ import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useState } from "react"
-import Banner from "@/components/Banner"
-import LoginFormDialog from "@/components/LoginFormDialog"
-import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
@@ -46,8 +43,6 @@ export default function ChatScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
     const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
-
-    const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const [unread_chats, setUnreadChats] = useState<ChatData[]>([]) // Stores The Unread Chats
     const [read_chats, setReadChats] = useState<ChatData[]>([]) // Stores The Read Chats

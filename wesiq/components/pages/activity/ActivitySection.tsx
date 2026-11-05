@@ -17,6 +17,7 @@ import { WarmUp } from "./WarmUp"
 import { useTranslation } from "react-i18next"
 import { HeartRate } from "./HeartRate"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { BlurView } from "expo-blur"
 
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
@@ -1038,7 +1039,19 @@ export default function ActivitySection({
             ]}
         >
             <View className="activity" style={styles.activity}>
-                <View className="record_activity" style={styles.record_activity}>
+                <View 
+                    className="record_activity" 
+                    style={styles.record_activity}
+                >
+                    <BlurView 
+                        intensity={10} 
+                        
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { borderRadius: MEDIUM_BORDER_RADIUS },
+                        ]} 
+                    />
+
                     <Text className="timer" style={styles.timer}><Text className="hours" style={styles.timer_part}>{getFormattedTime("hours", elapsed_time / 1000, true)}</Text>:<Text className="minutes" style={styles.timer_part}>{getFormattedTime("minutes", elapsed_time / 1000, true)}</Text>:<Text className="seconds" style={styles.timer_part}>{getFormattedTime("seconds", elapsed_time / 1000, true)}</Text></Text>
 
                     <View className="buttons" style={styles.buttons}>
@@ -1133,6 +1146,15 @@ export default function ActivitySection({
                 <View className="previous_activity" style={styles.previous_activity}>
                     <View className="top" style={styles.top}>
                         <View className="average_activity_time_container" style={styles.average_activity_time_container}>
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: MEDIUM_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <View 
                                 style={{
                                     flexDirection: "row",
@@ -1154,6 +1176,15 @@ export default function ActivitySection({
                         </View>
 
                         <View className="activities_amount_container" style={styles.activities_amount_container}>
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: MEDIUM_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <View 
                                 style={{
                                     flexDirection: "row",
@@ -1177,6 +1208,15 @@ export default function ActivitySection({
                     </View>
 
                     <View className="bottom" style={styles.bottom}>
+                        <BlurView 
+                            intensity={10} 
+                            
+                            style={[
+                                StyleSheet.absoluteFill,
+                                { borderRadius: MEDIUM_BORDER_RADIUS },
+                            ]} 
+                        />
+
                         <View className="latest_activity_container" style={styles.latest_activity_container}>
                             <FontAwesome6
                                 name="list"

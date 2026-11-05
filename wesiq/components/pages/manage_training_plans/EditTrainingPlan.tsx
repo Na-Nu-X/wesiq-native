@@ -8,7 +8,7 @@ import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
-import { Gesture, GestureDetector, PanGesture } from "react-native-gesture-handler"
+import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { BasicResponse } from "@/components/pages/community/Feed"
 import * as Notifications from "expo-notifications"
 import Icon from "@/components/Icon"
@@ -19,6 +19,7 @@ import ReAnimated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } fro
 import { DaySelectMenu } from "./DaySelectMenu"
 import { useTranslation } from "react-i18next"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { BlurView } from "expo-blur"
 
 import type { LoadedTrainingPlansResponse, TrainingPlanExercise } from "../activity/ActivitySection"
 import type { Day } from "./DaySelectMenu"
@@ -133,7 +134,7 @@ export default function EditTrainingPlan({
     // Function For Initialize The Drag Gesture
     const initializeDragGesture = (exercise:TrainingPlanExercise) => {
         // Creates The Drag Gesture (Starts After 250MS Hold)
-        const drag:PanGesture = Gesture.Pan()
+        const drag = Gesture.Pan()
             .activateAfterLongPress(250)
             .onStart((event) => {
                 exercise_scale.value = withSpring(0.95) // Shrinks The Item
@@ -1264,6 +1265,15 @@ export default function EditTrainingPlan({
                             accessibilityLabel={t("Uložiť zmeny")}
                             style={styles.save}
                         >
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: BIG_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <Text style={{ color: SECONDARY_COLOR }}>{t("Uložiť zmeny")}</Text>
                         </Pressable>
 
@@ -1273,6 +1283,15 @@ export default function EditTrainingPlan({
                             accessibilityLabel={t("Vymazať")}
                             style={styles.delete}
                         >
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: BIG_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <Text style={{ color: SECONDARY_COLOR }}>{t("Vymazať")}</Text>
                         </Pressable>
                     </View>

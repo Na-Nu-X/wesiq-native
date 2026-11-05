@@ -2,7 +2,6 @@ import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from "react-nati
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useMemo, useRef, useState } from "react"
-import Banner from "@/components/Banner"
 import { useLocalSearchParams } from "expo-router"
 import { API_URL, DOMAIN } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -73,7 +72,6 @@ export default function ArticleScreen() {
     const { t } = useTranslation() // Initializes The Translations
 
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
-    const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
 
     const { article } = useLocalSearchParams<{ article:string }>() // Gets The Searched Article
     const [loaded_article, setLoadedArticle] = useState<LoadedArticle|null>(null) // Stores The Loaded Article

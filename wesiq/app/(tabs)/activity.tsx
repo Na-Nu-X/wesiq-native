@@ -2,9 +2,6 @@ import { View, StyleSheet, Alert, ScrollView } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useState } from "react"
-import Banner from "@/components/Banner"
-import LoginFormDialog from "@/components/LoginFormDialog"
-import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import ActivitySection from "@/components/pages/activity/ActivitySection"
 import TasksSection from "@/components/pages/activity/TasksSection"
 import HistorySection from "@/components/pages/activity/HistorySection"
@@ -16,7 +13,6 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { OfficialTask } from "@/components/pages/activity/TasksSection"
 import type { CustomTask } from "@/components/pages/activity/TasksSection"
 
@@ -36,9 +32,7 @@ interface CompletedOfficialTaskResponse {
 export default function ActivityScreen() {
     const { t } = useTranslation() // Initializes The Translations
     
-    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
-
-    const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
 
     const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
     const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time

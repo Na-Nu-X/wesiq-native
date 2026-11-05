@@ -4,6 +4,7 @@ import { DOMAIN } from "@/constants/general"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { Gesture, GestureDetector, Directions, ComposedGesture, PanGesture } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
+import { BlurView } from "expo-blur"
 
 import type { Exercise } from "./ExerciseSelection"
 
@@ -36,7 +37,7 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
         })
 
     // Creates The Drag Gesture (Starts After 250MS Hold)
-    const drag:PanGesture = Gesture.Pan()
+    const drag = Gesture.Pan()
         .activateAfterLongPress(250)
         .onStart((event) => {
             scale.value = withSpring(1.05) // Scales The Item
@@ -71,7 +72,7 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
         elevation: scale.value > 1 ? 10 : 0,
     }))
 
-    const composed_gestures:ComposedGesture = Gesture.Race(swipe_up, swipe_down, drag) // Gets The Composed Gestures
+    const composed_gestures = Gesture.Race(swipe_up, swipe_down, drag) // Gets The Composed Gestures
 
     if(one_exercise.is_hidden) return null
 
@@ -86,6 +87,8 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
                     styles.exercise,
                 ]}
             >
+                <BlurView intensity={10} style={StyleSheet.absoluteFill} />
+
                 {one_exercise.image_filename && (
                     <Image 
                         source={{ uri: `${DOMAIN}/static/images/exercises/${one_exercise.image_filename}`}}

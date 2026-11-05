@@ -4,9 +4,7 @@ import { NativeAppEventEmitter, EmitterSubscription, PermissionsAndroid, Platfor
 import AppleHealthKit, { HealthKitPermissions, HealthObserver } from "react-native-health"
 import { initialize, requestPermission, readRecords, ReadRecordsResult, RecordResult } from "react-native-health-connect"
 import { HeartRateSample } from "react-native-health-connect/lib/typescript/types/base.types"
-import { useTranslation } from "react-i18next"
-
-const { t } = useTranslation() // Initializes The Translations
+import i18n from "@/app/i18n"
 
 export type HeartRateSourceType = "TEST"|"BLE"|"APPLE_HEALTH"|"HEALTH_CONNECT"
 
@@ -108,7 +106,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
         const has_permissions:boolean = await this.requestAndroidPermissions() // Stores The Information If The Permissions For Connection Are Allowed
 
         if(!has_permissions) {
-            console.error(t("Nedostatočné Bluetooth oprávnenia."))
+            console.error(i18n.t("Nedostatočné Bluetooth oprávnenia."))
             return false
         }
 
@@ -122,7 +120,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
                         resolve(true)
                     })
                     .catch(() => {
-                        console.error(t("Pri pripojovaní k BLE zariadeniu došlo k chybe."))
+                        console.error(i18n.t("Pri pripojovaní k BLE zariadeniu došlo k chybe."))
                         resolve(false)
                     })
 
@@ -132,7 +130,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
             // Scans For The New Devices
             this.manager.startDeviceScan([HEART_RATE_SERVICE_UUID], null, async (error:BleError|null, device:Device|null) => {
                 if(error) {
-                    console.error(t("Pri skenovaní BLE zariadení došlo k chybe."))
+                    console.error(i18n.t("Pri skenovaní BLE zariadení došlo k chybe."))
                     this.manager.stopDeviceScan() // Stops The Scan
                     resolve(false)
                     return
@@ -148,7 +146,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
                     } 
                     
                     catch {
-                        console.error(t("Pri pripojovaní k BLE zariadeniu došlo k chybe."))
+                        console.error(i18n.t("Pri pripojovaní k BLE zariadeniu došlo k chybe."))
                         resolve(false)
                     }
                 }
@@ -212,7 +210,7 @@ export class HealthKitHeartRateProvider implements HeartRateProvider {
         return new Promise((resolve) => {
             AppleHealthKit.initHealthKit(permissions, (error: string) => {
                 if(error) {
-                    console.error(t("Pri pripojovaní k Apple Health došlo k chybe."))
+                    console.error(i18n.t("Pri pripojovaní k Apple Health došlo k chybe."))
                     resolve(false)
                     return
                 }
@@ -269,7 +267,7 @@ export class HealthConnectHeartRateProvider implements HeartRateProvider {
         } 
         
         catch {
-            console.error(t("Pri pripojovaní k Health Connect došlo k chybe."))
+            console.error(i18n.t("Pri pripojovaní k Health Connect došlo k chybe."))
             return false
         }
     }
@@ -312,7 +310,7 @@ export class HealthConnectHeartRateProvider implements HeartRateProvider {
             } 
             
             catch {
-                console.error(t("Pri čítaní tepu z Health Connect došlo k chybe."))
+                console.error(i18n.t("Pri čítaní tepu z Health Connect došlo k chybe."))
             }
         }, 3000)
     }

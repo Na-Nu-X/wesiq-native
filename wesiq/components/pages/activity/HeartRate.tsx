@@ -15,7 +15,7 @@ interface HeartRateProps {
 
 export const HeartRate = ({ is_activity_started }:HeartRateProps) => {
     const { t } = useTranslation() // Initializes The Translations
-
+    
     const [bpm, setBpm] = useState<number|null>(null) // Stores The BPM
 
     // Function For Connect The Device

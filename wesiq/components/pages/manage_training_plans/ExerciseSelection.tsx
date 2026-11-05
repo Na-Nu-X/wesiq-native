@@ -11,6 +11,7 @@ import { ExerciseItem } from "./ExerciseItem"
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, runOnJS } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
+import { BlurView } from "expo-blur"
 
 interface LoadedExercisesResponse {
     success:boolean, 
@@ -276,6 +277,8 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                         // draggable="true"
                         style={styles.exercise}
                     >
+                        <BlurView intensity={10} style={StyleSheet.absoluteFill} />
+
                         <FontAwesome6
                             name="plus"
                             size={40}
@@ -295,6 +298,8 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                             styles.exercise,
                         ]}
                     >
+                        <BlurView intensity={10} style={StyleSheet.absoluteFill} />
+                        
                         <FontAwesome6
                             name="dumbbell"
                             size={40}
