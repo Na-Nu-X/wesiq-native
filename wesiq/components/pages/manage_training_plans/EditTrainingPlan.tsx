@@ -56,7 +56,7 @@ export default function EditTrainingPlan({
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
 
     const [active_training_plan_index, setActiveTrainingPlanIndex] = useState<number>(0) // Stores The Active Training Plan Index
-    const [are_training_plans_loading, setAreTrainingPlansLoading] = useState(false) // Stores The Information If Training Plans Are Loading
+    const [are_training_plans_loading, setAreTrainingPlansLoading] = useState<boolean>(false) // Stores The Information If Training Plans Are Loading
     const [training_plan_slide, setTrainingPlanSlide] = useState<TrainingPlanSlide>("drop_zone") // Stores The Training Plan Slide
 
     const [training_plan_title, setTrainingPlanTitle] = useState<string>("") // Stores The Training Plan Slide
