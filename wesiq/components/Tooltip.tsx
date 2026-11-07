@@ -5,10 +5,12 @@ import { Animated, Text, View, StyleSheet } from "react-native"
 
 type TooltipProps = {
     text:string,
-    orientation?:"top"|"right"
+    orientation?:"top"|"right",
+    width?:string,
+    top?:number
 }
 
-export const Tooltip = ({ text, orientation = "top" }:TooltipProps) => {
+export const Tooltip = ({ text, orientation = "top", width = "100%", top = -10 }:TooltipProps) => {
     const animated_scale = useRef(new Animated.Value(0)).current // Animates The Scale
 
     useEffect(() => {
@@ -22,17 +24,23 @@ export const Tooltip = ({ text, orientation = "top" }:TooltipProps) => {
     const is_top_oriented:boolean = orientation === "top" // Checks If The Tooltip Is Top Oriented
 
     return (
-        <Animated.View style={[
-            styles.tooltip_container,
-            is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
+        <Animated.View 
+            pointerEvents="none"
 
-            {
-                transform: [
-                    is_top_oriented ? { translateX: "-50%" } : { translateY: "-50%" },
-                    { scale: animated_scale }
-                ]
-            }
-        ]}>
+            style={[
+                styles.tooltip_container,
+                is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
+                width ? { width: width } : {},
+                top ? { top: top } : {},
+
+                {
+                    transform: [
+                        is_top_oriented ? { translateX: "-50%" } : { translateY: "-50%" },
+                        { scale: animated_scale }
+                    ]
+                }
+            ]}
+        >
             {!is_top_oriented && <View style={styles.tooltip_triangle_right} />}
             <Text style={styles.tooltip_body}>{text}</Text>
             {is_top_oriented && <View style={styles.tooltip_triangle_top} />}
@@ -43,6 +51,7 @@ export const Tooltip = ({ text, orientation = "top" }:TooltipProps) => {
 const styles = StyleSheet.create({
     tooltip_container: {
         position: "absolute",
+        top: -10,
         zIndex: 100,
     },
 

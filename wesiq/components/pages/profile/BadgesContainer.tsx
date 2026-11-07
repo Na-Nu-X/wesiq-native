@@ -1,11 +1,13 @@
-import React, { useState, useRef } from "react"
-import { Pressable, StyleProp, ViewStyle, Animated, ScrollView, View, StyleSheet, Text } from "react-native"
+import { ScrollView, View, StyleSheet, Text, Pressable } from "react-native"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { useTranslation } from "react-i18next"
+import { BlurView } from "expo-blur"
+import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+import { useState } from "react"
+import { Tooltip } from "@/components/Tooltip"
 
 import type { Profile } from "@/app/(tabs)/profile/[username]"
-import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 
 type BadgesContainerProps = {
     is_found:boolean,
@@ -21,6 +23,8 @@ const PURPLE_RARITY = "#8b5cf6" // Defines The Purple Rarity Color
 
 export default function BadgesContainer({ is_found, profile }:BadgesContainerProps) {
     const { t } = useTranslation() // Initializes The Translations
+
+    const [tooltip, setTooltip] = useState<string|null>(null) // Stores The Tooltip
 
     const MAX_EMPTY_BADGES:number = 16 // Defines The Amount Of The Maximum Empty Badges
     let badges_amount:number = 0 // Stores The Badges Amount
@@ -44,9 +48,45 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
     const remaining_empty_badges:number = MAX_EMPTY_BADGES - badges_amount // Gets The Number Of Remaining Empty Badges
 
+    // Function For Toggle Show / Hide Tooltip
+    const toggleShowTooltip = (key:string) => {
+        // Sets The Tooltips
+        setTooltip((previous_tooltip:string|null) => {
+            const is_already_open:boolean = previous_tooltip === key // Checks If The Tooltip Is Already Open
+
+            if(is_already_open) return null // Hides The Tooltip
+            else return key // Shows The Tooltip
+        })
+    }
+
     return (
         is_found && profile ? (
             <View className="badges_container" style={styles.badges_container}>
+                <BlurView 
+                    intensity={10} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { borderRadius: MEDIUM_BORDER_RADIUS },
+                    ]} 
+                />
+
+                {tooltip === "developer" && (<Tooltip text={t("Vývojár")} width="50%" top={-40} />)}
+                {tooltip === "subscriber" && (<Tooltip text={profile.subscription && profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")} width="50%" top={-40} />)}
+                {tooltip === "donations" && (<Tooltip text={t("Prispievateľ")} width="50%" top={-40} />)}
+                {tooltip === "level" && (<Tooltip text={t("Level")} width="50%" top={-40} />)}
+                {tooltip === "xp" && (<Tooltip text={t("Získané XP")} width="50%" top={-40} />)}
+                {tooltip === "max_activity_streak" && (<Tooltip text={t("Najdlhšia rada aktivity")} width="50%" top={-40} />)}
+                {tooltip === "years_since_registration" && (<Tooltip text={t("Roky od registrácie")} width="50%" top={-40} />)}
+                {tooltip === "total_activities" && (<Tooltip text={t("Zaznamenané aktivity")} width="50%" top={-40} />)}
+                {tooltip === "followers" && (<Tooltip text={t("Počet sledovateľov")} width="50%" top={-40} />)}
+                {tooltip === "posts" && (<Tooltip text={t("Počet príspevkov")} width="50%" top={-40} />)}
+                {tooltip === "received_likes" && (<Tooltip text={t("Získané lajky")} width="50%" top={-40} />)}
+                {tooltip === "written_comments" && (<Tooltip text={t("Napísané komentáre")} width="50%" top={-40} />)}
+                {tooltip === "no_day_off_week" && (<Tooltip text={t("Týždeň bez oddychu")} width="50%" top={-40} />)}
+                {tooltip === "xmas_activity" && (<Tooltip text={t("Vianočná aktivita")} width="50%" top={-40} />)}
+                {tooltip === "new_year_new_goals" && (<Tooltip text={t("Novoročná aktivita")} width="50%" top={-40} />)}
+
                 <ScrollView 
                     className="badges" 
                     horizontal={true}
@@ -56,8 +96,9 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                     contentContainerStyle={styles.badges_content}
                 >
                     {profile.role === "developer" && (
-                        <View 
+                        <Pressable 
                             className="badge developer" 
+                            onPress={() => toggleShowTooltip("developer")}
                             accessibilityLabel={t("Vývojár")}
 
                             style={[
@@ -71,12 +112,13 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 color={RED_RARITY}
                                 style={styles.badge_icon}
                             />
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.subscription && profile.subscription.is_active && (
-                        <View 
+                        <Pressable 
                             className="badge subscriber" 
+                            onPress={() => toggleShowTooltip("subscriber")}
                             accessibilityLabel={profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")}
 
                             style={[
@@ -90,11 +132,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 color={YELLOW_RARITY}
                                 style={styles.badge_icon}
                             />
-                        </View>
+                        </Pressable>
                     )}
                     
                     {profile.total_transactions_amount !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "donations",
@@ -106,6 +148,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_transactions_amount >= 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("donations")}
                             accessibilityLabel={t("Prispievateľ")}
 
                             style={[
@@ -152,10 +195,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.total_transactions_amount >= 50 && profile.total_transactions_amount < 100 && ("50€")}
                                 {profile.total_transactions_amount >= 100 && ("100+€")}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
-                    <View 
+                    <Pressable 
                         className={[
                             "badge", 
                             "level",
@@ -167,6 +210,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             profile.level > 100 && "purple"
                         ].filter(Boolean).join(" ")}
                         
+                        onPress={() => toggleShowTooltip("level")}
                         accessibilityLabel={t("Level")}
 
                         style={[
@@ -208,10 +252,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                         >
                             {profile.level}
                         </Text>
-                    </View>
+                    </Pressable>
 
                     {profile.xp !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "xp",
@@ -223,6 +267,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.xp > 100000 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("xp")}
                             accessibilityLabel={t("Získané XP")}
 
                             style={[
@@ -303,12 +348,13 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     XP
                                 </Text>
                             </View>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.max_activity_streak !== 0 && (
-                        <View 
+                        <Pressable 
                             className="badge max_activity_streak" 
+                            onPress={() => toggleShowTooltip("max_activity_streak")}
                             accessibilityLabel={t("Najdlhšia rada aktivity")}
 
                             style={[
@@ -331,11 +377,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             >
                                 {profile.max_activity_streak}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.years_since_registration !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "years_since_registration",
@@ -347,6 +393,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.years_since_registration > 5 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("years_since_registration")}
                             accessibilityLabel={t("Roky od registrácie")}
 
                             style={[
@@ -388,11 +435,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             >
                                 {profile.years_since_registration}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.total_activities !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "total_activities",
@@ -404,6 +451,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_activities > 500 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("total_activities")}
                             accessibilityLabel={t("Zaznamenané aktivity")}
 
                             style={[
@@ -450,11 +498,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.total_activities > 250 && profile.total_activities <= 500 && "250"}
                                 {profile.total_activities > 500 && "500+"}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.followers.length !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "followers",
@@ -466,6 +514,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.followers.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("followers")}
                             accessibilityLabel={t("Počet sledovateľov")}
 
                             style={[
@@ -512,11 +561,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.followers.length > 50 && profile.followers.length <= 100 && "50"}
                                 {profile.followers.length > 100 && "100+"}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.posts.length !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "posts",
@@ -528,6 +577,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.posts.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("posts")}
                             accessibilityLabel={t("Počet príspevkov")}
 
                             style={[
@@ -574,11 +624,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.posts.length > 50 && profile.posts.length <= 100 && "50"}
                                 {profile.posts.length > 100 && "100+"}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.total_received_likes !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "received_likes",
@@ -590,6 +640,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_received_likes > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
+                            onPress={() => toggleShowTooltip("received_likes")}
                             accessibilityLabel={t("Získané lajky")}
 
                             style={[
@@ -636,11 +687,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.total_received_likes > 50 && profile.total_received_likes <= 100 && "50"}
                                 {profile.total_received_likes > 100 && "100+"}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.post_comments.length !== 0 && (
-                        <View 
+                        <Pressable 
                             className={[
                                 "badge", 
                                 "written_comments",
@@ -652,7 +703,8 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.post_comments.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            accessibilityLabel={t("Získané lajky")}
+                            onPress={() => toggleShowTooltip("written_comments")}
+                            accessibilityLabel={t("Napísané komentáre")}
 
                             style={[
                                 styles.badge,
@@ -698,13 +750,21 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 {profile.post_comments.length > 50 && profile.post_comments.length <= 100 && "50"}
                                 {profile.post_comments.length > 100 && "100+"}
                             </Text>
-                        </View>
+                        </Pressable>
                     )}
 
                     {profile.badges.map((one_badge:{ title:string, data:string }, index:number) => (
-                        <View 
+                        <Pressable 
                             key={index} 
                             className="badge"
+
+                            onPress={() => 
+                                one_badge.data === "no_day_off_week" 
+                                    ? toggleShowTooltip("no_day_off_week") 
+                                    : one_badge.data === "xmas_activity" 
+                                        ? toggleShowTooltip("xmas_activity") 
+                                        : toggleShowTooltip("new_year_new_goals")
+                            }
 
                             style={[
                                 styles.badge,
@@ -754,7 +814,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     />
                                 </>
                             )}
-                        </View>
+                        </Pressable>
                     ))}
 
                     {profile.badges.length < MAX_EMPTY_BADGES && (

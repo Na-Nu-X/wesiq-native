@@ -178,16 +178,20 @@ export default function RootLayout() {
                     }}
                 />
 
-                {/* <Tabs.Screen
+                <Tabs.Screen
                     name="post"
                     
                     options={{
-                        tabBarButton: () => null
+                        tabBarButton: () => null,
+
+                        tabBarItemStyle: { 
+                            display: "none" 
+                        }
                     }}
-                /> */}
+                />
 
                 <Tabs.Screen
-                    name="post"
+                    name="subscribe"
                     
                     options={{
                         tabBarButton: () => null,

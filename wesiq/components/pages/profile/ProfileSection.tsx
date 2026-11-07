@@ -15,6 +15,7 @@ import { FollowingDialog } from "./FollowingDialog"
 import { FollowRequestsDialog } from "./FollowRequestsDialog"
 import { ImperativeRouter, useRouter } from "expo-router"
 import ProfilePicture from "@/components/ProfilePicture"
+import { BlurView } from "expo-blur"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
@@ -146,6 +147,15 @@ export default function ProfileSection({
                 style={styles.profile}
             >
                 <View className="header" style={styles.profile_header}>
+                    <BlurView 
+                        intensity={10} 
+                        
+                        style={[
+                            StyleSheet.absoluteFill,
+                            { borderRadius: MEDIUM_BORDER_RADIUS },
+                        ]} 
+                    />
+
                     <View className="top" style={styles.top}>
                         <View className="info" style={styles.profile_info}>
                             <ProfilePicture
@@ -182,6 +192,10 @@ export default function ProfileSection({
                             <Text style={styles.streak_text}>{profile.activity_streak || 0}</Text>
                         </View>
                     </View>
+
+                    {logged_in_user && logged_in_user.id === profile.id && !logged_in_user.subscription.is_active && logged_in_user.subscription.plan === "free" && (
+                        <Text style={{ color: SECONDARY_COLOR }}>{t("Kúpiť predplatné")}</Text>
+                    )}
 
                     <View className="bottom">
                         {profile.bio && (
@@ -237,6 +251,15 @@ export default function ProfileSection({
 
                 <View className="middle">
                     <View className="follow_container" style={styles.follow_container}>
+                        <BlurView 
+                            intensity={10} 
+                            
+                            style={[
+                                StyleSheet.absoluteFill,
+                                { borderRadius: MEDIUM_BORDER_RADIUS },
+                            ]} 
+                        />
+
                         <View className="statistics" style={styles.statistics}>
                             <Pressable 
                                 className="followers" 
@@ -321,6 +344,15 @@ export default function ProfileSection({
 
                     {profile.has_follow && (
                         <View className="message_container" style={styles.message_container}>
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: MEDIUM_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <Text className="unread_messages" style={styles.unread_messages}>{profile.unread_messages_amount}</Text>
 
                             <Icon 
@@ -337,6 +369,15 @@ export default function ProfileSection({
                 <View className="bottom" style={styles.bottom}>
                     {logged_in_user && profile && logged_in_user.id === profile.id && (
                         <View className="grid_select" style={styles.grid_select}>
+                            <BlurView 
+                                intensity={10} 
+                                
+                                style={[
+                                    StyleSheet.absoluteFill,
+                                    { borderRadius: MEDIUM_BORDER_RADIUS },
+                                ]} 
+                            />
+
                             <Animated.View
                                 style={[
                                     {

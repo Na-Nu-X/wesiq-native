@@ -12,6 +12,7 @@ import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import Animated, { SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight } from "react-native-reanimated"
 import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
+import { BlurView } from "expo-blur"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { Profile } from "@/app/(tabs)/profile/[username]"
@@ -228,6 +229,15 @@ export default function EditAccountForm({
             style={styles.edit_account_form}
         >
             <View className="header" style={styles.header}>
+                <BlurView 
+                    intensity={10} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { borderRadius: MEDIUM_BORDER_RADIUS },
+                    ]} 
+                />
+
                 <View className="info" style={styles.info}>
                     <SelectProfilePicture 
                         onProfilePictureSelection={handleProfilePictureSelection} 
@@ -246,7 +256,18 @@ export default function EditAccountForm({
                 </View>
             </View>
 
-            <Text className="friend_code" style={styles.friend_code}>{t("Friend Code")} - <Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text></Text>
+            <View className="friend_code" style={styles.friend_code}>
+                <BlurView 
+                    intensity={10} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { borderRadius: MEDIUM_BORDER_RADIUS },
+                    ]} 
+                />
+
+                <Text style={{ color: SECONDARY_COLOR }}>{t("Friend Code")} - </Text><Text style={styles.friend_code_text}>{logged_in_user.friend_code}</Text>
+            </View>
 
             <View className="bio_container" style={styles.bio_container}>
                 <TextInput
@@ -529,6 +550,15 @@ export default function EditAccountForm({
                     { outlineStyle: "none" } as any
                 ]}
             >
+                <BlurView 
+                    intensity={10} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { borderRadius: BIG_BORDER_RADIUS },
+                    ]} 
+                />
+
                 <Text className="text-white font-bold text-base" style={{ color: SECONDARY_COLOR }}>{t("Uložiť zmeny")}</Text>
             </Pressable>
 
@@ -622,6 +652,7 @@ const styles = StyleSheet.create({
     },
 
     friend_code: {
+        flexDirection: "row",
         textAlign: "left",
         marginBottom: 20,
         padding: 20,
@@ -887,6 +918,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: BIG_BORDER_RADIUS,
+        overflow: "hidden",
         // transition: border-color 0.3s ease, transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
     
         // &:hover,
