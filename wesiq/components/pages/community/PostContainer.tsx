@@ -29,7 +29,7 @@ import type { LoggedInUser } from "../../LoginFormDialog"
 import type { BasicResponse } from "./Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 import type { ProcessingPost } from "./Feed"
-import type { ChatSocketResponse, Post as ChatPost } from "@/app/chat/[username]"
+import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 export interface loadedPostCommentsResponse {
     success:boolean,

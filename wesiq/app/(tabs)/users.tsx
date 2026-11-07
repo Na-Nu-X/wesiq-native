@@ -16,7 +16,13 @@ export default function UsersScreen() {
                 <ScrollView 
                     className="content" 
                     style={styles.content} 
-                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+                    
+                    contentContainerStyle={{ 
+                        justifyContent: "center",
+                        flexGrow: 1,
+                        padding: 20, 
+                    }}
+
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >

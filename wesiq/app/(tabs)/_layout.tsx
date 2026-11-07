@@ -5,13 +5,11 @@ import { Bungee_400Regular } from "@expo-google-fonts/bungee"
 import { Poppins_400Regular } from "@expo-google-fonts/poppins"
 import { BalsamiqSans_400Regular } from "@expo-google-fonts/balsamiq-sans"
 import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
-import { ImperativeRouter, Tabs, useRouter } from "expo-router"
+import { ImperativeRouter, Tabs, usePathname, useRouter } from "expo-router"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { Image, StyleSheet, View } from "react-native"
-import { useTranslation } from "react-i18next"
-import ProfilePictureLink from "@/components/ProfilePictureLink"
 import ProfilePicture from "@/components/ProfilePicture"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
@@ -19,6 +17,14 @@ import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
+    const pathname:string = usePathname() // Gets The Pathname
+
+    const is_activity_page:boolean = pathname.startsWith("/activity") // Stores The Information If The User Is On The Activity Page
+    const is_profile_page:boolean = pathname.startsWith("/profile") // Stores The Information If The User Is On The Profile Page
+    const is_post_page:boolean = pathname.startsWith("/post") // Stores The Information If The User Is On The Post Page
+    const is_chat_page:boolean = pathname.startsWith("/chat") // Stores The Information If The User Is On The Chat Page
+    const is_blog_page:boolean = pathname.startsWith("/blog") // Stores The Information If The User Is On The Blog Page
+
     // Stores The Fonts
     const [loaded, error] = useFonts({
         Bungee_400Regular,
@@ -49,6 +55,7 @@ export default function RootLayout() {
                     tabBarActiveTintColor: DARK_BLUE_COLOR,
                     tabBarInactiveTintColor: BLUE_COLOR,
                     headerShown: false,
+                    tabBarStyle: (is_activity_page || is_profile_page || is_post_page || is_chat_page || is_blog_page) ? { display: "none" } : {},
                 }}
             >
                 <Tabs.Screen
@@ -102,7 +109,7 @@ export default function RootLayout() {
                     }}
                 />
 
-                {/* <Tabs.Screen
+                <Tabs.Screen
                     name="blog"
 
                     options={{
@@ -117,7 +124,7 @@ export default function RootLayout() {
                             />
                         )
                     }}
-                /> */}
+                />
 
                 <Tabs.Screen
                     name="users"
@@ -143,7 +150,7 @@ export default function RootLayout() {
                         tabPress: (event) => {
                             event.preventDefault() // Prevents The Default Behavior
                             if(!logged_in_user) setActiveForm("login_form") // Sets The Active Form
-                            else router.push(`/profile/${logged_in_user.username}`) // Goes To The Profile Page
+                            else router.navigate(`/profile/${logged_in_user.username}`) // Goes To The Profile Page
                         }
                     }}
 
@@ -167,6 +174,26 @@ export default function RootLayout() {
                                     style={styles.profile_picture}
                                 />
                             )
+                        }
+                    }}
+                />
+
+                {/* <Tabs.Screen
+                    name="post"
+                    
+                    options={{
+                        tabBarButton: () => null
+                    }}
+                /> */}
+
+                <Tabs.Screen
+                    name="post"
+                    
+                    options={{
+                        tabBarButton: () => null,
+
+                        tabBarItemStyle: { 
+                            display: "none" 
                         }
                     }}
                 />

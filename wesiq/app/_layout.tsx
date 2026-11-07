@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import Purchases from "react-native-purchases"
 
-import type { ChatSocketResponse } from "./chat/[username]"
+import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
 
 SplashScreen.preventAutoHideAsync()
 
@@ -44,10 +44,6 @@ function AppContent() {
                 <Stack.Screen name="activity/new" options={{ headerShown: false }} />
                 <Stack.Screen name="activity/edit" options={{ headerShown: false }} />
                 <Stack.Screen name="activity/copy" options={{ headerShown: false }} />
-                <Stack.Screen name="blog/[article]" options={{ headerShown: false }} />
-                <Stack.Screen name="chat/[username]" options={{ headerShown: false }} />
-                <Stack.Screen name="post/[post_id]" options={{ headerShown: false }} />
-                <Stack.Screen name="profile/[username]" options={{ headerShown: false }} />
                 
                 <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
             </Stack>
