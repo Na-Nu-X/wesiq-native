@@ -8,6 +8,7 @@ import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { getFormattedDate, getMinimalistFormattedTime } from "@/utils/time"
 import { useTranslation } from "react-i18next"
+import { BlurView } from "expo-blur"
 
 interface LoadedActivityHistoryResponse {
     success:boolean,
@@ -90,6 +91,15 @@ export default function HistorySection() {
             ]}
         >
             <View className="activity_history_container" style={styles.activity_history_container}>
+                <BlurView 
+                    intensity={10} 
+                    
+                    style={[
+                        StyleSheet.absoluteFill,
+                        { borderRadius: MEDIUM_BORDER_RADIUS },
+                    ]} 
+                />
+
                 <ScrollView 
                     className="activity_history" 
                     showsVerticalScrollIndicator={false}

@@ -408,7 +408,13 @@ export default function ProfileScreen() {
                 <ScrollView 
                     className="content" 
                     style={styles.content} 
-                    contentContainerStyle={{ padding: 20, flexGrow: 1 }}
+
+                    contentContainerStyle={{ 
+                        justifyContent: "center",
+                        flexGrow: 1,
+                        padding: 20, 
+                    }}
+
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >
@@ -1270,7 +1276,7 @@ const styles = StyleSheet.create({
         maxWidth: MAIN_WIDTH,
         width: "100%",
         marginHorizontal: "auto",
-        paddingBottom: 40,
+        // paddingBottom: 40,
 
         // &.not_found {
         //     .profile_container .profile_content .profile .bottom {
