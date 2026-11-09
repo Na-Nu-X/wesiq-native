@@ -92,13 +92,14 @@ export default function CopyTrainingPlan () {
     return (
         <View className="copy_training_plan hidden" style={styles.copy_training_plan}>
             {ordered_exercises && ordered_exercises.length > 0 && (
-                grouped_training_plans_exercises.map((one_training_plan_key:string) => (
-                    <View>
+                grouped_training_plans_exercises.map((one_training_plan_key:string, index:number) => (
+                    <View key={index}>
                         <Text 
                             style={{ 
-                                fontSize: 40,
-                                color: SECONDARY_COLOR,
+                                marginBottom: 10,
                                 textAlign: "center",
+                                color: SECONDARY_COLOR,
+                                fontSize: 40,
                             }}
                         >
                             {training_plans_exercises.find((one_training_plan_exercise:OfficialTrainingPlanExercise) => one_training_plan_exercise.training_plan_key === one_training_plan_key)?.type || t("Tréningový plán")}
@@ -119,16 +120,10 @@ export default function CopyTrainingPlan () {
 
 const styles = StyleSheet.create({
     copy_training_plan: {
-        alignItems: "center",
         justifyContent: "center",
         gap: 50,
         maxWidth: MAIN_WIDTH,
         width: "100%",
         marginHorizontal: "auto",
-        // marginBottom: 50,
-
-        // &.hidden {
-        //     display: none;
-        // }
     },
 })

@@ -1,6 +1,6 @@
 import Icon from "@/components/Icon"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS } from "@/constants/borders"
-import { BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
 import { useMemo, useRef, useState } from "react"
@@ -31,6 +31,8 @@ export const OfficialTrainingPlanItem = ({
     const { t } = useTranslation() // Initializes The Translations
 
     const [active_exercise_index, setActiveExerciseIndex] = useState<number>(0) // Stores The Active Exercise Index
+
+    const [bar_container_width, setBarContainerWidth] = useState<number>(0) // Stores The Bar Container Width
 
     const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
 
@@ -111,6 +113,7 @@ export const OfficialTrainingPlanItem = ({
 
                                             style={{
                                                 maxWidth: 350,
+                                                marginBottom: 15,
                                                 textAlign: "center",
                                                 color: SECONDARY_COLOR,
                                                 fontSize: 30,
@@ -151,23 +154,20 @@ export const OfficialTrainingPlanItem = ({
                             </>
                         </Animated.View>
 
-                        <View className="bar_container" style={{ width: "100%" }}>
+                        <View 
+                            className="bar_container" 
+                            style={styles.bar_container}
+                            onLayout={(event) => {setBarContainerWidth(event.nativeEvent.layout.width)}}
+                        >
                             <DraggableFlatList
                                 horizontal
                                 data={active_training_plan_exercises}
                                 keyExtractor={(one_exercise) => String(one_exercise.id)}
                                 renderItem={renderBar}
                                 activationDistance={5}
-
-                                contentContainerStyle={[
-                                    styles.bar_container,
-
-                                    {
-                                        justifyContent: "center",
-                                        flexGrow: 1,
-                                        gap: 10,
-                                    },
-                                ]}
+                                scrollEnabled={false} 
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ justifyContent: "center" }}
 
                                 onDragEnd={({ data, from, to }) => {
                                     if(from === to) return
@@ -202,77 +202,81 @@ export const OfficialTrainingPlanItem = ({
     const generatePeriodSelections = (periods_data:number[], amount:number[], unit:string) => {
         return amount.map((one_unit:number, index:number) => {
             return (
-                <View className="period_selection" style={styles.period_selection}>
-                    <View className="reps_container" style={styles.reps_container}>
-                        <View className="decrease_reps">
+                <View key={index} className="period_selection" style={styles.period_selection}>
+                    <View className="reps_container" style={styles.reps_sets_container}>
+                        <View className="decrease_reps" style={{ flexShrink: 0, paddingHorizontal: 5 }}>
                             <Icon 
                                 icon_name="minus"
                                 onPress={() => changeReps(active_exercise, index, "decrease")}
-                                size={20}
+                                size={18}
                             />
                         </View>
-
+                
                         {/* Shows To Failure Text */}
-                        {compressConsecutiveNumbers(periods_data)[index] === 0 ? (
+                        {compressConsecutiveNumbers(active_exercise.periods)[index] === 0 ? (
                             <Text 
                                 className="to_failure" 
 
                                 style={[
-                                    styles.to_failure,
-                                    { color: SECONDARY_COLOR }
+                                    styles.reps_sets_input,
+
+                                    { 
+                                        lineHeight: 45, 
+                                        fontSize: 14,
+                                    }
                                 ]}
                             >
-                                Do zlyhania
+                                {t("Do zlyhania")}
                             </Text>
                         ) : (
                             <>
                                 {/* Checks Exercise Unit Type */}
-                                {(unit === "reps" || unit === "steps") && (
+                                {(active_exercise.unit === "reps" || active_exercise.unit === "steps") && (
                                     <TextInput
                                         className="reps"
                                         keyboardType="number-pad"
                                         textAlignVertical="top" 
-                                        value={String(compressConsecutiveNumbers(periods_data)[index])}
+                                        value={String(compressConsecutiveNumbers(active_exercise.periods)[index])}
                                         onChangeText={(text:string) => changeRepsWithInput(active_exercise, index, text)}
                                         maxLength={4}
 
                                         style={[
-                                            styles.reps,
+                                            styles.reps_sets_input,
                                             { outlineStyle: "none" } as any
                                         ]}
                                     />
                                 )}
 
-                                {unit === "seconds" && (
+                                {active_exercise.unit === "seconds" && (
                                     <Text 
                                         className="time" 
 
                                         style={[
-                                            styles.time,
+                                            styles.reps_sets_input,
                                             { color: SECONDARY_COLOR }
                                         ]}
                                     >
-                                        {compressConsecutiveNumbers(periods_data)[index] ? getMinimalistFormattedTime(compressConsecutiveNumbers(periods_data)[index] as number).trim() : "0s"}
+                                        {compressConsecutiveNumbers(active_exercise.periods)[index] ? getMinimalistFormattedTime(compressConsecutiveNumbers(active_exercise.periods)[index] as number).trim() : "0s"}
                                     </Text>
                                 )}
                             </>
                         )}
 
-                        <View className="increase_reps">
+                        <View className="increase_reps" style={{ flexShrink: 0, paddingHorizontal: 5 }}>
                             <Icon 
                                 icon_name="plus"
                                 onPress={() => changeReps(active_exercise, index, "increase")}
-                                size={20}
+                                size={18}
                             />
                         </View>
                     </View>
-
-                    <View className="sets_container" style={styles.sets_container}>
-                        <View className="decrease_sets">
+                    
+                    <View className="sets_container" style={styles.reps_sets_container}>
+                        <View className="decrease_sets" style={{ flexShrink: 0, paddingHorizontal: 5 }}>
                             <Icon 
                                 icon_name="minus"
                                 onPress={() => changeSets(active_exercise, index, "decrease")}
-                                size={20}
+                                size={18}
                             />
                         </View>
 
@@ -285,16 +289,16 @@ export const OfficialTrainingPlanItem = ({
                             maxLength={4}
 
                             style={[
-                                styles.sets,
+                                styles.reps_sets_input,
                                 { outlineStyle: "none" } as any
                             ]}
                         />
 
-                        <View className="increase_sets">
+                        <View className="increase_sets" style={{ flexShrink: 0, paddingHorizontal: 5 }}>
                             <Icon 
                                 icon_name="plus"
                                 onPress={() => changeSets(active_exercise, index, "increase")}
-                                size={20}
+                                size={18}
                             />
                         </View>
                     </View>
@@ -337,37 +341,43 @@ export const OfficialTrainingPlanItem = ({
         return result
     }
 
-    const total_gaps:number = (active_training_plan_exercises.length - 1) * 10 // Defines The Total Gaps
-    const bar_width:number = (MAIN_WIDTH - 20 - total_gaps) / active_training_plan_exercises.length // Defines The Bar Width
-
-    const renderBar = ({ item, getIndex, drag, isActive }:RenderItemParams<OfficialTrainingPlanExercise>) => {
-        const index = getIndex()
+    // Function For Render The Bar
+    const renderBar = ({ item, getIndex, drag, isActive }: RenderItemParams<OfficialTrainingPlanExercise>) => {
+        const index:number = getIndex() ?? 0 // Gets The Index
+        const is_last_item:boolean = index === active_training_plan_exercises.length - 1 // Checks If The Item Is Last
+        
+        const bar_width:number = bar_container_width > 0 ? (bar_container_width - (10 * (active_training_plan_exercises.length - 1))) / active_training_plan_exercises.length : 0 // Gets The Bar Width
         
         return (
             <ScaleDecorator>
                 <Pressable
                     className={index === active_exercise_index ? "bar active" : "bar"} // Adds Active Class For Bar Of Active Training Plan
                     onLongPress={drag}
-                    onPress={() => changeExercises(index as number)} // Changes Training Plans
+                    onPress={() => changeExercises(index)}
                     disabled={isActive}
-
+                    
                     hitSlop={{
                         top: 20,
-                        right: 10,
+                        right: 5,
                         bottom: 20,
-                        left: 10,
+                        left: 5,
                     }}
 
                     style={{
                         justifyContent: "center",
-                        width: Math.max(bar_width, 10),
-                        paddingVertical: 15,
+                        marginRight: is_last_item ? 0 : 10,
+                        paddingBottom: 15,
                     }}
                 >
                     <View
                         style={[
-                            styles.bar,
-                            { width: "100%" },
+                            { 
+                                width: bar_width,
+                                height: 10,
+                                borderWidth: 1,
+                                borderColor: transparentize(BLUE_COLOR, 0.5),
+                                borderRadius: 5,
+                            },
 
                             index === active_exercise_index ? { 
                                 backgroundColor: BLUE_COLOR,
@@ -719,265 +729,33 @@ export const OfficialTrainingPlanItem = ({
 
 const styles = StyleSheet.create({
     training_plan: {
-        // @include animated_border;
         position: "relative",
         width: "100%",
-        // height: 250,
-        height: 500,
-        borderRadius: MEDIUM_BORDER_RADIUS,
-        // shadowColor: BLUE_COLOR,
-        // shadowOffset: { width: 0, height: 10 },
-        // shadowOpacity: 0.2,
-        // shadowRadius: 30,
-        // elevation: 10,
+        height: 400,
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        borderRadius: BIG_BORDER_RADIUS,
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.5),
         overflow: "hidden",
-
-        // &.animate {
-        //     animation: trainingPlanDrag 1s infinite alternate;
-        // }
-
-        // &.blur {
-        //     animation: blur 0.3s ease-out;
-        // }
     },
 
     exercise: {
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "flex-start",
         width: "100%",
         height: "100%",
-        paddingVertical: 50,
-        paddingHorizontal: 10,
-        zIndex: 100,
-    },
-
-    labels: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        maxWidth: 400,
-        width: "100%",
-        marginTop: 10,
-        marginBottom: 0,
-        paddingHorizontal: 10,
-    },
-
-    unit_select_menu: {
-        position: "relative",
-        maxWidth: "90%",
-        marginHorizontal: "auto",
-        cursor: "pointer",
-    },
-
-    unit_select_menu_select: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: 5,
-        width: "100%",
-        height: 50,
-        paddingHorizontal: 8.5,
-        color: LIGHT_BLUE_COLOR,
-        // transition: border 0.3s ease, box-shadow 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &:has(.fa-angle-down:hover),
-        // &:has(.fa-angle-up:hover) {
-        //     border-color: $blue-color !important;
-        // }
-
-        // span {
-        //     @include crop_text;
-        // }
-    },
-
-    unit_select_menu_option: {
-        // @include crop_text;
-        position: "relative",
-        paddingVertical: 5,
-        paddingHorizontal: 8.5,
-        textAlign: "center",
-        // transition: background-color 0.3s ease, color 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible,
-        // &.selected {
-        //     background-color: transparentize($blue-color, 0.9);
-        //     color: $light-blue-color;
-        // }
-
-        // &:focus-visible {
-        //     outline: none !important;
-        // }
-
-        // i {
-        //     position: absolute;
-        //     top: 50%;
-        //     left: 10px;
-        //     transform: translateY(-50%);
-        // }
-    },
-
-    label: {
-        width: "100%",
-        textAlign: "center",
-        lineHeight: 1,
-        color: LIGHT_BLUE_COLOR,
-    },
-
-    add_period: {
-        alignItems: "center",
-        justifyContent: "center",
-        width: "90%",
-        height: 40,
-        marginBottom: 10,
-        paddingHorizontal: 10,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: BIG_BORDER_RADIUS,
-        // transition: border-color 0.3s ease, transform 0.3s ease, letter-spacing 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-    
-        // &:hover,
-        // &:focus-visible {
-        //     border-color: $blue-color;
-        //     box-shadow: 0 6px 20px transparentize($blue-color, 0.65);
-        //     transform: scale(1.05);
-        //     letter-spacing: 0.5px;
-        //     cursor: pointer;
-        // }
-    },
-
-    periods_container: {
-        // @include scrollbar;
-        gap: 5,
-        width: "100%",
-        maxHeight: 100,
-        paddingHorizontal: 5,
-    },
-
-    period_selection: {
-        flexDirection: "row",
-        width: "100%",
-        justifyContent: "space-between",
-        gap: 10,
-    },
-
-    reps_container: {
-        position: "relative",
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        // width: "100%",
-        flex: 1,
-        paddingHorizontal: 10,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: BIG_BORDER_RADIUS,
-        // transition: border-color 0.2s ease;
-
-        // &:hover,
-        // &:focus-within {
-        //     border-color: $blue-color;
-        // }
-    },
-
-    sets_container: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        // width: "100%",
-        flex: 1,
-        paddingHorizontal: 10,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: BIG_BORDER_RADIUS,
-        // transition: border-color 0.2s ease;
-
-        // &:hover,
-        // &:focus-within {
-        //     border-color: $blue-color;
-        // }
-    },
-
-    reps: {
-        // visibility: "hidden",
-        // width: calc(100% - 30px - 30px);
-        width: "100%",
-        height: 40,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-    },
-
-    sets: {
-        // width: calc(100% - 30px - 30px);
-        width: "100%",
-        height: 40,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-    },
-
-    to_failure: {
-        width: "100%",
-        height: 40,
-        lineHeight: 40,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-
-        // position: "absolute",
-        // top: 0,
-        // left: 0,
-
-        // transform: [
-        //     { translateX: "-100%" },
-        //     { translateY: "-50%" }
-        // ],
-
-        // // width: calc(100% - 30px - 30px);
-        // width: "100%",
-        // height: "100%",
-        // lineHeight: 40,
-        // textAlign: "center",
-        // // text-overflow: ellipsis;
-        // // overflow: hidden;
-    },
-
-    time: {
-        width: "100%",
-        height: 40,
-        lineHeight: 40,
-        textAlign: "center",
-        color: SECONDARY_COLOR,
-        
-        // visibility: "hidden",
-        // position: "absolute",
-        // top: 0,
-        // left: 0,
-
-        // transform: [
-        //     { translateX: "-100%" },
-        //     { translateY: "-50%" }
-        // ],
-
-        // // width: calc(100% - 30px - 30px);
-        // width: "100%",
-        // height: "100%",
-        // lineHeight: 40,
-        // textAlign: "center",
-        // // text-overflow: ellipsis;
-        // // overflow: hidden;
+        paddingTop: 30,
+        paddingBottom: 20,
+        paddingHorizontal: 20,
     },
 
     timer_container: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "center",
+        gap: 50,
         width: "100%",
         marginVertical: "auto",
-        paddingHorizontal: 40,
-        paddingBottom: 34,
     },
 
     warm_up: {
@@ -1060,56 +838,137 @@ const styles = StyleSheet.create({
         // }
     },
 
-    bar_container: {
+    labels: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        width: "100%",
+        marginBottom: 10,
+        paddingHorizontal: 20,
+    },
+
+    label: {
+        flex: 1,
+        textAlign: "center",
+        fontSize: 12,
+        fontWeight: "600",
+        textTransform: "uppercase",
+        letterSpacing: 1,
+        color: LIGHT_BLUE_COLOR,
+        opacity: 0.8,
+    },
+
+    add_period: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: 45,
+        marginTop: 10,
+        marginBottom: 10,
+        backgroundColor: transparentize(BLUE_COLOR, 0.1),
+        borderRadius: BIG_BORDER_RADIUS,
+    },
+
+    periods_container: {
+        flex: 1,
+        width: "100%",
+        maxHeight: 45 * 2 + 10 * 2 + 45 / 2, // 2 And A Half Period Selections
+        marginTop: 5,
+    },
+
+    period_selection: {
+        flexDirection: "row",
+        gap: 15,
+        width: "100%",
+        justifyContent: "space-between",
+        marginBottom: 10,
+    },
+
+    reps_sets_container: {
         position: "relative",
         flexDirection: "row",
+        alignItems: "center",
         justifyContent: "space-between",
-        gap: 10,
+        flex: 1,
+        height: 45,
+        paddingHorizontal: 5,
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.5),
+        borderWidth: 1,
+        borderColor: transparentize(BLUE_COLOR, 0.2),
+        borderRadius: BIG_BORDER_RADIUS,
+    },
+
+    reps_sets_input: {
+        flex: 1,
+        height: "100%",
+        textAlign: "center",
+        fontWeight: "bold",
+        color: SECONDARY_COLOR,
+    },
+
+    unit_select_menu: {
+        position: "relative",
+        maxWidth: "90%",
+        marginHorizontal: "auto",
+        cursor: "pointer",
+    },
+
+    unit_select_menu_select: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 5,
+        width: "100%",
+        height: 50,
+        paddingHorizontal: 8.5,
+        color: LIGHT_BLUE_COLOR,
+        // transition: border 0.3s ease, box-shadow 0.3s ease;
+    
+        // &:hover,
+        // &:focus-visible,
+        // &:has(.fa-angle-down:hover),
+        // &:has(.fa-angle-up:hover) {
+        //     border-color: $blue-color !important;
+        // }
+
+        // span {
+        //     @include crop_text;
+        // }
+    },
+
+    unit_select_menu_option: {
+        // @include crop_text;
+        position: "relative",
+        paddingVertical: 5,
+        paddingHorizontal: 8.5,
+        textAlign: "center",
+        // transition: background-color 0.3s ease, color 0.3s ease;
+    
+        // &:hover,
+        // &:focus-visible,
+        // &.selected {
+        //     background-color: transparentize($blue-color, 0.9);
+        //     color: $light-blue-color;
+        // }
+
+        // &:focus-visible {
+        //     outline: none !important;
+        // }
+
+        // i {
+        //     position: absolute;
+        //     top: 50%;
+        //     left: 10px;
+        //     transform: translateY(-50%);
+        // }
+    },
+
+    bar_container: {
         marginTop: "auto",
         marginHorizontal: 10,
         marginBottom: 10,
         zIndex: 100,
-    },
-
-    bar: {
-        position: "relative",
-        // flex: 1,
-        height: 10,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: 10 / 2,
-
-        // &.animate:not(&.active) {
-        //     animation: barDrag 1s infinite alternate;
-        // }
-
-        // &:before {
-        //     content: "";
-        //     position: absolute;
-        //     top: 0px;
-        //     left: 0px;
-        //     width: 100%;
-        //     height: 100%;
-        //     border-radius: inherit;
-        //     transition: background-color 0.3s ease;
-        // }
-
-        // &.active,
-        // &:hover {
-        //     cursor: pointer;
-
-        //     &.animate {
-        //         &:before {
-        //             animation: barDrag 1s infinite alternate;
-        //         }
-        //     }
-
-        //     &:before {
-        //         width: 100%;
-        //         background-color: $green-color;
-        //         box-shadow: 0px 0px 10px $green-color;
-        //     }
-        // }
     },
 
     buttons: {

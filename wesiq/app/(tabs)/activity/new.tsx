@@ -194,7 +194,7 @@ export default function NewTrainingPlanScreen() {
   const generatePeriodSelections = (periods_data:number[], amount:number[], unit:string) => {
     return amount.map((one_unit:number, index:number) => {
       return (
-        <View className="period_selection" style={styles.period_selection}>
+        <View key={index} className="period_selection" style={styles.period_selection}>
           <View className="reps_container" style={styles.reps_container}>
             <View className="decrease_reps">
               <Icon 
