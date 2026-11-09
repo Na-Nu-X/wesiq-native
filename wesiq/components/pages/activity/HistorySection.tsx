@@ -105,7 +105,11 @@ export default function HistorySection() {
                     showsVerticalScrollIndicator={false}
                     indicatorStyle="white"
                     style={styles.activity_history}
-                    contentContainerStyle={styles.activity_history}
+
+                    contentContainerStyle={{
+                        gap: 10,
+                        padding: 15,
+                    }}
                 >
                     {activity_history.length > 0 ? (
                         activity_history.map((one_activity:Activity) => (
@@ -116,14 +120,19 @@ export default function HistorySection() {
                                     color={BLUE_COLOR}
                                 />
     
-                                <Text className="training_plan_title" style={styles.training_plan_title}>{one_activity.type ? one_activity.type : t("Aktivita")}</Text>
+                                <Text 
+                                    className="training_plan_title" 
+                                    numberOfLines={1}
+                                    ellipsizeMode="tail"
+                                    style={styles.training_plan_title}
+                                >
+                                    {one_activity.type ? one_activity.type : t("Aktivita")}
+                                </Text>
     
                                 <Text 
                                     className="elapsed_time" 
     
                                     style={{ 
-                                        width: 60,
-                                        lineHeight: 1,
                                         color: SECONDARY_COLOR,
                                     }}
                                 >
@@ -193,11 +202,8 @@ const styles = StyleSheet.create({
     },
 
     activity_history: {
-        gap: 10,
-        maxWidth: "100%",
         width: "100%",
         maxHeight: 50 * 5 + 10,
-        padding: 15,
     },
 
     one_activity: {
@@ -225,7 +231,8 @@ const styles = StyleSheet.create({
 
     training_plan_title: {
         // @include crop_text;
-        width: 180,
+        // width: 180,
+        flex: 1,
         color: BLUE_COLOR,
     },
 

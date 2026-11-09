@@ -47,14 +47,20 @@ export function getFormattedTime(unit:string = "seconds", elapsed_seconds:number
     else return leading_zero === true ? "00" : "0" // Default Values
 }
 
-// Function For Formatting Time To Minimalist Format
+// Function For Formatting Time To Minimalist Format (For Example Converts 3600 To 1h)
 export function getMinimalistFormattedTime(elapsed_time:number):string {
-    // For Example Converts 3600 To 1h
-    return (
-        `${getFormattedTime("hours", elapsed_time) !== "0" ? getFormattedTime("hours", elapsed_time) + "h" : ""}
-        ${getFormattedTime("minutes", elapsed_time) !== "0" ? getFormattedTime("minutes", elapsed_time) + "m" : ""}
-        ${getFormattedTime("seconds", elapsed_time) !== "0" ? getFormattedTime("seconds", elapsed_time) + "s" : ""}`
-    )
+    const hours:string = getFormattedTime("hours", elapsed_time) // Gets The Hours
+    const minutes:string = getFormattedTime("minutes", elapsed_time) // Gets The Minutes
+    const seconds:string = getFormattedTime("seconds", elapsed_time) // Gets The Seconds
+
+    const parts:string[] = [] // Stores The Parts (Prevents The Blank Spaces)
+
+    if(hours !== "0") parts.push(`${hours}h`) // Pushes The Hours To The Parts
+    if(minutes !== "0") parts.push(`${minutes}m`) // Pushes The Minutes To The Parts
+    if(seconds !== "0") parts.push(`${seconds}s`) // Pushes The Seconds To The Parts
+
+    if(parts.length === 0) return "0s" // Returns The Default Text
+    return parts.join(" ").trim() // Returns The Text
 }
 
 // Function For Get Day Name From Weekday Index In User's Country's Language (Sunday - 0, Monday - 1, Tuesday - 2, Wednesday - 3, Thursday - 4, Friday - 5, Saturday - 6)

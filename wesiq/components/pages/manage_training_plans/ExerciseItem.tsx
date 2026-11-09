@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet } from "react-native"
+import { View, Text, Image, StyleSheet, Dimensions } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
@@ -163,43 +163,23 @@ export const ExerciseItem = ({ one_exercise, onDragStart, onDragMove, checkDropL
     )
 }
 
+const screen_width:number = Dimensions.get("window").width // Gets The Screen Width
+const PADDING:number = 40 // Defines The Padding
+const exercise_width:number = (screen_width - PADDING - 20) / 3 // Gets The Exercise Width
+
 const styles = StyleSheet.create({
     exercise: {
-        // @include scrollbar;
         position: "relative",
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        flexBasis: 100,
-        flexGrow: 1,
-        minWidth: 100,
-        gap: 5,
-        aspectRatio: 1 / 1,
+        width: exercise_width, 
+        height: exercise_width,
         padding: 10,
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
-        // backdrop-filter: blur(5px);
-        // cursor: move;
         overflow: "hidden",
-        // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-
-        // &.hidden {
-        //     display: none !important;
-        // }
-
-        // &:hover, 
-        // &:focus-visible {
-        //     transform: translateY(-2px);
-        //     background: transparent;
-        //     border-color: transparentize($blue-color, 0.25);
-        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
-
-        //     .name {
-        //         filter: blur(2px);
-        //     }
-        // }
     },
 
     weight_selection: {

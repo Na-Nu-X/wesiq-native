@@ -1,6 +1,6 @@
 import Icon from "@/components/Icon"
-import { SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
+import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { useState, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native"
@@ -244,11 +244,16 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 5,
         width: "100%",
-        height: 50,
-        paddingHorizontal: 8.5,
+        height: 45,
+        // paddingHorizontal: 8.5,
+        paddingHorizontal: 10,
         color: LIGHT_BLUE_COLOR,
-        borderBottomWidth: 1,
-        borderBottomColor: transparentize(BLUE_COLOR, 0.5),
+        fontWeight: "600",
+        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.6),
+        borderWidth: 1,
+        // borderBottomColor: transparentize(BLUE_COLOR, 0.5),
+        borderColor: transparentize(BLUE_COLOR, 0.5),
+        borderRadius: MEDIUM_BORDER_RADIUS,
         // transition: border 0.3s ease, box-shadow 0.3s ease;
     
         // &:hover,

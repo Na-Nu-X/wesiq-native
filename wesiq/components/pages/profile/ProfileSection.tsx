@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Pressable, Alert, StyleSheet, Image, View, Text } from "react-native"
+import { Pressable, Alert, StyleSheet, Image, View, Text, Dimensions } from "react-native"
 import {BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { useTranslation } from "react-i18next"
@@ -53,6 +53,8 @@ export default function ProfileSection({
 }:ProfileSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
+    const [grid_select_width, setGridSelectWidth] = useState(0) // Stores The Grid Select Width
+    const grid_select_indicator_width:number = grid_select_width * 0.32 // Gets The Grid Select Indicator Width
     const [grid_select_active_menu, setGridSelectActiveMenu] = useState<"posts"|"saved_posts">("posts") // Stores The Information If The Loading Is Active
     const [grid_select_direction, setGridSelectDirection] = useState<"forward"|"back">("forward") // Stores The Grid Select Direction
 
@@ -116,14 +118,19 @@ export default function ProfileSection({
         }
     }
 
+    // Animates The Grid Select Indicator
     const grid_select_indicator_style = useAnimatedStyle(() => {
+        const target_x:number = grid_select_active_menu === "posts" ? 5 : grid_select_width - grid_select_indicator_width - 5 - 2 // Gets The Target X
+    
         return {
-            left: withTiming(grid_select_active_menu === "posts" ? '0%' : '68.5%', {
-                duration: 250, // Trvanie animácie v milisekundách
-                easing: Easing.out(Easing.quad), // Plynulý dojazd bez pruženia
-            }),
-        };
-    });
+            transform: [{
+                translateX: withTiming(target_x, {
+                    duration: 250,
+                    easing: Easing.out(Easing.quad),
+                })
+            }]
+        }
+    }, [grid_select_width, grid_select_indicator_width, grid_select_active_menu])
 
     // Function For Change The Active Section
     const changeGridSelectActiveMenu = ():void => {
@@ -194,7 +201,21 @@ export default function ProfileSection({
                     </View>
 
                     {logged_in_user && logged_in_user.id === profile.id && !logged_in_user.subscription.is_active && logged_in_user.subscription.plan === "free" && (
-                        <Text style={{ color: SECONDARY_COLOR }}>{t("Kúpiť predplatné")}</Text>
+                        <Pressable 
+                            onPress={() => router.push("/subscribe")}
+
+                            style={{
+                                alignSelf: "flex-start",
+                                minWidth: 0,
+                                paddingVertical: 5,
+                                paddingHorizontal: 10,
+                                borderWidth: 1,
+                                borderColor: BLUE_COLOR,
+                                borderRadius: BIG_BORDER_RADIUS,
+                            }}
+                        >
+                            <Text style={{ color: SECONDARY_COLOR }}>{t("Kúpiť predplatné")}</Text>
+                        </Pressable>
                     )}
 
                     <View className="bottom">
@@ -368,7 +389,11 @@ export default function ProfileSection({
 
                 <View className="bottom" style={styles.bottom}>
                     {logged_in_user && profile && logged_in_user.id === profile.id && (
-                        <View className="grid_select" style={styles.grid_select}>
+                        <View 
+                            className="grid_select" 
+                            style={styles.grid_select}
+                            onLayout={(event) => {setGridSelectWidth(event.nativeEvent.layout.width)}}
+                        >
                             <BlurView 
                                 intensity={10} 
                                 
@@ -378,20 +403,22 @@ export default function ProfileSection({
                                 ]} 
                             />
 
-                            <Animated.View
-                                style={[
-                                    {
-                                        position: "absolute",
-                                        top: 0,
-                                        bottom: 0,
-                                        width: "32%",
-                                        backgroundColor: transparentize(BLUE_COLOR, 0.8),
-                                        borderRadius: SMALL_BORDER_RADIUS,
-                                    },
+                            {grid_select_width > 0 && (
+                                <Animated.View
+                                    style={[
+                                        {
+                                            position: "absolute",
+                                            top: 5,
+                                            bottom: 5,
+                                            width: grid_select_indicator_width,
+                                            backgroundColor: transparentize(BLUE_COLOR, 0.8),
+                                            borderRadius: SMALL_BORDER_RADIUS,
+                                        },
 
-                                    grid_select_indicator_style,
-                                ]}
-                            />
+                                        grid_select_indicator_style,
+                                    ]}
+                                />
+                            )}
 
                             <Pressable
                                 className="all_posts_icon"
@@ -741,6 +768,9 @@ export default function ProfileSection({
         )
     )
 }
+
+const screen_width:number = Dimensions.get("window").width // Gets The Screen Width
+const item_size:number = (screen_width - 30) / 3 // Gets The Item Size
 
 const styles = StyleSheet.create({
     profile: {
@@ -1093,7 +1123,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         gap: 5,
-        marginHorizontal: 5,
+        // marginHorizontal: 5,
         marginBottom: 10,
         padding: 5,
         borderWidth: 1,
@@ -1194,27 +1224,28 @@ const styles = StyleSheet.create({
     },
 
     posts: {
-        // display: grid;
-        // grid-template-columns: repeat(3, 1fr);
         flexDirection: "row",
+        justifyContent: "space-between",
         flexWrap: "wrap",
-        // justifyContent: "center",
-        gap: 10,
-        margin: 5,
+        rowGap: 10,
+        marginBottom: 20,
     },
 
     private_post_notice: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        width: "32%",
+        aspectRatio: 1, 
         // background: $profile-surface-hover;
         // border: 1px solid $profile-surface-border;
         backgroundColor: BLUE_COLOR,
         borderWidth: 1,
         borderColor: BLUE_COLOR,
-        borderRadius: MEDIUM_BORDER_RADIUS,
+        borderRadius: SMALL_BORDER_RADIUS,
+        overflow: "hidden",
     },
-
+    
     post_link: {
         position: "relative",
         width: "32%",
@@ -1234,7 +1265,6 @@ const styles = StyleSheet.create({
     post_image: {
         width: "100%",
         height: "100%",
-        aspectRatio: 1 / 1,
         objectFit: "cover",
         // transition: filter 0.3s ease;
     
@@ -1247,7 +1277,6 @@ const styles = StyleSheet.create({
     post_thumbnail: {
         width: "100%",
         height: "100%",
-        aspectRatio: 1 / 1,
         objectFit: "cover",
         // transition: filter 0.3s ease;
     
@@ -1256,11 +1285,11 @@ const styles = StyleSheet.create({
         //     cursor: pointer;
         // }
     },
-
+    
     post_info: {
         position: "absolute",
-        top: 0,
-        left: 0,
+        top: 5,
+        right: 5,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",

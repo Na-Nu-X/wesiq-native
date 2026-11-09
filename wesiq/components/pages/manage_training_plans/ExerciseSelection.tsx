@@ -1,8 +1,7 @@
-import { View, StyleSheet, Alert, TextInput, ScrollView } from "react-native"
+import { View, StyleSheet, Alert, TextInput, ScrollView, Dimensions } from "react-native"
 import { useEffect, useState } from "react"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import AsyncStorage from "@react-native-async-storage/async-storage"
 import { API_URL } from "@/constants/general"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -268,8 +267,8 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
                 indicatorStyle="white"
                 keyboardShouldPersistTaps="handled" 
                 keyboardDismissMode="on-drag"
-                style={styles.exercises} 
-                contentContainerStyle={styles.exercises}
+                style={styles.exercises}
+                contentContainerStyle={styles.exercises_content}
             >
                 <GestureDetector gesture={custom_exercise_drag}>
                     <Animated.View 
@@ -327,6 +326,10 @@ export default function ExerciseSelection({ onDragStart, onDragMove, checkDropLo
         </View>
     )
 }
+
+const screen_width:number = Dimensions.get("window").width // Gets The Screen Width
+const PADDING:number = 40 // Defines The Padding
+const exercise_width:number = (screen_width - PADDING - 20) / 3 // Gets The Exercise Width
 
 const styles = StyleSheet.create({
     exercise_selection: {
@@ -390,74 +393,29 @@ const styles = StyleSheet.create({
     },
 
     exercises: {
-        // @include scrollbar;
-        // display: grid;
-        // grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        alignSelf: "center", 
+        width: "100%",
+        maxHeight: 450,
+    },
+
+    exercises_content: {
         flexDirection: "row",
         flexWrap: "wrap",
         gap: 10,
-        width: "100%",
-        maxHeight: 450,
-        marginHorizontal: "auto",
-        // padding: 5,
-        textAlign: "center",
-
-        // .custom_exercise,
-        // .warm_up {
-        //     &:hover {
-        //         .fa-plus,
-        //         .fa-dumbbell {
-        //             filter: blur(2px);
-        //             transform: scale(1.05);
-        //         }
-        //     }
-
-        //     .fa-plus,
-        //     .fa-dumbbell {
-        //         transition: filter 0.3s ease, transform 0.3s ease;
-        //     }
-
-        //     .name {
-        //         display: none;
-        //     }
-        // }
+        paddingBottom: 20,
     },
 
     exercise: {
-        // @include scrollbar;
         position: "relative",
-        flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        flexBasis: 100,
-        flexGrow: 1,
-        minWidth: 100,
-        gap: 5,
-        aspectRatio: 1 / 1,
+        width: exercise_width, 
+        height: exercise_width,
         padding: 10,
         backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
         borderWidth: 1,
         borderColor: transparentize(BLUE_COLOR, 0.5),
         borderRadius: MEDIUM_BORDER_RADIUS,
-        // backdrop-filter: blur(5px);
-        // cursor: move;
         overflow: "hidden",
-        // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-
-        // &.hidden {
-        //     display: none !important;
-        // }
-
-        // &:hover, 
-        // &:focus-visible {
-        //     transform: translateY(-2px);
-        //     background: transparent;
-        //     border-color: transparentize($blue-color, 0.25);
-        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
-
-        //     .name {
-        //         filter: blur(2px);
-        //     }
-        // }
     },
 })

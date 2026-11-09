@@ -1,12 +1,16 @@
 
-import { Alert, Image, StyleSheet, Text, View } from "react-native"
+import { Alert, Image, Platform, StyleSheet, Text, View } from "react-native"
 import { useTranslation } from "react-i18next"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useEffect, useState } from "react"
 import Purchases, { PurchasesError, PurchasesOfferings, PurchasesPackage } from "react-native-purchases"
-import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
+import { BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import AnimatedSubscriptionButton from "./AnimatedSubscriptionButton"
+import { LinearGradient } from "expo-linear-gradient"
+import MaskedViewDefault from "@react-native-masked-view/masked-view"
+
+const MaskedView:any = MaskedViewDefault as any
 
 export default function SubscriptionPlans() {
     const { t } = useTranslation() // Initializes The Translations
@@ -64,7 +68,54 @@ export default function SubscriptionPlans() {
             <View className="basic" style={styles.basic}>
                 <Text className="title" style={styles.title}>{t("Základné predplatné")}</Text>
                 <Text className="description" style={styles.description}>{t("Vážime si Vašu podporu, ktorá nám pomáha držať aplikáciu pri živote.")}</Text>
-                <Text className="price" style={styles.price}>{basic_subscription?.product.priceString || "0,99"}<Text style={styles.price_top}>€ / {t("mesiac")}</Text></Text>
+
+                <View 
+                    style={{ 
+                        flexDirection: "row", 
+                        alignItems: "flex-start", 
+                        justifyContent: "center", 
+                        marginBottom: 30,
+                    }}
+                >
+                    {Platform.OS === "web" ? (
+                        <Text
+                            style={[
+                                styles.price_mask,
+                                
+                                {
+                                    backgroundImage: `linear-gradient(135deg, ${SECONDARY_COLOR} 20%, #80A5FF 60%, ${BLUE_COLOR} 100%)`,
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
+                                } as any
+                            ]}
+                        >
+                            {basic_subscription?.product.priceString || "0,99"}
+                        </Text>
+                    ) : (
+                        <MaskedView
+                            style={{ flexDirection: "row" }} 
+                            maskElement={<Text style={styles.price_mask}>{basic_subscription?.product.priceString || "0,99"}</Text>}
+                        >
+                            <LinearGradient
+                                colors={[SECONDARY_COLOR, "#80A5FF", BLUE_COLOR]}
+                                locations={[0.2, 0.6, 1]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Text 
+                                    style={[
+                                        styles.price_mask, 
+                                        { opacity: 0 },
+                                    ]}
+                                >
+                                    {basic_subscription?.product.priceString || "0,99"}
+                                </Text>
+                            </LinearGradient>
+                        </MaskedView>
+                    )}
+
+                    <Text style={styles.price_top}>€ / {t("mesiac")}</Text>
+                </View>
 
                 <View className="checks" style={styles.checks}>
                     <View className="check" style={styles.check}>
@@ -150,7 +201,54 @@ export default function SubscriptionPlans() {
             <View className="premium" style={styles.premium}>
                 <Text className="title" style={styles.title}>{t("Prémiové predplatné")}</Text>
                 <Text className="description" style={styles.description}>{t("Pre náročných používateľov, ktorí chcú z aplikácie vyťažiť absolútne maximum.")}</Text>
-                <Text className="price" style={styles.price}>{premium_subscription?.product.priceString || "2,99"}<Text style={styles.price_top}>€ / {t("mesiac")}</Text></Text>
+
+                <View 
+                    style={{ 
+                        flexDirection: "row", 
+                        alignItems: "flex-start", 
+                        justifyContent: "center", 
+                        marginBottom: 30,
+                    }}
+                >
+                    {Platform.OS === "web" ? (
+                        <Text
+                            style={[
+                                styles.price_mask,
+                                
+                                {
+                                    backgroundImage: `linear-gradient(135deg, ${SECONDARY_COLOR} 20%, #80A5FF 60%, ${BLUE_COLOR} 100%)`,
+                                    WebkitBackgroundClip: "text",
+                                    WebkitTextFillColor: "transparent",
+                                } as any
+                            ]}
+                        >
+                            {premium_subscription?.product.priceString || "2,99"}
+                        </Text>
+                    ) : (
+                        <MaskedView
+                            style={{ flexDirection: "row" }} 
+                            maskElement={<Text style={styles.price_mask}>{premium_subscription?.product.priceString || "2,99"}</Text>}
+                        >
+                            <LinearGradient
+                                colors={[SECONDARY_COLOR, "#80A5FF", BLUE_COLOR]}
+                                locations={[0.2, 0.6, 1]}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                            >
+                                <Text 
+                                    style={[
+                                        styles.price_mask, 
+                                        { opacity: 0 },
+                                    ]}
+                                >
+                                    {premium_subscription?.product.priceString || "2,99"}
+                                </Text>
+                            </LinearGradient>
+                        </MaskedView>
+                    )}
+
+                    <Text style={styles.price_top}>€ / {t("mesiac")}</Text>
+                </View>
 
                 <View className="checks" style={styles.checks}>
                     <View className="check" style={styles.check}>
@@ -241,8 +339,9 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
+        flexWrap: "wrap",
         gap: 20,
-        flex: 1,
+        // flex: 1,
     },
 
     basic: {
@@ -300,16 +399,19 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         textAlign: "center",
         color: SECONDARY_COLOR,
-        // background: linear-gradient(135deg, $secondary-color 20%, lighten($blue-color, 15%) 60%, $blue-color 100%);
-        // background-clip: text;
-        // -webkit-background-clip: text;
-        // -webkit-text-fill-color: transparent;
     },
 
     price_top: {
+        marginTop: 5,
         marginLeft: 2,
         fontSize: 10,
-        verticalAlign: "top",
+        color: SECONDARY_COLOR,
+    },
+
+    price_mask: {
+        color: MAIN_COLOR,
+        fontSize: 40,
+        fontWeight: "bold",
     },
 
     checks: {

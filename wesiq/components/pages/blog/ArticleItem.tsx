@@ -155,7 +155,7 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                     
                     <View className="top" style={styles.top}>
                         <View />
-                        <Text className="title" style={styles.title}>{one_article.title}</Text>
+                        <Text className="title" numberOfLines={1} ellipsizeMode="tail" style={styles.title}>{one_article.title}</Text>
                         <View />
                     </View>
 
@@ -242,6 +242,8 @@ export default function ArticleItem({ one_article }:ArticleItemProps) {
                                 style={{
                                     flexDirection: "row",
                                     justifyContent: "space-between", 
+                                    width: "100%",
+                                    alignItems: "center",
                                 }}
                             >
                                 <View 
@@ -425,6 +427,7 @@ const styles = StyleSheet.create({
     },
 
     title: {
+        maxWidth: 250,
         // font-family: $article-heading-font;
         fontSize: 40,
         color: BLUE_COLOR,
@@ -478,10 +481,11 @@ const styles = StyleSheet.create({
         position: "absolute",
         bottom: 0,
         left: 0,
+        right: 0,
         justifyContent: "space-between",
         // display: grid;
         // grid-template-columns: repeat(2, minmax(0, 1fr));
-        width: "100%",
+        // width: "100%",
         height: 70,
         paddingVertical: 5,
         backgroundColor: transparentize(SECONDARY_COLOR, 0.9),

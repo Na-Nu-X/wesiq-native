@@ -164,6 +164,8 @@ export default function RootLayout() {
                                         user_id={logged_in_user.id}
                                         user_profile_picture_name={logged_in_user.profile_picture_name || null} 
                                         user_subscription={logged_in_user.subscription?.is_active || false} 
+                                        width={26}
+                                        height={26}
                                     />
                                 )
                             }
