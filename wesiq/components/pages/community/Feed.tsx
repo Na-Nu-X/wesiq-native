@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef , useMemo } from "react"
-import { View, StyleSheet, Text, Alert, Pressable, Switch, FlatList, ActivityIndicator, Share } from "react-native"
+import { View, StyleSheet, Text, Alert, Pressable, Switch, FlatList, ActivityIndicator } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next"
 import SearchPosts from "./SearchPosts"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { LoggedInUser } from "../../LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 import { TrackedTask } from "@/app/(tabs)"
 
 export interface BasicResponse {
@@ -197,7 +197,6 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
     const [selected_processing_post, setSelectedProcessingPost] = useState<ProcessingPost|null>(null) // Stores The Selected Processing Post
     const [selected_post_comment, setSelectedPostComment] = useState<Comment|null>(null) // Stores The Selected Post Comment
 
-    const [friends, setFriends] = useState<Following[]>([]) // Stores The Friends (Following Users)
 
     // Function For Load Posts
     const loadPosts = async (page:number = 1, is_refresh:boolean = false) => {
@@ -285,49 +284,6 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
         if(has_next && !are_posts_loading) loadPosts(page + 1) // Loads Posts
     }
 
-    // Function For Get The Friends
-    const getFriends = async ():Promise<void> => {
-        try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const loaded_friends_response:Response = await fetch(`${API_URL}/get-friends/`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            // If The Response Isn't Success
-            if(!loaded_friends_response.ok) {
-                Alert.alert(t("Chyba"), t("Pri získavaní sledovaných užívateľov došlo k chybe.")) // Shows The Alert
-                return
-            }
-
-            const loaded_friends_data:LoadedFriendsResponse = await loaded_friends_response.json() // Gets The Toggle Post Save Data
-
-            // If The Response Isn't Success
-            if(!loaded_friends_data.success || !loaded_friends_data.following) {
-                Alert.alert(t("Chyba"), loaded_friends_data.message) // Shows The Alert
-                return
-            }
-            
-            setFriends(loaded_friends_data.following) // Sets Friends
-        }
-        
-        catch {
-            Alert.alert(t("Chyba"), t("Pri získavaní sledovaných užívateľov došlo k chybe.")) // Shows The Alert
-        }
-    }
-
-    // Initializes The Get Logged In User
-    useEffect(() => {
-        getFriends() // Gets The Logged In User
-    }, [])
-
     return (
         <BottomSheetModalProvider>
             <View className="feed" style={styles.feed}>
@@ -395,7 +351,6 @@ export default function Feed({ tracked_tasks, processing_posts, onProcessingPost
                                     selected_processing_post={selected_processing_post}
                                     onSelectedPostCommentUpdate={(selected_post_comment:Comment|null) => setSelectedPostComment(selected_post_comment)}
                                     selected_post_comment={selected_post_comment}
-                                    friends={friends}
                                 />
                             )}
 

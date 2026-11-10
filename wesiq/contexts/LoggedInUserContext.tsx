@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { apiGet, onUnauthorized } from "@/lib/api/client"
 import { envelopeWith, isRecord } from "@/lib/api/guards"
-import { getStoredString } from "@/lib/storage"
+import { getStoredString, removeStoredValue } from "@/lib/storage"
 
 import type { LoggedInUser } from "@/types/models"
 import type { ApiResult } from "@/types/api"
@@ -10,6 +10,7 @@ interface LoggedInUserContextValue {
     logged_in_user:LoggedInUser|null,
     setLoggedInUser:React.Dispatch<React.SetStateAction<LoggedInUser|null>>,
     refreshLoggedInUser:() => Promise<LoggedInUser|null>,
+    logOut:() => Promise<void>,
     is_loading:boolean
 }
 
@@ -17,6 +18,7 @@ const LoggedInUserContext = createContext<LoggedInUserContextValue>({
     logged_in_user: null,
     setLoggedInUser: () => {},
     refreshLoggedInUser: async () => null,
+    logOut: async () => {},
     is_loading: true
 })
 
@@ -55,6 +57,12 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
         }
     }, [])
 
+    // Function For Log Out (Removes The Token And The User)
+    const logOut = useCallback(async ():Promise<void> => {
+        await removeStoredValue("user_token")
+        setLoggedInUser(null)
+    }, [])
+
     // Initializes The Get Logged In User And Logout On Expired Token
     useEffect(() => {
         getLoggedInUser() // Gets The Logged In User
@@ -63,7 +71,7 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
     }, [getLoggedInUser])
 
     return (
-        <LoggedInUserContext.Provider value={{ logged_in_user, setLoggedInUser, refreshLoggedInUser: getLoggedInUser, is_loading }}>
+        <LoggedInUserContext.Provider value={{ logged_in_user, setLoggedInUser, refreshLoggedInUser: getLoggedInUser, logOut, is_loading }}>
             {children}
         </LoggedInUserContext.Provider>
     )

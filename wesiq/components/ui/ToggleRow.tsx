@@ -4,6 +4,9 @@ import { haptics } from "@/lib/haptics"
 import Text from "./Text"
 import Icon, { IconName } from "./Icon"
 
+// React Native Web Uses Its Own Prop For The Thumb Color Of An Enabled Switch
+const WEB_SWITCH_PROPS:object = Platform.OS === "web" ? { activeThumbColor: colors.white } : {}
+
 export interface ToggleRowProps {
     label:string,
     description?:string,
@@ -50,6 +53,7 @@ export default function ToggleRow({ label, description, icon, value, onChange, i
                 trackColor={{ false: colors.surface_strong, true: colors.primary_solid }}
                 thumbColor={Platform.OS === "ios" ? undefined : (value ? colors.white : colors.text_secondary)} // iOS Keeps Its Native White Thumb
                 ios_backgroundColor={colors.surface_strong}
+                {...WEB_SWITCH_PROPS}
                 importantForAccessibility="no-hide-descendants" // The Row Is The Accessible Element
                 accessibilityElementsHidden
             />

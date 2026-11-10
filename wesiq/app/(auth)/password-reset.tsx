@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react"
+import AuthSheet from "@/components/features/auth/AuthSheet"
 import { StyleSheet, ScrollView } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
-import LoginFormDialog from "@/components/LoginFormDialog"
 import { SafeAreaView } from "react-native-safe-area-context"
-import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import PasswordResetForm from "@/components/pages/password_reset/PasswordResetForm"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { useLocalSearchParams } from "expo-router"
@@ -45,19 +44,7 @@ export default function PasswordResetScreen() {
                     keyboardShouldPersistTaps="handled" 
                     keyboardDismissMode="on-drag"
                 >
-                    <LoginFormDialog 
-                        visible={active_form==="login_form"}
-                        onChangeActiveForm={() => setActiveForm("registration_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
-
-                    <RegistrationFormDialog
-                        visible={active_form==="registration_form"}
-                        onChangeActiveForm={() => setActiveForm("login_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
+                    <AuthSheet active_form={active_form} onActiveFormChange={setActiveForm} />
 
                     {is_remaining_time_loaded && (
                         <PasswordResetForm 

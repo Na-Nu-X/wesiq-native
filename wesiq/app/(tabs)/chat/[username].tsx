@@ -3,12 +3,11 @@ import BackgroundContainer from "@/components/BackgroundContainer"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useState } from "react"
 import Banner from "@/components/Banner"
-import LoginFormDialog from "@/components/LoginFormDialog"
-import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 import { API_URL } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Stack, useLocalSearchParams } from "expo-router"
 import { useTranslation } from "react-i18next"
+import AuthSheet from "@/components/features/auth/AuthSheet"
 import { ChatContainer } from "@/components/pages/chat/ChatContainer"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
@@ -230,19 +229,7 @@ export default function ChatDetailScreen() {
                         className="content" 
                         style={styles.content}
                     >
-                        <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
-
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                        />
+                        <AuthSheet active_form={active_form} onActiveFormChange={setActiveForm} />
 
                         {receiver && chats && (
                             <ChatContainer 

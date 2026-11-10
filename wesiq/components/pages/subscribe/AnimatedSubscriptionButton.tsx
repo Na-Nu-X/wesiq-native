@@ -6,7 +6,7 @@ import { BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentiz
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { LinearGradient } from "expo-linear-gradient"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 
 interface AnimatedSubscriptionButtonProps {
     logged_in_user:LoggedInUser|null,

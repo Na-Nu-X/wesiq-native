@@ -15,15 +15,15 @@ import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 import * as ImagePicker from "expo-image-picker"
 import { useTranslation } from "react-i18next"
-import EditAccountForm from "@/components/pages/profile/EditAccountForm"
 import ProfileSection from "@/components/pages/profile/ProfileSection"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import Back from "@/components/Back"
 
-import type { BioLink, Profile } from "@/types/models"
+import EditAccountSheet from "@/components/features/account/EditAccountSheet"
+import type { Profile } from "@/types/models"
 import type { ConnectionsTab } from "@/components/features/profile/ConnectionsSheet"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 
 interface ProfileResponse {
     success:boolean,
@@ -47,29 +47,16 @@ export default function ProfileScreen() {
 
     const account_properties = useRef<BottomSheetModal>(null) // Stores The Account Properties
     const snap_points = useMemo(() => ["30%", "50%"], []) // Sets The Snap Points
-    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend"|"account_settings"|"languages">("main") // Stores The Active Account Properties Sheet
+    const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend">("main") // Stores The Active Account Properties Sheet
 
-    const [active_section, setActiveSection] = useState<"profile"|"edit_account_form">("profile") // Stores The Information Which Section Is Active
-    const [active_section_direction, setActiveSectionDirection] = useState<"forward"|"back">("forward") // Stores The Active Section Direction
     
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
     
-    const [bio, setBio] = useState<string>("") // Stores The Bio
-    const [bio_links, setBioLinks] = useState<BioLink[]>([]) // Stores The Bio
     
-    const [selected_profile_picture, setSelectedProfilePicture] = useState<ImagePicker.ImagePickerAsset|null>(null) // Stores The Selected Profile Picture
     
-    const [first_name, setFirstName] = useState<string>("") // Stores The First Name
-    const [last_name, setLastName] = useState<string>("") // Stores The Last Name
-    const [email_address, setEmailAddress] = useState<string>("") // Stores The Email Address
-    const [phone_number, setPhoneNumber] = useState<string>("") // Stores The Phone Number
-    const [is_phone_number_valid, setIsPhoneNumberValid] = useState<boolean>(false) // Stores The Information If The Phone Number Is Valid
     
-    const [data_saving_mode, setDataSavingMode] = useState<boolean>(false) // Stores The Information If The Data Saving Mode Option Is Enabled
-    const [private_account, setPrivateAccount] = useState<boolean>(false) // Stores The Information If The Private Account Option Is Enabled
-    const [delete_profile_picture, setDeleteProfilePicture] = useState<boolean>(false) // Stores The Information If The Delete Profile Picture Option Is Enabled
-    const [delete_account, setDeleteAccount] = useState<boolean>(false) // Stores The Information If The Delete Account Option Is Enabled
 
+    const [is_edit_account_open, setIsEditAccountOpen] = useState<boolean>(false) // Stores The Information If The Edit Account Sheet Is Open
     const [connections_tab, setConnectionsTab] = useState<ConnectionsTab|null>(null) // Stores The Open Tab Of The Followers / Following / Requests Sheet
 
     // Function For Get The Profile
@@ -105,18 +92,6 @@ export default function ProfileScreen() {
             else {
                 setIsFound(profile_data.is_found || false) // Sets The Information If The User Was Found
                 setProfile(profile_data.user) // Sets The Profile
-                if(profile_data.user.bio?.trim()) setBio(profile_data.user.bio) // Sets The Bio
-                setFirstName(profile_data.user.first_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
-                setLastName(profile_data.user.last_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
-                if(profile_data.user.email_address) setEmailAddress(profile_data.user.email_address) // Sets The Information If The Data Saving Mode Option Is Enabled
-
-                if(profile_data.user.phone_number) {
-                    setPhoneNumber(profile_data.user.phone_number) // Sets The Information If The Data Saving Mode Option Is Enabled
-                    setIsPhoneNumberValid(isValidPhoneNumber(profile_data.user.phone_number)) // Sets The Information If The Phone Number Is Valid
-                }
-
-                setDataSavingMode(profile_data.user.data_saving_mode || false) // Sets The Information If The Data Saving Mode Option Is Enabled
-                setPrivateAccount(profile_data.user.private_account) // Sets The Information If The Private Account Option Is Enabled
             }
         } 
         
@@ -130,21 +105,9 @@ export default function ProfileScreen() {
         if(username) {
             getProfile(username) // Gets The Profile
             setConnectionsTab(null) // Closes The Followers / Following / Requests Sheet
+            setIsEditAccountOpen(false) // Closes The Edit Account Sheet
         }
     }, [username])
-
-    // Function For Change The Active Section
-    const changeActiveSection = ():void => {
-        if(active_section === "profile") {
-            setActiveSectionDirection("forward") // Sets The Direction
-            setActiveSection("edit_account_form") // Sets The Active Section
-        }
-        
-        else {
-            setActiveSectionDirection("back") // Sets The Direction
-            setActiveSection("profile") // Sets The Active Section
-        }
-    }
 
     // Function For Show The Account Properties
     const showAccountProperties = ():void => {
@@ -269,18 +232,6 @@ export default function ProfileScreen() {
         }
     }
 
-    // Function For Change The Language
-    const changeLanguage = async (language_code:string):Promise<void> => {
-        try {
-            await i18n.changeLanguage(language_code) // Changes The Language
-            await AsyncStorage.setItem("app_language", language_code) // Stores The New Language
-        }
-        
-        catch {
-            console.error("Pri zmene jazyka došlo k chybe.")
-        }
-    }
-
     return (
         <BackgroundContainer>
             <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
@@ -313,10 +264,10 @@ export default function ProfileScreen() {
                                         <Back />
 
                                         {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                            <View className="toggle_settings" accessibilityLabel="">
+                                            <View className="toggle_settings" accessibilityRole="button" accessibilityLabel={t("Upraviť profil")}>
                                                 <Icon
                                                     icon_name="gear"
-                                                    onPress={changeActiveSection}
+                                                    onPress={() => setIsEditAccountOpen(true)}
                                                     size={30}
                                                     pressed_style={{ transform: [{ scale: 1.1 }] }}
                                                 />
@@ -334,42 +285,13 @@ export default function ProfileScreen() {
                                     </View>
 
                                     <View className="profile_content" style={styles.profile_content}>
-                                        {active_section === "edit_account_form" && logged_in_user && profile && logged_in_user.id === profile.id && (
-                                            <EditAccountForm 
-                                                logged_in_user={logged_in_user}
-                                                profile={profile}
-                                                active_section_direction={active_section_direction}
-                                                onBioUpdate={(bio:string) => setBio(bio)}
-                                                bio={bio}
-                                                onBioLinksUpdate={(bio_links:BioLink[]) => setBio(bio)}
-                                                bio_links={bio_links}
-                                                onSelectedProfilePictureUpdate={(selected_profile_picture:ImagePicker.ImagePickerAsset|null) => setSelectedProfilePicture(selected_profile_picture)}
-                                                selected_profile_picture={selected_profile_picture}
-                                                onFirstNameUpdate={(first_name:string) => setFirstName(first_name)}
-                                                first_name={first_name}
-                                                onLastNameUpdate={(last_name:string) => setLastName(last_name)}
-                                                last_name={last_name}
-                                                onEmailAddressUpdate={(email_address:string) => setEmailAddress(email_address)}
-                                                email_address={email_address}
-                                                onPhoneNumberUpdate={(phone_number:string) => setPhoneNumber(phone_number)}
-                                                phone_number={phone_number}
-                                                onSetIsPhoneNumberValid={(is_phone_number_valid:boolean) => setIsPhoneNumberValid(is_phone_number_valid)}
-                                                is_phone_number_valid={is_phone_number_valid}
-                                                data_saving_mode={data_saving_mode}
-                                                private_account={private_account}
-                                                delete_profile_picture={delete_profile_picture}
-                                                delete_account={delete_account}
-                                                onShowAccountProperties={showAccountProperties}
-                                            />
-                                        )}
-
-                                        {active_section === "profile" && profile && (
+                                        {profile && (
                                             <ProfileSection 
                                                 logged_in_user={logged_in_user}
                                                 is_found={is_found}
                                                 onProfileUpdate={(profile:Profile|null) => setProfile(profile)}
                                                 profile={profile}
-                                                active_section_direction={active_section_direction}
+                                                active_section_direction="forward"
                                                 onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                                 connections_tab={connections_tab}
                                                 onConnectionsTabChange={setConnectionsTab}
@@ -388,54 +310,6 @@ export default function ProfileScreen() {
                                                     <View className="account_properties">
                                                         {account_properties_sheet === "main" && (
                                                             <View style={styles.sheet_container}>
-                                                                {logged_in_user && profile && logged_in_user.id === profile.id && (
-                                                                    <>
-                                                                        <Pressable
-                                                                            className="show_account_settings_button"
-                                                                            onPress={() => setAccountPropertiesSheet("account_settings")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                        >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="gear"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>{t("Nastavenia")}</Text>
-                                                                        </Pressable>
-
-                                                                        <Pressable
-                                                                            className="show_languages_button"
-                                                                            onPress={() => setAccountPropertiesSheet("languages")}
-                                                                            accessibilityRole="button"
-
-                                                                            style={({ pressed }) => [
-                                                                                styles.sheet_item, 
-                                                                                styles.sheet_item_border, 
-                                                                                pressed && styles.sheet_item_pressed
-                                                                            ]}
-                                                                            >
-                                                                            <View style={styles.sheet_icon}>
-                                                                                <FontAwesome6
-                                                                                    name="language"
-                                                                                    size={20}
-                                                                                    color={BLUE_COLOR}
-                                                                                />
-                                                                            </View>
-
-                                                                            <Text style={styles.sheet_text}>{t("Jazyk")}</Text>
-                                                                        </Pressable>
-                                                                    </>
-                                                                )}
-
                                                                 {/* If The Logged In User Is Developer Or Admin The Suspend Option Will Be Shown */}
                                                                 {logged_in_user && (logged_in_user.role === "developer" || logged_in_user.role === "admin") && logged_in_user.id !== profile.id && (
                                                                     <Pressable
@@ -722,387 +596,6 @@ export default function ProfileScreen() {
                                                                 </Pressable>
                                                             </View>
                                                         )}
-
-                                                        {account_properties_sheet === "account_settings" && (
-                                                            <View className="account_settings" style={styles.sheet_container}>
-                                                                <View 
-                                                                    className="data_saving_mode_container"
-
-                                                                    style={[
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border,
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="signal"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Switch 
-                                                                        value={data_saving_mode}
-                                                                        onValueChange={(new_value:boolean) => setDataSavingMode(new_value)}
-                                                                        
-                                                                        trackColor={{ 
-                                                                            false: transparentize(RED_COLOR, 0.8), 
-                                                                            true: transparentize(GREEN_COLOR, 0.8) 
-                                                                        }}
-                                                                        
-                                                                        thumbColor={data_saving_mode ? GREEN_COLOR : RED_COLOR}
-                                                                    />
-
-                                                                    <Text style={styles.sheet_text}>{t("Šetrenie dát")}</Text>
-                                                                </View>
-
-                                                                <View 
-                                                                    className="private_account_container"
-
-                                                                    style={[
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border,
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name={!private_account ? "lock-open" : "lock"}
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Switch 
-                                                                        value={private_account}
-                                                                        onValueChange={(new_value:boolean) => setPrivateAccount(new_value)}
-                                                                        
-                                                                        trackColor={{ 
-                                                                            false: transparentize(RED_COLOR, 0.8), 
-                                                                            true: transparentize(GREEN_COLOR, 0.8) 
-                                                                        }}
-                                                                        
-                                                                        thumbColor={private_account ? GREEN_COLOR : RED_COLOR}
-                                                                    />
-
-                                                                    <Text style={styles.sheet_text}>{t("Súkromný účet")}</Text>
-                                                                </View>
-
-                                                                <View 
-                                                                    className="delete_profile_picture_container"
-
-                                                                    style={[
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border,
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="trash-can"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Switch 
-                                                                        value={delete_profile_picture}
-                                                                        onValueChange={(new_value:boolean) => setDeleteProfilePicture(new_value)}
-                                                                        
-                                                                        trackColor={{ 
-                                                                            false: transparentize(RED_COLOR, 0.8), 
-                                                                            true: transparentize(GREEN_COLOR, 0.8) 
-                                                                        }}
-                                                                        
-                                                                        thumbColor={delete_profile_picture ? GREEN_COLOR : RED_COLOR}
-                                                                    />
-
-                                                                    <Text style={styles.sheet_text}>{t("Odstrániť profilový obrázok")}</Text>
-                                                                </View>
-
-                                                                <View 
-                                                                    className="delete_account_container"
-
-                                                                    style={[
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border,
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="user-minus"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Switch 
-                                                                        value={delete_account}
-                                                                        onValueChange={(new_value:boolean) => setDeleteAccount(new_value)}
-                                                                        
-                                                                        trackColor={{ 
-                                                                            false: transparentize(RED_COLOR, 0.8), 
-                                                                            true: transparentize(GREEN_COLOR, 0.8) 
-                                                                        }}
-                                                                        
-                                                                        thumbColor={delete_account ? GREEN_COLOR : RED_COLOR}
-                                                                    />
-
-                                                                    <Text style={styles.sheet_text}>{t("Odstrániť účet")}</Text>
-                                                                </View>
-
-                                                                <Pressable
-                                                                    className="back_account_settings_button"
-                                                                    onPress={() => setAccountPropertiesSheet("main")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="xmark"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                                                </Pressable>
-                                                            </View>
-                                                        )}
-
-                                                        {account_properties_sheet === "languages" && (
-                                                            <View className="languages" style={styles.sheet_container}>
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("sk")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/sk.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "sk" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Slovenčina")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("cs")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/cs.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "cs" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Čeština")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("en")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/en.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "en" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Angličtina")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("es")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/es.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "es" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Španielčina")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("fr")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/fr.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "fr" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Francúžština")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("uk")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/uk.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "uk" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Ukrajinčina")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("ru")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/ru.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "ru" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Ruština")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("pt_BR")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/pt-br.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "pt_BR" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Portugalčina (Brazília)")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    onPress={() => changeLanguage("de")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        styles.sheet_item_border, 
-                                                                        pressed && styles.sheet_item_pressed,
-                                                                    ]}
-                                                                >
-                                                                    <Image
-                                                                        source={require("@/assets/images/languages/de.png")}
-
-                                                                        style={{
-                                                                            width: 32,
-                                                                            height: 32,
-                                                                            resizeMode: "contain",
-                                                                        }}
-                                                                    />
-
-                                                                    <Text style={language === "de" ? { color: DARK_BLUE_COLOR } : styles.sheet_text}>{t("Nemčina")}</Text>
-                                                                </Pressable>
-
-                                                                <Pressable
-                                                                    className="back_languages_button"
-                                                                    onPress={() => setAccountPropertiesSheet("main")}
-                                                                    accessibilityRole="button"
-
-                                                                    style={({ pressed }) => [
-                                                                        styles.sheet_item, 
-                                                                        pressed && styles.sheet_item_pressed
-                                                                    ]}
-                                                                >
-                                                                    <View style={styles.sheet_icon}>
-                                                                        <FontAwesome6
-                                                                            name="xmark"
-                                                                            size={20}
-                                                                            color={BLUE_COLOR}
-                                                                        />
-                                                                    </View>
-
-                                                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                                                </Pressable>
-                                                            </View>
-                                                        )}
                                                     </View>
                                                 </BottomSheetView>
                                             </BottomSheetModal>
@@ -1123,7 +616,7 @@ export default function ProfileScreen() {
                                             is_found={is_found}
                                             onProfileUpdate={(profile:Profile|null) => setProfile(profile)}
                                             profile={profile}
-                                            active_section_direction={active_section_direction}
+                                            active_section_direction="forward"
                                             onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
                                             connections_tab={connections_tab}
                                             onConnectionsTabChange={setConnectionsTab}
@@ -1131,6 +624,14 @@ export default function ProfileScreen() {
                                     </View>
                                 </View>
                             </View>
+                        )}
+                        {logged_in_user && profile && logged_in_user.id === profile.id && (
+                            <EditAccountSheet
+                                visible={is_edit_account_open}
+                                onClose={() => setIsEditAccountOpen(false)}
+                                profile={profile}
+                                onSaved={() => { if(username) getProfile(username) }}
+                            />
                         )}
                     </BottomSheetModalProvider>
                 </ScrollView>

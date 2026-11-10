@@ -16,7 +16,7 @@ import { ImperativeRouter, useRouter } from "expo-router"
 import ProfilePicture from "@/components/ProfilePicture"
 import { BlurView } from "expo-blur"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 import type { Profile , BioLink } from "@/app/(tabs)/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
 

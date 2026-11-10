@@ -6,7 +6,7 @@ import { BlurView } from "expo-blur"
 import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 
 interface BannerProps {
     logged_in_user:LoggedInUser|null

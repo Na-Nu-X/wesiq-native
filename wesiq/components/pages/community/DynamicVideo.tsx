@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next"
 import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
 import { useEventListener } from "expo"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 import type { BasicResponse , Post, Media } from "@/components/pages/community/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 

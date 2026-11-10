@@ -40,7 +40,7 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 - Mock mode: `EXPO_PUBLIC_USE_MOCKS=1` in a development build makes `lib/api/mocks/install.ts` intercept every `fetch` to the API and answer from `lib/api/mocks/handlers.ts` + `data.ts`. Unknown GETs return 404 so missing mocks are visible.
 - `lib/storage.ts` holds the typed AsyncStorage keys.
 
-**Components.** Shared components are in `components/`; page-specific ones are in `components/pages/<feature>/` (activity, blog, chat, community, manage_training_plans, post, profile, subscribe, …). Route files in `app/` are mostly thin and compose these. Platform-specific variants use the `.web.tsx` / `.ios.tsx` suffix (e.g. `ImageViewer.web.tsx`).
+**Components.** Redesigned feature components live in `components/features/<feature>/` (auth, account, profile, posts, upload-post) and use `components/ui`; older page-specific components are still in `components/pages/<feature>/` (activity, blog, chat, community, manage_training_plans, post, profile, subscribe, …). Route files in `app/` are mostly thin and compose these. Platform-specific variants use the `.web.tsx` / `.ios.tsx` suffix (e.g. `ImageViewer.web.tsx`).
 
 **Heart rate.** `classes/HeartRate.ts` has `HeartRateManager`, which switches between `HeartRateProvider` implementations: `TEST`, `BLE` (react-native-ble-plx), `APPLE_HEALTH` (react-native-health) and `HEALTH_CONNECT` (Android).
 
@@ -49,7 +49,7 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 - UI text uses the system font; Bungee is only for the wordmark and Orbitron only for timers.
 - `constants/colors.ts` is a legacy alias of the tokens kept for unmigrated screens; don't use it in new code.
 - Shared components are exported from `components/ui` (`Screen`, `Header`, `Text`, `Button`, `IconButton`, `Card`, `Avatar`, `TextField`, `Chip`, `SegmentedControl`, `Stepper`, `Sheet`, `UserRow`, `EmptyState`, `ErrorState`, `Skeleton`).
-- `Screen` handles safe areas, keyboard avoidance, pull-to-refresh and a pinned footer. `Sheet` is the standard dialog: a bottom sheet on phones and a centered dialog at 700px and wider.
+- `Screen` handles safe areas, keyboard avoidance, pull-to-refresh and a pinned footer. `Sheet` is the standard dialog: a bottom sheet on phones and a centered dialog at 700px and wider. `Sheet` resets the VirtualizedList context (`ListContextReset`), so a `FlatList` inside a sheet scrolls on its own even when the sheet is opened from a feed item; pass `is_scrollable={false}` when the sheet's child is a list.
 - `Icon` takes typed FontAwesome 6 names.
 - Use `lib/alert.ts` (`showAlert`, `confirmAction`) instead of `Alert.alert`, which does nothing on web. Use `lib/haptics.ts` for haptic feedback and `lib/media.ts` for media URLs.
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from "react"
-import { View, StyleSheet, TextInput, Text, Alert, Pressable, Share, ScrollView, ActivityIndicator, Linking, Platform, Switch } from "react-native"
+import { View, StyleSheet, TextInput, Text, Alert, Pressable, ScrollView, ActivityIndicator, Linking, Platform, Switch } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import Icon from "@/components/Icon"
 import { MAIN_WIDTH } from "@/constants/dimensions"
@@ -22,12 +22,11 @@ import { ImperativeRouter, useRouter } from "expo-router"
 import { VideoScrubberPreview } from "./VideoScrubberPreview"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { SharePostDialog } from "./SharePostDialog"
+import SharePostSheet, { SharedPostInfo } from "@/components/features/posts/SharePostSheet"
 
-import type { Post, Media, Comment, Following , BasicResponse , ProcessingPost } from "./Feed"
-import type { LoggedInUser } from "../../LoginFormDialog"
+import type { Post, Media, Comment, BasicResponse, ProcessingPost } from "./Feed"
+import type { LoggedInUser } from "@/types/models"
 import type { vtt } from "../activity/CustomVideoControls"
-import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 export interface loadedPostCommentsResponse {
     success:boolean,
@@ -81,7 +80,6 @@ interface PostContainerProps {
     selected_processing_post:ProcessingPost|null,
     onSelectedPostCommentUpdate:(selected_post_comment:Comment|null) => void,
     selected_post_comment:Comment|null,
-    friends:Following[]
 }
 
 export const PostContainer = ({ 
@@ -99,9 +97,9 @@ export const PostContainer = ({
     selected_processing_post,
     onSelectedPostCommentUpdate,
     selected_post_comment,
-    friends
 }:PostContainerProps) => {
     const { t } = useTranslation() // Initializes The Translations
+    const [share_post, setSharePost] = useState<SharedPostInfo|null>(null) // Stores The Post In The Share Sheet (Null = Closed)
 
     const router:ImperativeRouter = useRouter() // Gets The Router
 
@@ -143,11 +141,7 @@ export const PostContainer = ({
     const post_comment_properties = useRef<BottomSheetModal>(null) // Stores The Post Comment Properties
     const [post_comment_properties_sheet, setPostCommentPropertiesSheet] = useState<"main"|"report"|"delete">("main") // Stores The Active Post Comment Properties Sheet
 
-    const share_post_dialog = useRef<BottomSheetModal>(null) // Stores The Share Post Dialog
-    const [share_post_dialog_sheet, setSharePostDialogSheet] = useState<"main">("main") // Stores The Share Post Dialog Sheet
-    const [is_sending_post, setIsSendingPost] = useState<boolean>(false) // Stores The Information If The Post Is Sending
 
-    const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
 
     // Function For Get Post Comments
     const getPostComments = async (page:number = 1, is_refresh:boolean = false, post_id:string) => {
@@ -1301,95 +1295,9 @@ export const PostContainer = ({
     // Function For Show The Share Post Dialog
     const showSharePostDialog = (post:Post):void => {
         onSelectedPostUpdate(post) // Sets The Selected Post
-        share_post_dialog.current?.present() // Shows The Share Post Dialog
+        setSharePost({ id: post.id, author_username: post.user.username }) // Shows The Share Post Sheet
     }
 
-    // Function For Handle Share Post Dialog Sheet Switching
-    const handleSharePostDialogChanges = (index:number) => {
-        if(index === -1) setSharePostDialogSheet("main") // Sets The Share Post Dialog Sheet To Default
-    }
-
-    // Function For Share The Post To Chat
-    const sharePostToChat = async (post:Post, receiver_username:string):Promise<void> => {
-        if(!logged_in_user) {
-            Alert.alert(t("Chyba"), t("Príspevok nie je možné zdielať bez prihlásenia.")) // Shows The Alert
-            return
-        }
-
-        setIsSendingPost(true) // Stores The Information That The Post Is Sending
-
-        const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-
-        const is_secure:boolean = DOMAIN.startsWith("https") // Stores The Information If The API Is Secure
-        const clean_domain:string = DOMAIN.replace(/^https?:\/\//, "") // Gets The Clean Domain
-        const web_socket_protocol:"wss"|"ws" = is_secure ? "wss" : "ws" // Gets The Web Socket Protocol
-        const web_socket_url:string = `${web_socket_protocol}://${clean_domain}/ws/chat/${receiver_username}/?token=${user_token}` // Gets The Web Socket URL
-
-        chat_socket.current = new WebSocket(web_socket_url) // Sets The Chat Socket
-
-        chat_socket.current.onopen = () => {
-            if(chat_socket.current && chat_socket.current.readyState === WebSocket.OPEN) {
-                // Sends The New Message With Shared Post
-                chat_socket.current.send(JSON.stringify({
-                    action: "share_post",
-                    post_id: post.id
-                }))
-            }
-
-            else {
-                console.warn(t("Web Socket nie je otvorený."))
-            }
-        }
-
-        // Response From The Server (The DOM Changes Will Be Visible To Every User In Chat)
-        chat_socket.current.onmessage = (event) => {
-            const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
-
-            // New Message
-            if(data.action === "new") {
-                const sender_id:number = data.sender_id as number // Gets The Sender's ID
-                const post:ChatPost|null = data.post as ChatPost || null // Gets The Post
-
-                if(sender_id === logged_in_user.id && post) {
-                    setIsSendingPost(false) // Stores The Information That The Post Isn't Sending
-                }
-            }
-        }
-
-        // Interrupted Connection
-        chat_socket.current.onclose = () => {
-            Alert.alert(t("Chyba"), t("Spojenie sa neočakávane prerušilo.")) // Shows The Alert
-        }
-
-        // Interrupted Connection
-        chat_socket.current.onerror = () => {
-            Alert.alert(t("Chyba"), t("Pri pokuse o spojenie došlo k chybe.")) // Shows The Alert
-        }
-    }
-
-    // Function For Share The Post
-    const sharePost = async (post_id:string, username:string):Promise<void> => {
-        const link: string = `${DOMAIN}/sk/prispevok/${post_id}` // Sets The Link To The Post
-    
-        try {
-            const result = await Share.share({
-                message: `Wesiq - ${t("Príspevok užívateľa")} ${username}\n${link}`,
-                url: link, // Only IOS
-                title: `Wesiq - ${t("Príspevok užívateľa")} ${username}`
-            })
-    
-            if(result.action === Share.sharedAction) {
-                if(result.activityType) console.log(t("Zdieľané cez: "), result.activityType) // Only IOS
-                else console.log(t("Úspešne zdieľané"))
-            } 
-            
-            else if(result.action === Share.dismissedAction) console.log(t("Zdieľanie zrušené")) // Only IOS
-        } 
-
-        catch(error:any) {
-            Alert.alert(t("Chyba"), t("Nepodarilo sa otvoriť menu na zdieľanie."))
-        }
-    }
     
     return (
         <BottomSheetModalProvider>
@@ -2595,18 +2503,7 @@ export const PostContainer = ({
                     </BottomSheetView>
                 </BottomSheetModal>
 
-                {selected_post && (
-                    <SharePostDialog 
-                        friends={friends}
-                        onSharePostToChat={(friend_username:string) => sharePostToChat(selected_post, friend_username)}
-                        onSharePost={() => sharePost(selected_post.id, selected_post.user.username)}
-                        is_sending={is_sending_post}
-                        share_post_dialog={share_post_dialog}
-                        share_post_dialog_sheet={share_post_dialog_sheet}
-                        selected_post={selected_post}
-                        handleSharePostDialogChanges={() => handleSharePostDialogChanges}
-                    />
-                )}
+                <SharePostSheet post={share_post} onClose={() => setSharePost(null)} />
             </View>
         </BottomSheetModalProvider>
     )

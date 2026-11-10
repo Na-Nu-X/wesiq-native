@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next"
 import { colors, durations, layout, radii, shadows, spacing } from "@/theme"
 import Text from "./Text"
 import IconButton from "./IconButton"
+import ListContextReset from "./ListContextReset"
 
 export interface SheetProps {
     visible:boolean,
@@ -139,6 +140,7 @@ export default function Sheet({
             onRequestClose={requestClose} // Android Back Button
         >
             <GestureHandlerRootView style={styles.flex}>
+                <ListContextReset>
                 <KeyboardAvoidingView style={styles.flex} behavior="padding" enabled={Platform.OS !== "web"}>
                     <View style={[styles.flex, is_wide ? styles.center : styles.bottom]}>
                         <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdrop_style]}>
@@ -194,6 +196,7 @@ export default function Sheet({
                         </Animated.View>
                     </View>
                 </KeyboardAvoidingView>
+                </ListContextReset>
             </GestureHandlerRootView>
         </Modal>
     )

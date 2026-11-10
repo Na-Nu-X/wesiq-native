@@ -22,7 +22,7 @@ import { ImperativeRouter, useRouter } from "expo-router"
 import { FontAwesome6 } from "@expo/vector-icons"
 
 import type { Post, Media, Comment , BasicResponse } from "../community/Feed"
-import type { LoggedInUser } from "../../LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 import type { vtt } from "../activity/CustomVideoControls"
 import type { loadedPostCommentsResponse, AddedPostCommentResponse, Particle } from "../community/PostContainer"
 

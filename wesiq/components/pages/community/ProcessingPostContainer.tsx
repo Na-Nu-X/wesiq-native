@@ -18,7 +18,7 @@ import { FontAwesome6 } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
 import type { BasicResponse , ProcessingPost, ProcessingMedia , Post } from "@/components/pages/community/Feed"
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 import type { TrackedTask } from "@/app/(tabs)"
 
 interface ProcessingPostContainerProps {

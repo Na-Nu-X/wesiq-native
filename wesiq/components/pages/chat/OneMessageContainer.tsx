@@ -21,7 +21,7 @@ import Swipeable, { SwipeDirection, SwipeableMethods } from "react-native-gestur
 import Reanimated, { interpolate, SharedValue, useAnimatedStyle } from "react-native-reanimated"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
-import type { LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
 
 // Defines The File Icons
 export const FILE_ICONS:{

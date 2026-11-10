@@ -1,12 +1,11 @@
 import { useState } from "react"
+import AuthSheet from "@/components/features/auth/AuthSheet"
 import { ImperativeRouter, Tabs, usePathname, useRouter } from "expo-router"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { Image, StyleSheet, View } from "react-native"
 import ProfilePicture from "@/components/ProfilePicture"
-import LoginFormDialog from "@/components/LoginFormDialog"
-import RegistrationFormDialog from "@/components/RegistrationFormDialog"
 
 export default function RootLayout() {
     const pathname:string = usePathname() // Gets The Pathname
@@ -180,19 +179,7 @@ export default function RootLayout() {
                 />
             </Tabs>
 
-            <LoginFormDialog 
-                visible={active_form==="login_form"}
-                onChangeActiveForm={() => setActiveForm("registration_form")}
-                onClose={() => setActiveForm(null)}
-                onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-            />
-
-            <RegistrationFormDialog
-                visible={active_form==="registration_form"}
-                onChangeActiveForm={() => setActiveForm("login_form")}
-                onClose={() => setActiveForm(null)}
-                onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-            />
+            <AuthSheet active_form={active_form} onActiveFormChange={setActiveForm} />
         </>
     )
 }
