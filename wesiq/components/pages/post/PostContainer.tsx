@@ -1666,7 +1666,7 @@ export const PostContainer = ({
                                     indicatorStyle="white"
                                     style={styles.all_comments}
                                 >
-                                    {post.comments.length > 0 && loadComments()} {/* Loads The Comments */}
+                                    {post.comments.length > 0 && loadComments()}{/* Loads The Comments */}
 
                                     {has_next_post_comments && (
                                         <Pressable 

@@ -1012,7 +1012,7 @@ export default function ArticleScreen() {
                                         indicatorStyle="white"
                                         style={styles.all_comments}
                                     >
-                                        {loaded_article.comments && loaded_article.comments.length > 0 && loadComments()} {/* Loads The Comments */}
+                                        {loaded_article.comments && loaded_article.comments.length > 0 && loadComments()}{/* Loads The Comments */}
 
                                         {has_next_article_comments && (
                                             <Pressable 

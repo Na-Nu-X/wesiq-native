@@ -16,13 +16,14 @@ export interface StepperProps {
     step?:number,
     label?:string, // Visible Caption Under The Value (E.g. "reps")
     accessibility_label:string, // E.g. "Repetitions Of Set 1"
-    formatValue?:(value:number) => string // Display Formatting (E.g. Seconds As "1:30")
+    formatValue?:(value:number) => string, // Display Formatting (E.g. Seconds As "1:30")
+    is_compact?:boolean // Smaller Buttons (Two Steppers In One Row)
 }
 
 // Function For Clamp The Value Into The Range
 const clamp = (value:number, min:number, max:number):number => Math.min(max, Math.max(min, value))
 
-export default function Stepper({ value, onChange, min = 0, max = 999, step = 1, label, accessibility_label, formatValue }:StepperProps) {
+export default function Stepper({ value, onChange, min = 0, max = 999, step = 1, label, accessibility_label, formatValue, is_compact = false }:StepperProps) {
     const { t } = useTranslation() // Initializes The Translations
     const [draft, setDraft] = useState<string|null>(null) // Stores The Typed Text While Editing
 
@@ -55,10 +56,10 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
                 onPress={() => changeBy(-step)}
                 is_disabled={value <= min}
                 variant="soft"
-                size={36}
+                size={is_compact ? 32 : 36}
             />
 
-            <View style={styles.value_container}>
+            <View style={[styles.value_container, is_compact ? styles.value_container_compact : null]}>
                 <TextInput
                     value={draft ?? (formatValue ? formatValue(value) : String(value))}
                     onFocus={() => setDraft(String(value))}
@@ -85,7 +86,7 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
                 onPress={() => changeBy(step)}
                 is_disabled={value >= max}
                 variant="soft"
-                size={36}
+                size={is_compact ? 32 : 36}
             />
         </View>
     )
@@ -107,6 +108,10 @@ const styles = StyleSheet.create({
     value_container: {
         width: 60, // Fixed Width (A TextInput Would Otherwise Grow To Its Default Width On Web)
         alignItems: "center",
+    },
+
+    value_container_compact: {
+        width: 52,
     },
 
     input: {

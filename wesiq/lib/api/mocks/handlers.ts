@@ -18,7 +18,7 @@ import {
     MOCK_USERS,
 } from "./data"
 
-import type { Post, UserListItem } from "@/types/models"
+import type { Post, TrainingPlanExercise, UserListItem } from "@/types/models"
 
 export interface MockResponse {
     status:number,
@@ -30,7 +30,8 @@ interface MockRequest {
     path:string, // Path Without The API Prefix, E.g. "get-profile/alex.demo/"
     params:string[], // Dynamic Path Segments
     query:Record<string, string>,
-    body:Record<string, unknown> // Parsed JSON Body (Empty For GET Or Non JSON Bodies)
+    body:Record<string, unknown>, // Parsed JSON Object Body (Empty For GET, Arrays Or Non JSON Bodies)
+    raw_body:unknown // Parsed JSON Body Of Any Shape
 }
 
 type MockHandler = (request:MockRequest) => MockResponse
@@ -81,7 +82,8 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "GET", pattern: "get-processing-posts/", handler: () => ok({ processing_posts: [] }) },
     { method: "GET", pattern: "get-friends/", handler: () => ok({ following: MOCK_USERS.filter((user:UserListItem) => user.has_follow) }) },
 
-    { method: "GET", pattern: "get-training-plans/", handler: () => ok({ training_plans: MOCK_TRAINING_PLANS }) },
+    { method: "GET", pattern: "get-training-plans/", handler: () => ok({ training_plans: training_plans_state }) },
+    { method: "POST", pattern: "manage-training-plan/", handler: ({ raw_body }) => manageTrainingPlans(raw_body) },
     { method: "GET", pattern: "get-exercises/", handler: () => ok({ exercises: MOCK_EXERCISES }) },
     { method: "GET", pattern: "get-official-training-plans/", handler: () => ok({ official_training_plans: MOCK_OFFICIAL_TRAINING_PLANS }) },
 
@@ -162,6 +164,30 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "GET", pattern: "get-article-comments/", handler: () => ok({ comments: [], has_next: false, visible_comments: 0 }) },
 ]
 
+// In-Memory Training Plans (Saving And Deleting Change What get-training-plans Returns Until Reload)
+let training_plans_state:TrainingPlanExercise[] = [...MOCK_TRAINING_PLANS]
+
+// Function For Apply A manage-training-plan Request (Same Rules As The Server)
+function manageTrainingPlans(raw_body:unknown):MockResponse {
+    if(!Array.isArray(raw_body) || raw_body.length === 0) return { status: 400, body: { success: false, message: "Missing data (mock)" } }
+
+    const rows = raw_body as Record<string, unknown>[]
+    const deleted_keys:Set<string> = new Set()
+
+    rows.forEach((row) => {
+        const key = row.action === "edited_training_plan" ? row.previous_training_plan_key : row.action === "delete_training_plan" ? row.training_plan_key : null
+        if(typeof key === "string") deleted_keys.add(key)
+    })
+
+    training_plans_state = training_plans_state.filter((row:TrainingPlanExercise) => !deleted_keys.has(row.training_plan_key))
+
+    rows.filter((row) => row.action === "new_training_plan" || row.action === "edited_training_plan").forEach((row) => {
+        training_plans_state.push({ ...(row as unknown as TrainingPlanExercise), id: Math.floor(Math.random() * 1_000_000) })
+    })
+
+    return ok({}, 201)
+}
+
 // Adds The Followers Count Used By The Users List
 function withFollowers(user:UserListItem) {
     return { ...user, friend_code: `WSQ-${1000 + user.id}`, followers: 10 + user.id * 7 }
@@ -197,7 +223,8 @@ const parseQuery = (query_string:string):Record<string, string> => {
 }
 
 // Function For Resolve A Request (Unknown GETs Return 404 So Missing Mocks Are Visible, Unknown POSTs Succeed)
-export const resolveMockRequest = (method:string, path_with_query:string, body:Record<string, unknown> = {}):MockResponse => {
+export const resolveMockRequest = (method:string, path_with_query:string, raw_body:unknown = {}):MockResponse => {
+    const body:Record<string, unknown> = typeof raw_body === "object" && raw_body !== null && !Array.isArray(raw_body) ? raw_body as Record<string, unknown> : {}
     const [path = "", query_string = ""] = path_with_query.split("?") // Splits The Path And Query
     const upper_method:string = method.toUpperCase() // Gets The Method
 
@@ -205,7 +232,7 @@ export const resolveMockRequest = (method:string, path_with_query:string, body:R
         if(route.method !== upper_method) continue
 
         const params:string[]|null = matchPattern(route.pattern, path) // Matches The Route
-        if(params) return route.handler({ method: upper_method, path, params, query: parseQuery(query_string), body })
+        if(params) return route.handler({ method: upper_method, path, params, query: parseQuery(query_string), body, raw_body })
     }
 
     if(upper_method === "GET") return notFound(`No mock for GET ${path}`)

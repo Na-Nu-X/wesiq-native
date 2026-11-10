@@ -12,12 +12,11 @@ export const IS_MOCK_MODE:boolean = __DEV__ && process.env.EXPO_PUBLIC_USE_MOCKS
 let is_installed:boolean = false
 
 // Function For Parse A JSON Request Body (FormData And Other Bodies Are Ignored)
-const parseJsonBody = (body:RequestInit["body"]|undefined):Record<string, unknown> => {
+const parseJsonBody = (body:RequestInit["body"]|undefined):unknown => {
     if(typeof body !== "string") return {}
 
     try {
-        const parsed:unknown = JSON.parse(body) // Parses The Body
-        return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {}
+        return JSON.parse(body) as unknown // Parses The Body (Objects And Arrays)
     }
 
     catch {

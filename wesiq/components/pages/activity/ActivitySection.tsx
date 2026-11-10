@@ -21,7 +21,8 @@ import { BlurView } from "expo-blur"
 
 import type { Activity } from "./HistorySection"
 import type { OfficialTask } from "./TasksSection"
-import type { Day } from "../manage_training_plans/DaySelectMenu"
+import type { Day } from "@/types/models"
+import { onAppEvent } from "@/lib/events"
 
 export interface TrainingPlanExercise {
     id:number,
@@ -258,6 +259,9 @@ export default function ActivitySection({
         getTrainingPlansExercises() // Gets The Training Plans Exercises
     }, [])
 
+    // Initializes The Reload When A Plan Is Saved Or Deleted In The Editor (This Screen Stays Mounted In The Tabs)
+    useEffect(() => onAppEvent("training_plans_changed", () => { getTrainingPlansExercises() }), [])
+
     // Function For Get The XP Boost
     const getXpBoost = async ():Promise<void> => {
         try {
@@ -470,7 +474,7 @@ export default function ActivitySection({
                                     <Text style={styles.text}>{t("Tréningový plán")}</Text>
                                     <Text style={styles.text}>{t("Začať tréning")}</Text>
 
-                                    <Text className="title" style={styles.title}>{selected_day_or_training_plan_key && typeof selected_day_or_training_plan_key === "number" ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day_or_training_plan_key)}` : ordered_exercises[active_exercise_index].type || t("Tréning")}</Text> {/* Sets Training Plan Title On The Start Training Slide */}
+                                    <Text className="title" style={styles.title}>{selected_day_or_training_plan_key && typeof selected_day_or_training_plan_key === "number" ? `${ordered_exercises[active_exercise_index].type || "Tréning"} - ${getDayName(selected_day_or_training_plan_key)}` : ordered_exercises[active_exercise_index].type || t("Tréning")}</Text>{/* Sets Training Plan Title On The Start Training Slide */}
                                 </View>
 
                                 <View className="start_training_button">
@@ -488,7 +492,7 @@ export default function ActivitySection({
                                     <Text style={styles.text}>{t("Tréningový plán")}</Text>
                                     <Text style={styles.text}>{t("Dokončiť tréning")}</Text>
 
-                                    <Text className="title" style={styles.title}>{ordered_exercises[active_exercise_index].type || t("Tréning")}</Text> {/* Sets Training Plan Title On The Finish Training Slide */}
+                                    <Text className="title" style={styles.title}>{ordered_exercises[active_exercise_index].type || t("Tréning")}</Text>{/* Sets Training Plan Title On The Finish Training Slide */}
                                 </View>
 
                                 <View className="finish_training_button">
@@ -504,7 +508,7 @@ export default function ActivitySection({
 
                         {training_plan_slide === "exercise" && active_exercise && (
                             <>
-                                {active_exercise.is_warm_up && (<WarmUp time={active_exercise.periods[0]} skipWarmUp={nextExercise} />)} {/* Creates Warm Up */}
+                                {active_exercise.is_warm_up && (<WarmUp time={active_exercise.periods[0]} skipWarmUp={nextExercise} />)}{/* Creates Warm Up */}
 
                                 {/* Creates Exercise */}
                                 {!active_exercise.is_warm_up && (
@@ -652,7 +656,7 @@ export default function ActivitySection({
                     </View>
                 </View>
 
-                {grouped_training_plans_exercises.length > 1 && !is_activity_started && (createTrainingPlanBars(grouped_training_plans_exercises.length))} {/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
+                {grouped_training_plans_exercises.length > 1 && !is_activity_started && (createTrainingPlanBars(grouped_training_plans_exercises.length))}{/* Creates And Renders Training Plan Bars (Only If There Are More Than One Training Plan Available) */}
             </>
         )
     }
@@ -1138,7 +1142,7 @@ export default function ActivitySection({
                 {training_plans_exercises.length > 0 && !is_basic_activity_started && (
                     <GestureDetector gesture={swipe_gesture}>
                         <View className="training_plan_container" style={styles.training_plan_container}>
-                            {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (generateTrainingPlan())} {/* Generates The Training Plan */}
+                            {active_training_plan_exercises && active_training_plan_exercises.length > 0 && (generateTrainingPlan())}{/* Generates The Training Plan */}
                         </View>
                     </GestureDetector>
                 )}

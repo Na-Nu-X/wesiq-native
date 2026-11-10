@@ -295,9 +295,9 @@ export default function PasswordResetForm({
                             { color: break_timer_text_color },
                         ]}
                     >
-                        <Text className="minutes">{String(minutes)}</Text> {/* Shows Remaining Minutes */}
+                        <Text className="minutes">{String(minutes)}</Text>{/* Shows Remaining Minutes */}
                         :
-                        <Text className="seconds">{getFormattedTime("seconds", seconds, true)}</Text> {/* Shows Remaining Seconds */}
+                        <Text className="seconds">{getFormattedTime("seconds", seconds, true)}</Text>{/* Shows Remaining Seconds */}
                     </Text>
                 </View>
     
