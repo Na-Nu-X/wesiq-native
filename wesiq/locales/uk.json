@@ -1074,5 +1074,10 @@
     "Požiadavka bola zrušená.": "Запит було скасовано.",
     "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Ваш сеанс завершився. Увійдіть знову.",
     "Na serveri došlo k chybe. Skúste to znova.": "На сервері сталася помилка. Спробуйте ще раз.",
-    "Server vrátil neočakávanú odpoveď.": "Сервер повернув неочікувану відповідь."
+    "Server vrátil neočakávanú odpoveď.": "Сервер повернув неочікувану відповідь.",
+    "Skryť heslo": "Приховати пароль",
+    "Znížiť": "Зменшити",
+    "Zvýšiť": "Збільшити",
+    "Niečo sa pokazilo": "Щось пішло не так",
+    "Skúsiť znova": "Спробувати ще раз"
 }

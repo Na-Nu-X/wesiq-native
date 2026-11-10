@@ -1074,5 +1074,10 @@
     "Požiadavka bola zrušená.": "La requête a été annulée.",
     "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Votre session a expiré. Veuillez vous reconnecter.",
     "Na serveri došlo k chybe. Skúste to znova.": "Une erreur s'est produite sur le serveur. Veuillez réessayer.",
-    "Server vrátil neočakávanú odpoveď.": "Le serveur a renvoyé une réponse inattendue."
+    "Server vrátil neočakávanú odpoveď.": "Le serveur a renvoyé une réponse inattendue.",
+    "Skryť heslo": "Masquer le mot de passe",
+    "Znížiť": "Diminuer",
+    "Zvýšiť": "Augmenter",
+    "Niečo sa pokazilo": "Une erreur s'est produite",
+    "Skúsiť znova": "Réessayer"
 }

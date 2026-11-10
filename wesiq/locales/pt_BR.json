@@ -1074,5 +1074,10 @@
     "Požiadavka bola zrušená.": "A solicitação foi cancelada.",
     "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Sua sessão expirou. Faça login novamente.",
     "Na serveri došlo k chybe. Skúste to znova.": "Ocorreu um erro no servidor. Tente novamente.",
-    "Server vrátil neočakávanú odpoveď.": "O servidor retornou uma resposta inesperada."
+    "Server vrátil neočakávanú odpoveď.": "O servidor retornou uma resposta inesperada.",
+    "Skryť heslo": "Ocultar senha",
+    "Znížiť": "Diminuir",
+    "Zvýšiť": "Aumentar",
+    "Niečo sa pokazilo": "Algo deu errado",
+    "Skúsiť znova": "Tentar novamente"
 }

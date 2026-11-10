@@ -1074,5 +1074,10 @@
     "Požiadavka bola zrušená.": "Požiadavka bola zrušená.",
     "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Vaše prihlásenie vypršalo. Prihláste sa znova.",
     "Na serveri došlo k chybe. Skúste to znova.": "Na serveri došlo k chybe. Skúste to znova.",
-    "Server vrátil neočakávanú odpoveď.": "Server vrátil neočakávanú odpoveď."
+    "Server vrátil neočakávanú odpoveď.": "Server vrátil neočakávanú odpoveď.",
+    "Skryť heslo": "Skryť heslo",
+    "Znížiť": "Znížiť",
+    "Zvýšiť": "Zvýšiť",
+    "Niečo sa pokazilo": "Niečo sa pokazilo",
+    "Skúsiť znova": "Skúsiť znova"
 }

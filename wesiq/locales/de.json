@@ -1074,5 +1074,10 @@
     "Požiadavka bola zrušená.": "Die Anfrage wurde abgebrochen.",
     "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
     "Na serveri došlo k chybe. Skúste to znova.": "Auf dem Server ist ein Fehler aufgetreten. Bitte versuche es erneut.",
-    "Server vrátil neočakávanú odpoveď.": "Der Server hat eine unerwartete Antwort gesendet."
+    "Server vrátil neočakávanú odpoveď.": "Der Server hat eine unerwartete Antwort gesendet.",
+    "Skryť heslo": "Passwort verbergen",
+    "Znížiť": "Verringern",
+    "Zvýšiť": "Erhöhen",
+    "Niečo sa pokazilo": "Etwas ist schiefgelaufen",
+    "Skúsiť znova": "Erneut versuchen"
 }
