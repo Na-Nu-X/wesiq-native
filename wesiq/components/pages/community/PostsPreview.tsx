@@ -1,3 +1,4 @@
+import { getActiveSubscriptionPlan } from "@/lib/subscription"
 import { useEffect, useState } from "react"
 import { View, StyleSheet, Platform } from "react-native"
 import { MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
@@ -178,7 +179,7 @@ export const PostsPreview = ({
 
     // Function For Render Post Preview
     const renderPostPreview = () => {
-        const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
+        const subscription_plan:"free"|"basic"|"premium" = getActiveSubscriptionPlan(logged_in_user) // Gets The Subscription Plan
 
         const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
         const MAX_VIDEO_SIZE:number = subscription_plan === "free" ? 25 * 1000 * 1000 : subscription_plan === "basic" ? 50 * 1000 * 1000 : 100 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan

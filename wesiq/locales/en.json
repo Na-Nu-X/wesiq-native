@@ -1068,5 +1068,11 @@
     "Napísať...": "Write...",
     "Zavolať...": "Call...",
     "Domov": "Home",
-    "Všetky práva vyhradené.": "All rights reserved."
+    "Všetky práva vyhradené.": "All rights reserved.",
+    "Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.": "Couldn't connect to the server. Check your internet connection.",
+    "Server neodpovedal včas. Skúste to znova.": "The server didn't respond in time. Please try again.",
+    "Požiadavka bola zrušená.": "The request was cancelled.",
+    "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Your session has expired. Please log in again.",
+    "Na serveri došlo k chybe. Skúste to znova.": "Something went wrong on the server. Please try again.",
+    "Server vrátil neočakávanú odpoveď.": "The server returned an unexpected response."
 }

@@ -2,7 +2,8 @@ import { SplashScreen, Stack, usePathname } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import "react-native-reanimated"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
-import "./i18n"
+import "@/lib/i18n"
+import { installMockApi, IS_MOCK_MODE } from "@/lib/api/mocks/install"
 import { DarkTheme, Theme, ThemeProvider } from "@react-navigation/native"
 import { useFonts } from "expo-font"
 import { Bungee_400Regular } from "@expo-google-fonts/bungee"
@@ -18,6 +19,8 @@ import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserCo
 import Purchases from "react-native-purchases"
 
 import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
+
+installMockApi() // Enables Mock Data In Development When EXPO_PUBLIC_USE_MOCKS=1
 
 SplashScreen.preventAutoHideAsync()
 
@@ -180,7 +183,7 @@ export default function RootLayout() {
         // Function For Initialize The Web Socket
         const initializeWebSocket = async ():Promise<void> => {
             const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-            if(!user_token) return // Stops The Web Socket Connection If The User Isn't Logged In
+            if(!user_token || IS_MOCK_MODE) return // Stops The Web Socket Connection If The User Isn't Logged In (Or In Mock Mode)
 
             const is_secure:boolean = DOMAIN.startsWith("https") // Stores The Information If The API Is Secure
             const clean_domain:string = DOMAIN.replace(/^https?:\/\//, "") // Gets The Clean Domain

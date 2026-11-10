@@ -621,8 +621,8 @@ export default function ArticleScreen() {
 
                     user:{
                         id: added_article_comment_data.comment.user.id,
-                        first_name: logged_in_user.first_name,
-                        last_name: logged_in_user.last_name,
+                        first_name: logged_in_user.first_name ?? "",
+                        last_name: logged_in_user.last_name ?? "",
                         username: added_article_comment_data.comment.user.username,
                         profile_picture_name: added_article_comment_data.comment.user.profile_picture_name,
                         subscription:added_article_comment_data.comment.user.subscription

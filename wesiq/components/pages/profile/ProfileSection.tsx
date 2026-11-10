@@ -1,3 +1,4 @@
+import { getActiveSubscriptionPlan } from "@/lib/subscription"
 import { useState } from "react"
 import { Pressable, Alert, StyleSheet, Image, View, Text, Dimensions } from "react-native"
 import {BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
@@ -199,7 +200,7 @@ export default function ProfileSection({
                         </View>
                     </View>
 
-                    {logged_in_user && logged_in_user.id === profile.id && !logged_in_user.subscription.is_active && logged_in_user.subscription.plan === "free" && (
+                    {logged_in_user && logged_in_user.id === profile.id && getActiveSubscriptionPlan(logged_in_user) === "free" && (
                         <Pressable 
                             onPress={() => router.push("/subscribe")}
 
@@ -325,10 +326,10 @@ export default function ProfileSection({
                             </View>
                         </View>
 
-                        {logged_in_user && logged_in_user.private_account && logged_in_user.follow_requests.length > 0 && logged_in_user.id === profile.id && (
+                        {logged_in_user && logged_in_user.private_account && (logged_in_user.follow_requests?.length ?? 0) > 0 && logged_in_user.id === profile.id && (
                             <>
                                 <View className="show_follow_requests" style={styles.show_follow_requests}>
-                                    <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests.length || 0}</Text>
+                                    <Text className="follow_requests_amount" style={styles.follow_requests_amount}>{logged_in_user.follow_requests?.length ?? 0}</Text>
 
                                     <Icon
                                         icon_name="bell"

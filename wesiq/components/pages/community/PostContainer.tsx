@@ -725,8 +725,8 @@ export const PostContainer = ({
 
                     user:{
                         id: added_post_comment_data.comment.user.id,
-                        first_name: logged_in_user.first_name,
-                        last_name: logged_in_user.last_name,
+                        first_name: logged_in_user.first_name ?? "",
+                        last_name: logged_in_user.last_name ?? "",
                         username: added_post_comment_data.comment.user.username,
                         profile_picture_name: added_post_comment_data.comment.user.profile_picture_name,
                         subscription:added_post_comment_data.comment.user.subscription

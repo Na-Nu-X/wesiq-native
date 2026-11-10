@@ -1,3 +1,4 @@
+import { getActiveSubscriptionPlan } from "@/lib/subscription"
 import { View, Text, StyleSheet, Pressable, Alert, Platform, FlatList, ActivityIndicator, Modal, Switch, Image , TextInput } from "react-native"
 import { useEffect, useMemo, useRef, useState } from "react"
 import ProfilePictureLink from "@/components/ProfilePictureLink"
@@ -409,7 +410,7 @@ export const ChatContainer = ({
             const MAX_FILES:number = 5 // Defines The Maximum Amount Of Files
             const current_max_files:number = MAX_FILES - selected_files.length // Gets The Current Maximum Amount Of Files
 
-            const subscription_plan:"free"|"basic"|"premium" = logged_in_user && logged_in_user.subscription && logged_in_user.subscription.is_active ? logged_in_user.subscription.plan : "free" // Gets The Subscription Plan
+            const subscription_plan:"free"|"basic"|"premium" = getActiveSubscriptionPlan(logged_in_user) // Gets The Subscription Plan
 
             const MAX_IMAGE_SIZE:number = subscription_plan === "free" ? 2 * 1000 * 1000 : 10 * 1000 * 1000 // 2MB For No Subscribers, 10MB For Subscribers
             const MAX_VIDEO_SIZE:number = 1000 * 1000 * 1000 // 25MB For No Subscribers, 50MB For Subscribers With Basic Plan, 100MB For Subscribers With Premium Plan

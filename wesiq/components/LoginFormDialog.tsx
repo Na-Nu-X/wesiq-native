@@ -15,47 +15,9 @@ import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { BasicResponse } from "./pages/community/Feed"
 
-export interface LoggedInUser {
-    id:number,
-    first_name:string,
-    last_name:string,
-    username:string,
-    role:"user"|"admin"|"developer"
-    profile_picture_name:string,
-    friend_code:string,
-    saved_posts:string[],
-    private_account:boolean,
+import type { LoggedInUser } from "@/types/models"
 
-    follow_requests:{
-        id:number,
-
-        from_user:{
-            id:number,
-            first_name:string,
-            last_name:string,
-            username:string,
-            profile_picture_name:string|null,
-            private_account:boolean,
-
-            subscription:{
-                plan:string,
-                is_active:boolean
-            }|null
-        },
-
-        status:string,
-        created_at:string
-    }[],
-
-    followers_amount:number,
-
-    subscription:{
-        is_active:boolean,
-        plan:"free"|"basic"|"premium"
-    },
-
-    data_saving_mode:boolean
-}
+export type { LoggedInUser } from "@/types/models"
 
 interface LoginFormDialogProps {
     visible:boolean,

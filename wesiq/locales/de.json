@@ -1068,5 +1068,11 @@
     "Napísať...": "Schreiben...",
     "Zavolať...": "Anruf...",
     "Domov": "Heim",
-    "Všetky práva vyhradené.": "Alle Rechte vorbehalten."
+    "Všetky práva vyhradené.": "Alle Rechte vorbehalten.",
+    "Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.": "Keine Verbindung zum Server. Bitte überprüfe deine Internetverbindung.",
+    "Server neodpovedal včas. Skúste to znova.": "Der Server hat nicht rechtzeitig geantwortet. Bitte versuche es erneut.",
+    "Požiadavka bola zrušená.": "Die Anfrage wurde abgebrochen.",
+    "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Deine Sitzung ist abgelaufen. Bitte melde dich erneut an.",
+    "Na serveri došlo k chybe. Skúste to znova.": "Auf dem Server ist ein Fehler aufgetreten. Bitte versuche es erneut.",
+    "Server vrátil neočakávanú odpoveď.": "Der Server hat eine unerwartete Antwort gesendet."
 }

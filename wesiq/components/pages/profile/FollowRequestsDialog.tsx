@@ -65,7 +65,7 @@ export const FollowRequestsDialog = ({
             }
 
             // Stores The New State Of Updated Logged In User Follow Requests
-            const updated_logged_in_user_follow_requests = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.id !== follow_request_id)
+            const updated_logged_in_user_follow_requests = (logged_in_user.follow_requests ?? []).filter(one_follow_request => one_follow_request.id !== follow_request_id)
         
             // Sets The Logged In User
             onLoggedInUserUpdate({
@@ -117,7 +117,7 @@ export const FollowRequestsDialog = ({
             }
 
             // Stores The New State Of Updated Logged In User Follow Requests
-            const updated_profile_followers = logged_in_user.follow_requests.filter(one_follow_request => one_follow_request.id !== follow_request_id)
+            const updated_profile_followers = (logged_in_user.follow_requests ?? []).filter(one_follow_request => one_follow_request.id !== follow_request_id)
         
             // Sets The Logged In User
             onLoggedInUserUpdate({
@@ -183,10 +183,10 @@ export const FollowRequestsDialog = ({
                                     />
                                 </View>
 
-                                <Text style={styles.heading}>{t("Žiadosti o sledovanie")} (<Text className="follow_requests_amount">{logged_in_user.follow_requests.length || 0}</Text>)</Text>
+                                <Text style={styles.heading}>{t("Žiadosti o sledovanie")} (<Text className="follow_requests_amount">{(logged_in_user.follow_requests ?? []).length || 0}</Text>)</Text>
                             </View>
 
-                            {logged_in_user.follow_requests.length === 0 && (
+                            {(logged_in_user.follow_requests ?? []).length === 0 && (
                                 <Text 
                                     className="no_follow_requests" 
 
@@ -199,7 +199,7 @@ export const FollowRequestsDialog = ({
                                 </Text>
                             )} 
 
-                            {logged_in_user.follow_requests.map((one_follow_request, index:number) => (
+                            {(logged_in_user.follow_requests ?? []).map((one_follow_request, index:number) => (
                                 <View key={index} className="one_follow_request" style={styles.one_follow_request}>
                                     <ProfilePictureLink 
                                         user_id={one_follow_request.from_user.id} 

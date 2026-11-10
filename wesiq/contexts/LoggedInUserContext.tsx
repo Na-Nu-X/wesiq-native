@@ -1,19 +1,28 @@
-import React, { createContext, useState, useEffect, useContext } from "react"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
+import { apiGet, onUnauthorized } from "@/lib/api/client"
+import { envelopeWith, isRecord } from "@/lib/api/guards"
+import { getStoredString } from "@/lib/storage"
 
-import type { LoggedInUserResponse, LoggedInUser } from "@/components/LoginFormDialog"
+import type { LoggedInUser } from "@/types/models"
+import type { ApiResult } from "@/types/api"
 
-const LoggedInUserContext = createContext<{ 
+interface LoggedInUserContextValue {
     logged_in_user:LoggedInUser|null,
     setLoggedInUser:React.Dispatch<React.SetStateAction<LoggedInUser|null>>,
     refreshLoggedInUser:() => Promise<LoggedInUser|null>,
     is_loading:boolean
-}>({
+}
+
+const LoggedInUserContext = createContext<LoggedInUserContextValue>({
     logged_in_user: null,
     setLoggedInUser: () => {},
     refreshLoggedInUser: async () => null,
     is_loading: true
+})
+
+// Checks The Fields The App Relies On
+const isLoggedInUserResponse = envelopeWith<{ logged_in_user:LoggedInUser }>({
+    logged_in_user: (value:unknown):value is LoggedInUser => isRecord(value) && typeof value.id === "number" && typeof value.username === "string",
 })
 
 export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) => {
@@ -21,52 +30,37 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
     const [is_loading, setIsLoading] = useState<boolean>(true) // Stores The Information If The Logged In User Is Loading
 
     // Function For Get The Logged In User
-    const getLoggedInUser = async () => {
-        setIsLoading(true) // Sets The Information That The Logged In User Is Loading
-
+    const getLoggedInUser = useCallback(async ():Promise<LoggedInUser|null> => {
         try {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const logged_in_user_response:Response = await fetch(`${API_URL}/get-logged-in-user/`, {
-                method: "GET",
+            const user_token:string|null = await getStoredString("user_token") // Gets The User Token
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-    
-            const logged_in_user_data:LoggedInUserResponse = await logged_in_user_response.json() // Gets The Logged In User Data
-
-            if(logged_in_user_response.status === 401) {
-                await AsyncStorage.removeItem("user_token") // Removes The User Token
+            if(!user_token) {
                 setLoggedInUser(null) // Removes The Logged In User
                 return null
             }
-    
-            if(logged_in_user_data.success) {
-                setLoggedInUser(logged_in_user_data.logged_in_user || null) // Sets The Logged In User
-                return logged_in_user_data.logged_in_user || null
-            } 
-            
-            else return null
-        } 
-        
-        catch {
-            return null
+
+            const response:ApiResult<{ success:boolean, message:string, logged_in_user:LoggedInUser }> = await apiGet("get-logged-in-user/", { guard: isLoggedInUserResponse }) // Sends The GET Request To The Server
+
+            if(!response.ok) {
+                if(response.error.kind === "unauthorized") setLoggedInUser(null) // Removes The Logged In User
+                return null
+            }
+
+            setLoggedInUser(response.data.logged_in_user) // Sets The Logged In User
+            return response.data.logged_in_user
         }
 
         finally {
             setIsLoading(false) // Sets The Information That The Logged In User Isn't Loading
         }
-    }
+    }, [])
 
-    // Initializes The Get Logged In User
+    // Initializes The Get Logged In User And Logout On Expired Token
     useEffect(() => {
         getLoggedInUser() // Gets The Logged In User
-    }, [])
+
+        return onUnauthorized(() => setLoggedInUser(null)) // Removes The Logged In User When Any Request Returns 401
+    }, [getLoggedInUser])
 
     return (
         <LoggedInUserContext.Provider value={{ logged_in_user, setLoggedInUser, refreshLoggedInUser: getLoggedInUser, is_loading }}>
@@ -75,6 +69,6 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
     )
 }
 
-export const useLoggedInUser = () => {
+export const useLoggedInUser = ():LoggedInUserContextValue => {
     return useContext(LoggedInUserContext)
 }

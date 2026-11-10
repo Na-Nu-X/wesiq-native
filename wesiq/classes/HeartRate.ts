@@ -4,7 +4,7 @@ import { NativeAppEventEmitter, EmitterSubscription, PermissionsAndroid, Platfor
 import AppleHealthKit, { HealthKitPermissions, HealthObserver } from "react-native-health"
 import { initialize, requestPermission, readRecords, ReadRecordsResult, RecordResult } from "react-native-health-connect"
 import { HeartRateSample } from "react-native-health-connect/lib/typescript/types/base.types"
-import i18n from "@/app/i18n"
+import i18n from "@/lib/i18n"
 
 export type HeartRateSourceType = "TEST"|"BLE"|"APPLE_HEALTH"|"HEALTH_CONNECT"
 

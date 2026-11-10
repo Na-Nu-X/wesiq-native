@@ -1068,5 +1068,11 @@
     "Napísať...": "Escrever...",
     "Zavolať...": "Chamar...",
     "Domov": "Lar",
-    "Všetky práva vyhradené.": "Todos os direitos reservados."
+    "Všetky práva vyhradené.": "Todos os direitos reservados.",
+    "Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.": "Não foi possível conectar ao servidor. Verifique sua conexão com a internet.",
+    "Server neodpovedal včas. Skúste to znova.": "O servidor não respondeu a tempo. Tente novamente.",
+    "Požiadavka bola zrušená.": "A solicitação foi cancelada.",
+    "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Sua sessão expirou. Faça login novamente.",
+    "Na serveri došlo k chybe. Skúste to znova.": "Ocorreu um erro no servidor. Tente novamente.",
+    "Server vrátil neočakávanú odpoveď.": "O servidor retornou uma resposta inesperada."
 }

@@ -1068,5 +1068,11 @@
     "Napísať...": "Napísať...",
     "Zavolať...": "Zavolať...",
     "Domov": "Domov",
-    "Všetky práva vyhradené.": "Všetky práva vyhradené."
+    "Všetky práva vyhradené.": "Všetky práva vyhradené.",
+    "Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.": "Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.",
+    "Server neodpovedal včas. Skúste to znova.": "Server neodpovedal včas. Skúste to znova.",
+    "Požiadavka bola zrušená.": "Požiadavka bola zrušená.",
+    "Vaše prihlásenie vypršalo. Prihláste sa znova.": "Vaše prihlásenie vypršalo. Prihláste sa znova.",
+    "Na serveri došlo k chybe. Skúste to znova.": "Na serveri došlo k chybe. Skúste to znova.",
+    "Server vrátil neočakávanú odpoveď.": "Server vrátil neočakávanú odpoveď."
 }
