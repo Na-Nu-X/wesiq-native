@@ -11,7 +11,9 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.tvoje.wesiq",
-      "associatedDomains": ["applinks:wesiq.com"]
+      "associatedDomains": [
+        "applinks:wesiq.com"
+      ]
     },
     "android": {
       "package": "com.tvoje.wesiq",
@@ -25,10 +27,12 @@
               "pathPrefix": "/password-reset"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
-      
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -55,9 +59,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#060b18",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#060b18"
           }
         }
       ],
@@ -98,11 +102,6 @@
         "projectId": "c007e0da-9003-4e39-953f-bbc4e5f2a6f6"
       }
     },
-    
-    "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ff0000"
-    }
+    "backgroundColor": "#060b18"
   }
 }

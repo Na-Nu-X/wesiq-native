@@ -1,10 +1,4 @@
-import { useEffect, useState } from "react"
-import * as SplashScreen from "expo-splash-screen"
-import { useFonts } from "expo-font"
-import { Bungee_400Regular } from "@expo-google-fonts/bungee"
-import { Poppins_400Regular } from "@expo-google-fonts/poppins"
-import { BalsamiqSans_400Regular } from "@expo-google-fonts/balsamiq-sans"
-import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
+import { useState } from "react"
 import { ImperativeRouter, Tabs, usePathname, useRouter } from "expo-router"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
@@ -13,8 +7,6 @@ import { Image, StyleSheet, View } from "react-native"
 import ProfilePicture from "@/components/ProfilePicture"
 import LoginFormDialog from "@/components/LoginFormDialog"
 import RegistrationFormDialog from "@/components/RegistrationFormDialog"
-
-SplashScreen.preventAutoHideAsync()
 
 export default function RootLayout() {
     const pathname:string = usePathname() // Gets The Pathname
@@ -25,26 +17,9 @@ export default function RootLayout() {
     const is_chat_page:boolean = pathname.startsWith("/chat") // Stores The Information If The User Is On The Chat Page
     const is_blog_page:boolean = pathname.startsWith("/blog") // Stores The Information If The User Is On The Blog Page
 
-    // Stores The Fonts
-    const [loaded, error] = useFonts({
-        Bungee_400Regular,
-        Poppins_400Regular,
-        BalsamiqSans_400Regular,
-        Orbitron_400Regular,
-    })
-
     const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
     const router:ImperativeRouter = useRouter() // Gets The Router
     const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
-
-    // Initializes The Hide Of The Splash Screen
-    useEffect(() => {
-        if(loaded || error) SplashScreen.hideAsync() // Hides The Splash Screen
-    }, [loaded, error])
-
-    if(!loaded && !error) {
-        return null
-    }
 
     return (
         <>

@@ -2,12 +2,16 @@ import { SplashScreen, Stack, usePathname } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import "react-native-reanimated"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { useColorScheme } from "@/hooks/use-color-scheme"
 import "./i18n"
+import { DarkTheme, Theme, ThemeProvider } from "@react-navigation/native"
+import { useFonts } from "expo-font"
+import { Bungee_400Regular } from "@expo-google-fonts/bungee"
+import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
+import { colors } from "@/theme"
 import { useEffect, useRef } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DOMAIN } from "@/constants/general"
-import { ColorSchemeName, Platform } from "react-native"
+import { Platform, StyleSheet } from "react-native"
 import * as Notifications from "expo-notifications"
 import { useTranslation } from "react-i18next"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
@@ -17,35 +21,65 @@ import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
 
 SplashScreen.preventAutoHideAsync()
 
+// Navigation Theme (Dark Only) So Native Containers, Headers And Transitions Never Flash White
+const NAVIGATION_THEME:Theme = {
+    ...DarkTheme,
+
+    colors: {
+        ...DarkTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.background_deep,
+        text: colors.text,
+        border: colors.divider,
+        notification: colors.danger,
+    },
+}
+
 // Function For Render The App Content
 function AppContent() {
-    const color_scheme:ColorSchemeName|null = useColorScheme() // Gets The Color Scheme
     const { is_loading } = useLoggedInUser() // Gets The Information If The Logged In User Is Loading
+
+    // Loads The Brand Fonts (UI Text Uses The System Font)
+    const [are_fonts_loaded, fonts_error] = useFonts({
+        Bungee_400Regular,
+        Orbitron_400Regular,
+    })
+
+    const is_ready:boolean = !is_loading && (are_fonts_loaded || fonts_error !== null) // Stores The Information If The App Is Ready
 
     // Initializes The Hide Of The Splash Screen
     useEffect(() => {
-        if(!is_loading) SplashScreen.hideAsync() // Hides The Splash Screen
-    }, [is_loading])
+        if(is_ready) SplashScreen.hideAsync() // Hides The Splash Screen
+    }, [is_ready])
 
-    if(is_loading) return null
+    if(!is_ready) return null
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack
-                screenOptions={{
-                    contentStyle: {
-                        backgroundColor: color_scheme === "dark" ? "#000000" : "#ffffff",
-                    },
-                }}
-            >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
-            </Stack>
-            
-            <StatusBar style={color_scheme === "dark" ? "light" : "dark"} />
+        <GestureHandlerRootView style={styles.root}>
+            <ThemeProvider value={NAVIGATION_THEME}>
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.background },
+                    }}
+                >
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="(auth)/password-reset" />
+                </Stack>
+
+                <StatusBar style="light" />
+            </ThemeProvider>
         </GestureHandlerRootView>
     )
 }
+
+const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+})
 
 export default function RootLayout() {
     const { t } = useTranslation() // Initializes The Translations

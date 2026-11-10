@@ -11,10 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@expo-google-fonts/balsamiq-sans": "^0.4.1",
     "@expo-google-fonts/bungee": "^0.4.1",
     "@expo-google-fonts/orbitron": "^0.4.2",
-    "@expo-google-fonts/poppins": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
     "@flyerhq/react-native-link-preview": "^1.6.0",
     "@gorhom/bottom-sheet": "^5.2.14",
