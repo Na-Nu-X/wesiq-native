@@ -1,5 +1,5 @@
 import { ComponentRef, forwardRef, useState } from "react"
-import { StyleProp, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from "react-native"
+import { Platform, StyleProp, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from "react-native"
 import { useTranslation } from "react-i18next"
 import { colors, layout, radii, spacing, typography } from "@/theme"
 import Text from "./Text"
@@ -96,7 +96,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                         onBlur?.(event)
                     }}
 
-                    style={[styles.input, multiline ? styles.input_multiline : null]}
+                    style={[styles.input, multiline ? styles.input_multiline : null, Platform.OS === "web" ? styles.input_web : null]}
                     {...props}
                 />
 
@@ -175,6 +175,10 @@ const styles = StyleSheet.create({
         color: colors.text,
         ...typography.body,
         lineHeight: undefined, // A Fixed Line Height Misaligns The Caret On iOS
+    },
+
+    input_web: {
+        outlineWidth: 0, // The Field Border Already Shows Focus
     },
 
     input_multiline: {

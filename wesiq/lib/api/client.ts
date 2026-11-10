@@ -36,6 +36,11 @@ export const onUnauthorized = (listener:UnauthorizedListener):(() => void) => {
     }
 }
 
+// Function For Notify The Listeners (Also Used By The Upload Helper)
+export const notifyUnauthorized = ():void => {
+    unauthorized_listeners.forEach((listener:UnauthorizedListener) => listener())
+}
+
 // ---------- Helpers ----------
 
 // Function For Build The Full URL With Query Parameters
@@ -153,7 +158,7 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
     if(response.status === 401) {
         if(is_authenticated) {
             await removeStoredValue("user_token") // Removes The Invalid Token
-            unauthorized_listeners.forEach((listener:UnauthorizedListener) => listener()) // Notifies The Listeners
+            notifyUnauthorized() // Notifies The Listeners
         }
 
         return createError<T>("unauthorized", 401, getMessage(json))

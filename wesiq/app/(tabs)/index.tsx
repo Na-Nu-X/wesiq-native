@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react"
 import { StyleSheet, ScrollView, Alert } from "react-native"
 import BackgroundContainer from "@/components/BackgroundContainer"
-import UploadPostFormDialog from "@/components/pages/community/UploadPostFormDialog"
+import UploadPostSheet from "@/components/features/upload-post/UploadPostSheet"
+import { Header, IconButton, Text } from "@/components/ui"
 import SearchUsers from "@/components/pages/community/SearchUsers"
 import Feed from "@/components/pages/community/Feed"
 import LoginFormDialog from "@/components/LoginFormDialog"
@@ -12,8 +13,9 @@ import { API_URL } from "@/constants/general"
 import Banner from "@/components/Banner"
 import { useTranslation } from "react-i18next"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { colors, fonts } from "@/theme"
 
-import type { UploadProgressResponse, CompressTask } from "@/components/pages/community/UploadPostFormDialog"
+import type { UploadProgressResponse, CompressTask } from "@/components/features/upload-post/UploadPostSheet"
 import type { LoadedProcessingPostsResponse, ProcessingPost } from "@/components/pages/community/Feed"
 
 export interface TrackedTask {
@@ -254,6 +256,20 @@ export default function HomeScreen() {
                     setIsUploadPostFormDialogOpen={setIsUploadPostFormDialogOpen} 
                 /> */}
 
+                <Header
+                    left={<Text style={styles.wordmark} accessibilityRole="header">Wesiq</Text>}
+
+                    right={logged_in_user ? (
+                        <IconButton
+                            icon="plus"
+                            accessibility_label={t("Nový príspevok")}
+                            onPress={() => setIsUploadPostFormDialogOpen(true)}
+                            variant="solid"
+                            size={38}
+                        />
+                    ) : undefined}
+                />
+
                 <ScrollView 
                     className="content" 
                     style={styles.content} 
@@ -275,10 +291,10 @@ export default function HomeScreen() {
                         onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
                     /> */}
 
-                    <UploadPostFormDialog 
+                    <UploadPostSheet
                         visible={is_upload_post_form_dialog_open}
                         onClose={() => setIsUploadPostFormDialogOpen(false)}
-                        onCompressTasksLoad={(compress_tasks:CompressTask[]) => storeCompressTasks(compress_tasks)}
+                        onUploaded={(compress_tasks:CompressTask[]) => storeCompressTasks(compress_tasks)}
                     />
 
                     {/* <SearchUsers /> */}
@@ -295,6 +311,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  wordmark: {
+    fontFamily: fonts.brand,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.text,
+  },
+
   safe_area: {
     flex: 1,
   },

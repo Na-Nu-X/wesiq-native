@@ -117,8 +117,8 @@ export default function Sheet({
 
     const content:ReactNode = is_scrollable ? (
         <ScrollView
-            style={styles.scroll}
-            contentContainerStyle={[styles.scroll_content, !footer ? { paddingBottom: spacing.xl + (is_wide ? 0 : insets.bottom) } : null]}
+            style={size === "large" ? styles.flex : styles.scroll} // Large Sheets Keep The Footer Pinned To The Bottom
+            contentContainerStyle={[styles.scroll_content, size === "large" ? styles.scroll_content_large : null,!footer ? { paddingBottom: spacing.xl + (is_wide ? 0 : insets.bottom) } : null]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -276,6 +276,10 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.xl,
         paddingBottom: spacing.xl,
         gap: spacing.lg,
+    },
+
+    scroll_content_large: {
+        flexGrow: 1,
     },
 
     static_content: {

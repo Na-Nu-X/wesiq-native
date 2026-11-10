@@ -13,6 +13,7 @@ export { default as Sheet } from "./Sheet"
 export { default as Stepper } from "./Stepper"
 export { default as Text } from "./Text"
 export { default as TextField } from "./TextField"
+export { default as ToggleRow } from "./ToggleRow"
 export { default as UserRow, getDisplayName } from "./UserRow"
 export { Divider, EmptyState, ErrorState, Skeleton, UserRowSkeleton } from "./Feedback"
 
