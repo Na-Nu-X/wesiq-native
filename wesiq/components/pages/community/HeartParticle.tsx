@@ -1,6 +1,6 @@
 import { RED_COLOR } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Animated, StyleSheet, View } from "react-native"
 
 interface HeartParticleProps {
@@ -13,7 +13,7 @@ interface HeartParticleProps {
 const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Animated View
 
 export const HeartParticle = ({ x, y, is_regular, onComplete }:HeartParticleProps) => {
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     useEffect(() => {
         Animated.timing(animation_value, {

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useRef, useState } from "react"
 import { Animated, StyleProp, TextStyle } from "react-native"
 
 interface AnimatedProgressBarLabelProps {
@@ -7,7 +7,7 @@ interface AnimatedProgressBarLabelProps {
 }
 
 export const AnimatedProgressBarLabel = ({ text, style }:AnimatedProgressBarLabelProps) => {
-    const animation = useRef(new Animated.Value(0)).current // Stores The Animation
+    const animation = useState(() => new Animated.Value(0))[0] // Stores The Animation
 
     // Initializes The Animation
     useEffect(() => {

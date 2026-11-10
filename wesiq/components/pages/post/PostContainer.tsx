@@ -21,9 +21,8 @@ import { useTranslation } from "react-i18next"
 import { ImperativeRouter, useRouter } from "expo-router"
 import { FontAwesome6 } from "@expo/vector-icons"
 
-import type { Post, Media, Comment } from "../community/Feed"
+import type { Post, Media, Comment , BasicResponse } from "../community/Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
-import type { BasicResponse } from "../community/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 import type { loadedPostCommentsResponse, AddedPostCommentResponse, Particle } from "../community/PostContainer"
 

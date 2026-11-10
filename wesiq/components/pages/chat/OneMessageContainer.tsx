@@ -16,9 +16,9 @@ import ProfilePicture from "@/components/ProfilePicture"
 import { getTimeAgo } from "@/utils/time"
 import { ImperativeRouter, useRouter } from "expo-router"
 import { BlurView } from "expo-blur"
-import { JSX, useRef } from "react"
-import Swipeable, { SwipeDirection } from "react-native-gesture-handler/ReanimatedSwipeable"
-import Reanimated, { interpolate, useAnimatedStyle } from "react-native-reanimated"
+import { useRef } from "react"
+import Swipeable, { SwipeDirection, SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable"
+import Reanimated, { interpolate, SharedValue, useAnimatedStyle } from "react-native-reanimated"
 
 import type { Chat, MessageReaction, Attachment } from "@/app/(tabs)/chat/[username]"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
@@ -69,7 +69,7 @@ export const OneMessageContainer = ({
 
     const router:ImperativeRouter = useRouter() // Gets The Router
 
-    const swipeable = useRef<any>(null) // Stores The Swipeable Reference
+    const swipeable = useRef<SwipeableMethods>(null) // Stores The Swipeable Reference
 
     // Function For Download The File
     const downloadFile = async (file_url:string, filename:string):Promise<void> => {
@@ -115,44 +115,6 @@ export const OneMessageContainer = ({
     const handleSwipeRight = (message:Chat):void => {
         onHandleEditMessage(message) // Handles The Message Edit
         swipeable.current?.close() // Stops The Swipe
-    }
-
-    // Function For Render The Left Actions
-    const renderLeftActions = (progress:any):JSX.Element => {
-        // Creates The Animated Transform
-        const animated_transform = useAnimatedStyle(() => {
-            const translateX:number = interpolate(
-                progress.value,
-                [0, 1],
-                [-80, 0],
-                "clamp"
-            )
-
-            return {
-                transform: [{ translateX }]
-            }
-        })
-
-        return (
-            <Reanimated.View 
-                style={[
-                    { 
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 80,
-                        backgroundColor: "transparent",
-                    }, 
-                    
-                    animated_transform,
-                ]}
-            >
-                <FontAwesome6
-                    name="pen"
-                    size={20}
-                    color={BLUE_COLOR}
-                />
-            </Reanimated.View>
-        )
     }
 
     // Function For Render The One Message Container
@@ -531,7 +493,7 @@ export const OneMessageContainer = ({
     return (
         <Swipeable
             ref={swipeable}
-            renderLeftActions={renderLeftActions}
+            renderLeftActions={(progress:SharedValue<number>) => <SwipeEditAction progress={progress} />}
 
             onSwipeableOpen={(direction:SwipeDirection) => {
                 if(direction === "right") handleSwipeRight(one_chat)
@@ -822,5 +784,32 @@ const styles = StyleSheet.create({
         lineHeight: 1.5,
         fontSize: 12,
         color: transparentize(SECONDARY_COLOR, 0.08),
+    },
+})
+
+// Function For Render The Swipe Edit Action (Left Action Of The Swipeable Message)
+function SwipeEditAction({ progress }:{ progress:SharedValue<number> }) {
+    // Creates The Animated Transform
+    const animated_transform = useAnimatedStyle(() => ({
+        transform: [{ translateX: interpolate(progress.value, [0, 1], [-80, 0], "clamp") }]
+    }))
+
+    return (
+        <Reanimated.View style={[swipe_edit_action_styles.container, animated_transform]}>
+            <FontAwesome6
+                name="pen"
+                size={20}
+                color={BLUE_COLOR}
+            />
+        </Reanimated.View>
+    )
+}
+
+const swipe_edit_action_styles = StyleSheet.create({
+    container: {
+        alignItems: "center",
+        justifyContent: "center",
+        width: 80,
+        backgroundColor: "transparent",
     },
 })

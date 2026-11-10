@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Animated } from "react-native"
 import { RED_COLOR } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
@@ -10,7 +10,7 @@ interface AnimatedHeartProps {
 }
 
 export const AnimatedHeart = ({ bpm }:AnimatedHeartProps) => {
-    const animated_scale:Animated.Value = useRef(new Animated.Value(1)).current // Animates The Scale
+    const animated_scale:Animated.Value = useState(() => new Animated.Value(1))[0] // Animates The Scale
 
     // Initializes The Heart Beat Animation
     useEffect(() => {

@@ -91,7 +91,7 @@ export default function LoginFormDialog({ visible, onChangeActiveForm, onClose, 
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
     const [form_report, setFormReport] = useState<string>("") // Stores The Form Report
 
-    const spin_animation_value:Animated.Value = useRef(new Animated.Value(0)).current // Stores The Spin Animation Value
+    const spin_animation_value:Animated.Value = useState(() => new Animated.Value(0))[0] // Stores The Spin Animation Value
 
     // Initializes The Auto User Login
     useEffect(() => {

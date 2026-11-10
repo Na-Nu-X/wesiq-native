@@ -98,7 +98,7 @@ export default function EditTrainingPlan({
         if(typeof selected_day_or_training_plan_key === "number") onSetActiveTrainingPlanDay(selected_day_or_training_plan_key) // Sets The Active Training Plan Day
     }, [selected_day_or_training_plan_key])
     
-    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+    const translateX = useState(() => new Animated.Value(0))[0] // Translate X Animation
 
     // Orders Exercises From All Training Plans By Their Order Value
     const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {

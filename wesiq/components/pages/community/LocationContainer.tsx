@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { View, StyleSheet, Text, TextInput, Pressable, Platform, Alert, ActivityIndicator, ScrollView } from "react-native"
 import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -9,7 +9,7 @@ interface NominatimPlace {
     display_name:string,
     lat:string,
     lon:string,
-    [key:string]:any
+    [key:string]:unknown
 }
 
 interface LocationContainerProps {
@@ -25,11 +25,18 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
     const [location_results, setLocationResults] = useState<NominatimPlace[]>([]) // Stores The Location Results
     const [is_location_valid, setIsLocationValid] = useState<boolean>(false) // Stores The Information If The Location Is Valid
     const [is_location_loading, setIsLocationLoading] = useState<boolean>(false) // Stores The Information If The Location Is Loading
-    let debounce_timeout:number // Debounce Timeout Between API Requests
+    const debounce_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Debounce Timeout Between API Requests
+
+    // Initializes The Clear Of The Debounce Timeout On Unmount
+    useEffect(() => {
+        return () => {
+            if(debounce_timeout.current) clearTimeout(debounce_timeout.current) // Clears The Debounce Timeout
+        }
+    }, [])
     
     // Function For Handle Search Location
     const handleSearchLocation = (searched_text:string):void => {
-        clearTimeout(debounce_timeout) // Clears The Debounce Timeout
+        if(debounce_timeout.current) clearTimeout(debounce_timeout.current) // Clears The Debounce Timeout
 
         onLocationUpdate(searched_text) // Sets The Location
 
@@ -40,7 +47,7 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
         }
 
         // Gets Location After 1000 MS Delay (Because of The Nominatim Usage Policy - 1 Request per Second)
-        debounce_timeout = window.setTimeout(function():void {
+        debounce_timeout.current = setTimeout(():void => {
             getLocation(searched_text)
         }, 1000)
     }
@@ -190,6 +197,7 @@ export const LocationContainer = ({ onLocationUpdate, location, onLatitudeUpdate
                 <View className="location_results" style={styles.location_results}>
                     {location_results.map((one_place:NominatimPlace) => (
                         <Pressable 
+                            key={`${one_place.lat}_${one_place.lon}_${one_place.display_name}`}
                             className="place"
                             onPress={() => addLocation(one_place.display_name, Number(one_place.lat), Number(one_place.lon))}
                             style={styles.place}

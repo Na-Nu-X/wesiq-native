@@ -23,7 +23,7 @@ type ArticleItemProps = {
 export default function ArticleItem({ one_article }:ArticleItemProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const slide_animation = useRef(new Animated.Value(-100)).current // Creates The Slide Animation
+    const slide_animation = useState(() => new Animated.Value(-100))[0] // Creates The Slide Animation
 
     const router:ImperativeRouter = useRouter() // Gets The Router
 

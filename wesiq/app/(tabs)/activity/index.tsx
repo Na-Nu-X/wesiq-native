@@ -13,8 +13,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
-import type { OfficialTask } from "@/components/pages/activity/TasksSection"
-import type { CustomTask } from "@/components/pages/activity/TasksSection"
+import type { OfficialTask , CustomTask } from "@/components/pages/activity/TasksSection"
 
 interface CompletedOfficialTaskResponse {
     success: boolean,

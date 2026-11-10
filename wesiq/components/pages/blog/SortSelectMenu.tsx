@@ -2,7 +2,7 @@ import Icon from "@/components/Icon"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { useState, useRef } from "react"
+import { ComponentRef, useState, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native"
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
@@ -19,7 +19,7 @@ export const SortSelectMenu = ({ onSelectedSortOptionUpdate, selected_sort_optio
     const [is_sort_select_menu_open, setIsSortSelectMenuOpen] = useState<boolean>(false) // Stores The Information If The Sort Select Menu Is Open
     
     const [button_layout, setButtonLayout] = useState<{ x:number, y:number, width:number, height:number }|null>(null) // Stores The Button Layout
-    const select = useRef<View>(null) // Stores The Select Reference
+    const select = useRef<ComponentRef<typeof View>>(null) // Stores The Select Reference
 
     // Function For Toggle Show Sort Select Menu
     const toggleShowSortSelectMenu = ():void => {

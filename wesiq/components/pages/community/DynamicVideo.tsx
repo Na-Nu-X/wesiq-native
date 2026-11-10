@@ -15,8 +15,7 @@ import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "
 import { useEventListener } from "expo"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { Post, Media } from "@/components/pages/community/Feed"
+import type { BasicResponse , Post, Media } from "@/components/pages/community/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 
 interface DynamicVideoProps {

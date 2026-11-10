@@ -20,7 +20,7 @@ export default function SelectProfilePicture({
     const { t } = useTranslation() // Initializes The Translations
 
     const [is_pressed, setIsPressed] = useState(false) // Stores The Information If The Button Is Pressed
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
 

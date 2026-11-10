@@ -1,4 +1,4 @@
-import { useMemo, useEffect, JSX } from "react"
+import { useState, useEffect, JSX } from "react"
 import { StyleSheet, Dimensions } from "react-native"
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, SharedValue } from "react-native-reanimated"
 import { generateNumberRange } from "@/utils/generateNumberRange"
@@ -16,7 +16,7 @@ const FloatingCircle = () => {
         target_x:number,
         target_y:number,
         duration:number
-    } = useMemo(() => {
+    } = useState(() => {
         const radius:number = generateNumberRange(5, 10) // Sets The Random Radius
 
         return {
@@ -28,7 +28,7 @@ const FloatingCircle = () => {
             target_y: generateNumberRange(0, SCREEN_HEIGHT - radius * 2), // Sets The Random Target Y Position
             duration: generateNumberRange(10000, 25000), // Sets The Random Duration
         }
-    }, [])
+    })[0]
 
     const translate_x:SharedValue<number> = useSharedValue(initial_values.start_x) // Gets The Translate X
     const translate_y:SharedValue<number> = useSharedValue(initial_values.start_y) // Gets The Translate Y

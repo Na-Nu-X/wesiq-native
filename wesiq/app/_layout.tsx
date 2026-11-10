@@ -40,12 +40,6 @@ function AppContent() {
             >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
-                <Stack.Screen name="subscribe" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/new" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/edit" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/copy" options={{ headerShown: false }} />
-                
-                <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
             </Stack>
             
             <StatusBar style={color_scheme === "dark" ? "light" : "dark"} />

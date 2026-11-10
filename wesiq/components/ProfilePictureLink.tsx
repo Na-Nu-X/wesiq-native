@@ -27,7 +27,7 @@ export default function ProfilePictureLink({
 }:ProfilePictureLinkProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const router:ImperativeRouter = useRouter() // Gets The Router
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
     const [is_error, setIsError] = useState<boolean>(false) // Stores The Information That There Is An Error
 
     // Initializes Reset Of The Information That There Is An Error

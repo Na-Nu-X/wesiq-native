@@ -5,8 +5,7 @@ import { useTranslation } from "react-i18next"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { MAIN_WIDTH } from "@/constants/dimensions"
 
-import type { ChatData } from "@/app/(tabs)/chat"
-import type { Sender } from "@/app/(tabs)/chat"
+import type { ChatData , Sender } from "@/app/(tabs)/chat"
 
 export interface Chat {
     sender:Sender,

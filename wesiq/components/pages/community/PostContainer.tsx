@@ -24,11 +24,9 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { FontAwesome6 } from "@expo/vector-icons"
 import { SharePostDialog } from "./SharePostDialog"
 
-import type { Post, Media, Comment, Following } from "./Feed"
+import type { Post, Media, Comment, Following , BasicResponse , ProcessingPost } from "./Feed"
 import type { LoggedInUser } from "../../LoginFormDialog"
-import type { BasicResponse } from "./Feed"
 import type { vtt } from "../activity/CustomVideoControls"
-import type { ProcessingPost } from "./Feed"
 import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 export interface loadedPostCommentsResponse {

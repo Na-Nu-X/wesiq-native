@@ -18,9 +18,8 @@ import ProfilePicture from "@/components/ProfilePicture"
 import { BlurView } from "expo-blur"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile , BioLink } from "@/app/(tabs)/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { BioLink } from "@/app/(tabs)/profile/[username]"
 
 type ProfileSectionProps = {
     logged_in_user:LoggedInUser|null,

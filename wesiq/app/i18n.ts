@@ -1,8 +1,7 @@
 import i18n from "i18next"
-import { initReactI18next } from "react-i18next"
+import { initReactI18next , useTranslation } from "react-i18next"
 import * as Localization from "expo-localization"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { useTranslation } from "react-i18next"
 
 import en_translations from "./locales/en.json"
 import sk_translations from "./locales/sk.json"

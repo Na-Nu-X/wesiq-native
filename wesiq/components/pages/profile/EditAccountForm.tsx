@@ -1,12 +1,11 @@
 import { useState } from "react"
-import { Pressable, Alert, StyleSheet, Image, View, Text, Keyboard, Platform } from "react-native"
+import { Pressable, Alert, StyleSheet, Image, View, Text, Keyboard, Platform , TextInput } from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import {BLUE_COLOR, DARK_BLUE_COLOR, GREEN_COLOR, LIGHT_BLUE_COLOR, RED_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { useTranslation } from "react-i18next"
 import SelectProfilePicture from "./SelectProfilePicture"
 import Icon from "@/components/Icon"
-import { TextInput } from "react-native"
 import EmojiPicker from "rn-emoji-keyboard"
 import { BIG_BORDER_RADIUS, MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -15,9 +14,8 @@ import { AsYouType, isValidPhoneNumber } from "libphonenumber-js"
 import { BlurView } from "expo-blur"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile , BioLink } from "@/app/(tabs)/profile/[username]"
 import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { BioLink } from "@/app/(tabs)/profile/[username]"
 
 type EditAccountFormProps = {
     logged_in_user:LoggedInUser,

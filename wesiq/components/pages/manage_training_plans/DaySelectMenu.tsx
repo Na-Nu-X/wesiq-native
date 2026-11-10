@@ -2,7 +2,7 @@ import Icon from "@/components/Icon"
 import { MEDIUM_BORDER_RADIUS, SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
-import { useState, useRef } from "react"
+import { ComponentRef, useState, useRef } from "react"
 import { View, Text, Pressable, StyleSheet, Modal, TouchableWithoutFeedback } from "react-native"
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
@@ -21,7 +21,7 @@ export const DaySelectMenu = ({ used_days, onDayUpdate, day }:DaySelectMenuProps
     const [is_day_select_menu_open, setIsDaySelectMenuOpen] = useState<boolean>(false) // Stores The Information If The Day Select Menu Is Open
     
     const [button_layout, setButtonLayout] = useState<{ x:number, y:number, width:number, height:number }|null>(null) // Stores The Button Layout
-    const select = useRef<View>(null) // Stores The Select Reference
+    const select = useRef<ComponentRef<typeof View>>(null) // Stores The Select Reference
 
     // Function For Toggle Show Day Select Menu
     const toggleShowDaySelectMenu = ():void => {

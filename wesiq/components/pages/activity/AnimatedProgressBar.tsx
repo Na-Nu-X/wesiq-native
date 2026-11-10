@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Animated, StyleSheet } from "react-native"
 
 interface AnimatedProgressBarProps {
@@ -9,7 +9,7 @@ interface AnimatedProgressBarProps {
 }
 
 export const AnimatedProgressBar = ({ is_active, is_completed, percentage, red }:AnimatedProgressBarProps) => {
-    const animated_progress = useRef(new Animated.Value(0)).current // Animates The Progress
+    const animated_progress = useState(() => new Animated.Value(0))[0] // Animates The Progress
 
     // Initializes The Animation
     useEffect(() => {

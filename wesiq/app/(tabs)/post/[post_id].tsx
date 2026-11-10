@@ -17,8 +17,7 @@ import { SharePostDialog } from "@/components/pages/community/SharePostDialog"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse, Post, Comment } from "@/components/pages/community/Feed"
-import type { LoadedFriendsResponse, Following } from "@/components/pages/community/Feed"
+import type { BasicResponse, Post, Comment , LoadedFriendsResponse, Following } from "@/components/pages/community/Feed"
 import type { ChatSocketResponse, Post as ChatPost } from "@/app/(tabs)/chat/[username]"
 
 interface LoadedPostResponse {

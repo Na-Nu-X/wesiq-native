@@ -16,7 +16,7 @@ const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates T
 
 export default function IconButton({ icon_name, onPress, size = 20, is_regular = false }:IconButtonProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     // Function For Handle Press In
     const handlePressIn = () => {

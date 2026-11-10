@@ -10,8 +10,8 @@ export const CompletedTaskMessage = () => {
 
     const [gained_xp_text, setGainedXpText] = useState<string|null>(null) // Stores The Gained XP Text
 
-    const translateY = useRef(new Animated.Value(0)).current // Animates The Translate Y Movement
-    const fade = useRef(new Animated.Value(0)).current // Animates The Fade
+    const translateY = useState(() => new Animated.Value(0))[0] // Animates The Translate Y Movement
+    const fade = useState(() => new Animated.Value(0))[0] // Animates The Fade
 
     const success_sound:AudioPlayer = useAudioPlayer(require("@/assets/sounds/success.mp3")) // Gets The Sound
 

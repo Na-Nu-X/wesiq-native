@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { View, Text, StyleSheet, Animated } from "react-native"
 import { BLUE_COLOR, GREEN_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
@@ -16,7 +16,7 @@ const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Anima
 export const AnimatedOfficialTask = ({ official_task }:AnimatedOfficialTaskProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
-    const animation_value = useRef(new Animated.Value(official_task.progress_percentage || 0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(official_task.progress_percentage || 0))[0] // Stores The Animation Value
 
     useEffect(() => {
         Animated.timing(animation_value, {

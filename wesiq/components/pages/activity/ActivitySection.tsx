@@ -177,7 +177,7 @@ export default function ActivitySection({
 
     const { width: SCREEN_WIDTH } = Dimensions.get("window") // Gets The Screen Width
     
-    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+    const translateX = useState(() => new Animated.Value(0))[0] // Translate X Animation
 
     // Orders Exercises From All Training Plans By Their Order Value
     const ordered_exercises:TrainingPlanExercise[] = useMemo(() => {
@@ -311,7 +311,7 @@ export default function ActivitySection({
     }, [])
 
     // Function For Use The XP Boost
-    const useXpBoost = async ():Promise<void> => {
+    const applyXpBoost = async ():Promise<void> => {
         try {
             if(!logged_in_user) {
                 Alert.alert(t("Chyba"), t("Navýšenie XP nie je možné uplatniť bez prihlásenia.")) // Shows The Alert
@@ -359,7 +359,7 @@ export default function ActivitySection({
 
     // Initializes The Use Of The Available XP Boost
     useEffect(() => {
-        if(is_activity_started && is_xp_boost_available) useXpBoost() // Uses The XP Boost
+        if(is_activity_started && is_xp_boost_available) applyXpBoost() // Uses The XP Boost
     }, [is_activity_started])
 
     // Initializes The XP Boost Timer

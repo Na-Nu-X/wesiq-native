@@ -1,7 +1,7 @@
 
 import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native"
 import { useTranslation } from "react-i18next"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { LinearGradient } from "expo-linear-gradient"
@@ -23,8 +23,8 @@ export default function AnimatedSubscriptionButton({
 }:AnimatedSubscriptionButtonProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const spin_animation_value:Animated.Value = useRef(new Animated.Value(0)).current // Stores The Spin Animation Value
-    const press_animation_value:Animated.Value = useRef(new Animated.Value(0)).current // Stores The Press Animation Value
+    const spin_animation_value:Animated.Value = useState(() => new Animated.Value(0))[0] // Stores The Spin Animation Value
+    const press_animation_value:Animated.Value = useState(() => new Animated.Value(0))[0] // Stores The Press Animation Value
 
     // Initializes The Spin Animation
     useEffect(() => {

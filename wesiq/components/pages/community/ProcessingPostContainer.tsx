@@ -17,11 +17,9 @@ import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@go
 import { FontAwesome6 } from "@expo/vector-icons"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
-import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { ProcessingPost, ProcessingMedia } from "@/components/pages/community/Feed"
+import type { BasicResponse , ProcessingPost, ProcessingMedia , Post } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 import type { TrackedTask } from "@/app/(tabs)"
-import type { Post } from "@/components/pages/community/Feed"
 
 interface ProcessingPostContainerProps {
     processing_post:ProcessingPost,

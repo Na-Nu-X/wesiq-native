@@ -1,7 +1,7 @@
 import { View, Text, Animated, StyleSheet, Easing, Platform, TextInput, Pressable, Keyboard, Alert, TextInputKeyPressEvent } from "react-native"
 import { BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import Svg, { Circle } from "react-native-svg"
-import { RefObject, useEffect, useRef, useState } from "react"
+import { ComponentRef, RefObject, useEffect, useRef, useState } from "react"
 import { getFormattedTime } from "@/utils/time"
 import Back from "@/components/Back"
 import Icon from "@/components/Icon"
@@ -42,7 +42,7 @@ export default function PasswordResetForm({
 
     const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The Remaining Time
 
-    const animated_time = useRef(new Animated.Value(time)).current // Animates The Time
+    const animated_time = useState(() => new Animated.Value(time))[0] // Animates The Time
     const last_time = useRef<number>(time) // Stores The Last Time
 
     const RADIUS:number = 40 // Defines The Radius
@@ -104,7 +104,7 @@ export default function PasswordResetForm({
 
     const break_timer_text_color:string = remaining_time <= 10 ? "#df3535" : SECONDARY_COLOR // Gets The Break Timer Text Color
 
-    const otp_inputs:RefObject<TextInput[]> = useRef<TextInput[]>([]) // Stores The OTP Inputs References
+    const otp_inputs:RefObject<ComponentRef<typeof TextInput>[]> = useRef<ComponentRef<typeof TextInput>[]>([]) // Stores The OTP Inputs References
 
     // Function For Handle The OTP Input Change
     const handleOtpInputChange = (text:string, index:number):void => {
@@ -306,7 +306,7 @@ export default function PasswordResetForm({
                         <TextInput
                             key={index}
     
-                            ref={(one_input:TextInput|null) => {
+                            ref={(one_input:ComponentRef<typeof TextInput>|null) => {
                                 if(one_input) otp_inputs.current[index] = one_input
                             }}
     

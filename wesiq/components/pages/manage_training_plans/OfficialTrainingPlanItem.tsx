@@ -34,7 +34,7 @@ export const OfficialTrainingPlanItem = ({
 
     const [bar_container_width, setBarContainerWidth] = useState<number>(0) // Stores The Bar Container Width
 
-    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+    const translateX = useState(() => new Animated.Value(0))[0] // Translate X Animation
 
     // Gets The Active Training Plan Exercises
     const active_training_plan_exercises:OfficialTrainingPlanExercise[] = useMemo(() => {

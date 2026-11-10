@@ -1,6 +1,6 @@
 import { BLUE_COLOR, MAIN_COLOR, transparentize } from "@/constants/colors"
 import { DOMAIN } from "@/constants/general"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Animated, Image, StyleSheet, View } from "react-native"
 
 interface OfficialTaskCheckboxProps {
@@ -11,7 +11,7 @@ const AnimatedView = Animated.createAnimatedComponent(View) // Creates The Anima
 const AnimatedImage = Animated.createAnimatedComponent(Image) // Creates The Animated Image
 
 export const OfficialTaskCheckbox = ({ is_checked }:OfficialTaskCheckboxProps) => {
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     useEffect(() => {
         Animated.timing(animation_value, {

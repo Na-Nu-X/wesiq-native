@@ -85,7 +85,7 @@ export default function NewTrainingPlan({
 
     const active_exercise:TrainingPlanExercise = training_plan_exercises[active_exercise_index] // Gets The Active Exercise
 
-    const translateX = useRef(new Animated.Value(0)).current // Translate X Animation
+    const translateX = useState(() => new Animated.Value(0))[0] // Translate X Animation
 
     const exercise_translateX = useSharedValue(0) // Stores The X Transform
     const exercise_translateY = useSharedValue(0) // Stores The Y Transform
@@ -856,7 +856,7 @@ export default function NewTrainingPlan({
                                                 }}
                                             >
                                                 {getConsecutiveNumbersCount(active_exercise.periods).map((one_unit:number, index:number) => (
-                                                    <View className="period_selection" style={styles.period_selection}>
+                                                    <View key={index} className="period_selection" style={styles.period_selection}>
                                                         <View className="reps_container" style={styles.reps_sets_container}>
                                                             <View className="decrease_reps" style={{ flexShrink: 0, paddingHorizontal: 5 }}>
                                                                 <Icon 

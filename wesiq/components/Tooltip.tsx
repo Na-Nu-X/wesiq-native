@@ -1,6 +1,6 @@
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Animated, Text, View, StyleSheet } from "react-native"
 
 type TooltipProps = {
@@ -11,7 +11,7 @@ type TooltipProps = {
 }
 
 export const Tooltip = ({ text, orientation = "top", width = "100%", top = -10 }:TooltipProps) => {
-    const animated_scale = useRef(new Animated.Value(0)).current // Animates The Scale
+    const animated_scale = useState(() => new Animated.Value(0))[0] // Animates The Scale
 
     useEffect(() => {
         Animated.timing(animated_scale, {

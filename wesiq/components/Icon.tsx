@@ -27,7 +27,7 @@ export default function Icon({
     pressed_color = DARK_BLUE_COLOR 
 }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     // Function For Handle Press In
     const handlePressIn = () => {

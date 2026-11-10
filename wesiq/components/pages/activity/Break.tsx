@@ -31,7 +31,7 @@ export const Break = ({ time, skipBreak }:BreakProps) => {
     const [remaining_time, setRemainingTime] = useState<number>(time) // Stores The Remaining Time
     const [max_remaining_time, setMaxRemainingTime] = useState<number>(time) // Stores The Max Remaining Time
 
-    const animated_time = useRef(new Animated.Value(time)).current // Animates The Time
+    const animated_time = useState(() => new Animated.Value(time))[0] // Animates The Time
     const last_time = useRef<number>(time) // Stores The Last Time
 
     const RADIUS:number = 40 // Defines The Radius
