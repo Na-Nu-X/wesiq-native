@@ -20,6 +20,8 @@ import ProfileSection from "@/components/pages/profile/ProfileSection"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import Back from "@/components/Back"
 
+import type { BioLink, Profile } from "@/types/models"
+import type { ConnectionsTab } from "@/components/features/profile/ConnectionsSheet"
 import type { BasicResponse } from "@/components/pages/community/Feed"
 import type { LoggedInUser } from "@/components/LoginFormDialog"
 
@@ -30,122 +32,8 @@ interface ProfileResponse {
     message:string
 }
 
-export interface Profile {
-    id:number,
-    first_name:string|null,
-    last_name:string|null,
-    username:string,
-    email_address:string|null,
-    phone_number:string|null,
-    role:string,
-    profile_picture_name:string,
-    creation_time:string,
-    friend_code:string,
-    bio:string,
-    bio_links:BioLink[],
-    xp:number,
-    activity_streak:number,
-    max_activity_streak:number,
-    has_already_increased_activity_streak:boolean,
-    private_account:boolean,
-    data_saving_mode:boolean|null,
+export type { Profile, BioLink } from "@/types/models"
 
-    followers:{
-        from_user:{
-            id:number,
-            first_name:string,
-            last_name:string,
-            username:string,
-            profile_picture_name:string|null,
-            private_account:boolean,
-
-            subscription:{
-                plan:string,
-                is_active:boolean
-            }|null
-        },
-
-        status:string,
-        created_at:string
-    }[],
-
-    following:{
-        to_user:{
-            id:number,
-            first_name:string,
-            last_name:string,
-            username:string,
-            profile_picture_name:string|null,
-            private_account:boolean,
-
-            subscription:{
-                plan:string,
-                is_active:boolean
-            }|null,
-
-            has_follow:boolean,
-            has_pending_follow_request:boolean,
-        },
-
-        status:string,
-        created_at:string
-    }[],
-
-    has_follow:boolean,
-    has_pending_follow_request:boolean,
-
-    posts:{
-        id:number,
-        public_visibility:boolean,
-        allow_comments:boolean,
-        hide_likes:boolean,
-        created_at:string,
-
-        media:{
-            id:number,
-            file:string,
-            thumbnail:string|null,
-            is_video:boolean,
-            is_muted:boolean
-        }[]
-    }[],
-
-    saved_posts:{
-        id:number,
-        public_visibility:boolean,
-        allow_comments:boolean,
-        hide_likes:boolean,
-        created_at:string,
-
-        media:{
-            id:number,
-            file:string,
-            thumbnail:string|null,
-            is_video:boolean,
-            is_muted:boolean
-        }[]
-    }[]|null,
-
-    unread_messages_amount:number|null,
-
-    subscription:{
-        plan:string,
-        is_active:boolean
-    }|null,
-
-    total_transactions_amount:number,
-    level:number,
-    years_since_registration:number,
-    total_activities:number,
-    total_received_likes:number,
-    post_comments:[],
-    badges:{ title:string, data:string }[],
-}
-
-export interface BioLink {
-    id:number,
-    url:string
-}
 
 export default function ProfileScreen() {
     const { t, i18n } = useTranslation() // Initializes The Translations
@@ -182,9 +70,7 @@ export default function ProfileScreen() {
     const [delete_profile_picture, setDeleteProfilePicture] = useState<boolean>(false) // Stores The Information If The Delete Profile Picture Option Is Enabled
     const [delete_account, setDeleteAccount] = useState<boolean>(false) // Stores The Information If The Delete Account Option Is Enabled
 
-    const [is_followers_dialog_open, setIsFollowersDialogOpen] = useState<boolean>(false) // Stores The Information If The Followers Dialog Is Open
-    const [is_following_dialog_open, setIsFollowingDialogOpen] = useState<boolean>(false) // Stores The Information If The Following Dialog Is Open
-    const [is_follow_requests_dialog_open, setIsFollowRequestsDialogOpen] = useState<boolean>(false) // Stores The Information If The Follow Requests Dialog Is Open
+    const [connections_tab, setConnectionsTab] = useState<ConnectionsTab|null>(null) // Stores The Open Tab Of The Followers / Following / Requests Sheet
 
     // Function For Get The Profile
     const getProfile = async (username:string):Promise<void> => {
@@ -219,7 +105,7 @@ export default function ProfileScreen() {
             else {
                 setIsFound(profile_data.is_found || false) // Sets The Information If The User Was Found
                 setProfile(profile_data.user) // Sets The Profile
-                if(profile_data.user.bio.trim()) setBio(profile_data.user.bio) // Sets The Bio
+                if(profile_data.user.bio?.trim()) setBio(profile_data.user.bio) // Sets The Bio
                 setFirstName(profile_data.user.first_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
                 setLastName(profile_data.user.last_name || "") // Sets The Information If The Data Saving Mode Option Is Enabled
                 if(profile_data.user.email_address) setEmailAddress(profile_data.user.email_address) // Sets The Information If The Data Saving Mode Option Is Enabled
@@ -243,9 +129,7 @@ export default function ProfileScreen() {
     useEffect(() => {
         if(username) {
             getProfile(username) // Gets The Profile
-            setIsFollowersDialogOpen(false) // Sets The Information That The Followers Dialog Is Closed
-            setIsFollowingDialogOpen(false) // Sets The Information That The Following Dialog Is Closed
-            setIsFollowRequestsDialogOpen(false) // Sets The Information That The Follow Requests Dialog Is Closed
+            setConnectionsTab(null) // Closes The Followers / Following / Requests Sheet
         }
     }, [username])
 
@@ -487,12 +371,8 @@ export default function ProfileScreen() {
                                                 profile={profile}
                                                 active_section_direction={active_section_direction}
                                                 onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
-                                                onSetIsFollowersDialogOpen={(is_followers_dialog_open:boolean) => setIsFollowersDialogOpen(is_followers_dialog_open)}
-                                                is_followers_dialog_open={is_followers_dialog_open}
-                                                onSetIsFollowingDialogOpen={(is_following_dialog_open:boolean) => setIsFollowingDialogOpen(is_following_dialog_open)}
-                                                is_following_dialog_open={is_following_dialog_open}
-                                                onSetIsFollowRequestsDialogOpen={(is_follow_requests_dialog_open:boolean) => setIsFollowRequestsDialogOpen(is_follow_requests_dialog_open)}
-                                                is_follow_requests_dialog_open={is_follow_requests_dialog_open}
+                                                connections_tab={connections_tab}
+                                                onConnectionsTabChange={setConnectionsTab}
                                             />
                                         )}
 
@@ -1245,12 +1125,8 @@ export default function ProfileScreen() {
                                             profile={profile}
                                             active_section_direction={active_section_direction}
                                             onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => setLoggedInUser(logged_in_user)}
-                                            onSetIsFollowersDialogOpen={(is_followers_dialog_open:boolean) => setIsFollowersDialogOpen(is_followers_dialog_open)}
-                                            is_followers_dialog_open={is_followers_dialog_open}
-                                            onSetIsFollowingDialogOpen={(is_following_dialog_open:boolean) => setIsFollowersDialogOpen(is_following_dialog_open)}
-                                            is_following_dialog_open={is_following_dialog_open}
-                                            onSetIsFollowRequestsDialogOpen={(is_follow_requests_dialog_open:boolean) => setIsFollowersDialogOpen(is_follow_requests_dialog_open)}
-                                            is_follow_requests_dialog_open={is_follow_requests_dialog_open}
+                                            connections_tab={connections_tab}
+                                            onConnectionsTabChange={setConnectionsTab}
                                         />
                                     </View>
                                 </View>

@@ -422,7 +422,7 @@ export const getFollowButtonProperties = (
     
     else if(has_follow) {
         action = "unfollow"
-        text = "Prestať sledovať"
+        text = t("Prestať sledovať")
     } 
     
     else if(!has_pending_follow_request && private_account) {

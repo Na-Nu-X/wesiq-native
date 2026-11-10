@@ -53,7 +53,7 @@ export interface LoggedInUser {
     role:UserRole,
     profile_picture_name:string|null,
     friend_code:string,
-    saved_posts:(PostId|number)[], // The Server Currently Returns Database IDs Here, Not Public IDs
+    saved_posts:PostId[], // Public IDs Of Saved Posts
     private_account:boolean,
     follow_requests:FollowRequest[]|null, // Null For Public Accounts
     followers_amount:number,
@@ -124,6 +124,7 @@ export interface Profile {
     years_since_registration:number,
     total_activities:number,
     total_received_likes:number,
+    post_comments:unknown[], // The Server Currently Always Sends An Empty List
     badges:Badge[]
 }
 

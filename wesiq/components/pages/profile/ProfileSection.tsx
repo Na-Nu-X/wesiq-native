@@ -1,4 +1,5 @@
 import { getActiveSubscriptionPlan } from "@/lib/subscription"
+import ConnectionsSheet, { ConnectionsTab } from "@/components/features/profile/ConnectionsSheet"
 import { useState } from "react"
 import { Pressable, Alert, StyleSheet, Image, View, Text, Dimensions } from "react-native"
 import {BLUE_COLOR, DARK_BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize, YELLOW_COLOR } from "@/constants/colors"
@@ -11,9 +12,6 @@ import Animated, { SlideInRight, SlideOutLeft, SlideInLeft, SlideOutRight, useAn
 import { FontAwesome6 } from "@expo/vector-icons"
 import BadgesContainer from "./BadgesContainer"
 import { getFollowButtonProperties } from "../community/SearchUsers"
-import { FollowersDialog } from "./FollowersDialog"
-import { FollowingDialog } from "./FollowingDialog"
-import { FollowRequestsDialog } from "./FollowRequestsDialog"
 import { ImperativeRouter, useRouter } from "expo-router"
 import ProfilePicture from "@/components/ProfilePicture"
 import { BlurView } from "expo-blur"
@@ -29,12 +27,8 @@ type ProfileSectionProps = {
     profile:Profile|null,
     active_section_direction:"forward"|"back",
     onLoggedInUserUpdate:(logged_in_user:LoggedInUser) => void,
-    onSetIsFollowersDialogOpen:(is_followers_dialog_open:boolean) => void,
-    is_followers_dialog_open:boolean,
-    onSetIsFollowingDialogOpen:(is_following_dialog_open:boolean) => void,
-    is_following_dialog_open:boolean,
-    onSetIsFollowRequestsDialogOpen:(is_follow_requests_dialog_open:boolean) => void
-    is_follow_requests_dialog_open:boolean
+    connections_tab:ConnectionsTab|null, // Open Tab Of The Followers / Following / Requests Sheet
+    onConnectionsTabChange:(tab:ConnectionsTab|null) => void
 }
 
 export default function ProfileSection({ 
@@ -44,12 +38,8 @@ export default function ProfileSection({
     profile,
     active_section_direction,
     onLoggedInUserUpdate,
-    onSetIsFollowersDialogOpen,
-    is_followers_dialog_open,
-    onSetIsFollowingDialogOpen,
-    is_following_dialog_open,
-    onSetIsFollowRequestsDialogOpen,
-    is_follow_requests_dialog_open
+    connections_tab,
+    onConnectionsTabChange
 }:ProfileSectionProps) {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -144,6 +134,8 @@ export default function ProfileSection({
             setGridSelectActiveMenu("posts") // Sets The Active Section
         }
     }
+
+    const can_see_connections:boolean = profile !== null && (!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) // Stores The Information If Followers And Following Can Be Viewed
 
     return (
         is_found && profile ? (
@@ -284,41 +276,29 @@ export default function ProfileSection({
                         <View className="statistics" style={styles.statistics}>
                             <Pressable 
                                 className="followers" 
-                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? onSetIsFollowersDialogOpen(true) : onSetIsFollowersDialogOpen(false)}
+                                onPress={() => { if(can_see_connections) onConnectionsTabChange("followers") }}
+                                disabled={!can_see_connections}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${profile.followers.length} ${t("sledujú")}`}
                                 style={styles.followers}
                             >
                                 <Text className="amount" style={styles.followers_amount}>{profile.followers.length || 0}</Text>
                                 <Text className="label" style={styles.followers_label}>{t("sledujú")}</Text>
                             </Pressable>
 
-                            {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
-                                <FollowersDialog 
-                                    visible={is_followers_dialog_open}
-                                    onClose={() => onSetIsFollowersDialogOpen(false)}
-                                    profile={profile}
-                                    logged_in_user={logged_in_user}
-                                    onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
-                                />
-                            )}
 
                             <Pressable 
                                 className="following" 
-                                onPress={() => !profile.private_account || profile.has_follow || profile.id === logged_in_user?.id ? onSetIsFollowingDialogOpen(true) : onSetIsFollowingDialogOpen(false)}
+                                onPress={() => { if(can_see_connections) onConnectionsTabChange("following") }}
+                                disabled={!can_see_connections}
+                                accessibilityRole="button"
+                                accessibilityLabel={`${profile.following.length} ${t("sleduje")}`}
                                 style={styles.following}
                             >
                                 <Text className="amount" style={styles.following_amount}>{profile.following.length || 0}</Text>
                                 <Text className="label" style={styles.following_label}>{t("sleduje")}</Text>
                             </Pressable>
 
-                            {(!profile.private_account || profile.has_follow || profile.id === logged_in_user?.id) && (
-                                <FollowingDialog 
-                                    visible={is_following_dialog_open}
-                                    onClose={() => onSetIsFollowingDialogOpen(false)}
-                                    profile={profile}
-                                    logged_in_user={logged_in_user}
-                                    onProfileUpdate={(profile:Profile|null) => onProfileUpdate(profile)}
-                                />
-                            )}
 
                             <View className="posts">
                                 <Text className="amount" style={styles.posts_amount}>{profile.posts.length || 0}</Text>
@@ -333,18 +313,11 @@ export default function ProfileSection({
 
                                     <Icon
                                         icon_name="bell"
-                                        onPress={() => onSetIsFollowRequestsDialogOpen(true)}
+                                        onPress={() => onConnectionsTabChange("requests")}
                                         size={25}
                                         is_regular={true}
                                     />
                                 </View>
-
-                                <FollowRequestsDialog
-                                    visible={is_follow_requests_dialog_open}
-                                    onClose={() => onSetIsFollowRequestsDialogOpen(false)}
-                                    logged_in_user={logged_in_user}
-                                    onLoggedInUserUpdate={(logged_in_user:LoggedInUser) => onLoggedInUserUpdate(logged_in_user)}
-                                />
                             </>
                         )}
 
@@ -695,6 +668,17 @@ export default function ProfileSection({
                         </>
                     )}
                 </View>
+
+                {can_see_connections && (
+                    <ConnectionsSheet
+                        tab={connections_tab}
+                        onTabChange={onConnectionsTabChange}
+                        profile={profile}
+                        logged_in_user={logged_in_user}
+                        onProfileUpdate={(updated_profile:Profile) => onProfileUpdate(updated_profile)}
+                        onLoggedInUserUpdate={onLoggedInUserUpdate}
+                    />
+                )}
             </Animated.View>
         ) : (
             <View className="profile" style={styles.profile}>

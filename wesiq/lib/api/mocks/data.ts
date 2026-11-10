@@ -193,6 +193,7 @@ export const MOCK_PROFILE:Profile = {
     years_since_registration: 1,
     total_activities: 186,
     total_received_likes: 1294,
+    post_comments: [],
     badges: [
         { title: "streak", data: "31" },
         { title: "activities", data: "150" },
