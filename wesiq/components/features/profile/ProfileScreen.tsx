@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context"
 import { useEffect, useMemo, useRef, useState } from "react"
 import Banner from "@/components/Banner"
 import Icon from "@/components/Icon"
-import { useLocalSearchParams } from "expo-router"
 import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from "@gorhom/bottom-sheet"
 import { API_URL, DOMAIN } from "@/constants/general"
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -32,10 +31,9 @@ interface ProfileResponse {
     message:string
 }
 
-export type { Profile, BioLink } from "@/types/models"
 
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ username }:{ username:string|undefined }) {
     const { t, i18n } = useTranslation() // Initializes The Translations
     const language:string = i18n.language // Gets The Language
     
@@ -50,7 +48,6 @@ export default function ProfileScreen() {
     const [account_properties_sheet, setAccountPropertiesSheet] = useState<"main"|"report"|"suspend">("main") // Stores The Active Account Properties Sheet
 
     
-    const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
     
     
     

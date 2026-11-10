@@ -7,7 +7,7 @@ import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
 import { useState } from "react"
 import { Tooltip } from "@/components/Tooltip"
 
-import type { Profile } from "@/app/(tabs)/profile/[username]"
+import type { Profile } from "@/types/models"
 
 type BadgesContainerProps = {
     is_found:boolean,

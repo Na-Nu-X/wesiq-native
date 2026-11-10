@@ -1,24 +1,26 @@
+// Main Tab Bar (Always Visible): Home, Chat, Activity, Blog, Profile
+
 import { useState } from "react"
-import AuthSheet from "@/components/features/auth/AuthSheet"
-import { ImperativeRouter, Tabs, usePathname, useRouter } from "expo-router"
-import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
-import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
+import { Platform, StyleSheet } from "react-native"
+import { Tabs } from "expo-router"
+import { useTranslation } from "react-i18next"
+import { Avatar, Icon } from "@/components/ui"
+import { colors, layout } from "@/theme"
+import { haptics } from "@/lib/haptics"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import { Image, StyleSheet, View } from "react-native"
-import ProfilePicture from "@/components/ProfilePicture"
+import AuthSheet, { AuthForm } from "@/components/features/auth/AuthSheet"
 
-export default function RootLayout() {
-    const pathname:string = usePathname() // Gets The Pathname
+import type { IconName } from "@/components/ui"
 
-    const is_activity_page:boolean = pathname.startsWith("/activity") // Stores The Information If The User Is On The Activity Page
-    const is_profile_page:boolean = pathname.startsWith("/profile") // Stores The Information If The User Is On The Profile Page
-    const is_post_page:boolean = pathname.startsWith("/post") // Stores The Information If The User Is On The Post Page
-    const is_chat_page:boolean = pathname.startsWith("/chat") // Stores The Information If The User Is On The Chat Page
-    const is_blog_page:boolean = pathname.startsWith("/blog") // Stores The Information If The User Is On The Blog Page
+// Function For Create A Tab Icon
+const tabIcon = (name:IconName) => ({ focused }:{ focused:boolean }) => (
+    <Icon name={name} size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />
+)
 
-    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
-    const router:ImperativeRouter = useRouter() // Gets The Router
-    const [active_form, setActiveForm] = useState<"login_form"|"registration_form"|null>(null) // Stores The Information Which Dialog Is Open (Login, Registration)
+export default function TabsLayout() {
+    const { t } = useTranslation() // Initializes The Translations
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
+    const [active_form, setActiveForm] = useState<AuthForm|null>(null) // Stores The Open Login / Registration Form
 
     return (
         <>
@@ -26,155 +28,41 @@ export default function RootLayout() {
                 backBehavior="history"
 
                 screenOptions={{
-                    tabBarActiveTintColor: DARK_BLUE_COLOR,
-                    tabBarInactiveTintColor: BLUE_COLOR,
                     headerShown: false,
-                    tabBarStyle: (is_activity_page || is_profile_page || is_post_page || is_chat_page || is_blog_page) ? { display: "none" } : {},
+                    tabBarActiveTintColor: colors.primary,
+                    tabBarInactiveTintColor: colors.text_muted,
+                    tabBarStyle: styles.tab_bar,
+                    tabBarLabelStyle: styles.label,
+                    tabBarHideOnKeyboard: Platform.OS === "android",
+                }}
+
+                screenListeners={{
+                    tabPress: () => haptics.selection(),
                 }}
             >
-                <Tabs.Screen
-                    name="index"
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: ({ color, focused, size }) => (
-                            <FontAwesome6
-                                name="house"
-                                size={size}
-                                solid={focused}
-                                color={color}
-                            />
-                        )
-                    }}
-                />
-                
-                <Tabs.Screen
-                    name="chat"
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: ({ color, focused, size }) => (
-                            <FontAwesome6
-                                name="comment"
-                                size={size}
-                                solid={focused}
-                                color={color}
-                            />
-                        )
-                    }}
-                />
+                <Tabs.Screen name="index" options={{ title: t("Domov"), tabBarIcon: tabIcon("house") }} />
+                <Tabs.Screen name="chat" options={{ title: t("Správy"), tabBarIcon: tabIcon("comment") }} />
+                <Tabs.Screen name="activity" options={{ title: t("Aktivita"), tabBarIcon: tabIcon("dumbbell") }} />
+                <Tabs.Screen name="blog" options={{ title: t("Blog"), tabBarIcon: tabIcon("book-open") }} />
 
                 <Tabs.Screen
-                    name="activity"
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: ({ color, focused, size }) => (
-                            <FontAwesome6
-                                name="dumbbell"
-                                size={size}
-                                solid={focused}
-                                color={color}
-                            />
-                        )
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="blog"
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: ({ color, focused, size }) => (
-                            <FontAwesome6
-                                name="book"
-                                size={size}
-                                solid={focused}
-                                color={color}
-                            />
-                        )
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="users"
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: ({ color, focused, size }) => (
-                            <FontAwesome6
-                                name="users"
-                                size={size}
-                                solid={focused}
-                                color={color}
-                            />
-                        )
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="profile"
+                    name="me"
 
                     listeners={{
                         tabPress: (event) => {
-                            event.preventDefault() // Prevents The Default Behavior
-                            if(!logged_in_user) setActiveForm("login_form") // Sets The Active Form
-                            else router.navigate(`/profile/${logged_in_user.username}`) // Goes To The Profile Page
-                        }
-                    }}
-
-                    options={{
-                        title: "",
-
-                        tabBarIcon: () => {
-                            if(logged_in_user) {
-                                return (
-                                    <ProfilePicture
-                                        user_id={logged_in_user.id}
-                                        user_profile_picture_name={logged_in_user.profile_picture_name || null} 
-                                        user_subscription={logged_in_user.subscription?.is_active || false} 
-                                        width={26}
-                                        height={26}
-                                    />
-                                )
+                            if(!logged_in_user) {
+                                event.preventDefault() // Opens The Login Instead
+                                setActiveForm("login_form")
                             }
-                        
-                            return (
-                                <Image 
-                                    source={require("@/assets/images/profile_picture.png")} // https://www.flaticon.com/free-icon/user_3177440
-                                    style={styles.profile_picture}
-                                />
-                            )
-                        }
+                        },
                     }}
-                />
 
-                <Tabs.Screen
-                    name="post"
-                    
                     options={{
-                        tabBarButton: () => null,
+                        title: t("Profil"),
 
-                        tabBarItemStyle: { 
-                            display: "none" 
-                        }
-                    }}
-                />
-
-                <Tabs.Screen
-                    name="subscribe"
-                    
-                    options={{
-                        tabBarButton: () => null,
-
-                        tabBarItemStyle: { 
-                            display: "none" 
-                        }
+                        tabBarIcon: ({ focused }:{ focused:boolean }) => logged_in_user
+                            ? <Avatar user={logged_in_user} size={focused ? 26 : 24} is_ring_hidden={!focused} />
+                            : <Icon name="user" size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />,
                     }}
                 />
             </Tabs>
@@ -185,9 +73,14 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-    profile_picture: {
-        width: 32,
-        height: 32,
-        borderRadius: 100,
+    tab_bar: {
+        backgroundColor: colors.background_deep,
+        borderTopColor: colors.divider,
+        borderTopWidth: layout.hairline,
+    },
+
+    label: {
+        fontSize: 11,
+        fontWeight: "600",
     },
 })

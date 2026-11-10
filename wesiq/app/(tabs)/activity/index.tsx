@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { router } from "expo-router"
+import { Chip } from "@/components/ui"
 
 import type { OfficialTask , CustomTask } from "@/components/pages/activity/TasksSection"
 
@@ -148,6 +150,12 @@ export default function ActivityScreen() {
                             onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
                         /> */}
 
+                        <View style={styles.plan_actions}>
+                            <Chip label={t("Nový plán")} icon="plus" onPress={() => router.push("/activity/new")} />
+                            <Chip label={t("Moje plány")} icon="pen" onPress={() => router.push("/activity/edit")} />
+                            <Chip label={t("Hotové plány")} icon="copy" onPress={() => router.push("/activity/copy")} />
+                        </View>
+
                         <View className="training_page" style={styles.training_page}>
                             <ActivitySection 
                                 onElapsedTimeUpdate={setElapsedTime} 
@@ -186,6 +194,14 @@ export default function ActivityScreen() {
 }
 
 const styles = StyleSheet.create({
+    plan_actions: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: 8,
+        marginBottom: 16,
+    },
+
     safe_area: {
         flex: 1,
     },

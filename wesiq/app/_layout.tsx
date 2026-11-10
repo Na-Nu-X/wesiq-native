@@ -69,6 +69,10 @@ function AppContent() {
                 >
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="(auth)/password-reset" />
+                    <Stack.Screen name="post/[post_id]" />
+                    <Stack.Screen name="profile/[username]" />
+                    <Stack.Screen name="users" />
+                    <Stack.Screen name="subscribe" />
                 </Stack>
 
                 <StatusBar style="light" />
