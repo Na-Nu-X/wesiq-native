@@ -43,6 +43,11 @@ export const requestPasswordResetCode = (identifier:string):Promise<ApiResult<Ap
 }
 
 // Function For Map The App Language To The Server's Language Codes
+// Sets A New Password With The Emailed 6-Digit Code (The Identifier Tells The Server Whose Code It Is, The User Isn't Logged In)
+export const resetPassword = (identifier:string|null, password_reset_code:string, new_password:string):Promise<ApiResult<ApiEnvelope>> => {
+    return apiPost("password-reset/", { identifier, password_reset_code, new_password }, { is_authenticated: false })
+}
+
 export const toServerLanguage = (app_language:string):string => {
     const normalized:string = app_language.toLowerCase().replace("_", "-") // Normalizes The Code
     const supported:string[] = ["sk", "cs", "en", "es", "fr", "uk", "ru", "pt-br", "zh-hans"]

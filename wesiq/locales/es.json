@@ -1453,5 +1453,22 @@
     "mesačne": "al mes",
     "Úspech": "Éxito",
     "Ďakujeme, predplatné bolo úspešne kúpené!": "¡Gracias, tu suscripción está activa!",
-    "Žiadne nákupy": "Sin compras"
+    "Žiadne nákupy": "Sin compras",
+    "Aspoň {{count}} znakov.": "Al menos {{count}} caracteres.",
+    "Heslo bolo zmenené": "Contraseña cambiada",
+    "Kód bol odoslaný": "Código enviado",
+    "Kód platí ešte {{minutes}} min {{seconds}} s": "El código vale {{minutes}} min {{seconds}} s más",
+    "Nastavte si nové heslo": "Crea una nueva contraseña",
+    "Nové heslo": "Nueva contraseña",
+    "Overovací kód": "Código de verificación",
+    "Platnosť kódu vypršala": "El código ha caducado",
+    "Poslať nový kód": "Enviar un código nuevo",
+    "Poslať znova": "Reenviar",
+    "Pošlite si nový kód a skúste to znova.": "Envíate un código nuevo e inténtalo de nuevo.",
+    "Skontrolujte svoj e-mail.": "Revisa tu correo.",
+    "Späť na prihlásenie": "Volver a iniciar sesión",
+    "Teraz sa môžete prihlásiť novým heslom.": "Ya puedes iniciar sesión con tu nueva contraseña.",
+    "Zadajte 6-miestny kód z e-mailu.": "Introduce el código de 6 dígitos del correo.",
+    "Zadajte 6-miestny kód, ktorý sme poslali na e-mail účtu {{identifier}}.": "Introduce el código de 6 dígitos que enviamos al correo de {{identifier}}.",
+    "Zadajte celý 6-miestny kód.": "Introduce el código completo de 6 dígitos."
 }

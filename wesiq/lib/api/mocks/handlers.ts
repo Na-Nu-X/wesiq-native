@@ -46,6 +46,14 @@ const notFound = (message:string):MockResponse => ({ status: 404, body: { succes
 // Routes (":param" Matches One Path Segment)
 const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "POST", pattern: "login/", handler: () => ok({ access: "mock-access-token", refresh: "mock-refresh-token" }) },
+    { method: "POST", pattern: "get-password-reset-code/", handler: () => ok({ message: "Overovací kód bol odoslaný na váš e-mail. (mock)" }) },
+
+    {
+        method: "POST",
+        pattern: "password-reset/",
+        handler: ({ body }) => body.password_reset_code === "123456" ? ok({ message: "Heslo bolo úspešne zmenené. (mock)" }) : { status: 400, body: { success: false, message: "Overovací kód sa nezhoduje. (mock: 123456)" } },
+    },
+
     { method: "GET", pattern: "get-logged-in-user/", handler: () => ok({ logged_in_user: MOCK_LOGGED_IN_USER }) },
 
     {
