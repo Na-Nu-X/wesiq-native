@@ -1,7 +1,8 @@
 // Tiny Typed App Events (For Screens That Stay Mounted, E.g. Tabs, And Must Reload When Data Changes Elsewhere)
 
 type EventMap = {
-    training_plans_changed:void
+    training_plans_changed:void,
+    posts_changed:void // A Post Was Uploaded, Finished Processing Or Was Deleted
 }
 
 type Listener<T> = (payload:T) => void

@@ -154,9 +154,9 @@ export const MOCK_POSTS:Post[] = [
 ]
 
 export const MOCK_COMMENTS:PostComment[] = [
-    { id: 501, user: martin, comment: "Huge! Form looks super solid 🔥", likes: 4, likes_from_users: [1], creation_time: hoursAgo(1), parent_id: null, level: 0 },
-    { id: 502, user: lucia, comment: "Thanks Martin! Next goal is 150.", likes: 2, likes_from_users: [], creation_time: hoursAgo(1), parent_id: 501, level: 1 },
-    { id: 503, user: sofia, comment: "What does your warm up look like?", likes: 1, likes_from_users: [], creation_time: hoursAgo(0.5), parent_id: null, level: 0 },
+    { id: 501, user: martin, comment: "Huge! Form looks super solid 🔥", likes: 4, likes_from_users: [1], creation_time: hoursAgo(1), parent_id: null, level: 1 },
+    { id: 502, user: lucia, comment: "Thanks Martin! Next goal is 150.", likes: 2, likes_from_users: [], creation_time: hoursAgo(1), parent_id: 501, level: 2 },
+    { id: 503, user: sofia, comment: "What does your warm up look like?", likes: 1, likes_from_users: [], creation_time: hoursAgo(0.5), parent_id: null, level: 1 },
 ]
 
 // ---------- Profile ----------

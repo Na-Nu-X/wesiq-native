@@ -1,14 +1,27 @@
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 import "dayjs/locale/sk"
+import "dayjs/locale/cs"
+import "dayjs/locale/de"
+import "dayjs/locale/es"
+import "dayjs/locale/fr"
+import "dayjs/locale/uk"
+import "dayjs/locale/ru"
+import "dayjs/locale/pt-br"
+import i18n from "@/lib/i18n"
 
 dayjs.extend(relativeTime)
-dayjs.locale("sk")
+
+// Function For Map The App Language To A dayjs Locale (Relative Times Used To Be Always Slovak)
+const getDayjsLocale = ():string => {
+    const language:string = i18n.language.toLowerCase().replace("_", "-") // Gets The Language
+    return ["sk", "cs", "de", "es", "fr", "uk", "ru", "pt-br", "en"].includes(language) ? language : "en"
+}
 
 // Function For Get The Time Ago
 export const getTimeAgo = (date_string:string):string => {
     if(!date_string) return ""
-    return dayjs(date_string).fromNow()
+    return dayjs(date_string).locale(getDayjsLocale()).fromNow()
 }
 
 // Function For Get The Formatted Date

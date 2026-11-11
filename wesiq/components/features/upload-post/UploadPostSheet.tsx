@@ -313,7 +313,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         }
 
         const compress_tasks:CompressTask[] = isArrayOf(response.data.compress_tasks, isCompressTask) ? response.data.compress_tasks : [] // Gets The Processing Tasks
-        if(compress_tasks.length > 0) onUploaded(compress_tasks)
+        onUploaded(compress_tasks) // Always Reported, So The Feed Refreshes For Photo-Only Posts Too
 
         haptics.success()
         dispatch({ type: "upload_finished" })

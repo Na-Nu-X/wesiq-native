@@ -9,6 +9,8 @@ import { useFonts } from "expo-font"
 import { Bungee_400Regular } from "@expo-google-fonts/bungee"
 import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
 import { colors } from "@/theme"
+import { AuthSheetProvider } from "@/components/features/auth/AuthSheetProvider"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet" // Older Components Still Use @gorhom Sheets
 import { useEffect, useRef } from "react"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DOMAIN } from "@/constants/general"
@@ -61,6 +63,8 @@ function AppContent() {
     return (
         <GestureHandlerRootView style={styles.root}>
             <ThemeProvider value={NAVIGATION_THEME}>
+                <BottomSheetModalProvider>
+                <AuthSheetProvider>
                 <Stack
                     screenOptions={{
                         headerShown: false,
@@ -74,6 +78,8 @@ function AppContent() {
                     <Stack.Screen name="users" />
                     <Stack.Screen name="subscribe" />
                 </Stack>
+                </AuthSheetProvider>
+                </BottomSheetModalProvider>
 
                 <StatusBar style="light" />
             </ThemeProvider>

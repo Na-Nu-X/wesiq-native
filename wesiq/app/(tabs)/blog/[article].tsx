@@ -24,7 +24,7 @@ import { AnimatedExerciseStatisticsBar } from "@/components/pages/articles/Anima
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { Comment , BasicResponse } from "@/components/pages/community/Feed"
-import type { AddedComment } from "@/components/pages/community/PostContainer"
+import type { AddedComment } from "@/lib/api/endpoints/posts"
 
 interface LoadedArticleResponse {
     success:boolean,

@@ -77,8 +77,8 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         }
     },
 
-    { method: "GET", pattern: "get-post-comments/", handler: () => ok({ comments: MOCK_COMMENTS, has_next: false, visible_comments: MOCK_COMMENTS.length }) },
-    { method: "POST", pattern: "get-post-comments/", handler: () => ok({ comments: MOCK_COMMENTS, has_next: false, visible_comments: MOCK_COMMENTS.length }) },
+    { method: "GET", pattern: "get-post-comments/", handler: () => ok({ visible_comments: MOCK_COMMENTS, has_next: false }) },
+    { method: "POST", pattern: "get-post-comments/", handler: () => ok({ visible_comments: MOCK_COMMENTS, has_next: false }) },
     { method: "GET", pattern: "get-processing-posts/", handler: () => ok({ processing_posts: [] }) },
     { method: "GET", pattern: "get-friends/", handler: () => ok({ following: MOCK_USERS.filter((user:UserListItem) => user.has_follow) }) },
 

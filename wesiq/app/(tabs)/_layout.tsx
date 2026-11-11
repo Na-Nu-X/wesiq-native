@@ -1,6 +1,5 @@
 // Main Tab Bar (Always Visible): Home, Chat, Activity, Blog, Profile
 
-import { useState } from "react"
 import { Platform, StyleSheet } from "react-native"
 import { Tabs } from "expo-router"
 import { useTranslation } from "react-i18next"
@@ -8,7 +7,7 @@ import { Avatar, Icon } from "@/components/ui"
 import { colors, layout } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import AuthSheet, { AuthForm } from "@/components/features/auth/AuthSheet"
+import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 
 import type { IconName } from "@/components/ui"
 
@@ -20,7 +19,7 @@ const tabIcon = (name:IconName) => ({ focused }:{ focused:boolean }) => (
 export default function TabsLayout() {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
-    const [active_form, setActiveForm] = useState<AuthForm|null>(null) // Stores The Open Login / Registration Form
+    const auth_sheet = useAuthSheet() // Opens The Login Sheet
 
     return (
         <>
@@ -42,7 +41,7 @@ export default function TabsLayout() {
             >
                 <Tabs.Screen name="index" options={{ title: t("Domov"), tabBarIcon: tabIcon("house") }} />
                 <Tabs.Screen name="chat" options={{ title: t("Správy"), tabBarIcon: tabIcon("comment") }} />
-                <Tabs.Screen name="activity" options={{ title: t("Aktivita"), tabBarIcon: tabIcon("dumbbell") }} />
+                <Tabs.Screen name="activity" options={{ title: t("Tréningy"), tabBarIcon: tabIcon("dumbbell") }} />
                 <Tabs.Screen name="blog" options={{ title: t("Blog"), tabBarIcon: tabIcon("book-open") }} />
 
                 <Tabs.Screen
@@ -52,7 +51,7 @@ export default function TabsLayout() {
                         tabPress: (event) => {
                             if(!logged_in_user) {
                                 event.preventDefault() // Opens The Login Instead
-                                setActiveForm("login_form")
+                                auth_sheet.open("login_form")
                             }
                         },
                     }}
@@ -66,8 +65,6 @@ export default function TabsLayout() {
                     }}
                 />
             </Tabs>
-
-            <AuthSheet active_form={active_form} onActiveFormChange={setActiveForm} />
         </>
     )
 }
