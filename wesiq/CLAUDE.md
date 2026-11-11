@@ -26,7 +26,7 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 ## Architecture
 
 **Routing (expo-router, typed routes, React Compiler enabled).**
-- `app/_layout.tsx` is the root `Stack`. It installs the mock API (when enabled), loads the brand fonts, wraps everything in `LoggedInUserProvider` and a dark React Navigation theme, holds the splash screen until the user and fonts are loaded, configures RevenueCat, requests notification permissions, and opens a global WebSocket (`/ws/notifications/?token=…`) that schedules a local notification for new chat messages unless the user is already in that chat.
+- `app/_layout.tsx` is the root `Stack`. It installs the mock API (when enabled), loads the brand fonts, wraps everything in `LoggedInUserProvider` and a dark React Navigation theme, and holds the splash screen until the user and fonts are loaded. Inside the provider it links RevenueCat to the logged-in user (`syncPurchasesUser` in `lib/purchases.ts`, skipped while the API keys are placeholders) and runs `hooks/useNotificationSocket.ts`, which opens `/ws/notifications/?token=…` on login, closes it on logout, reconnects after drops and schedules a local notification for new chat messages unless that chat is open.
 - `app/(tabs)/_layout.tsx` is the one permanent bottom tab bar: Home (`index`), `chat`, `activity`, `blog` and Profile (`me`, opens the login sheet when logged out). `chat`, `activity` and `blog` are folders with their own native `Stack` (`initialRouteName: "index"`), so detail screens (`chat/[username]`, `blog/[article]`, `activity/new|edit|copy`) push inside the tab with a back button.
 - Screens outside the tabs live in the root stack: `post/[post_id]`, `profile/[username]`, `users` (find people), `subscribe`, `(auth)/password-reset`, `dev/ui-kit`.
 - Every file in `app/` becomes a route, so don't put non-route modules there.
@@ -56,6 +56,8 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 - `Screen` handles safe areas, keyboard avoidance, pull-to-refresh and a pinned footer. `Sheet` is the standard dialog: a bottom sheet on phones and a centered dialog at 700px and wider. `Sheet` resets the VirtualizedList context (`ListContextReset`), so a `FlatList` inside a sheet scrolls on its own even when the sheet is opened from a feed item; pass `is_scrollable={false}` when the sheet's child is a list.
 - `Icon` takes typed FontAwesome 6 names.
 - Use `lib/alert.ts` (`showAlert`, `confirmAction`) instead of `Alert.alert`, which does nothing on web. Use `lib/haptics.ts` for haptic feedback and `lib/media.ts` for media URLs.
+- Notifications go through `lib/notifications.ts`. Never ask for the permission at launch: ask in context (`requestNotificationPermission`, e.g. the chat list prompt or when a workout break starts).
+- Store links: `lib/legal.ts` (`openLegalPage("privacy" | "terms")`). iOS permission texts live in `app.json` plugins and are localized in `locales/native/`.
 
 **Animation and gestures.** Use Reanimated shared values with `.get()`/`.set()` (not `.value`) inside gesture callbacks and components; the React Compiler flags `.value` writes. Use `scheduleOnRN` from `react-native-worklets` to call JS from worklets. Gesture Handler is v3: use the hook API (`usePanGesture`, …) with `GestureDetector`; `Gesture.Pan()` is deprecated. Content inside a `Modal` needs its own `GestureHandlerRootView`.
 
