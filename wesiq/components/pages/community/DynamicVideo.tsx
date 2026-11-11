@@ -10,6 +10,7 @@ import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { DynamicImage } from "./DynamicImage"
+import { VideoScrubberPreview } from "./VideoScrubberPreview"
 import { useTranslation } from "react-i18next"
 import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
 import { useEventListener } from "expo"
@@ -815,6 +816,17 @@ export const DynamicVideo = ({
                     onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
                     scrubber_position={scrubber_position}
                     onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
+                />
+            )}
+
+            {/* Frame Preview While Dragging The Scrubber (The Fullscreen Player Draws Its Own) */}
+            {show_controls && !is_fullscreen && !!video_scrubber_preview && is_scrubber_dragged && (
+                <VideoScrubberPreview
+                    video_scrubber_preview={video_scrubber_preview}
+                    video_scrubber_preview_image={video_scrubber_preview_image}
+                    scrubber_position={scrubber_position}
+                    scrubber_width={scrubber_width}
+                    bottom={BIG_BORDER_RADIUS / 2 + 5}
                 />
             )}
 

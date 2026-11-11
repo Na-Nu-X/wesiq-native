@@ -1,7 +1,7 @@
 // One Post In The Feed Or On The Post Screen
 
-import { memo, useRef, useState } from "react"
-import { LayoutChangeEvent, Linking, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { memo, useEffect, useRef, useState } from "react"
+import { Image as NativeImage, LayoutChangeEvent, Linking, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native"
 import { Image } from "expo-image"
 import { router } from "expo-router"
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated"
@@ -18,10 +18,41 @@ import { getFollowState, getToggledFollowFlags, toggleFollow } from "@/lib/api/e
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import PostVideo from "./PostVideo"
 import Caption from "./Caption"
+import HeartParticles, { createHeartParticles, HeartParticle } from "./HeartParticles"
 
 import type { Post, PostAuthor, PostMedia } from "@/types/models"
 
-const MEDIA_ASPECT_RATIO:number = 4 / 5 // Same Frame For Every Photo (No Layout Jumps While Images Load)
+const DEFAULT_IMAGE_RATIO:number = 4 / 5 // Until The First Photo Size Is Known
+const DEFAULT_VIDEO_RATIO:number = 16 / 9 // Videos Without A Thumbnail
+const MIN_MEDIA_RATIO:number = 4 / 5 // Tallest Frame (Portrait)
+const MAX_MEDIA_RATIO:number = 1.91 // Widest Frame (Landscape)
+
+const aspect_ratio_cache:Map<string, number> = new Map() // Keeps Measured Sizes While Scrolling The Feed
+
+// Function For Measure The Frame Shape From The First Photo Or Video Thumbnail (Landscape Posts Get A Landscape Frame)
+function useMediaAspectRatio(first_media:PostMedia|undefined):number {
+    const uri:string|null = first_media ? getMediaUrl(first_media.is_video ? first_media.thumbnail : first_media.file) : null
+    const fallback:number = first_media?.is_video ? DEFAULT_VIDEO_RATIO : DEFAULT_IMAGE_RATIO
+    const [measured, setMeasured] = useState<{ uri:string, ratio:number }|null>(null)
+
+    // Initializes The Measurement Of The First Media
+    useEffect(() => {
+        if(!uri || aspect_ratio_cache.has(uri)) return
+        let is_active:boolean = true
+
+        NativeImage.getSize(uri, (width:number, height:number) => {
+            if(height <= 0) return
+            const ratio:number = Math.min(MAX_MEDIA_RATIO, Math.max(MIN_MEDIA_RATIO, width / height))
+            aspect_ratio_cache.set(uri, ratio)
+            if(is_active) setMeasured({ uri, ratio })
+        }, () => {})
+
+        return () => { is_active = false }
+    }, [uri])
+
+    if(!uri) return fallback
+    return aspect_ratio_cache.get(uri) ?? (measured?.uri === uri ? measured.ratio : fallback)
+}
 const DOUBLE_TAP_MS:number = 280
 
 interface PostCardProps {
@@ -44,6 +75,9 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
     const [is_follow_busy, setIsFollowBusy] = useState<boolean>(false)
     const last_tap = useRef<number>(0) // Detects Double Taps
     const heart_scale = useSharedValue<number>(0) // Big Heart On Double Tap
+    const media_ratio:number = useMediaAspectRatio(post.media[0]) // Shape Of The Media Frame
+    const media_height:number = media_width > 0 ? media_width / media_ratio : 0
+    const [particles, setParticles] = useState<HeartParticle[]>([]) // Small Hearts Bursting From The Like Button
 
     const is_own:boolean = logged_in_user?.id === post.user.id // Stores The Information If The Post Belongs To The Logged In User
     const is_liked:boolean = logged_in_user ? post.likes_from_users.includes(logged_in_user.id) : false
@@ -63,6 +97,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
 
         const next_liked:boolean = !is_liked
         haptics.light()
+        if(next_liked) setParticles(createHeartParticles()) // Bursts The Hearts (Only When Liking)
 
         const updated:Post = {
             ...post,
@@ -185,7 +220,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
 
             {/* ---------- Media ---------- */}
             {post.media.length > 0 && (
-                <View style={styles.media_frame} onLayout={(event:LayoutChangeEvent) => setMediaWidth(event.nativeEvent.layout.width)}>
+                <View style={[styles.media_frame, { aspectRatio: media_ratio }]} onLayout={(event:LayoutChangeEvent) => setMediaWidth(event.nativeEvent.layout.width)}>
                     {media_width > 0 && (
                         <ScrollView
                             horizontal
@@ -197,12 +232,12 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
                             scrollEventThrottle={64}
                         >
                             {post.media.map((media:PostMedia, index:number) => (
-                                <View key={media.id} style={{ width: media_width }}>
+                                <View key={media.id} style={[styles.media_page, { width: media_width, height: media_height }]}>
                                     {media.is_video ? (
                                         <PostVideo post={post} media={media} />
                                     ) : (
                                         <Pressable onPress={handleMediaPress} accessibilityLabel={t("Fotka {{position}} z {{count}}", { position: index + 1, count: post.media.length })} accessibilityHint={t("Dvojitým ťuknutím označíte páči sa mi to")}>
-                                            <PostImage media={media} width={media_width} />
+                                            <PostImage media={media} width={media_width} height={media_height} />
                                         </Pressable>
                                     )}
                                 </View>
@@ -233,7 +268,10 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
             {/* ---------- Actions ---------- */}
             <View style={styles.actions}>
                 <Pressable onPress={() => toggleLike()} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: is_liked }} accessibilityLabel={is_liked ? t("Zrušiť páči sa mi to") : t("Páči sa mi to")} style={styles.action}>
-                    <Icon name="heart" size={21} color={is_liked ? "danger" : "text"} is_solid={is_liked} />
+                    <View style={styles.heart}>
+                        <Icon name="heart" size={21} color={is_liked ? "danger" : "text"} is_solid={is_liked} />
+                        <HeartParticles particles={particles} onComplete={(id:number) => setParticles((previous:HeartParticle[]) => previous.filter((particle:HeartParticle) => particle.id !== id))} />
+                    </View>
                     {show_likes && <Text variant="body_strong" is_tabular>{post.likes}</Text>}
                 </Pressable>
 
@@ -291,13 +329,13 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
 export default memo(PostCard)
 
 // Function For Render One Photo (Shows A Placeholder Instead Of The Browser's Broken Image Icon When Loading Fails)
-function PostImage({ media, width }:{ media:PostMedia, width:number }) {
+function PostImage({ media, width, height }:{ media:PostMedia, width:number, height:number }) {
     const [has_failed, setHasFailed] = useState<boolean>(false) // Stores The Information If The Image Failed To Load
     const uri:string|null = getMediaUrl(media.file) // Gets The URL
 
     if(has_failed || !uri) {
         return (
-            <View style={[styles.image, styles.image_fallback, { width }]}>
+            <View style={[styles.image, styles.image_fallback, { width, height }]}>
                 <Icon name="image" size={28} color="text_muted" />
             </View>
         )
@@ -307,7 +345,7 @@ function PostImage({ media, width }:{ media:PostMedia, width:number }) {
         <Image
             source={{ uri }}
             placeholder={media.thumbnail ? { uri: getMediaUrl(media.thumbnail) ?? undefined } : undefined}
-            style={[styles.image, { width }]}
+            style={[styles.image, { width, height }]}
             contentFit="cover"
             transition={200}
             recyclingKey={String(media.id)}
@@ -357,13 +395,15 @@ const styles = StyleSheet.create({
 
     media_frame: {
         width: "100%",
-        aspectRatio: MEDIA_ASPECT_RATIO,
         backgroundColor: colors.background_deep,
         justifyContent: "center",
     },
 
+    media_page: {
+        justifyContent: "center", // Centers A Video Whose Shape Differs From The Frame
+    },
+
     image: {
-        aspectRatio: MEDIA_ASPECT_RATIO,
         backgroundColor: colors.surface_pressed,
     },
 
@@ -412,6 +452,12 @@ const styles = StyleSheet.create({
         gap: spacing.lg,
         paddingHorizontal: spacing.lg,
         paddingTop: spacing.md,
+    },
+
+    heart: {
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "visible",
     },
 
     action: {
