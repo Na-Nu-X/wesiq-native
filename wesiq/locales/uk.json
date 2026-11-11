@@ -1814,5 +1814,6 @@
     "{{count}} krokov_one": "{{count}} крок",
     "{{count}} krokov_few": "{{count}} кроки",
     "{{count}} krokov_many": "{{count}} кроків",
-    "{{count}} krokov_other": "{{count}} кроку"
+    "{{count}} krokov_other": "{{count}} кроку",
+    "Video sa nepodarilo načítať.": "Не вдалося завантажити відео."
 }

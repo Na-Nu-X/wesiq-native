@@ -1814,5 +1814,6 @@
     "{{count}} krokov_one": "{{count}} krok",
     "{{count}} krokov_few": "{{count}} kroky",
     "{{count}} krokov_many": "{{count}} kroku",
-    "{{count}} krokov_other": "{{count}} krokov"
+    "{{count}} krokov_other": "{{count}} krokov",
+    "Video sa nepodarilo načítať.": "Video sa nepodarilo načítať."
 }

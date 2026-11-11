@@ -1804,5 +1804,6 @@
     "Skryť ovládanie": "Steuerelemente ausblenden",
     "Zobraziť ovládanie": "Steuerelemente einblenden",
     "{{count}} krokov_one": "{{count}} Schritt",
-    "{{count}} krokov_other": "{{count}} Schritte"
+    "{{count}} krokov_other": "{{count}} Schritte",
+    "Video sa nepodarilo načítať.": "Das Video konnte nicht geladen werden."
 }

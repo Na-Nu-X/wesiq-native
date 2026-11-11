@@ -1804,5 +1804,6 @@
     "Skryť ovládanie": "Hide controls",
     "Zobraziť ovládanie": "Show controls",
     "{{count}} krokov_one": "{{count}} step",
-    "{{count}} krokov_other": "{{count}} steps"
+    "{{count}} krokov_other": "{{count}} steps",
+    "Video sa nepodarilo načítať.": "Couldn't load the video."
 }

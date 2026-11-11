@@ -10,10 +10,12 @@ import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet"
 import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { getStoredString } from "@/lib/storage"
 import { VideoScrubberPreview } from "./VideoScrubberPreview"
 import { useTranslation } from "react-i18next"
 import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
 import { useEventListener } from "expo"
+import { needs_hls_library, useHlsSource } from "@/lib/hls"
 
 import type { LoggedInUser } from "@/types/models"
 import type { BasicResponse , Post, Media } from "@/components/pages/community/Feed"
@@ -114,7 +116,7 @@ export const DynamicVideo = ({
 
     // Function For Get The Video URL
     const getVideoURL = (quality:number):string => {
-        const base_url:string = `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}` // Gets The Base Video URL
+        const base_url:string = `${API_URL}/stream-video/${one_post.user.id}/${one_post_media.id}` // API Route: Checks The Login Token, So Videos Of Private Posts Play Too (The Website Route Needs A Website Session)
         
         switch(quality) {
             case 1080: return `${base_url}/v2_index.m3u8` // Gets The URL For 1080p Quality
@@ -124,14 +126,29 @@ export const DynamicVideo = ({
         }
     }
 
-    // Stores The Video Source
+    const [has_load_error, setHasLoadError] = useState<boolean>(false) // Stores The Information If The Stream Failed To Load
+    const [retry_count, setRetryCount] = useState<number>(0) // A New URL On Retry Makes Every Player Load The Stream Again
+
+    const [user_token, setUserToken] = useState<string|null|undefined>(undefined) // Undefined While Loading (The Stream Waits For It)
+
+    // Initializes The Token For The Stream Requests (Changes With The Logged In User)
+    useEffect(() => {
+        let is_active:boolean = true
+        getStoredString("user_token").then((token:string|null) => { if(is_active) setUserToken(token) })
+        return () => { is_active = false }
+    }, [logged_in_user?.id])
+
+    // Stores The Video Source (With The Token, So The Server Can Check The Viewer's Access)
     const video_source = useMemo(
-        () => ({ uri: getVideoURL(active_quality) }), 
-        [one_post.user.id, one_post_media.id, active_quality]
+        () => user_token === undefined ? null : {
+            uri: getVideoURL(active_quality) + (retry_count > 0 ? `?retry=${retry_count}` : ""),
+            headers: user_token ? { Authorization: `Bearer ${user_token}` } : undefined,
+        },
+        [one_post.user.id, one_post_media.id, active_quality, retry_count, user_token]
     )
 
     // Creates The Video Player
-    const video_player:VideoPlayer = useVideoPlayer(video_source, (player) => {
+    const video_player:VideoPlayer = useVideoPlayer(needs_hls_library ? null : video_source, (player) => { // Browsers Without Native HLS Get The Source From hls.js Instead
         player.playbackRate = video_speed
         player.loop = true
         player.muted = is_muted
@@ -144,6 +161,8 @@ export const DynamicVideo = ({
             saved_position.current = 0
         }
     })
+
+    useHlsSource(video_player, video_source?.uri ?? null, user_token ?? null) // Web: Plays The .m3u8 Stream Where The Browser Can't And Keeps The Position Between The Post And Fullscreen
 
     // Initializes The Play Of The Video
     useEffect(() => {
@@ -183,6 +202,29 @@ export const DynamicVideo = ({
         }
     }, [playing_video, video_player, duration])
     
+    // Initializes The Error State (Missing Stream, Network Failure, Unsupported Format)
+    useEventListener(video_player, "statusChange", ({ status }:{ status:string }) => {
+        setHasLoadError(status === "error")
+    })
+
+    // Function For Load The Stream Again After An Error
+    const retryVideo = ():void => {
+        setHasLoadError(false)
+        setRetryCount((previous:number) => previous + 1)
+    }
+
+    // Error Overlay (Shown Over The Post Video And In Fullscreen)
+    const error_overlay = has_load_error ? (
+        <View style={styles.load_error}>
+            <FontAwesome6 name="triangle-exclamation" size={26} color={LIGHT_BLUE_COLOR} />
+            <Text style={styles.load_error_text}>{t("Video sa nepodarilo načítať.")}</Text>
+
+            <Pressable onPress={retryVideo} accessibilityRole="button" style={({ pressed }) => [styles.load_error_button, pressed ? { opacity: 0.7 } : null]}>
+                <Text style={styles.load_error_button_text}>{t("Skúsiť znova")}</Text>
+            </Pressable>
+        </View>
+    ) : null
+
     // Initializes The Video Duration Update
     useEventListener(video_player, "sourceLoad", (payload:SourceLoadEventPayload) => {
         if(payload.duration) {
@@ -886,11 +928,15 @@ export const DynamicVideo = ({
                         //     }}
                         // />
 
-                        <VideoView
-                            player={video_player}
-                            nativeControls={false}
-                            style={{ width: "100%", height: "100%" }}
-                        />
+                        <>
+                            <VideoView
+                                player={video_player}
+                                nativeControls={false}
+                                style={{ width: "100%", height: "100%" }}
+                            />
+
+                            {error_overlay}
+                        </>
                     )
                 )}
 
@@ -913,6 +959,8 @@ export const DynamicVideo = ({
                         )}
 
                         <Pressable style={StyleSheet.absoluteFill} onPress={() => setAreFullscreenControlsVisible((previous:boolean) => !previous)} accessibilityLabel={are_fullscreen_controls_visible ? t("Skryť ovládanie") : t("Zobraziť ovládanie")} />
+
+                        {error_overlay}
 
                         {are_fullscreen_controls_visible && (
                             <View
@@ -1035,6 +1083,39 @@ export const DynamicVideo = ({
 }
 
 const styles = StyleSheet.create({
+    load_error: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        padding: 20,
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        zIndex: 50,
+    },
+
+    load_error_text: {
+        color: "white",
+        fontSize: 15,
+        textAlign: "center",
+    },
+
+    load_error_button: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: BLUE_COLOR,
+    },
+
+    load_error_button_text: {
+        color: "white",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+
     fullscreen: {
         flex: 1,
         backgroundColor: "black",

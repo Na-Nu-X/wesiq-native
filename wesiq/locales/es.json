@@ -1809,5 +1809,6 @@
     "Zobraziť ovládanie": "Mostrar controles",
     "{{count}} krokov_one": "{{count}} paso",
     "{{count}} krokov_many": "{{count}} pasos",
-    "{{count}} krokov_other": "{{count}} pasos"
+    "{{count}} krokov_other": "{{count}} pasos",
+    "Video sa nepodarilo načítať.": "No se pudo cargar el vídeo."
 }

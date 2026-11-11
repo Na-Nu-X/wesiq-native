@@ -1814,5 +1814,6 @@
     "{{count}} krokov_one": "{{count}} шаг",
     "{{count}} krokov_few": "{{count}} шага",
     "{{count}} krokov_many": "{{count}} шагов",
-    "{{count}} krokov_other": "{{count}} шага"
+    "{{count}} krokov_other": "{{count}} шага",
+    "Video sa nepodarilo načítať.": "Не удалось загрузить видео."
 }

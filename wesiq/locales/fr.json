@@ -1805,5 +1805,6 @@
     "Zobraziť ovládanie": "Afficher les commandes",
     "{{count}} krokov_one": "{{count}} pas",
     "{{count}} krokov_many": "{{count}} pas",
-    "{{count}} krokov_other": "{{count}} pas"
+    "{{count}} krokov_other": "{{count}} pas",
+    "Video sa nepodarilo načítať.": "Impossible de charger la vidéo."
 }
