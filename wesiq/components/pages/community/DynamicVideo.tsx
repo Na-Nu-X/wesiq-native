@@ -25,7 +25,6 @@ interface DynamicVideoProps {
     onSetPlayingVideo:(id:number|null) => void,
     playing_video:number|null,
     data_saving_mode:boolean,
-    is_volume_slider_sliding:RefObject<boolean>,
     onVideoDurationLoad:(video_duration:number) => void,
     onSetIsVideoInitialized:(is_video_initialized:boolean) => void,
     is_video_initialized:boolean,
@@ -42,8 +41,11 @@ interface DynamicVideoProps {
     onSetScrubberWidth:(scrubber_width:number) => void,
     scrubber_width:number,
     onStopControlsTimer:() => void,
-    controls_timeout:any
+    onStartControlsTimer:() => void
 }
+
+// Function For Get The Seconds Since A Timestamp (Called Only From Effects)
+const getSecondsSince = (start_ms:number):number => (Date.now() - start_ms) / 1000
 
 export const DynamicVideo = ({ 
     logged_in_user,
@@ -52,7 +54,6 @@ export const DynamicVideo = ({
     onSetPlayingVideo, 
     playing_video, 
     data_saving_mode, 
-    is_volume_slider_sliding, 
     onVideoDurationLoad,
     onSetIsVideoInitialized,
     is_video_initialized,
@@ -69,7 +70,7 @@ export const DynamicVideo = ({
     onSetScrubberWidth,
     scrubber_width,
     onStopControlsTimer,
-    controls_timeout
+    onStartControlsTimer
 }:DynamicVideoProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -196,40 +197,13 @@ export const DynamicVideo = ({
         }
     }, [thumbnail_url])
 
-    // Updates The Data Saving Mode Value If The Data Loads
-    useEffect(() => {
-        if(data_saving_mode) setActiveQuality(480)
-        else setActiveQuality(-1)
-    }, [data_saving_mode])
+    const [synced_data_saving_mode, setSyncedDataSavingMode] = useState<boolean>(data_saving_mode) // Stores The Last Data Saving Mode
 
-    // Initializes Record Of Video Watch Time
-    useEffect(() => {
-        if(playing_video) start_time.current = Date.now() // Sets The Start Time
-        else initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-    
-        return () => {
-            initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-        }
-    }, [playing_video])
-
-    // Initializes The Reset Of Record Of Video Watch Time
-    useEffect(() => {
-        const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
-            // When App Is On Background
-            if(nextAppState.match(/inactive|background/)) {
-                initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-            } 
-            
-            // When App Is On Screen
-            else if(nextAppState === "active" && playing_video) {
-                start_time.current = Date.now() // Sets The Start Time
-            }
-        })
-    
-        return () => {
-            app_state_subscription.remove()
-        }
-    }, [playing_video])
+    // Updates The Quality When The Data Saving Mode Changes
+    if(synced_data_saving_mode !== data_saving_mode) {
+        setSyncedDataSavingMode(data_saving_mode)
+        setActiveQuality(data_saving_mode ? 480 : -1)
+    }
 
     // Initializes The Video Orientation
     useEffect(() => {
@@ -415,15 +389,7 @@ export const DynamicVideo = ({
         }
     }
 
-    // Function For Start The Controls Timer
-    const startControlsTimer = ():void => {
-        onStopControlsTimer() // Stops The Controls Timer
-        
-        // 5 Seconds Timeout
-        controls_timeout.current = setTimeout(() => {
-            onShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
-        }, 5000)
-    }
+    const startControlsTimer = onStartControlsTimer // Hides The Controls After 5 Seconds
 
     useEffect(() => {
         return () => {
@@ -435,7 +401,7 @@ export const DynamicVideo = ({
     const initializeRecordVideoWatchTime = ():void => {
         if(start_time.current === 0) return
     
-        const elapsed_seconds:number = (Date.now() - start_time.current) / 1000 // Gets The Elapsed Seconds Of The Watched Sequence
+        const elapsed_seconds:number = getSecondsSince(start_time.current) // Gets The Elapsed Seconds Of The Watched Sequence
 
         total_watch_time.current += elapsed_seconds // Increases The Total Watch Time
         start_time.current = 0 // Resets The Start Time
@@ -491,6 +457,35 @@ export const DynamicVideo = ({
             console.warn(t("Pri zaznamenávaní času pozerania videa došlo k chybe.")) // Shows The Alert
         }
     }
+
+    // Initializes Record Of Video Watch Time
+    useEffect(() => {
+        if(playing_video) start_time.current = Date.now() // Sets The Start Time
+        else initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+    
+        return () => {
+            initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+        }
+    }, [playing_video])
+
+    // Initializes The Reset Of Record Of Video Watch Time
+    useEffect(() => {
+        const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
+            // When App Is On Background
+            if(nextAppState.match(/inactive|background/)) {
+                initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+            } 
+            
+            // When App Is On Screen
+            else if(nextAppState === "active" && playing_video) {
+                start_time.current = Date.now() // Sets The Start Time
+            }
+        })
+    
+        return () => {
+            app_state_subscription.remove()
+        }
+    }, [playing_video])
 
     return (
         <Pressable 
@@ -718,13 +713,12 @@ export const DynamicVideo = ({
                             duration={duration}
                             buffered_time={buffered_time}
                             onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                            is_volume_slider_sliding={is_volume_slider_sliding}
                             onMuteUnmuteVideo={muteUnmuteVideo}
                             onShowVideoSettings={showVideoSettings}
                             is_fullscreen={is_fullscreen}
                             onToggleVideoFullscreen={toggleVideoFullscreen}
                             onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                            current_video={getCurrentVideo()}
+                            getCurrentVideo={getCurrentVideo}
                             onStartControlsTimer={startControlsTimer}
                             onStopControlsTimer={onStopControlsTimer}
                             onIsScrubberDragged={onIsScrubberDragged}
@@ -802,13 +796,12 @@ export const DynamicVideo = ({
                     duration={duration}
                     buffered_time={buffered_time}
                     onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                    is_volume_slider_sliding={is_volume_slider_sliding}
                     onMuteUnmuteVideo={muteUnmuteVideo}
                     onShowVideoSettings={showVideoSettings}
                     is_fullscreen={is_fullscreen}
                     onToggleVideoFullscreen={toggleVideoFullscreen}
                     onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                    current_video={getCurrentVideo()}
+                    getCurrentVideo={getCurrentVideo}
                     onStartControlsTimer={startControlsTimer}
                     onStopControlsTimer={onStopControlsTimer}
                     onIsScrubberDragged={onIsScrubberDragged}

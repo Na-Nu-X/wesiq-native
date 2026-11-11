@@ -1,5 +1,5 @@
-import { RefObject, useEffect, useRef, useState } from "react"
-import { View, StyleSheet, Text, LayoutChangeEvent, GestureResponderEvent, PanResponder, PanResponderInstance } from "react-native"
+import { useEffect, useRef, useState } from "react"
+import { View, StyleSheet, Text, LayoutChangeEvent, GestureResponderEvent, Platform } from "react-native"
 import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLUE_COLOR, MAIN_COLOR } from "@/constants/colors"
 import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next"
 import { DOMAIN } from "@/constants/general"
 
 import type { Media } from "@/components/pages/community/Feed"
-import { Platform } from "expo"
+import i18n from "@/lib/i18n"
 
 export interface vtt {
     start:number,
@@ -35,13 +35,12 @@ interface CustomVideoControlsProps {
     duration:number,
     buffered_time:number,
     onChangeVideoVolume:(value:number) => void,
-    is_volume_slider_sliding:RefObject<boolean>
     onMuteUnmuteVideo:() => void,
     onShowVideoSettings:() => void,
     is_fullscreen:boolean,
     onToggleVideoFullscreen:() => void,
     onSetScrubberWidth:(scrubber_width:number) => void,
-    current_video:VideoPlayer|null
+    getCurrentVideo:() => VideoPlayer|null,
     onStartControlsTimer:() => void,
     onStopControlsTimer:() => void,
     onIsScrubberDragged:(is_scrubber_dragged:boolean) => void,
@@ -51,6 +50,38 @@ interface CustomVideoControlsProps {
     onScrubberPositionUpdate:(scrubber_position:number) => void,
     scrubber_position:number,
     onElapsedTimeUpdate:(elapsed_time:number) => void
+}
+
+// Function For Parse The VTT Time
+const parseVttTime = (time:string):number => {
+    const parts:string[] = time.split(":")
+    const seconds_parts:string[] = (parts[2] as string).split(".")
+
+    return parseInt(parts[0] as string) * 3600 + parseInt(parts[1] as string) * 60 + parseInt(seconds_parts[0] as string) + parseFloat("0." + seconds_parts[1])
+}
+
+// Function For Load The VTT Scrubber Previews
+const loadVttPreviews = async (vtt_url:string):Promise<vtt[]> => {
+    try {
+        const response:Response = await fetch(`${DOMAIN}/media/${vtt_url}`) // Sends The GET Request To The Server
+        const text:string = await response.text() // Gets The Text Content Of The VTT File
+        const regex:RegExp = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\s+(.+)#xywh=(\d+),(\d+),(\d+),(\d+)/g
+
+        return [...text.matchAll(regex)].map((match:RegExpMatchArray):vtt => ({
+            start: parseVttTime(match[1] as string),
+            end: parseVttTime(match[2] as string),
+            image: match[3] as string,
+            x: parseInt(match[4] as string),
+            y: parseInt(match[5] as string),
+            w: parseInt(match[6] as string),
+            h: parseInt(match[7] as string),
+        }))
+    }
+
+    catch {
+        console.warn(i18n.t("Pri získavaní náhľadov pre video došlo k chybe."))
+        return []
+    }
 }
 
 export const CustomVideoControls = ({ 
@@ -65,13 +96,12 @@ export const CustomVideoControls = ({
     duration, 
     buffered_time, 
     onChangeVideoVolume,
-    is_volume_slider_sliding,
     onMuteUnmuteVideo,
     onShowVideoSettings,
     is_fullscreen,
     onToggleVideoFullscreen,
     onSetScrubberWidth,
-    current_video,
+    getCurrentVideo,
     onStartControlsTimer,
     onStopControlsTimer,
     onIsScrubberDragged,
@@ -91,18 +121,15 @@ export const CustomVideoControls = ({
 
     const scrubber_width_reference = useRef<number>(0) // Stores The Scrubber Width Reference
 
-    const latest_video_reference = useRef<VideoPlayer|null>(current_video) // Stores The Latest Video Reference
 
-    // 1. Pridaj si lokálny stav len pre vizuálny pohyb slidera
-    const [localVolume, setLocalVolume] = useState(volume);
+    const [local_volume, setLocalVolume] = useState<number>(volume) // Stores The Slider Position While Dragging
+    const [synced_volume, setSyncedVolume] = useState<number>(volume) // Stores The Last Volume From The Player
 
-    // ... (ak sa zmení globálne volume zvonku, zosynchronizuj ho)
-    useEffect(() => { setLocalVolume(volume) }, [volume]);
-
-    // Initializes The Update Of The Latest Video Reference
-    useEffect(() => {
-        latest_video_reference.current = current_video // Sets The Latest Video Reference
-    }, [current_video])
+    // Follows The Player Volume When It Changes Outside Of The Slider
+    if(synced_volume !== volume) {
+        setSyncedVolume(volume)
+        setLocalVolume(volume)
+    }
 
     // Function For Get The Volume Icon
     const getVolumeIcon = ():string => {
@@ -113,44 +140,6 @@ export const CustomVideoControls = ({
         return "volume-high"
     }
 
-    // Creates The Scrubbar Gesture
-    const scrubbar_gesture:PanResponderInstance = useRef(
-        PanResponder.create({
-            onStartShouldSetPanResponder: () => true, // Enables The Tap
-            onMoveShouldSetPanResponder: () => true, // Enables The Move
-    
-            // Tap Start (mousedown / touchstart)
-            onPanResponderGrant: (event:GestureResponderEvent):void => {
-                onStopControlsTimer() // Stops The Controls Timer
-                onIsScrubberDragged(true) // Sets The Information That The Scrubber Is Dragged
-                calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
-            },
-    
-            // Move (mousemove / touchmove)
-            onPanResponderMove: (event:GestureResponderEvent):void => {
-                calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
-            },
-
-            // Tap End (mouseup / touchend)
-            onPanResponderRelease:(event:GestureResponderEvent):void => {
-                onIsScrubberDragged(false) // Sets The Information That The Scrubber Isn't Dragged
-                
-                const scrubber_progress:number|undefined = calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
-
-                if(scrubber_progress !== undefined && duration > 0) {
-                    const video_time:number = scrubber_progress * duration // Gets The Video Time
-                    
-                    if(latest_video_reference.current) {
-                        latest_video_reference.current.currentTime = video_time / 1000 // Sets The New Current Video Time Position
-                        onElapsedTimeUpdate(video_time) // Sets The Elapsed Time
-                    }
-                }
-
-                onStartControlsTimer() // Starts The Controls Timer
-            }
-        })
-    ).current
-
     // Function For Handle Set Scrubber Width
     const handleSetScrubberWidth = (event:LayoutChangeEvent):void => {
         const scrubber_width:number = event.nativeEvent.layout.width // Gets The Scrubber Width
@@ -158,59 +147,17 @@ export const CustomVideoControls = ({
         onSetScrubberWidth(event.nativeEvent.layout.width) // Sets The Scrubber Width
     }
 
-    // Function For Load The VTT File Data
-    const loadVttData = async (vtt_url:string) => {
-        try {
-            // Sends The GET Request To The Server
-            const loaded_vtt_file_response:Response = await fetch(`${DOMAIN}/media/${vtt_url}`, {
-                method: "GET",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                }
-            })
-
-            const loaded_vtt_file_text:string = await loaded_vtt_file_response.text() // Gets The Text Content Of The VTT File
-            const regex:RegExp = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\s+(.+)#xywh=(\d+),(\d+),(\d+),(\d+)/g;
-            let match
-
-            while((match = regex.exec(loaded_vtt_file_text)) !== null) {
-                // Stores The Data Of VTT Video Preview To All VTT Video Previews
-                const new_vtt_video_previews:vtt = {
-                    start: parseVttTime(match[1] as string),
-                    end: parseVttTime(match[2] as string),
-                    image: match[3] as string,
-                    x: parseInt(match[4] as string),
-                    y: parseInt(match[5] as string),
-                    w: parseInt(match[6] as string),
-                    h: parseInt(match[7] as string)
-                }
-
-                // Sets The VTT Video Previews
-                setVttVideoPreviews((previous_vtt_video_previews:vtt[]) => {
-                    return [...previous_vtt_video_previews, new_vtt_video_previews] // Returns The Combined VTT Video Previews
-                })
-            }
-        } 
-        
-        catch {
-            console.warn(t("Pri získavaní náhľadov pre video došlo k chybe."))
-        } 
-    }
-
     // Initializes The Load Of The VTT File Data
     useEffect(() => {
-        if(one_post_media.vtt_file) loadVttData(one_post_media.vtt_file) // Loads The VTT File Data
-    }, [one_post_media])
+        if(!one_post_media.vtt_file) return
+        let is_active:boolean = true
 
-    // Function For Parse The VTT Time
-    const parseVttTime = (time:string):number => {
-        const parts:string[] = time.split(':')
-        const seconds_parts:string[] = (parts[2] as string).split('.')
+        loadVttPreviews(one_post_media.vtt_file).then((previews:vtt[]) => {
+            if(is_active) setVttVideoPreviews(previews) // Replaces The Previews (They Were Appended Again On Every Media Change)
+        })
 
-        return parseInt(parts[0] as string) * 3600 + parseInt(parts[1] as string) * 60 + parseInt(seconds_parts[0] as string) + parseFloat('0.' + seconds_parts[1] as string)
-    }
+        return () => { is_active = false }
+    }, [one_post_media.vtt_file])
 
     // Function For Initialize The Video Preview
     const initializeVideoPreview = ():void => {
@@ -243,6 +190,48 @@ export const CustomVideoControls = ({
         setScrubberTime(duration * scrubber_progress) // Sets The Scrubber Time
         
         return scrubber_progress // Returns The Scrubber Progress
+    }
+
+    // Scrubber Touch Handling (Plain Responder Props, So Every Render Uses The Current Duration)
+    const scrubber_responder = {
+        onStartShouldSetResponder: ():boolean => true, // Enables The Tap
+        onMoveShouldSetResponder: ():boolean => true, // Enables The Move
+        onResponderTerminationRequest: ():boolean => false, // Keeps The Drag When A Parent List Wants To Scroll
+
+        // Tap Start (mousedown / touchstart)
+        onResponderGrant: (event:GestureResponderEvent):void => {
+            onStopControlsTimer() // Stops The Controls Timer
+            onIsScrubberDragged(true) // Sets The Information That The Scrubber Is Dragged
+            calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+        },
+
+        // Move (mousemove / touchmove)
+        onResponderMove: (event:GestureResponderEvent):void => {
+            calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+        },
+
+        // Tap End (mouseup / touchend)
+        onResponderRelease: (event:GestureResponderEvent):void => {
+            onIsScrubberDragged(false) // Sets The Information That The Scrubber Isn't Dragged
+
+            const scrubber_progress:number|undefined = calculateAndSetScrubberProgress(event) // Calculate End Set The Scrubber Progress
+
+            const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
+
+            if(scrubber_progress !== undefined && duration > 0 && current_video) {
+                const video_time:number = scrubber_progress * duration // Gets The Video Time
+                current_video.currentTime = video_time / 1000 // Sets The New Current Video Time Position
+                onElapsedTimeUpdate(video_time) // Sets The Elapsed Time
+            }
+
+            onStartControlsTimer() // Starts The Controls Timer
+        },
+
+        // Drag Taken Over By The System
+        onResponderTerminate: ():void => {
+            onIsScrubberDragged(false)
+            onStartControlsTimer()
+        },
     }
 
     return (
@@ -373,14 +362,9 @@ export const CustomVideoControls = ({
                                     minimumValue={0}
                                     maximumValue={1}
                                     step={0.01}
-                                    value={is_muted ? 0 : localVolume}
+                                    value={is_muted ? 0 : local_volume}
                                     onValueChange={(value:number[]) => setLocalVolume(value[0])} 
-                                    onSlidingStart={() => { is_volume_slider_sliding.current = true }}
-
-                                    onSlidingComplete={(value:number[]) => { 
-                                        is_volume_slider_sliding.current = false // Sets The Information That The Volume Slider Isn't Sliding
-                                        onChangeVideoVolume(value[0]) // Changes The Video Volume
-                                    }}
+                                    onSlidingComplete={(value:number[]) => onChangeVideoVolume(value[0])} // Changes The Video Volume
                               
                                     minimumTrackTintColor={DARK_BLUE_COLOR}
                                     maximumTrackTintColor={BLUE_COLOR}
@@ -482,7 +466,7 @@ export const CustomVideoControls = ({
                 className="scrubber_hitbox" 
                 onLayout={(event:LayoutChangeEvent) => handleSetScrubberWidth(event)} 
                 style={styles.scrubber_hitbox}
-                {...scrubbar_gesture.panHandlers} 
+                {...scrubber_responder} 
             />
 
             <View className="scrubber" style={styles.scrubber}>

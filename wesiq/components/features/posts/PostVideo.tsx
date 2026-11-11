@@ -40,7 +40,6 @@ export default function PostVideo({ post, media, onDurationLoad }:PostVideoProps
     const [scrubber_preview_image, setScrubberPreviewImage] = useState<string>("")
     const [scrubber_position, setScrubberPosition] = useState<number>(0)
     const [scrubber_width, setScrubberWidth] = useState<number>(0)
-    const is_volume_slider_sliding = useRef<boolean>(false)
     const controls_timeout = useRef<ReturnType<typeof setTimeout>|null>(null)
 
     return (
@@ -51,7 +50,6 @@ export default function PostVideo({ post, media, onDurationLoad }:PostVideoProps
             onSetPlayingVideo={setPlayingMediaId}
             playing_video={playing_media_id}
             data_saving_mode={logged_in_user?.data_saving_mode ?? false}
-            is_volume_slider_sliding={is_volume_slider_sliding}
             onVideoDurationLoad={(seconds:number) => onDurationLoad?.(seconds)}
             onSetIsVideoInitialized={setIsInitialized}
             is_video_initialized={is_initialized}
@@ -72,7 +70,10 @@ export default function PostVideo({ post, media, onDurationLoad }:PostVideoProps
                 if(controls_timeout.current) clearTimeout(controls_timeout.current)
             }}
 
-            controls_timeout={controls_timeout}
+            onStartControlsTimer={() => {
+                if(controls_timeout.current) clearTimeout(controls_timeout.current)
+                controls_timeout.current = setTimeout(() => setShowControls(false), 5000) // Hides The Controls After 5 Seconds
+            }}
         />
     )
 }

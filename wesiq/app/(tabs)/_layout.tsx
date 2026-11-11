@@ -12,9 +12,11 @@ import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 import type { IconName } from "@/components/ui"
 
 // Function For Create A Tab Icon
-const tabIcon = (name:IconName) => ({ focused }:{ focused:boolean }) => (
-    <Icon name={name} size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />
-)
+const tabIcon = (name:IconName) => {
+    const TabIcon = ({ focused }:{ focused:boolean }) => <Icon name={name} size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />
+    TabIcon.displayName = `TabIcon(${name})`
+    return TabIcon
+}
 
 export default function TabsLayout() {
     const { t } = useTranslation() // Initializes The Translations
