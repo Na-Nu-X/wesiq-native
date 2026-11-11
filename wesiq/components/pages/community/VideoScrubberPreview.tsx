@@ -1,96 +1,65 @@
+// Frame Preview Above The Scrubber While It Is Dragged (Sprite Sheet Tile From The VTT File)
+
 import { View, StyleSheet } from "react-native"
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
-import { DynamicImage } from "./DynamicImage"
 import { DOMAIN } from "@/constants/general"
+import { DynamicImage } from "./DynamicImage"
 
 import type { vtt } from "../activity/CustomVideoControls"
+
+const SCRUBBER_INSET:number = 12.5 // Same As The Scrubber Hitbox In CustomVideoControls
+const EDGE_GAP:number = 6 // Keeps The Preview Inside The Video
+const TRIANGLE_SIZE:number = 10
 
 interface VideoScrubberPreviewProps {
     video_scrubber_preview:vtt,
     video_scrubber_preview_image:string,
-    scrubber_position:number,
-    scrubber_width:number
+    scrubber_position:number, // Touch X Inside The Scrubber
+    scrubber_width:number,
+    bottom:number // Distance Of The Scrubber From The Bottom Of The Video
 }
 
-export const VideoScrubberPreview = ({ 
-    video_scrubber_preview, 
-    video_scrubber_preview_image, 
-    scrubber_position, 
-    scrubber_width 
-}:VideoScrubberPreviewProps) => {
+export const VideoScrubberPreview = ({ video_scrubber_preview, video_scrubber_preview_image, scrubber_position, scrubber_width, bottom }:VideoScrubberPreviewProps) => {
+    const { w, h, x, y } = video_scrubber_preview
+    const container_width:number = scrubber_width + SCRUBBER_INSET * 2 // Width Of The Video
+    const touch_x:number = SCRUBBER_INSET + Math.min(Math.max(0, scrubber_position), scrubber_width) // Touch X Inside The Video
+    const left:number = Math.min(Math.max(EDGE_GAP, touch_x - w / 2), container_width - w - EDGE_GAP) // Centers The Preview Over The Finger
+    const triangle_left:number = Math.min(Math.max(TRIANGLE_SIZE, touch_x - left), w - TRIANGLE_SIZE) - TRIANGLE_SIZE // Points At The Finger
+
     return (
-        <View 
-            style={{ 
-                position: "relative", 
-                bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 20 + 2.5,
-
-                left: Math.min(
-                    Math.max(7, scrubber_position - (video_scrubber_preview.w / 2) + 10 + 3), 
-                    scrubber_width + 20 - video_scrubber_preview.w
-                ),
-            }}
-        >
-            <View 
-                className="video_scrubber_preview"
-
-                style={[
-                    styles.video_scrubber_preview,
-
-                    {
-                        width: video_scrubber_preview.w,
-                        height: video_scrubber_preview.h,
-                    }
-                ]}
-            >
-                <DynamicImage 
-                    uri={`${DOMAIN}/${video_scrubber_preview_image}`}
-
-                    style={{ 
-                        position: "absolute",
-                        left: -video_scrubber_preview.x,
-                        top: -video_scrubber_preview.y,
-                    }}
-                />
+        <View pointerEvents="none" style={[styles.root, { left, bottom: bottom + TRIANGLE_SIZE + 4, width: w, height: h + TRIANGLE_SIZE }]}>
+            <View style={[styles.frame, { width: w, height: h }]}>
+                <DynamicImage uri={`${DOMAIN}/${video_scrubber_preview_image}`} style={{ position: "absolute", left: -x, top: -y }} />
             </View>
-        
-            <View 
-                className="triangle" 
 
-                style={[
-                    styles.triangle,
-
-                    {
-                        top: video_scrubber_preview.h + 10,
-                        left: (video_scrubber_preview.w / 2) - 10,
-                    }
-                ]} 
-            />
+            <View style={[styles.triangle, { top: h, left: triangle_left }]} />
         </View>
     )
 }
 
 const styles = StyleSheet.create({
-    video_scrubber_preview: {
+    root: {
         position: "absolute",
-        width: 160,
-        height: 90,
+        zIndex: 200,
+    },
+
+    frame: {
         borderWidth: 1,
         borderColor: "#cccccc",
         borderRadius: SMALL_BORDER_RADIUS,
-        opacity: 0.9,
+        opacity: 0.95,
         overflow: "hidden",
-        zIndex: 200,
     },
-    
+
     triangle: {
         position: "absolute",
         width: 0,
         height: 0,
         backgroundColor: "transparent",
-        borderTopWidth: 10,
-        borderRightWidth: 10,
+        borderTopWidth: TRIANGLE_SIZE,
+        borderRightWidth: TRIANGLE_SIZE,
         borderRightColor: "transparent",
-        borderLeftWidth: 10,
+        borderLeftWidth: TRIANGLE_SIZE,
         borderLeftColor: "transparent",
         borderTopColor: "#cccccc",
     },

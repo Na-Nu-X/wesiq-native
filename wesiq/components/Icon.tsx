@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react"
-import { Pressable, StyleProp, ViewStyle, Animated } from "react-native"
+import { Pressable, StyleProp, ViewStyle, Animated, GestureResponderEvent } from "react-native"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
 
@@ -11,7 +11,8 @@ type IconProps = {
     style?:StyleProp<ViewStyle>,
     pressed_style?:StyleProp<ViewStyle>,
     color?:string,
-    pressed_color?:string
+    pressed_color?:string,
+    accessibility_label?:string // Required For Screen Readers When The Icon Is A Button
 }
 
 const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates The Animated Icon
@@ -24,10 +25,11 @@ export default function Icon({
     style, 
     pressed_style, 
     color = BLUE_COLOR, 
-    pressed_color = DARK_BLUE_COLOR 
+    pressed_color = DARK_BLUE_COLOR,
+    accessibility_label
 }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
-    const animation_value = useRef(new Animated.Value(0)).current // Stores The Animation Value
+    const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
 
     // Function For Handle Press In
     const handlePressIn = () => {
@@ -59,10 +61,12 @@ export default function Icon({
 
     return (
         <Pressable
-            onPress={onPress}
+            onPress={onPress ? (event:GestureResponderEvent) => { event.stopPropagation() /* Keeps The Tap From Reaching The Video Behind (Web Bubbles Nested Presses) */; onPress() } : undefined}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole={onPress ? "button" : undefined}
+            accessibilityLabel={accessibility_label}
             style={[style, is_pressed && pressed_style]}
         >
             <AnimatedIcon

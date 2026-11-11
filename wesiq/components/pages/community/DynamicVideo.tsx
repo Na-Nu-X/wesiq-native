@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, RefObject, useMemo } from "react"
-import { View, Image, StyleSheet, Text, Pressable, Modal, AppState, AppStateStatus, NativeEventSubscription } from "react-native"
+import { View, Image, StyleSheet, Text, Pressable, Modal, AppState, AppStateStatus, NativeEventSubscription, Platform, useWindowDimensions } from "react-native"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { API_URL, DOMAIN } from "@/constants/general"
 import { BLUE_COLOR, LIGHT_BLUE_COLOR, MAIN_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { FontAwesome6 } from "@expo/vector-icons"
@@ -9,14 +10,15 @@ import { BottomSheetModal, BottomSheetView } from "@gorhom/bottom-sheet"
 import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { DynamicImage } from "./DynamicImage"
+import { getStoredString } from "@/lib/storage"
+import { VideoScrubberPreview } from "./VideoScrubberPreview"
 import { useTranslation } from "react-i18next"
 import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
 import { useEventListener } from "expo"
+import { needs_hls_library, useHlsSource } from "@/lib/hls"
 
-import type { LoggedInUser } from "@/components/LoginFormDialog"
-import type { BasicResponse } from "@/components/pages/community/Feed"
-import type { Post, Media } from "@/components/pages/community/Feed"
+import type { LoggedInUser } from "@/types/models"
+import type { BasicResponse , Post, Media } from "@/components/pages/community/Feed"
 import type { vtt } from "../activity/CustomVideoControls"
 
 interface DynamicVideoProps {
@@ -26,7 +28,6 @@ interface DynamicVideoProps {
     onSetPlayingVideo:(id:number|null) => void,
     playing_video:number|null,
     data_saving_mode:boolean,
-    is_volume_slider_sliding:RefObject<boolean>,
     onVideoDurationLoad:(video_duration:number) => void,
     onSetIsVideoInitialized:(is_video_initialized:boolean) => void,
     is_video_initialized:boolean,
@@ -43,8 +44,17 @@ interface DynamicVideoProps {
     onSetScrubberWidth:(scrubber_width:number) => void,
     scrubber_width:number,
     onStopControlsTimer:() => void,
-    controls_timeout:any
+    onStartControlsTimer:() => void
 }
+
+// Function For Lock The Screen To Landscape (Fullscreen Landscape Video) Or Back To Portrait (The Rest Of The App)
+const lockOrientation = (is_landscape:boolean):void => {
+    if(Platform.OS === "web") return
+    ScreenOrientation.lockAsync(is_landscape ? ScreenOrientation.OrientationLock.LANDSCAPE : ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {})
+}
+
+// Function For Get The Seconds Since A Timestamp (Called Only From Effects)
+const getSecondsSince = (start_ms:number):number => (Date.now() - start_ms) / 1000
 
 export const DynamicVideo = ({ 
     logged_in_user,
@@ -53,7 +63,6 @@ export const DynamicVideo = ({
     onSetPlayingVideo, 
     playing_video, 
     data_saving_mode, 
-    is_volume_slider_sliding, 
     onVideoDurationLoad,
     onSetIsVideoInitialized,
     is_video_initialized,
@@ -70,7 +79,7 @@ export const DynamicVideo = ({
     onSetScrubberWidth,
     scrubber_width,
     onStopControlsTimer,
-    controls_timeout
+    onStartControlsTimer
 }:DynamicVideoProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
@@ -82,8 +91,10 @@ export const DynamicVideo = ({
     const [video_speed, setVideoSpeed] = useState<number>(1) // Stores The Video Speed
 
     const normal_video:RefObject<VideoPlayer|null> = useRef<VideoPlayer|null>(null) // Stores The Normal Video Reference
-    const fullscreen_video:RefObject<VideoPlayer|null> = useRef<VideoPlayer|null>(null) // Stores The Fullscreen Video Reference
-    const getCurrentVideo = ():VideoPlayer|null => is_fullscreen ? fullscreen_video.current : normal_video.current // Function For Get The Current Video (Normal / Fullscreen)
+    const insets = useSafeAreaInsets() // Keeps The Fullscreen Controls Away From The Notch And Home Indicator
+    const { width: window_width, height: window_height } = useWindowDimensions()
+    const is_landscape:boolean = window_width > window_height
+    const getCurrentVideo = ():VideoPlayer|null => normal_video.current // One Player Serves Both The Post And The Fullscreen View
 
     const [is_muted, setIsMuted] = useState<boolean>(false) // Stores The Information If The Video Is Muted
     const [volume, setVolume] = useState<number>(0) // Stores The Video Volume
@@ -97,13 +108,15 @@ export const DynamicVideo = ({
     const [video_settings_sheet, setVideoSettingsSheet] = useState<"main"|"quality"|"speed">("main") // Stores The Active Video Settings Sheet
 
     const [is_fullscreen, setIsFullscreen] = useState<boolean>(false) // Stores The Information If The Video Is In Fullscreen Mode
+    const [is_fullscreen_settings_open, setIsFullscreenSettingsOpen] = useState<boolean>(false) // Video Settings Inside Fullscreen
+    const [are_fullscreen_controls_visible, setAreFullscreenControlsVisible] = useState<boolean>(true) // Own Visibility, So Taps On The Post Behind Can't Hide Them
 
     const start_time = useRef<number>(0) // Stores The Start Time Of The Video
     const total_watch_time = useRef<number>(0) // Stores The Total Watch Time Of The Video
 
     // Function For Get The Video URL
     const getVideoURL = (quality:number):string => {
-        const base_url:string = `${DOMAIN}/api/stream-video/${one_post.user.id}/${one_post_media.id}` // Gets The Base Video URL
+        const base_url:string = `${API_URL}/stream-video/${one_post.user.id}/${one_post_media.id}` // API Route: Checks The Login Token, So Videos Of Private Posts Play Too (The Website Route Needs A Website Session)
         
         switch(quality) {
             case 1080: return `${base_url}/v2_index.m3u8` // Gets The URL For 1080p Quality
@@ -113,26 +126,43 @@ export const DynamicVideo = ({
         }
     }
 
-    // Stores The Video Source
+    const [has_load_error, setHasLoadError] = useState<boolean>(false) // Stores The Information If The Stream Failed To Load
+    const [retry_count, setRetryCount] = useState<number>(0) // A New URL On Retry Makes Every Player Load The Stream Again
+
+    const [user_token, setUserToken] = useState<string|null|undefined>(undefined) // Undefined While Loading (The Stream Waits For It)
+
+    // Initializes The Token For The Stream Requests (Changes With The Logged In User)
+    useEffect(() => {
+        let is_active:boolean = true
+        getStoredString("user_token").then((token:string|null) => { if(is_active) setUserToken(token) })
+        return () => { is_active = false }
+    }, [logged_in_user?.id])
+
+    // Stores The Video Source (With The Token, So The Server Can Check The Viewer's Access)
     const video_source = useMemo(
-        () => ({ uri: getVideoURL(active_quality) }), 
-        [one_post.user.id, one_post_media.id, active_quality]
+        () => user_token === undefined ? null : {
+            uri: getVideoURL(active_quality) + (retry_count > 0 ? `?retry=${retry_count}` : ""),
+            headers: user_token ? { Authorization: `Bearer ${user_token}` } : undefined,
+        },
+        [one_post.user.id, one_post_media.id, active_quality, retry_count, user_token]
     )
 
     // Creates The Video Player
-    const video_player:VideoPlayer = useVideoPlayer(video_source, (player) => {
+    const video_player:VideoPlayer = useVideoPlayer(needs_hls_library ? null : video_source, (player) => { // Browsers Without Native HLS Get The Source From hls.js Instead
         player.playbackRate = video_speed
         player.loop = true
         player.muted = is_muted
         player.staysActiveInBackground = false
 
-        !is_fullscreen ? normal_video.current = player : fullscreen_video.current = player // Sets The Current Video (Normal / Fullscreen)
+        normal_video.current = player // Sets The Current Video
         
         if(saved_position.current > 0) {
             player.currentTime = saved_position.current / 1000
             saved_position.current = 0
         }
     })
+
+    useHlsSource(video_player, video_source?.uri ?? null, user_token ?? null) // Web: Plays The .m3u8 Stream Where The Browser Can't And Keeps The Position Between The Post And Fullscreen
 
     // Initializes The Play Of The Video
     useEffect(() => {
@@ -172,6 +202,29 @@ export const DynamicVideo = ({
         }
     }, [playing_video, video_player, duration])
     
+    // Initializes The Error State (Missing Stream, Network Failure, Unsupported Format)
+    useEventListener(video_player, "statusChange", ({ status }:{ status:string }) => {
+        setHasLoadError(status === "error")
+    })
+
+    // Function For Load The Stream Again After An Error
+    const retryVideo = ():void => {
+        setHasLoadError(false)
+        setRetryCount((previous:number) => previous + 1)
+    }
+
+    // Error Overlay (Shown Over The Post Video And In Fullscreen)
+    const error_overlay = has_load_error ? (
+        <View style={styles.load_error}>
+            <FontAwesome6 name="triangle-exclamation" size={26} color={LIGHT_BLUE_COLOR} />
+            <Text style={styles.load_error_text}>{t("Video sa nepodarilo načítať.")}</Text>
+
+            <Pressable onPress={retryVideo} accessibilityRole="button" style={({ pressed }) => [styles.load_error_button, pressed ? { opacity: 0.7 } : null]}>
+                <Text style={styles.load_error_button_text}>{t("Skúsiť znova")}</Text>
+            </Pressable>
+        </View>
+    ) : null
+
     // Initializes The Video Duration Update
     useEventListener(video_player, "sourceLoad", (payload:SourceLoadEventPayload) => {
         if(payload.duration) {
@@ -191,59 +244,32 @@ export const DynamicVideo = ({
                 }, 
 
                 (error) => {
-                    console.error(t("Nepodarilo sa zistiť veľkosť náhľadu videa:"), error)
+                    console.warn(t("Nepodarilo sa zistiť veľkosť náhľadu videa:"), error)
                 }
             )
         }
     }, [thumbnail_url])
 
-    // Updates The Data Saving Mode Value If The Data Loads
-    useEffect(() => {
-        if(data_saving_mode) setActiveQuality(480)
-        else setActiveQuality(-1)
-    }, [data_saving_mode])
+    const [synced_data_saving_mode, setSyncedDataSavingMode] = useState<boolean>(data_saving_mode) // Stores The Last Data Saving Mode
 
-    // Initializes Record Of Video Watch Time
-    useEffect(() => {
-        if(playing_video) start_time.current = Date.now() // Sets The Start Time
-        else initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-    
-        return () => {
-            initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-        }
-    }, [playing_video])
+    // Updates The Quality When The Data Saving Mode Changes
+    if(synced_data_saving_mode !== data_saving_mode) {
+        setSyncedDataSavingMode(data_saving_mode)
+        setActiveQuality(data_saving_mode ? 480 : -1)
+    }
 
-    // Initializes The Reset Of Record Of Video Watch Time
+    // Initializes The Auto Hide Of The Fullscreen Controls (Not While The Scrubber Is Dragged)
     useEffect(() => {
-        const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
-            // When App Is On Background
-            if(nextAppState.match(/inactive|background/)) {
-                initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
-            } 
-            
-            // When App Is On Screen
-            else if(nextAppState === "active" && playing_video) {
-                start_time.current = Date.now() // Sets The Start Time
-            }
-        })
-    
-        return () => {
-            app_state_subscription.remove()
-        }
-    }, [playing_video])
+        if(!is_fullscreen || !are_fullscreen_controls_visible || is_scrubber_dragged || is_fullscreen_settings_open) return
+        const timeout:ReturnType<typeof setTimeout> = setTimeout(() => setAreFullscreenControlsVisible(false), 4000)
+        return () => clearTimeout(timeout)
+    }, [is_fullscreen, are_fullscreen_controls_visible, is_scrubber_dragged, is_fullscreen_settings_open])
 
-    // Initializes The Video Orientation
+    // Initializes The Return To Portrait When The Post Leaves The Screen While In Fullscreen
     useEffect(() => {
-        const subscription = ScreenOrientation.addOrientationChangeListener((event) => {
-            const orientation:ScreenOrientation.Orientation = event.orientationInfo.orientation // Gets The Current Orientation
-            if(orientation === ScreenOrientation.Orientation.LANDSCAPE_LEFT || orientation === ScreenOrientation.Orientation.LANDSCAPE_RIGHT) setIsFullscreen(true) // Sets The Information If The Video Is In Fullscreen Mode
-            else if(orientation === ScreenOrientation.Orientation.PORTRAIT_UP) setIsFullscreen(false) // Sets The Information If The Video Isn't In Fullscreen Mode
-        })
-    
-        return () => {
-            ScreenOrientation.removeOrientationChangeListener(subscription)
-        }
-    }, [])
+        if(!is_fullscreen) return
+        return () => { lockOrientation(false) }
+    }, [is_fullscreen])
 
     // Function For Initialize (Download) The Video
     const initializeVideo = ():void => {
@@ -347,13 +373,14 @@ export const DynamicVideo = ({
 
     // Function For Show The Video Settings
     const showVideoSettings = ():void => {
-        // setSelectedPost(post) // Sets The Selected Post
-        video_settings.current?.present() // Shows The Video Settings
+        if(is_fullscreen) setIsFullscreenSettingsOpen(true) // The Sheet Would Open Behind The Fullscreen View
+        else video_settings.current?.present() // Shows The Video Settings
     }
 
     // Function For Close The Video Settings
     const hideVideoSettings = ():void => {
-        // setSelectedPost(null) // Sets The Selected Post
+        setIsFullscreenSettingsOpen(false)
+        setVideoSettingsSheet("main")
         video_settings.current?.dismiss() // Hides The Video Settings
     }
 
@@ -394,13 +421,12 @@ export const DynamicVideo = ({
     }
 
     // Function For Toggle The Video Fullscreen
-    const toggleVideoFullscreen = (): void => {
-        const current_video:VideoPlayer|null = getCurrentVideo() // Gets The Current Video (Normal / Fullscreen)
-        
-        if(current_video) {
-            saved_position.current = current_video.currentTime * 1000 // Saves The Video Position
-            setIsFullscreen((previous_value:boolean) => !previous_value) // Sets The Information If The Video Is In Fullscreen Mode
-        }
+    const toggleVideoFullscreen = ():void => {
+        const next_is_fullscreen:boolean = !is_fullscreen
+        setIsFullscreen(next_is_fullscreen)
+        setAreFullscreenControlsVisible(true) // Fullscreen Always Opens With The Controls Shown
+        setIsFullscreenSettingsOpen(false) // The Same Player Moves Between The Post And The Fullscreen View, So The Position Stays
+        lockOrientation(next_is_fullscreen && aspect_ratio > 1) // Landscape Videos Rotate The Screen
     }
 
     // Function For Handle The Tap On The Video
@@ -416,15 +442,7 @@ export const DynamicVideo = ({
         }
     }
 
-    // Function For Start The Controls Timer
-    const startControlsTimer = ():void => {
-        onStopControlsTimer() // Stops The Controls Timer
-        
-        // 5 Seconds Timeout
-        controls_timeout.current = setTimeout(() => {
-            onShowControls(false) // Sets The Information That The Custom Video Controls Are Hidden
-        }, 5000)
-    }
+    const startControlsTimer = onStartControlsTimer // Hides The Controls After 5 Seconds
 
     useEffect(() => {
         return () => {
@@ -436,7 +454,7 @@ export const DynamicVideo = ({
     const initializeRecordVideoWatchTime = ():void => {
         if(start_time.current === 0) return
     
-        const elapsed_seconds:number = (Date.now() - start_time.current) / 1000 // Gets The Elapsed Seconds Of The Watched Sequence
+        const elapsed_seconds:number = getSecondsSince(start_time.current) // Gets The Elapsed Seconds Of The Watched Sequence
 
         total_watch_time.current += elapsed_seconds // Increases The Total Watch Time
         start_time.current = 0 // Resets The Start Time
@@ -493,6 +511,277 @@ export const DynamicVideo = ({
         }
     }
 
+    // Initializes Record Of Video Watch Time
+    useEffect(() => {
+        if(playing_video) start_time.current = Date.now() // Sets The Start Time
+        else initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+    
+        return () => {
+            initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+        }
+    }, [playing_video])
+
+    // Initializes The Reset Of Record Of Video Watch Time
+    useEffect(() => {
+        const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
+            // When App Is On Background
+            if(nextAppState.match(/inactive|background/)) {
+                initializeRecordVideoWatchTime() // Initializes Record Of Video Watch Time
+            } 
+            
+            // When App Is On Screen
+            else if(nextAppState === "active" && playing_video) {
+                start_time.current = Date.now() // Sets The Start Time
+            }
+        })
+    
+        return () => {
+            app_state_subscription.remove()
+        }
+    }, [playing_video])
+
+    // Video Settings (Shown In The Bottom Sheet, Or Inside Fullscreen Where The Sheet Would Open Behind)
+    const settings_content = (
+        <View className="video_settings">
+            {video_settings_sheet === "main" && (
+                <View style={styles.sheet_container}>
+                    <Pressable
+                        className="show_video_quality_button"
+                        onPress={() => setVideoSettingsSheet("quality")}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <View style={styles.sheet_icon}>
+                            <FontAwesome6
+                                name="gear"
+                                size={20}
+                                solid={false}
+                                color={BLUE_COLOR}
+                            />
+                        </View>
+
+                        <Text style={styles.sheet_text}>{t("Kvalita")}</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="show_video_speed_button"
+                        onPress={() => setVideoSettingsSheet("speed")}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <View style={styles.sheet_icon}>
+                            <FontAwesome6
+                                name="stopwatch"
+                                size={20}
+                                solid={false}
+                                color={BLUE_COLOR}
+                            />
+                        </View>
+
+                        <Text style={styles.sheet_text}>{t("Rýchlosť")}</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="back_video_settings_button"
+                        onPress={hideVideoSettings}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <View style={styles.sheet_icon}>
+                            <FontAwesome6
+                                name="xmark"
+                                size={20}
+                                color={BLUE_COLOR}
+                            />
+                        </View>
+
+                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                    </Pressable>
+                </View>
+            )}
+
+            {video_settings_sheet === "quality" && (
+                <View className="video_quality" style={styles.sheet_container}>
+                    <Pressable
+                        className="quality_button quality_auto"
+                        onPress={() => changeVideoQuality(-1)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            active_quality === -1 && styles.sheet_item_active,
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>auto</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="quality_button quality_1080p"
+                        onPress={() => changeVideoQuality(1080)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            active_quality === 1080 && styles.sheet_item_active,
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>1080p</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="quality_button quality_720p"
+                        onPress={() => changeVideoQuality(720)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            active_quality === 720 && styles.sheet_item_active,
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>720p</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="quality_button quality_480p"
+                        onPress={() => changeVideoQuality(480)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            active_quality === 480 && styles.sheet_item_active,
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>480p ({t("šetrenie dát")})</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="back_video_quality_button"
+                        onPress={() => setVideoSettingsSheet("main")}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <View style={styles.sheet_icon}>
+                            <FontAwesome6
+                                name="xmark"
+                                size={20}
+                                color={BLUE_COLOR}
+                            />
+                        </View>
+
+                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                    </Pressable>
+                </View>
+            )}
+
+            {video_settings_sheet === "speed" && (
+                <View className="video_speed" style={styles.sheet_container}>
+                    <Pressable
+                        className="speed_button"
+                        onPress={() => changeVideoSpeed(2)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>2×</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="speed_button"
+                        onPress={() => changeVideoSpeed(1.5)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>1,5×</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="speed_button"
+                        onPress={() => changeVideoSpeed(1)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>{t("Normálna")}</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="speed_button"
+                        onPress={() => changeVideoSpeed(0.5)}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            styles.sheet_item_border, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <Text style={styles.sheet_text}>0,5×</Text>
+                    </Pressable>
+
+                    <Pressable
+                        className="back_video_speed_button"
+                        onPress={() => setVideoSettingsSheet("main")}
+                        accessibilityRole="button"
+
+                        style={({ pressed }) => [
+                            styles.sheet_item, 
+                            pressed && styles.sheet_item_pressed
+                        ]}
+                    >
+                        <View style={styles.sheet_icon}>
+                            <FontAwesome6
+                                name="xmark"
+                                size={20}
+                                color={BLUE_COLOR}
+                            />
+                        </View>
+
+                        <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
+                    </Pressable>
+                </View>
+            )}
+        </View>
+    )
+
     return (
         <Pressable 
             className="video_container" 
@@ -504,6 +793,7 @@ export const DynamicVideo = ({
                     <View className="play_pause_indicator hidden" style={styles.play_pause_indicator}>
                         <Icon
                             icon_name={playing_video !== one_post_media.id ? "pause" : "play"}
+                            accessibility_label={playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
                             onPress={() => playPauseVideo(one_post_media.id)}
                             size={40}
                             style={playing_video === one_post_media.id ? { marginLeft: 8 } : { marginLeft: 0 }}
@@ -515,6 +805,7 @@ export const DynamicVideo = ({
                     <View className="step_back_indicator hidden" style={styles.step_back_indicator}>
                         <Icon
                             icon_name="angle-left"
+                            accessibility_label={t("Späť o 5 sekúnd")}
                             onPress={() => stepBack(5)}
                             size={40}
                             pressed_color={LIGHT_BLUE_COLOR}
@@ -548,6 +839,7 @@ export const DynamicVideo = ({
 
                         <Icon
                             icon_name="angle-right"
+                            accessibility_label={t("Dopredu o 5 sekúnd")}
                             onPress={() => stepFurther(5)}
                             size={40}
                             pressed_color={LIGHT_BLUE_COLOR}
@@ -576,6 +868,7 @@ export const DynamicVideo = ({
                         <View style={styles.play_pause_indicator}>
                             <Icon
                                 icon_name="download"
+                                accessibility_label={t("Načítať video")}
                                 onPress={initializeVideo}
                                 size={30}
                                 pressed_color={LIGHT_BLUE_COLOR}
@@ -635,158 +928,100 @@ export const DynamicVideo = ({
                         //     }}
                         // />
 
-                        <VideoView
-                            player={video_player}
-                            nativeControls={false}
-                            style={{ width: "100%", height: "100%" }}
-                        />
+                        <>
+                            <VideoView
+                                player={video_player}
+                                nativeControls={false}
+                                style={{ width: "100%", height: "100%" }}
+                            />
+
+                            {error_overlay}
+                        </>
                     )
                 )}
 
                 <Modal
                     visible={is_fullscreen}
                     animationType="fade"
-                    supportedOrientations={["landscape", "portrait"]}
-                    onRequestClose={() => setIsFullscreen(false)}
+                    supportedOrientations={["portrait", "landscape-left", "landscape-right"]}
+                    statusBarTranslucent
+                    navigationBarTranslucent
+                    onRequestClose={toggleVideoFullscreen} // Android Back Button Leaves Fullscreen
                 >
-                    <View 
-                        style={{
-                            flex: 1,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: MAIN_COLOR,
-                        }}
-                    >
-                        {/* <Video
-                            ref={fullscreen_video}
-                            className="video"
-                            source={video_source}
-                            
-                            // @ts-ignore
-                            initialStatus={{
-                                positionMillis: saved_position.current,
-                                shouldPlay: playing_video === one_post_media.id,
-                            }}
-
-                            // @ts-ignore
-                            selectedVideoTrack={{
-                                type: active_quality === -1 ? "auto" : "resolution",
-                                value: active_quality === -1 ? undefined : active_quality
-                            }}
-
-                            rate={video_speed} 
-                            shouldCorrectPitch={true}
-                            shouldPlay={playing_video === one_post_media.id}
-                            useNativeControls={false}
-                            isLooping={true}
-                            isMuted={is_muted}
-                            resizeMode={ResizeMode.CONTAIN} 
-                            style={{ width: "100%", height: "100%" }}
-                            videoStyle={{ width: "100%", height: "100%" }}
-
-                            // onLoad={async () => {
-                            //     if(fullscreen_video.current && saved_position.current > 0) {
-                            //         await fullscreen_video.current.setPositionAsync(saved_position.current) // Jumps Back To The Watched Part
-                            //         // await fullscreen_video.current.playAsync() // Plays The Video Again
-                            //         saved_position.current = 0 // Removes The Saved Video Position
-                            //     }
-                            // }}
-
-                            onPlaybackStatusUpdate={(status) => {
-                                if(status.isLoaded) {
-                                    setElapsedTime(status.positionMillis) // Sets The Elapsed Time
-                                    setVolume(status.volume) // Sets The Volume
-    
-                                    if(status.durationMillis) {
-                                        setDuration(status.durationMillis) // Sets The Duration
-                                        // onVideoDurationLoad(status.durationMillis) // Sets The Duration
-                                    }
-    
-                                    if(status.playableDurationMillis) setBufferedTime(status.playableDurationMillis) // Sets The Buffered Time
-                                }
-                            }}
-                        /> */}
-
-                        <CustomVideoControls 
-                            one_post_media={one_post_media}
-                            onPlayPauseVideo={() => playPauseVideo(one_post_media.id)}
-                            playing_video={playing_video}
-                            onStepBack={(step:number) => stepBack(step)}
-                            onStepFurther={(step:number) => stepFurther(step)}
-                            is_muted={is_muted}
-                            volume={volume}
-                            elapsed_time={elapsed_time}
-                            duration={duration}
-                            buffered_time={buffered_time}
-                            onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                            is_volume_slider_sliding={is_volume_slider_sliding}
-                            onMuteUnmuteVideo={muteUnmuteVideo}
-                            onShowVideoSettings={showVideoSettings}
-                            is_fullscreen={is_fullscreen}
-                            onToggleVideoFullscreen={toggleVideoFullscreen}
-                            onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                            current_video={getCurrentVideo()}
-                            onStartControlsTimer={startControlsTimer}
-                            onStopControlsTimer={onStopControlsTimer}
-                            onIsScrubberDragged={onIsScrubberDragged}
-                            is_scrubber_dragged={is_scrubber_dragged}
-                            onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
-                            onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
-                            onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
-                            scrubber_position={scrubber_position}
-                            onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
-                        />
-                    </View>
-
-                    {video_scrubber_preview && is_scrubber_dragged && (
-                        <View 
-                            style={{ 
-                                position: "relative", 
-                                bottom: video_scrubber_preview.h + 10 + 17.5 + 10 + 10,
-
-                                left: Math.min(
-                                    Math.max(0, scrubber_position - (video_scrubber_preview.w / 2) + 5), 
-                                    scrubber_width - video_scrubber_preview.w
-                                ),
-                            }}
-                        >
-                            <View 
-                                className="video_scrubber_preview"
-
-                                style={[
-                                    styles.video_scrubber_preview,
-
-                                    {
-                                        width: video_scrubber_preview.w,
-                                        height: video_scrubber_preview.h,
-                                    }
-                                ]}
-                            >
-                                <DynamicImage 
-                                    uri={`${DOMAIN}/${video_scrubber_preview_image}`}
-
-                                    style={{ 
-                                        position: "absolute",
-                                        left: -video_scrubber_preview.x,
-                                        top: -video_scrubber_preview.y,
-                                    }}
-                                />
-                            </View>
-                        
-                            <View 
-                                className="triangle" 
-
-                                style={[
-                                    styles.triangle,
-
-                                    {
-                                        top: video_scrubber_preview.h + 10,
-                                        left: (video_scrubber_preview.w / 2) - 10,
-                                    }
-                                ]} 
+                    <View style={styles.fullscreen}>
+                        {is_fullscreen && (
+                            <VideoView
+                                player={video_player}
+                                nativeControls={false}
+                                contentFit="contain"
+                                style={StyleSheet.absoluteFill}
                             />
-                        </View>
-                    )}
+                        )}
+
+                        <Pressable style={StyleSheet.absoluteFill} onPress={() => setAreFullscreenControlsVisible((previous:boolean) => !previous)} accessibilityLabel={are_fullscreen_controls_visible ? t("Skryť ovládanie") : t("Zobraziť ovládanie")} />
+
+                        {error_overlay}
+
+                        {are_fullscreen_controls_visible && (
+                            <View
+                                pointerEvents="box-none"
+                                style={[styles.fullscreen_controls, {
+                                    left: Math.max(insets.left, is_landscape ? 16 : 0),
+                                    right: Math.max(insets.right, is_landscape ? 16 : 0),
+                                    bottom: Math.max(insets.bottom, 12),
+                                }]}
+                            >
+<CustomVideoControls 
+                                    one_post_media={one_post_media}
+                                    onPlayPauseVideo={() => playPauseVideo(one_post_media.id)}
+                                    playing_video={playing_video}
+                                    onStepBack={(step:number) => stepBack(step)}
+                                    onStepFurther={(step:number) => stepFurther(step)}
+                                    is_muted={is_muted}
+                                    volume={volume}
+                                    elapsed_time={elapsed_time}
+                                    duration={duration}
+                                    buffered_time={buffered_time}
+                                    onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
+                                    onMuteUnmuteVideo={muteUnmuteVideo}
+                                    onShowVideoSettings={showVideoSettings}
+                                    is_fullscreen={is_fullscreen}
+                                    onToggleVideoFullscreen={toggleVideoFullscreen}
+                                    onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
+                                    getCurrentVideo={getCurrentVideo}
+                                    onStartControlsTimer={startControlsTimer}
+                                    onStopControlsTimer={onStopControlsTimer}
+                                    onIsScrubberDragged={onIsScrubberDragged}
+                                    is_scrubber_dragged={is_scrubber_dragged}
+                                    onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
+                                    onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
+                                    onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
+                                    scrubber_position={scrubber_position}
+                                    onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
+                                />
+
+                                {!!video_scrubber_preview && is_scrubber_dragged && (
+                                    <VideoScrubberPreview
+                                        video_scrubber_preview={video_scrubber_preview}
+                                        video_scrubber_preview_image={video_scrubber_preview_image}
+                                        scrubber_position={scrubber_position}
+                                        scrubber_width={scrubber_width}
+                                        bottom={BIG_BORDER_RADIUS / 2 + 5}
+                                    />
+                                )}
+                            </View>
+                        )}
+
+                        {is_fullscreen_settings_open && (
+                            <View style={styles.fullscreen_settings}>
+                                <Pressable style={StyleSheet.absoluteFill} onPress={hideVideoSettings} accessibilityRole="button" accessibilityLabel={t("Zavrieť")} />
+
+                                <View style={[styles.fullscreen_settings_panel, { marginBottom: Math.max(insets.bottom, 12) }]}>
+                                    {settings_content}
+                                </View>
+                            </View>
+                        )}
+                    </View>
                 </Modal>
             </View>
 
@@ -803,13 +1038,12 @@ export const DynamicVideo = ({
                     duration={duration}
                     buffered_time={buffered_time}
                     onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                    is_volume_slider_sliding={is_volume_slider_sliding}
                     onMuteUnmuteVideo={muteUnmuteVideo}
                     onShowVideoSettings={showVideoSettings}
                     is_fullscreen={is_fullscreen}
                     onToggleVideoFullscreen={toggleVideoFullscreen}
                     onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                    current_video={getCurrentVideo()}
+                    getCurrentVideo={getCurrentVideo}
                     onStartControlsTimer={startControlsTimer}
                     onStopControlsTimer={onStopControlsTimer}
                     onIsScrubberDragged={onIsScrubberDragged}
@@ -822,6 +1056,17 @@ export const DynamicVideo = ({
                 />
             )}
 
+            {/* Frame Preview While Dragging The Scrubber (The Fullscreen Player Draws Its Own) */}
+            {show_controls && !is_fullscreen && !!video_scrubber_preview && is_scrubber_dragged && (
+                <VideoScrubberPreview
+                    video_scrubber_preview={video_scrubber_preview}
+                    video_scrubber_preview_image={video_scrubber_preview_image}
+                    scrubber_position={scrubber_position}
+                    scrubber_width={scrubber_width}
+                    bottom={BIG_BORDER_RADIUS / 2 + 5}
+                />
+            )}
+
             <BottomSheetModal
                 ref={video_settings}
                 snapPoints={snap_points}
@@ -830,244 +1075,7 @@ export const DynamicVideo = ({
                 containerStyle={{ zIndex: 9999 }}
             >
                 <BottomSheetView style={{ padding: 20 }}>
-                    <View className="video_settings">
-                        {video_settings_sheet === "main" && (
-                            <View style={styles.sheet_container}>
-                                <Pressable
-                                    className="show_video_quality_button"
-                                    onPress={() => setVideoSettingsSheet("quality")}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <View style={styles.sheet_icon}>
-                                        <FontAwesome6
-                                            name="gear"
-                                            size={20}
-                                            solid={false}
-                                            color={BLUE_COLOR}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.sheet_text}>{t("Kvalita")}</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="show_video_speed_button"
-                                    onPress={() => setVideoSettingsSheet("speed")}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <View style={styles.sheet_icon}>
-                                        <FontAwesome6
-                                            name="stopwatch"
-                                            size={20}
-                                            solid={false}
-                                            color={BLUE_COLOR}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.sheet_text}>{t("Rýchlosť")}</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="back_video_settings_button"
-                                    onPress={hideVideoSettings}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <View style={styles.sheet_icon}>
-                                        <FontAwesome6
-                                            name="xmark"
-                                            size={20}
-                                            color={BLUE_COLOR}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                </Pressable>
-                            </View>
-                        )}
-
-                        {video_settings_sheet === "quality" && (
-                            <View className="video_quality" style={styles.sheet_container}>
-                                <Pressable
-                                    className="quality_button quality_auto"
-                                    onPress={() => changeVideoQuality(-1)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        active_quality === -1 && styles.sheet_item_active,
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>auto</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="quality_button quality_1080p"
-                                    onPress={() => changeVideoQuality(1080)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        active_quality === 1080 && styles.sheet_item_active,
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>1080p</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="quality_button quality_720p"
-                                    onPress={() => changeVideoQuality(720)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        active_quality === 720 && styles.sheet_item_active,
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>720p</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="quality_button quality_480p"
-                                    onPress={() => changeVideoQuality(480)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        active_quality === 480 && styles.sheet_item_active,
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>480p ({t("šetrenie dát")})</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="back_video_quality_button"
-                                    onPress={() => setVideoSettingsSheet("main")}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <View style={styles.sheet_icon}>
-                                        <FontAwesome6
-                                            name="xmark"
-                                            size={20}
-                                            color={BLUE_COLOR}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                </Pressable>
-                            </View>
-                        )}
-
-                        {video_settings_sheet === "speed" && (
-                            <View className="video_speed" style={styles.sheet_container}>
-                                <Pressable
-                                    className="speed_button"
-                                    onPress={() => changeVideoSpeed(2)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>2×</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="speed_button"
-                                    onPress={() => changeVideoSpeed(1.5)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>1,5×</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="speed_button"
-                                    onPress={() => changeVideoSpeed(1)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>{t("Normálna")}</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="speed_button"
-                                    onPress={() => changeVideoSpeed(0.5)}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        styles.sheet_item_border, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <Text style={styles.sheet_text}>0,5×</Text>
-                                </Pressable>
-
-                                <Pressable
-                                    className="back_video_speed_button"
-                                    onPress={() => setVideoSettingsSheet("main")}
-                                    accessibilityRole="button"
-
-                                    style={({ pressed }) => [
-                                        styles.sheet_item, 
-                                        pressed && styles.sheet_item_pressed
-                                    ]}
-                                >
-                                    <View style={styles.sheet_icon}>
-                                        <FontAwesome6
-                                            name="xmark"
-                                            size={20}
-                                            color={BLUE_COLOR}
-                                        />
-                                    </View>
-
-                                    <Text style={styles.sheet_text}>{t("Zavrieť")}</Text>
-                                </Pressable>
-                            </View>
-                        )}
-                    </View>
+                    {settings_content}
                 </BottomSheetView>
             </BottomSheetModal>
         </Pressable>
@@ -1075,6 +1083,68 @@ export const DynamicVideo = ({
 }
 
 const styles = StyleSheet.create({
+    load_error: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 10,
+        padding: 20,
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        zIndex: 50,
+    },
+
+    load_error_text: {
+        color: "white",
+        fontSize: 15,
+        textAlign: "center",
+    },
+
+    load_error_button: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 999,
+        backgroundColor: BLUE_COLOR,
+    },
+
+    load_error_button_text: {
+        color: "white",
+        fontSize: 14,
+        fontWeight: "600",
+    },
+
+    fullscreen: {
+        flex: 1,
+        backgroundColor: "black",
+    },
+
+    fullscreen_settings: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        justifyContent: "flex-end",
+        alignItems: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+    },
+
+    fullscreen_settings_panel: {
+        width: "100%",
+        maxWidth: 420,
+        padding: 20,
+        backgroundColor: "white", // Same As The Bottom Sheet
+        borderRadius: 16,
+    },
+
+    fullscreen_controls: {
+        position: "absolute",
+        top: 0,
+    },
+
     video_container: {
         position: "relative",
     },

@@ -1,203 +1,364 @@
-import { View, StyleSheet, Alert, ScrollView } from "react-native"
-import BackgroundContainer from "@/components/BackgroundContainer"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useState } from "react"
-import ActivitySection from "@/components/pages/activity/ActivitySection"
-import TasksSection from "@/components/pages/activity/TasksSection"
-import HistorySection from "@/components/pages/activity/HistorySection"
-import { MAIN_WIDTH } from "@/constants/dimensions"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
+// Activity: Stopwatch, Guided Training Plan, Weekly Stats, Daily Challenges, My Tasks And History
+
+import { useEffect, useRef, useState } from "react"
+import { RefreshControl, ScrollView, StyleSheet, View } from "react-native"
+import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { CompletedTaskMessage } from "@/components/pages/activity/CompletedTaskMessage"
+import { Button, Card, Chip, Header, Icon, Screen, Skeleton, Text } from "@/components/ui"
+import { colors, layout, radii, spacing } from "@/theme"
+import { haptics } from "@/lib/haptics"
+import { confirmAction, showAlert } from "@/lib/alert"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
+import { useMyPlans } from "@/components/features/training-plan/usePlans"
+import { activateXpBoost, completeOfficialTask, getActivityHistory, getActivityStats, getOfficialTasks, getXpBoost, recordActivity } from "@/lib/api/endpoints/activity"
+import { getMinimalistFormattedTime } from "@/utils/time"
+import TimerCard from "@/components/features/activity/TimerCard"
+import WorkoutPlanCard from "@/components/features/activity/WorkoutPlanCard"
+import StatsGrid from "@/components/features/activity/StatsGrid"
+import ChallengesCard from "@/components/features/activity/ChallengesCard"
+import CustomTasksCard from "@/components/features/activity/CustomTasksCard"
+import HistoryCard from "@/components/features/activity/HistoryCard"
+import ActivityScroll from "@/components/features/activity/ActivityScroll"
+import { useActivityTimer } from "@/components/features/activity/useActivityTimer"
+import { buildSessionSummary, useWorkoutSession } from "@/components/features/activity/useWorkoutSession"
+import { useXpToast } from "@/components/features/activity/useXpToast"
+import { calculateGainedXp, getChallengeRule, LiveProgressInput } from "@/components/features/activity/xp"
 
-import type { OfficialTask } from "@/components/pages/activity/TasksSection"
-import type { CustomTask } from "@/components/pages/activity/TasksSection"
-
-interface CompletedOfficialTaskResponse {
-    success: boolean,
-
-    task?:{
-        progress_percentage:number,
-        is_completed:boolean,
-        first_completion:boolean,
-        gained_xp: number
-    },
-    
-    message: string
-}
+import type { PlanSummary } from "@/components/features/training-plan/model"
+import type { OfficialTask, TrainingPlanExercise } from "@/types/models"
 
 export default function ActivityScreen() {
     const { t } = useTranslation() // Initializes The Translations
-    
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
+    const auth_sheet = useAuthSheet() // Opens The Login Sheet
+    const is_logged_in:boolean = Boolean(logged_in_user)
 
-    const [elapsed_time, setElapsedTime] = useState<number>(0) // Stores The Elapsed Time
-    const [average_activity_time, setAverageActivityTime] = useState<number>(0) // Stores The Average Activity Time
-    const [xp_boost_amount, setXpBoostAmount] = useState<number>(2) // Stores The XP Boost Amount
-    const [xp_boost_expiration_time, setXpBoostExpirationTime] = useState<string|null>() // Stores The XP Boost Expiration Time
-    const [official_tasks, setOfficialTasks] = useState<OfficialTask[]>([]) // Stores The Official Tasks
-    const [custom_tasks, setCustomTasks] = useState<CustomTask[]>([]) // Stores The Custom Tasks
-    const [is_dragging_custom_task, setIsDraggingCustomTask] = useState<boolean>(false) // Stores The Information If The Custom Task Is Dragging
+    const timer = useActivityTimer()
+    const xp_toast = useXpToast()
+    const [is_saving, setIsSaving] = useState<boolean>(false)
+    const [now, setNow] = useState<number>(() => Date.now())
 
-    const { triggerCompletedTaskMessage, AnimatedCompletedTaskMessage } = CompletedTaskMessage() // Creates The Completed Task Message
+    // ---------- Data ----------
 
-    // Function For Complete Official Task
-    const completeOfficialTask = async (task_data:string):Promise<void> => {
-        try {
-            if(!logged_in_user) {
-                Alert.alert(t("Chyba"), t("Úlohu nie je možné dokončiť bez prihlásenia.")) // Shows The Alert
-                return
-            }
+    const plans_query = useMyPlans(is_logged_in)
+    const stats_query = useApiQuery("activity_stats", (signal:AbortSignal) => getActivityStats(signal), { is_enabled: is_logged_in })
+    const history_query = useApiQuery("activity_history", (signal:AbortSignal) => getActivityHistory(signal), { is_enabled: is_logged_in })
+    const boost_query = useApiQuery("xp_boost", (signal:AbortSignal) => getXpBoost(signal), { is_enabled: is_logged_in })
+    const challenges_query = useApiQuery("official_tasks", (signal:AbortSignal) => getOfficialTasks(signal), { is_enabled: is_logged_in })
 
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The POST Request To The Server
-            const completed_official_task_response:Response = await fetch(`${API_URL}/complete-official-task/`, {
-                method: "POST",
+    const plans:PlanSummary<TrainingPlanExercise>[] = plans_query.plans
+    const [selected_key, setSelectedKey] = useState<string|null>(null)
+    const today:number = new Date().getDay() // 0 = Sunday, Like The Server
+    const selected_plan:PlanSummary<TrainingPlanExercise>|undefined = plans.find((plan) => plan.key === selected_key) ?? plans.find((plan) => plan.day === today) ?? plans[0]
+    const session = useWorkoutSession(selected_plan?.rows ?? [])
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                },
+    const boost_expiration:string|null = boost_query.state.data?.xp_boost_expiration_time ?? null
+    const boost_expires_at:number|null = boost_expiration ? new Date(boost_expiration).getTime() : null
+    const gained_xp:number = calculateGainedXp(timer.elapsed_ms, boost_expiration)
+    const tasks:OfficialTask[] = challenges_query.state.data?.official_tasks ?? []
 
-                body: JSON.stringify({
-                    task_data: task_data
-                })
-            })
+    const live_input:LiveProgressInput|null = timer.is_started ? { elapsed_seconds: timer.elapsed_ms / 1000, gained_xp, average_seconds: stats_query.state.data?.activity.average_activity_time ?? 0 } : null
 
-            // If The Response Isn't Success
-            if(!completed_official_task_response.ok) {
-                Alert.alert(t("Chyba"), t("Pri označovaní úlohy za dokončenú došlo k chybe.")) // Shows The Alert
-                return
-            }
+    // Initializes The Clock For The Boost Countdown
+    useEffect(() => {
+        if(boost_expires_at === null || boost_expires_at <= Date.now()) return
 
-            const completed_official_task_data:CompletedOfficialTaskResponse = await completed_official_task_response.json() // Gets The Completed Official Task Data
+        const interval:ReturnType<typeof setInterval> = setInterval(() => setNow(Date.now()), 1000)
+        return () => clearInterval(interval)
+    }, [boost_expires_at])
 
-            // If The Response Isn't Success
-            if(!completed_official_task_data.success || !completed_official_task_data.task) {
-                Alert.alert(t("Chyba"), completed_official_task_data.message) // Shows The Alert
-                return
-            }
+    // ---------- Daily Challenges ----------
 
-            // Stores The New State Of Updated Official Tasks
-            const updated_official_tasks:OfficialTask[] = official_tasks.map((one_task:OfficialTask) => {
-                if(one_task.data === task_data) {
-                    return { 
-                        ...one_task, 
-                        progress_percentage: completed_official_task_data.task ? completed_official_task_data.task.progress_percentage : one_task.progress_percentage,
-                        is_completed: completed_official_task_data.task ? completed_official_task_data.task.is_completed : one_task.is_completed
-                    }
+    const requested_challenges = useRef<Set<string>>(new Set()) // Prevents Completing One Challenge Twice
+    const tasks_reference = useRef<OfficialTask[]>(tasks)
+
+    // Initializes The Latest Tasks Reference
+    useEffect(() => {
+        tasks_reference.current = tasks
+    })
+
+    // Function For Complete A Challenge On The Server
+    const completeChallenge = async (data:string):Promise<void> => {
+        const task:OfficialTask|undefined = tasks_reference.current.find((one_task:OfficialTask) => one_task.data === data)
+        if(!task || task.is_completed || requested_challenges.current.has(data)) return
+
+        requested_challenges.current.add(data)
+        const response = await completeOfficialTask(data) // Sends The Request
+
+        if(!response.ok) {
+            requested_challenges.current.delete(data) // Allows A Retry
+            return
+        }
+
+        const result = response.data.task // Gets The Result
+        if(!result.is_completed) requested_challenges.current.delete(data) // Partial Progress (E.g. 1 Of 2 Activities)
+
+        const updated:OfficialTask[] = tasks_reference.current.map((one_task:OfficialTask) => one_task.data === data ? { ...one_task, progress_percentage: result.progress_percentage, is_completed: result.is_completed } : one_task)
+        tasks_reference.current = updated
+        challenges_query.setData((previous) => previous ? { ...previous, official_tasks: updated } : previous)
+
+        if(!result.first_completion || !result.is_completed) return
+
+        xp_toast.show(result.gained_xp, getChallengeRule(data).label)
+
+        // Completes "All Challenges" When Every Other One Is Done
+        const others:OfficialTask[] = updated.filter((one_task:OfficialTask) => one_task.data !== "complete_all_official_tasks")
+        if(others.length > 0 && others.every((one_task:OfficialTask) => one_task.is_completed)) completeChallenge("complete_all_official_tasks")
+    }
+
+    // Initializes The Completion Of Time And XP Challenges While Recording
+    useEffect(() => {
+        if(!live_input || !is_logged_in) return
+
+        tasks_reference.current.forEach((task:OfficialTask) => {
+            const live_progress = getChallengeRule(task.data).live_progress
+            if(!task.is_completed && live_progress && live_progress(live_input) >= 100) completeChallenge(task.data)
+        })
+    })
+
+    // ---------- Timer ----------
+
+    // Function For Start Or Resume (The Daily XP Boost Starts With The First Activity)
+    const startTimer = ():void => {
+        if(timer.is_running) return
+
+        timer.start()
+
+        if(is_logged_in && boost_query.state.data?.is_xp_boost_available && !boost_query.state.data.is_xp_boost_active) {
+            boost_query.setData((previous) => previous ? { ...previous, is_xp_boost_available: false } : previous) // Prevents A Second Request
+
+            activateXpBoost().then((response) => {
+                if(!response.ok) {
+                    boost_query.refetch()
+                    return
                 }
 
-                return one_task
+                setNow(Date.now())
+                boost_query.setData((previous) => previous ? { ...previous, xp_boost_expiration_time: response.data.xp_boost_expiration_time, is_xp_boost_active: true, is_xp_boost_available: false } : previous)
             })
-
-            setOfficialTasks(updated_official_tasks) // Sets The Official Tasks
-
-            const complete_all_official_tasks:OfficialTask|null = official_tasks.find(one_task => one_task.data === "complete_all_official_tasks") || null // Gets The "Complete All Official Tasks" Official Task If Is Available
-
-            if(completed_official_task_data.task.first_completion && completed_official_task_data.task.is_completed) {
-                triggerCompletedTaskMessage(completed_official_task_data.task.gained_xp) // Triggers The Completed Task Message
-
-                // All Official Tasks
-                if(complete_all_official_tasks && !complete_all_official_tasks.is_completed) {
-                    const other_official_tasks:OfficialTask[] = updated_official_tasks.filter(one_task => one_task.data !== "complete_all_official_tasks") // Gets Other Official Tasks
-                    const are_all_other_official_tasks_completed:boolean = other_official_tasks.length > 0 && other_official_tasks.every(one_task => one_task.is_completed) // Stores The Information If All Other Official Tasks Are Completed
-
-                    if(are_all_other_official_tasks_completed) completeOfficialTask("complete_all_official_tasks") // Completes The "Complete All Official Tasks" Official Task
-                }
-            }
-        } 
-        
-        catch {
-            Alert.alert(t("Chyba"), t("Pri označovaní úlohy za dokončenú došlo k chybe.")) // Shows The Alert
         }
     }
 
+    const toggleTimer = ():void => {
+        haptics.light()
+        if(timer.is_running) timer.pause()
+        else startTimer()
+    }
+
+    // Function For Stop And Save The Activity
+    const finishActivity = async ():Promise<void> => {
+        const was_running:boolean = timer.is_running
+        timer.pause() // Keeps The Time If Saving Fails
+
+        const elapsed_ms:number = timer.elapsed_ms > 0 ? timer.elapsed_ms : 0
+        const final_xp:number = calculateGainedXp(elapsed_ms, boost_expiration)
+
+        const is_confirmed:boolean = await confirmAction({
+            title: t("Ukončiť aktivitu?"),
+            message: is_logged_in ? t("Čas: {{time}} · {{xp}} XP", { time: getMinimalistFormattedTime(Math.round(elapsed_ms / 1000)), xp: final_xp }) : t("Bez prihlásenia sa aktivita neuloží."),
+            confirm_label: is_logged_in ? t("Ukončiť a uložiť") : t("Ukončiť"),
+        })
+
+        if(!is_confirmed) {
+            if(was_running) startTimer()
+            return
+        }
+
+        const is_plan_session:boolean = session.state.step !== "start"
+        const is_plan_finished:boolean = session.state.step === "finish"
+
+        const reset = ():void => {
+            timer.reset()
+            session.reset()
+        }
+
+        if(!is_logged_in) {
+            reset()
+            auth_sheet.open("login_form")
+            return
+        }
+
+        if(final_xp <= 0) {
+            reset()
+            showAlert(t("Aktivita sa neuložila"), t("Aktivita bola príliš krátka na získanie XP."))
+            return
+        }
+
+        setIsSaving(true)
+
+        const response = await recordActivity({
+            elapsed_time: Math.round(elapsed_ms),
+            gained_xp: final_xp,
+            type: is_plan_session && selected_plan ? selected_plan.title : null,
+            day: is_plan_session && selected_plan ? selected_plan.day : null,
+            training_plan_summary: is_plan_session && selected_plan ? buildSessionSummary(session.state.durations, selected_plan.rows, boost_expiration) : null,
+        })
+
+        setIsSaving(false)
+
+        if(!response.ok) {
+            showAlert(t("Aktivita sa neuložila"), `${response.error.message}\n${t("Čas zostal zachovaný, skúste to znova.")}`)
+            return
+        }
+
+        reset()
+        haptics.success()
+        xp_toast.show(final_xp, t("Aktivita uložená"))
+
+        completeChallenge("2_activities")
+        if(is_plan_finished) completeChallenge("complete_training_plan_activity")
+
+        stats_query.refetch()
+        history_query.refetch()
+    }
+
+    // Function For Keep The Stopwatch Running While Moving Through The Plan
+    const withRunningTimer = (action:() => void) => ():void => {
+        startTimer()
+        action()
+    }
+
+    const refresh = ():void => {
+        plans_query.refetch()
+        stats_query.refetch()
+        history_query.refetch()
+        boost_query.refetch()
+        challenges_query.refetch()
+    }
+
+    const is_refreshing:boolean = stats_query.is_refreshing || history_query.is_refreshing || challenges_query.is_refreshing
+
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <BackgroundContainer>
-                <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                    {/* <Banner 
-                        logged_in_user={logged_in_user} 
-                        setActiveForm={setActiveForm} 
-                    /> */}
+        <Screen is_scrollable={false} is_padded={false} header={<Header title={t("Aktivita")} subtitle={t("Trénujte, plňte výzvy a zbierajte XP")} is_large />}>
+            <ActivityScroll
+                contentContainerStyle={styles.content}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                refreshControl={is_logged_in ? <RefreshControl refreshing={is_refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.surface_raised} /> : undefined}
+            >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+                    <Chip label={t("Nový plán")} icon="plus" onPress={() => router.push("/activity/new")} />
+                    <Chip label={t("Moje plány")} icon="pen" onPress={() => router.push("/activity/edit")} />
+                    <Chip label={t("Hotové plány")} icon="copy" onPress={() => router.push("/activity/copy")} />
+                </ScrollView>
 
-                    <ScrollView 
-                        className="content" 
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                        scrollEnabled={!is_dragging_custom_task}
-                        style={styles.content} 
-                        contentContainerStyle={{ padding: 20, flexGrow: 1 }}
-                    >
-                        {/* <LoginFormDialog 
-                            visible={active_form==="login_form"}
-                            onChangeActiveForm={() => setActiveForm("registration_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
-                        />
+                {!is_logged_in && (
+                    <Card variant="highlighted" padding="md" style={styles.sign_in}>
+                        <Icon name="circle-info" size={18} color="primary" />
+                        <Text variant="callout" style={styles.flex}>{t("Prihláste sa, aby sa vaše aktivity ukladali a mohli ste plniť výzvy.")}</Text>
+                        <Button label={t("Prihlásiť sa")} size="sm" onPress={() => auth_sheet.open("login_form")} />
+                    </Card>
+                )}
 
-                        <RegistrationFormDialog
-                            visible={active_form==="registration_form"}
-                            onChangeActiveForm={() => setActiveForm("login_form")}
-                            onClose={() => setActiveForm(null)}
-                            onUserLogin={(logged_in_user_data:LoggedInUser) => setLoggedInUser(logged_in_user_data)}
-                        /> */}
+                <TimerCard
+                    elapsed_ms={timer.elapsed_ms}
+                    gained_xp={gained_xp}
+                    is_running={timer.is_running}
+                    is_started={timer.is_started}
+                    is_saving={is_saving}
+                    boost={{ is_available: Boolean(boost_query.state.data?.is_xp_boost_available), expires_at: boost_expires_at }}
+                    now={now}
+                    onToggle={toggleTimer}
+                    onStop={finishActivity}
+                />
 
-                        <View className="training_page" style={styles.training_page}>
-                            <ActivitySection 
-                                onElapsedTimeUpdate={setElapsedTime} 
-                                elapsed_time={elapsed_time} 
-                                onAverageActivityTimeLoad={setAverageActivityTime} 
-                                onXpBoostAmountUpdate={(xp_boost_amount:number) => setXpBoostAmount(xp_boost_amount)}
-                                xp_boost_amount={xp_boost_amount}
-                                onXpBoostExpirationTimeUpdate={(xp_boost_expiration_time:string|null) => setXpBoostExpirationTime(xp_boost_expiration_time)}
-                                xp_boost_expiration_time={xp_boost_expiration_time || null}
-                                official_tasks={official_tasks}
-                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
-                            />
+                {/* ---------- Training Plan ---------- */}
+                {is_logged_in && (plans_query.state.status === "loading" && plans.length === 0 ? (
+                    <Skeleton height={220} radius={radii.lg} />
+                ) : selected_plan ? (
+                    <WorkoutPlanCard
+                        plans={plans}
+                        selected_key={selected_plan.key}
+                        onSelect={setSelectedKey}
+                        session={session.state}
+                        onStart={withRunningTimer(session.start)}
+                        onNextSet={withRunningTimer(session.nextSet)}
+                        onSkipExercise={withRunningTimer(session.finishExercise)}
+                        onEndBreak={withRunningTimer(session.endBreak)}
+                        onFinish={finishActivity}
+                        is_saving={is_saving}
+                    />
+                ) : (
+                    <Card padding="lg" style={styles.no_plan}>
+                        <View style={styles.no_plan_icon}><Icon name="dumbbell" size={20} color="primary" /></View>
+                        <Text variant="heading" align="center">{t("Zatiaľ nemáte tréningový plán")}</Text>
+                        <Text variant="callout" color="text_secondary" align="center">{t("Vytvorte si vlastný alebo začnite s hotovým plánom. Aplikácia vás prevedie sériami aj prestávkami.")}</Text>
 
-                            <TasksSection 
-                                elapsed_time={elapsed_time} 
-                                average_activity_time={average_activity_time} 
-                                xp_boost_amount={xp_boost_amount}
-                                xp_boost_expiration_time={xp_boost_expiration_time || null}
-                                onOfficialTasksUpdate={(official_tasks:OfficialTask[]) => setOfficialTasks(official_tasks)}
-                                official_tasks={official_tasks}
-                                onCustomTasksUpdate={(custom_tasks:CustomTask[]) => setCustomTasks(custom_tasks)}
-                                custom_tasks={custom_tasks}
-                                onCompleteOfficialTask={(task_data:string) => completeOfficialTask(task_data)}
-                                onCustomTasksDragChange={setIsDraggingCustomTask}
-                            />
-                            
-                            <HistorySection />
+                        <View style={styles.no_plan_actions}>
+                            <Button label={t("Vytvoriť plán")} icon="plus" onPress={() => router.push("/activity/new")} />
+                            <Button label={t("Hotové plány")} icon="copy" variant="secondary" onPress={() => router.push("/activity/copy")} />
                         </View>
-                    </ScrollView>
+                    </Card>
+                ))}
 
-                    {AnimatedCompletedTaskMessage}
-                </SafeAreaView>
-            </BackgroundContainer>
-        </GestureHandlerRootView>
+                {is_logged_in && (
+                    <>
+                        <Text variant="overline" color="text_muted" style={styles.section_title}>{t("Posledných 7 dní")}</Text>
+                        <StatsGrid stats={stats_query.state.data?.activity ?? null} is_loading={stats_query.state.status === "loading"} />
+
+                        <ChallengesCard tasks={tasks} remaining_hours={challenges_query.state.data?.official_tasks_remaining_hours ?? null} live_input={live_input} is_loading={challenges_query.state.status === "loading"} />
+                        <CustomTasksCard onTaskAdded={() => completeChallenge("add_custom_task")} />
+                        <HistoryCard activities={history_query.state.data?.activity_history ?? []} is_loading={history_query.state.status === "loading"} error={history_query.state.error} onRetry={history_query.refetch} />
+                    </>
+                )}
+            </ActivityScroll>
+
+            {xp_toast.element}
+        </Screen>
     )
 }
 
 const styles = StyleSheet.create({
-    safe_area: {
-        flex: 1,
-    },
-  
-    content: {
+    flex: {
         flex: 1,
     },
 
-    training_page: {
-        maxWidth: MAIN_WIDTH,
+    content: {
         width: "100%",
-        marginHorizontal: "auto",
+        maxWidth: layout.max_content_width,
+        alignSelf: "center",
+        gap: spacing.lg,
+        paddingHorizontal: layout.screen_padding,
+        paddingBottom: spacing.xxxl,
+    },
+
+    chips: {
+        gap: spacing.sm,
+        paddingRight: spacing.lg,
+    },
+
+    sign_in: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.md,
+    },
+
+    section_title: {
+        marginBottom: -spacing.sm,
+    },
+
+    no_plan: {
+        alignItems: "center",
+        gap: spacing.sm,
+    },
+
+    no_plan_icon: {
+        width: 48,
+        height: 48,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: spacing.xs,
+        backgroundColor: colors.primary_soft,
+        borderRadius: radii.pill,
+    },
+
+    no_plan_actions: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        justifyContent: "center",
+        gap: spacing.sm,
+        paddingTop: spacing.sm,
     },
 })

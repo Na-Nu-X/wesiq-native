@@ -1,189 +1,109 @@
-import { SplashScreen, Stack, usePathname } from "expo-router"
+import { SplashScreen, Stack } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import "react-native-reanimated"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
-import { useColorScheme } from "@/hooks/use-color-scheme"
-import "./i18n"
-import { useEffect, useRef } from "react"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { DOMAIN } from "@/constants/general"
-import { ColorSchemeName, Platform } from "react-native"
-import * as Notifications from "expo-notifications"
-import { useTranslation } from "react-i18next"
+import "@/lib/i18n"
+import { installMockApi } from "@/lib/api/mocks/install"
+import { DarkTheme, Theme, ThemeProvider } from "@react-navigation/native"
+import { useFonts } from "expo-font"
+import { Bungee_400Regular } from "@expo-google-fonts/bungee"
+import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
+import { colors } from "@/theme"
+import { AuthSheetProvider } from "@/components/features/auth/AuthSheetProvider"
+import { BottomSheetModalProvider } from "@gorhom/bottom-sheet" // Older Components Still Use @gorhom Sheets
+import { useEffect } from "react"
+import { Platform, StyleSheet } from "react-native"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import Purchases from "react-native-purchases"
+import useNotificationSocket from "@/hooks/useNotificationSocket"
+import { syncPurchasesUser } from "@/lib/purchases"
+import * as ScreenOrientation from "expo-screen-orientation"
 
-import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
+installMockApi() // Enables Mock Data In Development When EXPO_PUBLIC_USE_MOCKS=1
 
 SplashScreen.preventAutoHideAsync()
 
+// The App Is Portrait; Only A Fullscreen Landscape Video Unlocks Landscape (app.json Allows Rotation For That)
+if(Platform.OS === "ios" || Platform.OS === "android") ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {})
+
+// Navigation Theme (Dark Only) So Native Containers, Headers And Transitions Never Flash White
+const NAVIGATION_THEME:Theme = {
+    ...DarkTheme,
+
+    colors: {
+        ...DarkTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.background_deep,
+        text: colors.text,
+        border: colors.divider,
+        notification: colors.danger,
+    },
+}
+
 // Function For Render The App Content
 function AppContent() {
-    const color_scheme:ColorSchemeName|null = useColorScheme() // Gets The Color Scheme
-    const { is_loading } = useLoggedInUser() // Gets The Information If The Logged In User Is Loading
+    const { logged_in_user, is_loading } = useLoggedInUser() // Gets The Logged In User
+
+    const user_id:number|null = logged_in_user?.id ?? null
+
+    useNotificationSocket(user_id) // Opens The Notification Socket For The Logged In User And Closes It On Logout
+
+    // Initializes The Store Customer For RevenueCat (Linked To The Logged In User)
+    useEffect(() => {
+        if(Platform.OS === "ios") syncPurchasesUser("apple_revenuecat_api_key", user_id) // iOS
+        else if(Platform.OS === "android") syncPurchasesUser("google_revenuecat_api_key", user_id) // Android
+    }, [user_id])
+
+    // Loads The Brand Fonts (UI Text Uses The System Font)
+    const [are_fonts_loaded, fonts_error] = useFonts({
+        Bungee_400Regular,
+        Orbitron_400Regular,
+    })
+
+    const is_ready:boolean = !is_loading && (are_fonts_loaded || fonts_error !== null) // Stores The Information If The App Is Ready
 
     // Initializes The Hide Of The Splash Screen
     useEffect(() => {
-        if(!is_loading) SplashScreen.hideAsync() // Hides The Splash Screen
-    }, [is_loading])
+        if(is_ready) SplashScreen.hideAsync() // Hides The Splash Screen
+    }, [is_ready])
 
-    if(is_loading) return null
+    if(!is_ready) return null
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack
-                screenOptions={{
-                    contentStyle: {
-                        backgroundColor: color_scheme === "dark" ? "#000000" : "#ffffff",
-                    },
-                }}
-            >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/password-reset" options={{ headerShown: false }} />
-                <Stack.Screen name="subscribe" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/new" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/edit" options={{ headerShown: false }} />
-                <Stack.Screen name="activity/copy" options={{ headerShown: false }} />
-                
-                <Stack.Screen name="modal" options={{ presentation: "modal", title: "Modal" }} />
-            </Stack>
-            
-            <StatusBar style={color_scheme === "dark" ? "light" : "dark"} />
+        <GestureHandlerRootView style={styles.root}>
+            <ThemeProvider value={NAVIGATION_THEME}>
+                <BottomSheetModalProvider>
+                <AuthSheetProvider>
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.background },
+                    }}
+                >
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="(auth)/password-reset" />
+                    <Stack.Screen name="post/[post_id]" />
+                    <Stack.Screen name="profile/[username]" />
+                    <Stack.Screen name="users" />
+                    <Stack.Screen name="subscribe" />
+                </Stack>
+                </AuthSheetProvider>
+                </BottomSheetModalProvider>
+
+                <StatusBar style="light" />
+            </ThemeProvider>
         </GestureHandlerRootView>
     )
 }
 
+const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+        backgroundColor: colors.background,
+    },
+})
+
 export default function RootLayout() {
-    const { t } = useTranslation() // Initializes The Translations
-
-    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
-
-    const notification_id = useRef<string|null>(null) // Stores The Notification ID
-
-    // Initializes The Subscription Buyer Load For Revenuecat
-    useEffect(() => {
-        if(logged_in_user) {
-            if(Platform.OS === "ios") Purchases.configure({ apiKey: "apple_revenuecat_api_key", appUserID: logged_in_user.id.toString() }) // iOS
-            else if(Platform.OS === "android") Purchases.configure({ apiKey: "google_revenuecat_api_key", appUserID: logged_in_user.id.toString() }) // Android
-        }
-    }, [logged_in_user])
-
-    // Initializes The Notification Permission Request
-    useEffect(() => {
-        // Function For Request The Notification Permissions
-        const requestNotificationPermissions = async ():Promise<void> => {
-            if(Platform.OS === "android") {
-                await Notifications.setNotificationChannelAsync("break-alarm", {
-                    name: "Break alarm",
-                    importance: Notifications.AndroidImportance.MAX,
-                    sound: "default",
-                    vibrationPattern: [0, 250, 250, 250]
-                })
-            }
-
-            const { status } = await Notifications.requestPermissionsAsync() // Gets The Permission Status
-
-            if(status !== "granted") console.error(t("Notifikácie neboli povolené."))
-        }
-
-        requestNotificationPermissions() // Requests The Notification Permissions
-    }, [])
-
-    // Function For Schedule The Notification
-    const scheduleNotification = async (seconds:number, username:string, message:string):Promise<void> => {
-        if(Platform.OS === "web") {
-            console.warn(t("Notifikácie nie je možné spúšťať vo webovej aplikácii."))
-            return
-        }
-
-        try {
-            if(notification_id.current) {
-                await Notifications.cancelScheduledNotificationAsync(notification_id.current) // Cancels The Previous Notification
-                notification_id.current = null // Removes The Notification ID
-            }
-
-            if(seconds <= 0) return
-
-            // Setup The Notification And Gets Its ID
-            const id:string = await Notifications.scheduleNotificationAsync({
-                content: {
-                    title: t("Nová správa"),
-                    body: t("Nová správa od užívateľa {{username}}: {{message}}", { username, message }),
-                    sound: "default"
-                },
-
-                trigger: {
-                    type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-                    seconds: Math.ceil(seconds),
-                    repeats: false,
-
-                    ...(Platform.OS === "android" && {
-                        channelId: "break-alarm"
-                    })
-                }
-            })
-
-            notification_id.current = id // Sets The Notification ID
-        } 
-        
-        catch {
-            console.error(t("Pri plánovaní notifikácie došlo k chybe."))
-        }
-    }
-
-    const pathname:string = usePathname() // Gets The Pathname
-    const active_chat_username = useRef<string|null>(null) // Gets The Active Chat Username Reference
-
-    // Initializes The Load Of The Active Chat Username
-    useEffect(() => {
-        // If The User Is On The Chat Page
-        if(pathname.startsWith("/chat/")) {
-            const current_username:string = pathname.replace("/chat/", "") // Gets The Current Username
-            active_chat_username.current = current_username // Stores The Active Chat Username
-        }
-        
-        else active_chat_username.current = null // Stores The Active Chat Username
-    }, [pathname])
-
-    const chat_socket = useRef<WebSocket|null>(null) // Stores The Chat Socket Reference
-
-    // Initializes The Web Socket
-    useEffect(() => {
-        // Function For Initialize The Web Socket
-        const initializeWebSocket = async ():Promise<void> => {
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-            if(!user_token) return // Stops The Web Socket Connection If The User Isn't Logged In
-
-            const is_secure:boolean = DOMAIN.startsWith("https") // Stores The Information If The API Is Secure
-            const clean_domain:string = DOMAIN.replace(/^https?:\/\//, "") // Gets The Clean Domain
-            const web_socket_protocol:"wss"|"ws" = is_secure ? "wss" : "ws" // Gets The Web Socket Protocol
-            const web_socket_url:string = `${web_socket_protocol}://${clean_domain}/ws/notifications/?token=${user_token}` // Gets The Web Socket URL
-
-            chat_socket.current = new WebSocket(web_socket_url) // Sets The Chat Socket
-
-            // Response From The Server
-            chat_socket.current.onmessage = (event) => {
-                const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
-
-                // New Message
-                if(data.action === "new_message_notification") {
-                    const current_active_chat_username:string|null = active_chat_username.current // Gets The Current Active Chat Username
-                    
-                    // If The Logged In User Isn't In Chat With The Sender Of The Message
-                    if(current_active_chat_username !== data.sender_username) {
-                        if(data.sender_username) scheduleNotification(10, data.sender_username, data.message) // Schedules The Notification (After 10 Seconds)
-                    }
-                }
-            }
-        }
-
-        initializeWebSocket() // Initializes The Web Socket
-
-        return () => {
-            if(chat_socket.current) chat_socket.current.close() // Closes The Socket
-        }
-    }, [])
-
     return (
         <LoggedInUserProvider>
             <AppContent />

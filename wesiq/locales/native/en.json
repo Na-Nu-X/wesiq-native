@@ -1,0 +1,5 @@
+{
+    "NSBluetoothAlwaysUsageDescription": "Wesiq uses Bluetooth to connect to your heart rate monitor during workouts.",
+    "NSHealthShareUsageDescription": "Wesiq reads your heart rate from Apple Health to show it while you record a workout.",
+    "NSPhotoLibraryUsageDescription": "Wesiq needs access to your photos so you can share them in posts and chats and set a profile picture."
+}

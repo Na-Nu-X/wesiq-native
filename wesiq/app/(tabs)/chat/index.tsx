@@ -1,412 +1,196 @@
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native"
-import BackgroundContainer from "@/components/BackgroundContainer"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useEffect, useState } from "react"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { API_URL } from "@/constants/general"
-import ProfilePictureLink from "@/components/ProfilePictureLink"
-import Icon from "@/components/Icon"
-import { MAIN_WIDTH } from "@/constants/dimensions"
-import { BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { MEDIUM_BORDER_RADIUS } from "@/constants/borders"
+// Messages: Conversations (Unread First)
+
+import { useCallback, useMemo, useState } from "react"
+import { FlatList, ListRenderItemInfo, Pressable, StyleSheet, View } from "react-native"
+import { router, useFocusEffect } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { ImperativeRouter, useRouter } from "expo-router"
-import { SearchChat } from "@/components/pages/chat/SearchChat"
+import { Avatar, EmptyState, ErrorState, Header, IconButton, Screen, Text, TextField, UserRowSkeleton } from "@/components/ui"
+import { colors, layout, radii, spacing } from "@/theme"
+import { apiGet } from "@/lib/api/client"
+import { envelopeWith, isArrayOf, isRecord } from "@/lib/api/guards"
+import { useApiQuery } from "@/hooks/useApiQuery"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
+import NotificationPrompt from "@/components/features/chat/NotificationPrompt"
 
-import type { Chat } from "@/components/pages/chat/SearchChat"
+import type { ChatPreview, UserSummary } from "@/types/models"
 
-interface ChatsResponse {
-    success:boolean, 
-    unread_chats:ChatData[],
-    read_chats:ChatData[],
-    message:string
+interface Conversation {
+    user:UserSummary,
+    preview:string,
+    unread_count:number
 }
 
-export interface ChatData {
-    id:number, 
-    sender:Sender,
-    content:string
+const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && (typeof value.content === "string" || value.content === null)
+
+const isChatsResponse = envelopeWith<{ unread_chats:ChatPreview[], read_chats:ChatPreview[] }>({
+    unread_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
+    read_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
+})
+
+// Function For Group Messages Into One Row Per Person (Unread First, Then Read)
+const groupConversations = (unread:ChatPreview[], read:ChatPreview[]):Conversation[] => {
+    const by_user:Map<number, Conversation> = new Map()
+
+    unread.forEach((message:ChatPreview) => {
+        const existing:Conversation|undefined = by_user.get(message.sender.id)
+        by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: (existing?.unread_count ?? 0) + 1 })
+    })
+
+    read.forEach((message:ChatPreview) => {
+        if(by_user.has(message.sender.id)) return
+        by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: 0 })
+    })
+
+    return [...by_user.values()].sort((a:Conversation, b:Conversation) => Number(b.unread_count > 0) - Number(a.unread_count > 0))
 }
 
-export interface Sender {
-    id:number,
-    username:string,
-    profile_picture_name:string|null,
-
-    subscription: {
-        is_active:boolean
-    }|null
-}
-
-export default function ChatScreen() {
+export default function ChatsScreen() {
     const { t } = useTranslation() // Initializes The Translations
+    const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
+    const auth_sheet = useAuthSheet() // Opens The Login Sheet
+    const [search, setSearch] = useState<string>("") // Stores The Search
 
-    const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
+    const { state, refetch, is_refreshing } = useApiQuery("chats", (signal:AbortSignal) => apiGet("get-chats/", { signal, guard: isChatsResponse }), { is_enabled: logged_in_user !== null })
 
-    const [unread_chats, setUnreadChats] = useState<ChatData[]>([]) // Stores The Unread Chats
-    const [read_chats, setReadChats] = useState<ChatData[]>([]) // Stores The Read Chats
+    // Initializes The Reload When The Tab Gets Focus Again (Returning From A Conversation Marks It As Read)
+    useFocusEffect(useCallback(() => {
+        if(logged_in_user) refetch()
+    }, [logged_in_user, refetch]))
 
-    const router:ImperativeRouter = useRouter() // Gets The Router
+    const conversations:Conversation[] = useMemo(() => state.data ? groupConversations(state.data.unread_chats, state.data.read_chats) : [], [state.data])
+    const query:string = search.trim().toLowerCase() // Gets The Query
+    const visible:Conversation[] = conversations.filter((conversation:Conversation) => conversation.user.username.toLowerCase().includes(query))
 
-    const [searched_text, setSearchedText] = useState<string>("") // Stores The Searched Text
-    const [filtered_chats, setFilteredChats] = useState<Chat[]>([]) // Stores The Filtered Chats
+    // Function For Render One Conversation
+    const renderConversation = ({ item }:ListRenderItemInfo<Conversation>) => {
+        const is_unread:boolean = item.unread_count > 0
 
-    // Function For Get The Chats
-    const getChats = async ():Promise<void> => {
-        try {
-            if(!logged_in_user) {
-                Alert.alert(t("Chyba"), t("Správy nie je možné načítať bez prihlásenia.")) // Shows The Alert
-                return
-            }
+        return (
+            <Pressable
+                onPress={() => router.push({ pathname: "/chat/[username]", params: { username: item.user.username } })}
+                accessibilityRole="button"
+                accessibilityLabel={is_unread ? `${item.user.username}, ${t("Neprečítané")}: ${item.unread_count}. ${item.preview}` : `${item.user.username}. ${item.preview}`}
+                style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null]}
+            >
+                <Avatar user={item.user} size={50} />
 
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
-    
-            // Sends The GET Request To The Server
-            const chats_response:Response = await fetch(`${API_URL}/get-chats/`, {
-                method: "GET",
+                <View style={styles.row_text}>
+                    <Text variant="body_strong" numberOfLines={1}>{item.user.username}</Text>
+                    <Text variant="callout" color={is_unread ? "text" : "text_secondary"} numberOfLines={1} style={is_unread ? styles.unread_preview : null}>
+                        {item.preview || t("Príloha")}
+                    </Text>
+                </View>
 
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    "Authorization": `Bearer ${user_token}`
-                }
-            })
-
-            // If The Response Isn't Success
-            if(!chats_response.ok) {
-                Alert.alert(t("Chyba"), t("Pri načítaní správ došlo k chybe.")) // Shows The Alert
-                return
-            }
-
-            const chats_data:ChatsResponse = await chats_response.json() // Gets The Chats Data
-
-            // If The Response Isn't Success
-            if(!chats_data.success) {
-                Alert.alert(t("Chyba"), chats_data.message) // Shows The Alert
-                return
-            }
-            
-            else {
-                setUnreadChats(chats_data.unread_chats) // Sets The Unread Chats
-                setReadChats(chats_data.read_chats) // Sets The Read Chats
-            }
-        } 
-        
-        catch {
-            Alert.alert(t("Chyba"), t("Pri načítaní správ došlo k chybe.")) // Shows The Alert
-        }
+                {is_unread && (
+                    <View style={styles.badge}>
+                        <Text variant="caption" color="on_primary" is_tabular style={styles.badge_text}>{item.unread_count > 99 ? "99+" : item.unread_count}</Text>
+                    </View>
+                )}
+            </Pressable>
+        )
     }
 
-    // Initializes The Load Of The Chats
-    useEffect(() => {
-        getChats() // Gets The Chats
-    }, [logged_in_user])
-
-    // Groups The Unread Chats By Senders
-    const grouped_unread_chats:Chat[] = Object.values(
-        unread_chats.reduce((user:Record<number, Chat>, chat:ChatData) => {
-            const sender_id:number = chat.sender.id // Gets The Sender ID
-
-            if(!user[sender_id]) {
-                user[sender_id] = {
-                    sender: chat.sender,
-                    list: []
-                }
-            }
-
-            if(user[sender_id].list) user[sender_id].list.push(chat)
-
-            return user
-        }, {} as Record<number, Chat>)
-    )
-
-    // Groups The Read Chats By Senders
-    const grouped_read_chats:Chat[] = Object.values(
-        read_chats.reduce((user:Record<number, Chat>, chat:ChatData) => {
-            const sender_id:number = chat.sender.id // Gets The Sender ID
-
-            if(!user[sender_id]) {
-                user[sender_id] = {
-                    sender: chat.sender,
-                    last_message: chat.content
-                }
-            }
-
-            user[sender_id].last_message = chat.content // Updates The Last Message
-
-            return user
-        }, {} as Record<number, Chat>)
-    )
+    if(!logged_in_user) {
+        return (
+            <Screen header={<Header title={t("Správy")} is_large />}>
+                <EmptyState icon="comments" title={t("Prihláste sa")} message={t("Po prihlásení si môžete písať s ľuďmi, ktorých sledujete.")} action={{ label: t("Prihlásiť sa"), onPress: () => auth_sheet.open("login_form") }} />
+            </Screen>
+        )
+    }
 
     return (
-        <BackgroundContainer>
-            <SafeAreaView style={[styles.safe_area, { flex: 1 }]}>
-                {/* <Banner 
-                    logged_in_user={logged_in_user} 
-                    setActiveForm={setActiveForm} 
-                /> */}
+        <Screen
+            is_scrollable={false}
+            is_padded={false}
+            header={<Header title={t("Správy")} is_large right={<IconButton icon="user-plus" accessibility_label={t("Hľadať ľudí")} onPress={() => router.push("/users")} variant="soft" size={38} />} />}
+        >
+            <FlatList
+                data={visible}
+                keyExtractor={(conversation:Conversation) => String(conversation.user.id)}
+                renderItem={renderConversation}
+                refreshing={is_refreshing}
+                onRefresh={refetch}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                contentContainerStyle={styles.list_content}
 
-                <ScrollView 
-                    className="content" 
-                    keyboardShouldPersistTaps="handled" 
-                    keyboardDismissMode="on-drag"
-                    style={styles.content} 
+                ListHeaderComponent={
+                    <>
+                        <NotificationPrompt />
 
-                    contentContainerStyle={{ 
-                        alignItems: "center",
-                        justifyContent: "center",
-                        padding: 20, 
-                        flexGrow: 1 
-                    }}
-                >
-                    {/* <LoginFormDialog 
-                        visible={active_form==="login_form"}
-                        onChangeActiveForm={() => setActiveForm("registration_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    />
+                        {(conversations.length > 0 || search) ? (
+                            <TextField
+                                icon="magnifying-glass"
+                                placeholder={t("Hľadať v správach")}
+                                accessibilityLabel={t("Hľadať v správach")}
+                                value={search}
+                                onChangeText={setSearch}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                container_style={styles.search}
+                            />
+                        ) : null}
+                    </>
+                }
 
-                    <RegistrationFormDialog
-                        visible={active_form==="registration_form"}
-                        onChangeActiveForm={() => setActiveForm("login_form")}
-                        onClose={() => setActiveForm(null)}
-                        onUserLogin={(logged_in_user_data) => setLoggedInUser(logged_in_user_data)}
-                    /> */}
-
-                    <ScrollView 
-                        className="all_messages_container" 
-                        showsVerticalScrollIndicator={false}
-                        indicatorStyle="white"
-                        keyboardShouldPersistTaps="handled" 
-                        keyboardDismissMode="on-drag"
-                        style={styles.all_messages_container}
-                    >
-                        <View style={styles.circle_decoration_before} />
-                        <View style={styles.circle_decoration_after} />
-
-                        <SearchChat 
-                            grouped_unread_chats={grouped_unread_chats} 
-                            grouped_read_chats={grouped_read_chats} 
-                            onFilteredChatsUpdate={(filtered_chats:Chat[]) => setFilteredChats(filtered_chats)}
-                            onSearchedTextUpdate={(searched_text:string) => setSearchedText(searched_text)}
-                            searched_text={searched_text}
-                        />
-
-                        {filtered_chats.length === 0 || searched_text.trim() === "" ? (
-                            <>
-                                {unread_chats.length > 0 ? (
-                                    <View 
-                                        className="all_unread_messages" 
-
-                                        style={[
-                                            styles.all_messages,
-                                            { marginBottom: 50 },
-                                        ]}
-                                    >
-                                        {grouped_unread_chats.map((one_item:Chat, index:number) => (
-                                            <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
-                                                <ProfilePictureLink 
-                                                    user_id={one_item.sender.id} 
-                                                    user_username={one_item.sender.username}
-                                                    user_profile_picture_name={one_item.sender.profile_picture_name || null} 
-                                                    user_subscription={one_item.sender.subscription?.is_active || false} 
-                                                    label={t("Zobraziť užívateľa")} 
-                                                />
-            
-                                                <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
-            
-                                                <View className="message_container" style={styles.message_container}>
-                                                    {one_item.list && (<Text className="unread_messages" style={styles.messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>)}
-            
-                                                    <View 
-                                                        className="chat"
-                                                        accessibilityLabel={t("Zobraziť správy")}
-                                                    >
-                                                        <Icon 
-                                                            icon_name="comment-dots"
-                                                            onPress={() => router.push(`/chat/${one_item.sender.username}`)}
-                                                            size={25}
-                                                            is_regular={true}
-                                                        />
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        ))}
-                                    </View>
-                                ) : (
-                                    <Text className="no_messages" style={styles.no_messages}>{t("Žiadne nové správy")}</Text>
-                                )}
-
-                                {read_chats.length > 0 ? (
-                                    <View className="all_read_messages" style={styles.all_messages}>
-                                        {grouped_read_chats.map((one_item:Chat, index:number) => (
-                                            <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
-                                                <ProfilePictureLink 
-                                                    user_id={one_item.sender.id} 
-                                                    user_username={one_item.sender.username}
-                                                    user_profile_picture_name={one_item.sender.profile_picture_name || null} 
-                                                    user_subscription={one_item.sender.subscription?.is_active || false} 
-                                                    label={t("Zobraziť užívateľa")} 
-                                                />
-            
-                                                <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
-
-                                                <Text className="last_message" numberOfLines={1} ellipsizeMode="tail" style={styles.last_message}>{one_item.last_message}</Text>
-            
-                                                <View className="message_container" style={styles.message_container}>
-                                                    <View 
-                                                        className="chat"
-                                                        accessibilityLabel={t("Zobraziť správy")}
-                                                    >
-                                                        <Icon 
-                                                            icon_name="comment-dots"
-                                                            onPress={() => router.push(`/chat/${one_item.sender.username}`)}
-                                                            size={25}
-                                                            is_regular={true}
-                                                        />
-                                                    </View>
-                                                </View>
-                                            </View>
-                                        ))}
-                                    </View>
-                                ) : null}
-                            </>
-                        ) : (
-                            filtered_chats.map((one_item:Chat, index:number) => (
-                                <View key={one_item.sender.id || index} className="one_message" style={styles.one_message}>
-                                    <ProfilePictureLink 
-                                        user_id={one_item.sender.id} 
-                                        user_username={one_item.sender.username}
-                                        user_profile_picture_name={one_item.sender.profile_picture_name || null} 
-                                        user_subscription={one_item.sender.subscription?.is_active || false} 
-                                        label={t("Zobraziť užívateľa")} 
-                                    />
-
-                                    <Text className="username" numberOfLines={1} ellipsizeMode="tail" style={styles.username}>{one_item.sender.username}</Text>
-
-                                    {one_item.last_message && (<Text className="last_message" numberOfLines={1} ellipsizeMode="tail" style={styles.last_message}>{one_item.last_message}</Text>)}
-
-                                    <View className="message_container" style={styles.message_container}>
-                                        {one_item.list && (<Text className="unread_messages" style={styles.messages}>{one_item.list.length <= 9 ? one_item.list.length : "9+"}</Text>)}
-
-                                        <View 
-                                            className="chat"
-                                            accessibilityLabel={t("Zobraziť správy")}
-                                        >
-                                            <Icon 
-                                                icon_name="comment-dots"
-                                                onPress={() => router.push(`/chat/${one_item.sender.username}`)}
-                                                size={25}
-                                                is_regular={true}
-                                            />
-                                        </View>
-                                    </View>
-                                </View>
-                            ))
-                        )}
-                    </ScrollView>
-                </ScrollView>
-            </SafeAreaView>
-        </BackgroundContainer>
+                ListEmptyComponent={
+                    state.status === "loading" ? <View>{[0, 1, 2, 3].map((index:number) => <UserRowSkeleton key={index} />)}</View>
+                    : state.status === "error" ? <ErrorState error={state.error} onRetry={refetch} />
+                    : query ? <EmptyState icon="magnifying-glass" title={t("Nikto sa nenašiel")} is_compact />
+                    : <EmptyState icon="comments" title={t("Zatiaľ žiadne správy")} message={t("Napíšte niekomu z jeho profilu tlačidlom Správa.")} action={{ label: t("Hľadať ľudí"), onPress: () => router.push("/users") }} />
+                }
+            />
+        </Screen>
     )
 }
 
 const styles = StyleSheet.create({
-    safe_area: {
-        flex: 1,
-    },
-  
-    content: {
-        flex: 1,
+    list_content: {
+        flexGrow: 1,
+        paddingHorizontal: layout.screen_padding,
+        paddingBottom: spacing.xxl,
     },
 
-    all_messages_container: {
-        gap: 10,
-        maxWidth: MAIN_WIDTH,
-        width: "100%",
-        padding: 20,
-        borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: MEDIUM_BORDER_RADIUS,
-        shadowColor: BLUE_COLOR,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.2,
-        shadowRadius: 30,
-        elevation: 10,
-        overflow: "hidden",
+    search: {
+        marginBottom: spacing.sm,
     },
 
-    circle_decoration_before: {
-        position: "absolute",
-        top: -250,
-        left: -50,
-        width: 400,
-        height: 400,
-        borderRadius: 400 / 2,
-        backgroundColor: transparentize(BLUE_COLOR, 0.95),
-        zIndex: -1,
-    },
-    
-    circle_decoration_after: {
-        position: "absolute",
-        bottom: -200,
-        right: -50,
-        width: 400,
-        height: 400,
-        borderRadius: 400 / 2,
-        backgroundColor: transparentize(BLUE_COLOR, 0.95),
-        zIndex: -1,
-    },
-
-    no_messages: {
-        color: SECONDARY_COLOR,
-        textAlign: "center",
-    },
-
-    all_messages: {
-        gap: 10,
-    },
-
-    one_message: {
+    row: {
+        minHeight: 72,
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
-        // transition: display 0.3s ease allow-discrete, transform 0.3s ease, opacity 0.3s ease;
-
-        // &.hidden {
-        //     display: none;
-        //     transform: translateX(-100%);
-        //     opacity: 0;
-        // }
+        gap: spacing.md,
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.sm,
+        marginHorizontal: -spacing.sm,
+        borderRadius: radii.md,
     },
 
-    username: {
-        // @include crop_text;
+    row_pressed: {
+        backgroundColor: colors.surface_pressed,
+    },
+
+    row_text: {
         flex: 1,
-        width: 250,
-        color: SECONDARY_COLOR,
+        gap: 2,
     },
 
-    last_message: {
-        // @include crop_text;
-        flex: 1,
-        width: 250,
-        textAlign: "right",
-        color: transparentize(SECONDARY_COLOR, 0.4),
+    unread_preview: {
+        fontWeight: "600",
     },
 
-    message_container: {
-        flexDirection: "row",
+    badge: {
+        minWidth: 22,
+        height: 22,
+        paddingHorizontal: 6,
         alignItems: "center",
-        justifyContent: "flex-end",
-        gap: 5,
-        marginLeft: "auto",
-        paddingVertical: 5,
+        justifyContent: "center",
+        backgroundColor: colors.primary_solid,
+        borderRadius: radii.pill,
     },
 
-    messages: {
-        fontSize: 22,
-        color: transparentize(SECONDARY_COLOR, 0.4),
+    badge_text: {
+        fontWeight: "700",
     },
 })
