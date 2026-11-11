@@ -13,6 +13,15 @@ import uk_translations from "@/locales/uk.json"
 import ru_translations from "@/locales/ru.json"
 import pt_BR_translations from "@/locales/pt_BR.json"
 
+const SUPPORTED_LANGUAGES:string[] = ["en", "sk", "cs", "de", "es", "fr", "uk", "ru", "pt_BR"]
+
+// Function For Get The Device Language (Portuguese Devices Report "pt", The Translations Are "pt_BR")
+const getDeviceLanguage = ():string => {
+    const language_code:string = Localization.getLocales()[0]?.languageCode ?? "en"
+    if(language_code === "pt") return "pt_BR"
+    return SUPPORTED_LANGUAGES.includes(language_code) ? language_code : "en"
+}
+
 i18n.use(initReactI18next).init({
     compatibilityJSON: "v4",
 
@@ -28,7 +37,7 @@ i18n.use(initReactI18next).init({
         pt_BR: { translation: pt_BR_translations }
     },
 
-    lng: Localization.getLocales()[0]?.languageCode ?? "en", 
+    lng: getDeviceLanguage(),
     fallbackLng: "en",
     interpolation: { escapeValue: false }
 })
