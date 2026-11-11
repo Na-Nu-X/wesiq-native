@@ -14,6 +14,7 @@ export interface TextFieldProps extends Omit<TextInputProps, "style"|"placeholde
     is_password?:boolean, // Adds The Show / Hide Toggle
     is_disabled?:boolean,
     is_counter_visible?:boolean, // Shows "length / maxLength"
+    multiline_min_height?:number, // Starting Height Of A Multiline Field (Grows With The Text)
     container_style?:StyleProp<ViewStyle>
 }
 
@@ -25,6 +26,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
     is_password = false,
     is_disabled = false,
     is_counter_visible = false,
+    multiline_min_height,
     container_style,
     multiline,
     maxLength,
@@ -96,7 +98,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                         onBlur?.(event)
                     }}
 
-                    style={[styles.input, multiline ? styles.input_multiline : null, Platform.OS === "web" ? styles.input_web : null]}
+                    style={[styles.input, multiline ? styles.input_multiline : null, multiline && multiline_min_height !== undefined ? { minHeight: multiline_min_height } : null, Platform.OS === "web" ? styles.input_web : null]}
                     {...props}
                 />
 

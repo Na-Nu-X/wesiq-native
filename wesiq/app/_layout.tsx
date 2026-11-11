@@ -20,7 +20,7 @@ import { useTranslation } from "react-i18next"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import Purchases from "react-native-purchases"
 
-import type { ChatSocketResponse } from "./(tabs)/chat/[username]"
+import type { ChatSocketEvent } from "@/types/models"
 
 installMockApi() // Enables Mock Data In Development When EXPO_PUBLIC_USE_MOCKS=1
 
@@ -204,7 +204,7 @@ export default function RootLayout() {
 
             // Response From The Server
             chat_socket.current.onmessage = (event) => {
-                const data:ChatSocketResponse = JSON.parse(event.data) // Gets The Data
+                const data:ChatSocketEvent = JSON.parse(event.data) // Gets The Data
 
                 // New Message
                 if(data.action === "new_message_notification") {
