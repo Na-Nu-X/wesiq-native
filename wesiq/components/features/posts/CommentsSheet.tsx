@@ -9,21 +9,34 @@ import { colors, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
 import { getTimeAgo } from "@/utils/time"
-import { addComment, deletePostComment, getPostComments, REPORT_REASONS, ReportReason, reportPostComment, togglePostCommentLike } from "@/lib/api/endpoints/posts"
+import { REPORT_REASONS, ReportReason } from "@/lib/api/endpoints/posts"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { MenuRow, useReportReasonLabels } from "./PostMenuSheet"
 
-import type { ApiError } from "@/types/api"
-import type { Post, PostComment } from "@/types/models"
+import type { ApiEnvelope, ApiError, ApiResult } from "@/types/api"
+import type { PostComment } from "@/types/models"
+import type { AddedComment, CommentsPage } from "@/lib/api/endpoints/posts"
+
+// What The Sheet Needs From A Commented Item (A Post Or A Blog Article)
+export interface CommentsSource {
+    key:string, // Changes When Another Item Is Opened
+    comments_count:number,
+    allow_comments:boolean,
+    load:(page:number, signal?:AbortSignal) => Promise<ApiResult<CommentsPage>>,
+    add:(comment:string, parent_id:number|null) => Promise<ApiResult<ApiEnvelope & { comment:AddedComment }>>,
+    like:(comment_id:number) => Promise<ApiResult<ApiEnvelope>>,
+    report:(comment_id:number, reason:ReportReason) => Promise<ApiResult<ApiEnvelope>>,
+    remove:(comment_id:number) => Promise<ApiResult<ApiEnvelope>>
+}
 
 const MAX_COMMENT_LENGTH:number = 100 // Same As Before
 const MAX_INDENT_LEVEL:number = 3 // Deeper Replies Stay At This Indentation
 const MAX_REPLY_LEVEL:number = 5 // The Server Rejects Replies Deeper Than Level 5 (Top Level Is 1)
 
 interface CommentsSheetProps {
-    post:Post|null, // Null = Closed
+    source:CommentsSource|null, // Null = Closed
     onClose:() => void,
-    onCommentsCountChange:(post:Post, delta:number) => void,
+    onCommentsCountChange:(delta:number) => void,
     onRequireLogin:() => void
 }
 
@@ -56,12 +69,12 @@ const collectThread = (comments:PostComment[], root_id:number):Set<number> => {
     return ids
 }
 
-export default function CommentsSheet({ post, onClose, onCommentsCountChange, onRequireLogin }:CommentsSheetProps) {
+export default function CommentsSheet({ source, onClose, onCommentsCountChange, onRequireLogin }:CommentsSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
 
-    const [shown_post, setShownPost] = useState<Post|null>(post) // Keeps The Post While The Sheet Animates Closed
+    const [shown_source, setShownSource] = useState<CommentsSource|null>(source) // Keeps The Source While The Sheet Animates Closed
     const [state, setState] = useState<CommentsState|null>(null)
     const [draft, setDraft] = useState<string>("") // Stores The Comment Being Written
     const [reply_to, setReplyTo] = useState<PostComment|null>(null) // Stores The Comment Being Replied To
@@ -71,25 +84,27 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
     const [menu_view, setMenuView] = useState<"main"|"report">("main")
 
     // Resets Everything For Another Post (Adjusted During Render)
-    if(post && post.id !== shown_post?.id) {
-        setShownPost(post)
+    if(source && source.key !== shown_source?.key) {
+        setShownSource(source)
         setState(null)
         setDraft("")
         setReplyTo(null)
         setExpandedRoots(new Set())
     }
 
-    else if(post && post !== shown_post) setShownPost(post)
+    else if(source && source !== shown_source) setShownSource(source)
 
-    const post_id:string|null = post?.id ?? null // Gets The Open Post
+    const source_key:string|null = source?.key ?? null // Gets The Open Item
+    const load_first_page = source?.load // Gets The Loader
 
     // Initializes The Load Of The First Page (State Is Only Set After The Request)
     useEffect(() => {
-        if(!post_id) return
+        if(!source_key || !load_first_page) return
 
         const controller:AbortController = new AbortController()
+        const post_id:string = source_key
 
-        getPostComments(post_id, 1, controller.signal).then((response) => {
+        load_first_page(1, controller.signal).then((response) => {
             if(controller.signal.aborted) return
 
             setState(response.ok
@@ -98,17 +113,17 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         })
 
         return () => controller.abort()
-    }, [post_id])
+    }, [source_key]) // eslint-disable-line react-hooks/exhaustive-deps -- Reloads Only For Another Item
 
     // Function For Load The Next Page
     const loadMore = async ():Promise<void> => {
-        if(!state || !state.has_next || state.is_loading_more || !shown_post) return
+        if(!state || !state.has_next || state.is_loading_more || !shown_source) return
 
         setState({ ...state, is_loading_more: true })
-        const response = await getPostComments(shown_post.id, state.page + 1) // Sends The Request
+        const response = await shown_source.load(state.page + 1) // Sends The Request
 
         setState((previous:CommentsState|null) => {
-            if(!previous || previous.post_id !== shown_post.id) return previous
+            if(!previous || previous.post_id !== shown_source.key) return previous
             if(!response.ok) return { ...previous, is_loading_more: false }
 
             const known:Set<number> = new Set(previous.comments.map((comment:PostComment) => comment.id))
@@ -174,7 +189,8 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         haptics.light()
         updateComment({ likes: Math.max(0, comment.likes + (is_liked ? -1 : 1)), likes_from_users: is_liked ? comment.likes_from_users.filter((id:number) => id !== logged_in_user.id) : [...comment.likes_from_users, logged_in_user.id] })
 
-        const response = await togglePostCommentLike(comment.id) // Sends The Request
+        if(!shown_source) return
+        const response = await shown_source.like(comment.id) // Sends The Request
         if(!response.ok) updateComment({ likes: comment.likes, likes_from_users: comment.likes_from_users })
     }
 
@@ -186,10 +202,10 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         }
 
         const text:string = draft.trim() // Gets The Text
-        if(!text || !shown_post || is_sending) return
+        if(!text || !shown_source || is_sending) return
 
         setIsSending(true)
-        const response = await addComment(shown_post.id, text, reply_to?.id ?? null) // Sends The Request
+        const response = await shown_source.add(text, reply_to?.id ?? null) // Sends The Request
         setIsSending(false)
 
         if(!response.ok) {
@@ -214,7 +230,7 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         if(reply_to) setExpandedRoots((previous) => new Set(previous).add(findRootId(reply_to)))
         setDraft("")
         setReplyTo(null)
-        onCommentsCountChange(shown_post, 1)
+        onCommentsCountChange(1)
     }
 
     // Function For Delete A Comment (Removes Its Replies Too)
@@ -222,9 +238,9 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         setMenuComment(null)
 
         const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť komentár?"), message: t("Odstránia sa aj odpovede na tento komentár."), confirm_label: t("Odstrániť"), is_destructive: true })
-        if(!is_confirmed || !state || !shown_post) return
+        if(!is_confirmed || !state || !shown_source) return
 
-        const response = await deletePostComment(comment.id) // Sends The Request
+        const response = await shown_source.remove(comment.id) // Sends The Request
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -233,13 +249,14 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
 
         const removed:Set<number> = collectThread(state.comments, comment.id) // Gets The Removed Comments
         setState((previous) => previous ? { ...previous, comments: previous.comments.filter((other:PostComment) => !removed.has(other.id)) } : previous)
-        onCommentsCountChange(shown_post, -removed.size)
+        onCommentsCountChange(-removed.size)
     }
 
     // Function For Report A Comment
     const report = async (comment:PostComment, reason:ReportReason):Promise<void> => {
         setMenuComment(null)
-        const response = await reportPostComment(comment.id, reason) // Sends The Request
+        if(!shown_source) return
+        const response = await shown_source.report(comment.id, reason) // Sends The Request
 
         if(!response.ok) showAlert(t("Chyba"), response.error.message)
         else showAlert(t("Ďakujeme za nahlásenie"), t("Komentár skontrolujeme. Nahlasovateľ zostáva anonymný."))
@@ -312,21 +329,21 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
         )
     }
 
-    if(!shown_post) return null
+    if(!shown_source) return null
 
     const is_own_menu_comment:boolean = menu_comment !== null && logged_in_user?.id === menu_comment.user.id
     const can_delete_menu_comment:boolean = is_own_menu_comment || logged_in_user?.role === "admin" || logged_in_user?.role === "developer" // Same Rule As The Server
 
     return (
         <Sheet
-            visible={post !== null}
+            visible={source !== null}
             onClose={onClose}
             title={t("Komentáre")}
-            subtitle={shown_post.comments_amount > 0 ? `${shown_post.comments_amount}` : undefined}
+            subtitle={shown_source.comments_count > 0 ? `${shown_source.comments_count}` : undefined}
             size="large"
             is_scrollable={false}
 
-            footer={shown_post.allow_comments ? (
+            footer={shown_source.allow_comments ? (
                 <View style={styles.composer}>
                     {reply_to && (
                         <View style={styles.reply_to}>
@@ -367,7 +384,7 @@ export default function CommentsSheet({ post, onClose, onCommentsCountChange, on
                 ListEmptyComponent={
                     !state ? <View>{[0, 1, 2].map((index:number) => <UserRowSkeleton key={index} />)}</View>
                     : state.error ? <ErrorState error={state.error} is_compact />
-                    : shown_post.allow_comments ? <EmptyState icon="comments" title={t("Zatiaľ žiadne komentáre")} message={t("Buďte prvý, kto pridá komentár.")} is_compact />
+                    : shown_source.allow_comments ? <EmptyState icon="comments" title={t("Zatiaľ žiadne komentáre")} message={t("Buďte prvý, kto pridá komentár.")} is_compact />
                     : <EmptyState icon="comment-slash" title={t("Komentáre sú vypnuté")} is_compact />
                 }
 

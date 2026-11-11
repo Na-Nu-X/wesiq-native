@@ -1399,5 +1399,22 @@
     "Zobraziť obrázok": "Открыть изображение",
     "Zrušiť úpravu": "Отменить редактирование",
     "Úprava správy": "Редактирование сообщения",
-    "Účet používateľa je súkromný.": "Этот аккаунт закрытый."
+    "Účet používateľa je súkromný.": "Этот аккаунт закрытый.",
+    "Doba učenia": "Время обучения",
+    "Hľadať články": "Искать статьи",
+    "Na webe": "На сайте",
+    "Nenašli sa žiadne články.": "Статьи не найдены.",
+    "Návody, techniky a tipy na tréning": "Руководства, техники и советы",
+    "Obtiažnosť": "Сложность",
+    "Ohodnoťte článok": "Оцените статью",
+    "Sila": "Сила",
+    "Skúste iné slovo.": "Попробуйте другое слово.",
+    "Späť na blog": "Назад в блог",
+    "Technika": "Техника",
+    "Vaše hodnotenie: {{rating}}": "Ваша оценка: {{rating}}",
+    "Vzácnosť": "Редкость",
+    "Zdieľať článok": "Поделиться статьёй",
+    "{{count}} z 5": "{{count}} из 5",
+    "Články: {{count}}": "Статьи: {{count}}",
+    "Článok sa nenašiel": "Статья не найдена"
 }

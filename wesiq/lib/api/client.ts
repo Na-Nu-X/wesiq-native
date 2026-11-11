@@ -19,6 +19,7 @@ export interface ApiRequestOptions<T> {
     signal?:AbortSignal,
     timeout_ms?:number,
     is_authenticated?:boolean, // Sends The Bearer Token (Default True)
+    headers?:Record<string, string>, // Extra Headers (E.g. X-Device-ID)
     guard?:ResponseGuard<T> // Validates The Response Payload
 }
 
@@ -95,10 +96,11 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
         signal,
         timeout_ms = DEFAULT_TIMEOUT_MS,
         is_authenticated = true,
+        headers: extra_headers,
         guard,
     } = options
 
-    const headers:Record<string, string> = { "Accept": "application/json" } // Stores The Headers
+    const headers:Record<string, string> = { "Accept": "application/json", ...extra_headers } // Stores The Headers
 
     if(body !== undefined && !form_data) headers["Content-Type"] = "application/json"
 

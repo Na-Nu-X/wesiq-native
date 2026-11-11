@@ -287,7 +287,7 @@ export const MOCK_CUSTOM_TASKS:CustomTask[] = [
 // ---------- Blog ----------
 
 export const MOCK_ARTICLES:Article[] = [
-    { id: 1, title: "Front lever: a complete progression guide", description: "From tuck holds to the full lever, a structured plan with the exact progressions and volume to use.", image_name: null, html_filename: "front_lever", link: "front-lever", categories: ["calisthenics", "strength"], visitors: 4210, creation_time: daysAgo(40), average_rating: 4.7, user: { username: "wesiq" } },
+    { id: 1, title: "Front lever: a complete progression guide", description: "From tuck holds to the full lever, a structured plan with the exact progressions and volume to use.", image_name: null, html_filename: "front_lever.html", link: "front-lever", categories: ["calisthenics", "strength"], visitors: 4210, creation_time: daysAgo(40), average_rating: 4.7, user: { username: "wesiq" } },
     { id: 2, title: "How to warm up properly", description: "Why five minutes of the right warm up beats twenty minutes of the wrong one.", image_name: null, html_filename: null, link: "warm-up", categories: ["mobility"], visitors: 2980, creation_time: daysAgo(18), average_rating: 4.4, user: { username: "wesiq" } },
     { id: 3, title: "Sleep and recovery for lifters", description: "What the research says about sleep, muscle growth and performance.", image_name: null, html_filename: null, link: "sleep-recovery", categories: ["recovery"], visitors: 1630, creation_time: daysAgo(7), average_rating: 4.9, user: { username: "wesiq" } },
 ]

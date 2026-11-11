@@ -1399,5 +1399,22 @@
     "Zobraziť obrázok": "Переглянути зображення",
     "Zrušiť úpravu": "Скасувати редагування",
     "Úprava správy": "Редагування повідомлення",
-    "Účet používateľa je súkromný.": "Цей обліковий запис приватний."
+    "Účet používateľa je súkromný.": "Цей обліковий запис приватний.",
+    "Doba učenia": "Час навчання",
+    "Hľadať články": "Шукати статті",
+    "Na webe": "На сайті",
+    "Nenašli sa žiadne články.": "Статей не знайдено.",
+    "Návody, techniky a tipy na tréning": "Посібники, техніки та поради",
+    "Obtiažnosť": "Складність",
+    "Ohodnoťte článok": "Оцініть статтю",
+    "Sila": "Сила",
+    "Skúste iné slovo.": "Спробуйте інше слово.",
+    "Späť na blog": "Назад до блогу",
+    "Technika": "Техніка",
+    "Vaše hodnotenie: {{rating}}": "Ваша оцінка: {{rating}}",
+    "Vzácnosť": "Рідкість",
+    "Zdieľať článok": "Поділитися статтею",
+    "{{count}} z 5": "{{count}} з 5",
+    "Články: {{count}}": "Статті: {{count}}",
+    "Článok sa nenašiel": "Статтю не знайдено"
 }

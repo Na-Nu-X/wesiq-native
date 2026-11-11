@@ -1399,5 +1399,22 @@
     "Zobraziť obrázok": "Voir l'image",
     "Zrušiť úpravu": "Annuler la modification",
     "Úprava správy": "Modification du message",
-    "Účet používateľa je súkromný.": "Ce compte est privé."
+    "Účet používateľa je súkromný.": "Ce compte est privé.",
+    "Doba učenia": "Temps d'apprentissage",
+    "Hľadať články": "Rechercher des articles",
+    "Na webe": "Sur le web",
+    "Nenašli sa žiadne články.": "Aucun article trouvé.",
+    "Návody, techniky a tipy na tréning": "Guides, techniques et conseils d'entraînement",
+    "Obtiažnosť": "Difficulté",
+    "Ohodnoťte článok": "Notez cet article",
+    "Sila": "Force",
+    "Skúste iné slovo.": "Essayez un autre mot.",
+    "Späť na blog": "Retour au blog",
+    "Technika": "Technique",
+    "Vaše hodnotenie: {{rating}}": "Votre note : {{rating}}",
+    "Vzácnosť": "Rareté",
+    "Zdieľať článok": "Partager l'article",
+    "{{count}} z 5": "{{count}} sur 5",
+    "Články: {{count}}": "Articles : {{count}}",
+    "Článok sa nenašiel": "Article introuvable"
 }

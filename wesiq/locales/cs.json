@@ -1399,5 +1399,22 @@
     "Zobraziť obrázok": "Zobrazit obrázek",
     "Zrušiť úpravu": "Zrušit úpravu",
     "Úprava správy": "Úprava zprávy",
-    "Účet používateľa je súkromný.": "Účet uživatele je soukromý."
+    "Účet používateľa je súkromný.": "Účet uživatele je soukromý.",
+    "Doba učenia": "Doba učení",
+    "Hľadať články": "Hledat články",
+    "Na webe": "Na webu",
+    "Nenašli sa žiadne články.": "Nenašly se žádné články.",
+    "Návody, techniky a tipy na tréning": "Návody, techniky a tipy na trénink",
+    "Obtiažnosť": "Obtížnost",
+    "Ohodnoťte článok": "Ohodnoťte článek",
+    "Sila": "Síla",
+    "Skúste iné slovo.": "Zkuste jiné slovo.",
+    "Späť na blog": "Zpět na blog",
+    "Technika": "Technika",
+    "Vaše hodnotenie: {{rating}}": "Vaše hodnocení: {{rating}}",
+    "Vzácnosť": "Vzácnost",
+    "Zdieľať článok": "Sdílet článek",
+    "{{count}} z 5": "{{count}} z 5",
+    "Články: {{count}}": "Články: {{count}}",
+    "Článok sa nenašiel": "Článek nebyl nalezen"
 }
