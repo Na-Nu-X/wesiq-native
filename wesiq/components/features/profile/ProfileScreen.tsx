@@ -20,6 +20,7 @@ import ConnectionsSheet, { ConnectionsTab } from "./ConnectionsSheet"
 import UserMenuSheet from "./UserMenuSheet"
 import PostGrid from "./PostGrid"
 import BadgesContainer from "@/components/pages/profile/BadgesContainer"
+import { formatUsername } from "@/lib/format"
 
 import type { BioLink, Profile } from "@/types/models"
 
@@ -137,7 +138,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
 
                         <View style={styles.hero_text}>
                             {display_name ? <Text variant="heading" numberOfLines={2}>{display_name}</Text> : null}
-                            <Text variant="callout" color="text_secondary">@{profile.username}</Text>
+                            <Text variant="callout" color="text_secondary">{formatUsername(profile.username)}</Text>
 
                             <View style={styles.chips}>
                                 <Chip label={`${t("Level")} ${profile.level}`} icon="star" is_selected />
@@ -184,7 +185,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
                             style={styles.flex}
                         />
 
-                        {logged_in_user && (
+                        {!!logged_in_user && (
                             <Button label={t("Správa")} icon="comment" variant="secondary" onPress={() => router.push({ pathname: "/chat/[username]", params: { username: profile.username } })} style={styles.flex} />
                         )}
                     </View>

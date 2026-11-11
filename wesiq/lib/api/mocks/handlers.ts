@@ -190,7 +190,8 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         pattern: "get-article/:theme/",
         handler: ({ params }) => {
             const article = MOCK_ARTICLES.find((one_article) => one_article.link === params[0]) // Finds The Article
-            return article ? ok({ article: { ...article, difficulty: 75, time_to_learn: 60, time_to_learn_text: "2 - 6 months", rarity: 80, strength: 85, technique: 70, given_rating: null, comments_amount: MOCK_COMMENTS.length }, not_found: false }) : ok({ not_found: true })
+            const { user: _author, ...article_without_author } = article ?? {} // Like The Server, get-article/ Has No Author
+            return article ? ok({ article: { ...article_without_author, difficulty: 75, time_to_learn: 60, time_to_learn_text: "2 - 6 months", rarity: 80, strength: 85, technique: 70, given_rating: null, comments_amount: MOCK_COMMENTS.length }, not_found: false }) : ok({ not_found: true })
         }
     },
 

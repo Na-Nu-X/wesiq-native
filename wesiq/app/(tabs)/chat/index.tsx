@@ -21,7 +21,7 @@ interface Conversation {
     unread_count:number
 }
 
-const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && typeof value.content === "string"
+const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && (typeof value.content === "string" || value.content === null)
 
 const isChatsResponse = envelopeWith<{ unread_chats:ChatPreview[], read_chats:ChatPreview[] }>({
     unread_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
@@ -34,12 +34,12 @@ const groupConversations = (unread:ChatPreview[], read:ChatPreview[]):Conversati
 
     unread.forEach((message:ChatPreview) => {
         const existing:Conversation|undefined = by_user.get(message.sender.id)
-        by_user.set(message.sender.id, { user: message.sender, preview: message.content, unread_count: (existing?.unread_count ?? 0) + 1 })
+        by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: (existing?.unread_count ?? 0) + 1 })
     })
 
     read.forEach((message:ChatPreview) => {
         if(by_user.has(message.sender.id)) return
-        by_user.set(message.sender.id, { user: message.sender, preview: message.content, unread_count: 0 })
+        by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: 0 })
     })
 
     return [...by_user.values()].sort((a:Conversation, b:Conversation) => Number(b.unread_count > 0) - Number(a.unread_count > 0))

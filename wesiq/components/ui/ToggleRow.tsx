@@ -35,7 +35,7 @@ export default function ToggleRow({ label, description, icon, value, onChange, i
             accessibilityState={{ checked: value, disabled: is_disabled }}
             style={({ pressed }) => [styles.row, pressed ? styles.pressed : null, is_disabled ? styles.disabled : null]}
         >
-            {icon && (
+            {!!icon && (
                 <View style={styles.icon}>
                     <Icon name={icon} size={15} color={value ? "primary" : "text_muted"} />
                 </View>
@@ -43,7 +43,7 @@ export default function ToggleRow({ label, description, icon, value, onChange, i
 
             <View style={styles.text}>
                 <Text variant="body_strong">{label}</Text>
-                {description && <Text variant="caption" color="text_secondary">{description}</Text>}
+                {!!description && <Text variant="caption" color="text_secondary">{description}</Text>}
             </View>
 
             <Switch

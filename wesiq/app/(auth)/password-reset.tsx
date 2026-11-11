@@ -158,7 +158,7 @@ export default function PasswordResetScreen() {
                                 </View>
                             ) : <View />}
 
-                            {identifier && <Button label={t("Poslať znova")} variant="ghost" size="sm" onPress={resend} is_loading={busy_action === "resend"} is_disabled={busy_action !== null} />}
+                            {!!identifier && <Button label={t("Poslať znova")} variant="ghost" size="sm" onPress={resend} is_loading={busy_action === "resend"} is_disabled={busy_action !== null} />}
                         </View>
                     </View>
 
@@ -181,7 +181,7 @@ export default function PasswordResetScreen() {
                         <Button label={t("Vygenerovať silné heslo")} icon="wand-magic-sparkles" variant="ghost" size="sm" onPress={() => setNewPassword(generateKey(16))} style={styles.generate} />
                     </View>
 
-                    {form_error && (
+                    {!!form_error && (
                         <Card padding="md" style={styles.error} accessibility_label={form_error}>
                             <Icon name="circle-exclamation" size={16} color="danger" />
                             <Text variant="callout" color="danger" style={styles.flex} accessibilityLiveRegion="polite">{form_error}</Text>

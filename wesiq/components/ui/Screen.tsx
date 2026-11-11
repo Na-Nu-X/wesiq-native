@@ -80,7 +80,7 @@ export default function Screen({
                         {body}
                     </View>
 
-                    {footer && (
+                    {!!footer && (
                         <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
                             <View style={styles.footer_inner}>{footer}</View>
                         </View>

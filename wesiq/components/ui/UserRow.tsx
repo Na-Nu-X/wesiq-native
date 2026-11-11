@@ -4,6 +4,7 @@ import { colors, radii, spacing } from "@/theme"
 import Avatar, { AvatarUser } from "./Avatar"
 import Text from "./Text"
 import Icon from "./Icon"
+import { formatUsername } from "@/lib/format"
 
 export interface UserRowProps {
     user:AvatarUser,
@@ -21,7 +22,7 @@ export const getDisplayName = (user:AvatarUser):string => {
 
 export default function UserRow({ user, subtitle, onPress, trailing, accessibility_hint }:UserRowProps) {
     const display_name:string = getDisplayName(user) // Gets The Display Name
-    const secondary:string|null = subtitle ?? (display_name !== user.username ? `@${user.username}` : null) // Gets The Secondary Text
+    const secondary:string|null = subtitle ?? (display_name !== user.username ? formatUsername(user.username) : null) // Gets The Secondary Text
 
     return (
         <View style={styles.row}>
@@ -41,11 +42,11 @@ export default function UserRow({ user, subtitle, onPress, trailing, accessibili
                         {user.subscription?.is_active && <Icon name="crown" size={11} color="premium" />}
                     </View>
 
-                    {secondary && <Text variant="caption" color="text_muted" numberOfLines={1}>{secondary}</Text>}
+                    {!!secondary && <Text variant="caption" color="text_muted" numberOfLines={1}>{secondary}</Text>}
                 </View>
             </Pressable>
 
-            {trailing && <View style={styles.trailing}>{trailing}</View>}
+            {!!trailing && <View style={styles.trailing}>{trailing}</View>}
         </View>
     )
 }

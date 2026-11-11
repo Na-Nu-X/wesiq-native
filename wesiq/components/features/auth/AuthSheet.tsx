@@ -241,7 +241,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
             is_dismissable={!is_submitting}
             footer={renderFooter()}
         >
-            {form_error && (
+            {!!form_error && (
                 <Card variant="outlined" padding="md" style={styles.error_card}>
                     <View style={styles.row}>
                         <Icon name="circle-exclamation" size={14} color="danger" />

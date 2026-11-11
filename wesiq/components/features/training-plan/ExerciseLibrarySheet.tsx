@@ -118,7 +118,7 @@ export default function ExerciseLibrarySheet({ visible, onClose, onAddExercise, 
                         <Text variant="label">{t("Vlastný cvik")}</Text>
                     </Pressable>
 
-                    {onAddWarmUp && (
+                    {!!onAddWarmUp && (
                         <Pressable onPress={() => add(onAddWarmUp)} accessibilityRole="button" style={({ pressed }) => [styles.quick, pressed ? styles.row_pressed : null]}>
                             <Icon name="fire" size={14} color="warning" />
                             <Text variant="label">{t("Rozcvička")}</Text>

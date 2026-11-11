@@ -22,7 +22,7 @@ const getSocketUrl = (user_token:string):string => {
 
 // Function For The Notification Text Of A Message
 const getMessagePreview = (event:ChatSocketEvent):string => {
-    if(event.message.trim()) return event.message
+    if(event.message?.trim()) return event.message
     if(event.post) return i18n.t("Zdieľaný príspevok")
     return i18n.t("Príloha")
 }

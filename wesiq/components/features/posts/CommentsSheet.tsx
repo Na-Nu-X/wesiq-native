@@ -318,7 +318,7 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
                         {item.likes > 0 && <Text variant="caption" color="text_muted" is_tabular>{item.likes}</Text>}
                     </Pressable>
 
-                    {logged_in_user && (
+                    {!!logged_in_user && (
                         <IconButton icon="ellipsis" accessibility_label={t("Možnosti komentára")} onPress={() => {
                             setMenuView("main")
                             setMenuComment(item)
@@ -345,7 +345,7 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
 
             footer={shown_source.allow_comments ? (
                 <View style={styles.composer}>
-                    {reply_to && (
+                    {!!reply_to && (
                         <View style={styles.reply_to}>
                             <Icon name="reply" size={11} color="text_muted" />
                             <Text variant="caption" color="text_secondary" style={styles.flex} numberOfLines={1}>{t("Odpoveď používateľovi {{username}}", { username: reply_to.user.username })}</Text>
@@ -396,7 +396,7 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
                 onClose={() => menu_view === "report" ? setMenuView("main") : setMenuComment(null)}
                 title={menu_view === "report" ? t("Nahlásiť komentár") : t("Možnosti komentára")}
             >
-                {menu_comment && (
+                {!!menu_comment && (
                     <Card padding="xs">
                         {menu_view === "report" ? REPORT_REASONS.map((reason:ReportReason, index:number) => (
                             <View key={reason}>

@@ -246,7 +246,7 @@ export interface MessageReaction {
 export interface ChatMessage {
     id:number,
     sender:UserSummary,
-    content:string,
+    content:string|null, // Null For A Shared Post Or Attachments Only
     attachments:Attachment[],
     is_read:boolean,
     is_edited:boolean,
@@ -268,7 +268,7 @@ export interface ChatReceiver extends UserListItem {
 export interface ChatPreview {
     id:number,
     sender:UserSummary,
-    content:string
+    content:string|null // Null For A Shared Post
 }
 
 export type ChatSocketAction = "new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification"
@@ -276,7 +276,7 @@ export type ChatSocketAction = "new"|"edit"|"delete"|"add_reaction"|"remove_reac
 export interface ChatSocketEvent {
     action:ChatSocketAction,
     chat_id:number,
-    message:string,
+    message:string|null,
     attachments:Attachment[],
     post:SharedPost|null,
     formatted_time?:string,
@@ -368,6 +368,6 @@ export interface Article {
     categories:string[],
     visitors:number,
     creation_time:ISODateString,
-    average_rating:number,
-    user:{ username:string }
+    average_rating:number|null, // Null Until Someone Rates It
+    user?:{ username:string } // Only In The Article List (get-article/ Doesn't Send It)
 }

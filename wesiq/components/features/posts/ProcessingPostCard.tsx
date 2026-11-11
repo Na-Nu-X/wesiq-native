@@ -25,7 +25,7 @@ export default function ProcessingPostCard({ post, tasks }:{ post:ProcessingPost
 
             <View style={styles.body}>
                 <Text variant="body_strong">{has_failed ? t("Príspevok sa nepodarilo spracovať") : t("Spracováva sa príspevok")}</Text>
-                {post.description && <Text variant="caption" color="text_secondary" numberOfLines={1}>{post.description}</Text>}
+                {!!post.description && <Text variant="caption" color="text_secondary" numberOfLines={1}>{post.description}</Text>}
 
                 {!has_failed && (
                     <View style={styles.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: progress }}>

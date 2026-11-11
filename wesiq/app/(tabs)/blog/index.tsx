@@ -75,10 +75,12 @@ export default function BlogScreen() {
                     <Text variant="callout" color="text_secondary" numberOfLines={2}>{item.description}</Text>
 
                     <View style={styles.meta}>
-                        <View style={styles.meta_item}>
-                            <Icon name="star" size={12} color="premium" />
-                            <Text variant="caption" color="text_secondary" is_tabular>{item.average_rating.toFixed(1)}</Text>
-                        </View>
+                        {item.average_rating !== null && (
+                            <View style={styles.meta_item}>
+                                <Icon name="star" size={12} color="premium" />
+                                <Text variant="caption" color="text_secondary" is_tabular>{item.average_rating.toFixed(1)}</Text>
+                            </View>
+                        )}
 
                         <View style={styles.meta_item}>
                             <Icon name="eye" size={12} color="text_muted" is_solid={false} />

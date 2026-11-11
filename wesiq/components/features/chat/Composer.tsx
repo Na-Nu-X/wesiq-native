@@ -114,7 +114,7 @@ export default function Composer({ value, onChange, attachments, onAttachmentsCh
 
     return (
         <View style={styles.container}>
-            {editing && (
+            {!!editing && (
                 <View style={styles.banner}>
                     <Icon name="pen" size={12} color="primary" />
                     <View style={styles.flex}>

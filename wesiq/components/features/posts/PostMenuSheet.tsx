@@ -12,7 +12,7 @@ import { confirmAction, showAlert } from "@/lib/alert"
 import { emitAppEvent } from "@/lib/events"
 import { deletePost, editPostSetting, PostSetting, REPORT_REASONS, ReportReason, reportPost } from "@/lib/api/endpoints/posts"
 import { getPostLink } from "./SharePostSheet"
-import { formatDuration } from "@/lib/format"
+import { formatDuration, formatUsername } from "@/lib/format"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { IconName } from "@/components/ui"
@@ -122,7 +122,7 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
                 else onClose()
             }}
             title={view === "report" ? t("Nahlásiť príspevok") : t("Možnosti príspevku")}
-            subtitle={view === "report" ? t("Prečo tento príspevok nahlasujete?") : `@${shown_post.user.username}`}
+            subtitle={view === "report" ? t("Prečo tento príspevok nahlasujete?") : formatUsername(shown_post.user.username)}
             is_dismissable={!is_busy}
         >
             {view === "report" ? (

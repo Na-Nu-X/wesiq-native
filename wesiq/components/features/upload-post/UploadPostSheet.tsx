@@ -475,7 +475,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
         return (
             <>
-                {state.error && (
+                {!!state.error && (
                     <Card variant="outlined" padding="md" style={styles.error_card}>
                         <View style={styles.limits_row}>
                             <Icon name="triangle-exclamation" size={14} color="danger" />
@@ -515,7 +515,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
                     />
                 </Card>
 
-                {first_media && (
+                {!!first_media && (
                     <Card variant="raised" padding="md">
                         <View style={styles.summary}>
                             <Image source={{ uri: first_media.cover?.uri ?? first_media.uri }} style={styles.summary_image} contentFit="cover" />

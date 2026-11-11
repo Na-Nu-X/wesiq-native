@@ -6,6 +6,7 @@ import { Image } from "expo-image"
 import { router, useLocalSearchParams } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { Button, Card, EmptyState, ErrorState, Header, Icon, IconButton, Screen, Skeleton, Text } from "@/components/ui"
+import { formatUsername } from "@/lib/format"
 import { colors, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { showAlert } from "@/lib/alert"
@@ -112,7 +113,7 @@ export default function ArticleScreen() {
     return (
         <>
             <Screen header={header} refresh={{ is_refreshing, onRefresh: refetch }}>
-                {image_url && (
+                {!!image_url && (
                     <View style={styles.image}>
                         <Image source={{ uri: image_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
                     </View>
@@ -123,20 +124,20 @@ export default function ArticleScreen() {
                     <Text variant="body" color="text_secondary">{article.description}</Text>
 
                     <Text variant="caption" color="text_muted">
-                        {getFormattedDate(article.creation_time)} · {t("Zobrazenia")}: {article.visitors} · @{article.user.username}
+                        {getFormattedDate(article.creation_time)} · {t("Zobrazenia")}: {article.visitors}{article.user ? ` · ${formatUsername(article.user.username)}` : ""}
                     </Text>
                 </View>
 
                 {/* ---------- Rating ---------- */}
                 <Card padding="md" style={styles.rating_card}>
                     <View style={styles.flex}>
-                        <Text variant="body_strong">{article.average_rating > 0 ? `${article.average_rating.toFixed(1)} / 5` : t("Zatiaľ žiadne hodnotenia")}</Text>
+                        <Text variant="body_strong">{article.average_rating ? `${article.average_rating.toFixed(1)} / 5` : t("Zatiaľ žiadne hodnotenia")}</Text>
                         <Text variant="caption" color="text_muted">{article.given_rating ? t("Vaše hodnotenie: {{rating}}", { rating: article.given_rating }) : t("Ohodnoťte článok")}</Text>
                     </View>
 
                     <View style={styles.stars} accessibilityRole="adjustable" accessibilityLabel={t("Ohodnoťte článok")}>
                         {[1, 2, 3, 4, 5].map((star:number) => {
-                            const is_filled:boolean = star <= (article.given_rating ?? Math.round(article.average_rating))
+                            const is_filled:boolean = star <= (article.given_rating ?? Math.round(article.average_rating ?? 0))
 
                             return (
                                 <Pressable key={star} onPress={() => rate(star)} disabled={is_rating} hitSlop={4} accessibilityRole="button" accessibilityLabel={t("{{count}} z 5", { count: star })}>

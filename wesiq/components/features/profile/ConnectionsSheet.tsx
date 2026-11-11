@@ -9,6 +9,7 @@ import { spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
 import { approveFollowRequest, FollowState, getFollowState, getToggledFollowFlags, rejectFollowRequest, removeFollower, toggleFollow } from "@/lib/api/endpoints/users"
+import { formatUsername } from "@/lib/format"
 
 import type { SegmentOption } from "@/components/ui"
 import type { ApiEnvelope, ApiResult } from "@/types/api"
@@ -215,7 +216,7 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
             visible={tab !== null}
             onClose={() => onTabChange(null)}
             title={active_tab === "requests" ? t("Žiadosti o sledovanie") : active_tab === "followers" ? t("Sledovatelia") : (is_own_profile ? t("Sleduješ") : t("Sleduje"))}
-            subtitle={`@${profile.username}`}
+            subtitle={formatUsername(profile.username)}
             size="large"
             is_scrollable={false}
         >

@@ -70,7 +70,7 @@ export default function MediaTile({ media, index, count, issue, onRemove, onMove
                     </View>
                 )}
 
-                {issue && (
+                {!!issue && (
                     <View style={styles.issue} accessibilityLiveRegion="polite">
                         <Icon name="triangle-exclamation" size={12} color="white" />
                         <Text variant="caption" color="white" numberOfLines={1}>{getIssueText(issue)}</Text>

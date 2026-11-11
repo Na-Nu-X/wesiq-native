@@ -35,8 +35,8 @@ export function EmptyState({ icon, title, message, action, is_compact = false }:
             </View>
 
             <Text variant={is_compact ? "body_strong" : "heading"} align="center">{title}</Text>
-            {message && <Text variant="callout" color="text_secondary" align="center">{message}</Text>}
-            {action && <Button label={action.label} onPress={action.onPress} variant="secondary" size="sm" style={styles.empty_action} />}
+            {!!message && <Text variant="callout" color="text_secondary" align="center">{message}</Text>}
+            {!!action && <Button label={action.label} onPress={action.onPress} variant="secondary" size="sm" style={styles.empty_action} />}
         </View>
     )
 }

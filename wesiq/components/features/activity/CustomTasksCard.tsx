@@ -186,7 +186,7 @@ export default function CustomTasksCard({ onTaskAdded }:CustomTasksCardProps) {
             )}
 
             <Sheet visible={menu_task !== null} onClose={() => setMenuTask(null)} title={menu_task?.title ?? ""}>
-                {menu_task && (
+                {!!menu_task && (
                     <View style={styles.menu}>
                         <MenuRow icon={menu_task.is_completed ? "rotate-left" : "check"} label={menu_task.is_completed ? t("Označiť ako nesplnené") : t("Označiť ako splnené")} onPress={() => { toggle(menu_task); setMenuTask(null) }} />
                         {menu_index > 0 && <MenuRow icon="arrow-up" label={t("Posunúť vyššie")} onPress={() => { move(menu_task, -1); setMenuTask(null) }} />}

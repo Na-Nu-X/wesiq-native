@@ -42,7 +42,7 @@ export default function StatsGrid({ stats, is_loading }:StatsGridProps) {
                         </View>
 
                         <Text variant="heading" is_tabular numberOfLines={1}>{tile.value}</Text>
-                        {tile.detail && <Text variant="caption" color="text_muted" numberOfLines={1}>{tile.detail}</Text>}
+                        {!!tile.detail && <Text variant="caption" color="text_muted" numberOfLines={1}>{tile.detail}</Text>}
                     </View>
                 </Card>
             ))}

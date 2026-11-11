@@ -294,7 +294,7 @@ export default function ConversationScreen() {
                 accessibilityLabel={receiver ? `${receiver.username}, ${t("Zobraziť profil")}` : username}
                 style={styles.header_user}
             >
-                {receiver && <Avatar user={receiver} size={36} />}
+                {!!receiver && <Avatar user={receiver} size={36} />}
 
                 <View style={styles.flex}>
                     <Text variant="body_strong" numberOfLines={1}>{receiver?.username ?? username}</Text>
@@ -303,7 +303,7 @@ export default function ConversationScreen() {
                 </View>
             </Pressable>
 
-            {receiver && <IconButton icon="ellipsis" accessibility_label={t("Možnosti")} onPress={() => setIsMenuOpen(true)} variant="soft" size={38} />}
+            {!!receiver && <IconButton icon="ellipsis" accessibility_label={t("Možnosti")} onPress={() => setIsMenuOpen(true)} variant="soft" size={38} />}
         </View>
     )
 
@@ -344,7 +344,7 @@ export default function ConversationScreen() {
                     />
                 ) : undefined}
             >
-                {background && (
+                {!!background && (
                     <View style={StyleSheet.absoluteFill} pointerEvents="none">
                         <Image source={{ uri: getAttachmentUrl(background) ?? undefined }} style={StyleSheet.absoluteFill} contentFit="cover" />
                         <View style={styles.background_dim} />
@@ -381,12 +381,12 @@ export default function ConversationScreen() {
                 onReact={react}
                 onEdit={(message:ChatMessage) => {
                     setEditing(message)
-                    setDraft(message.content)
+                    setDraft(message.content ?? "")
                 }}
                 onDelete={deleteMessage}
             />
 
-            {receiver && (
+            {!!receiver && (
                 <ConversationMenuSheet
                     visible={is_menu_open}
                     onClose={() => setIsMenuOpen(false)}
@@ -404,7 +404,7 @@ export default function ConversationScreen() {
                 onRequestClose={() => setViewedImages(null)}
             />
 
-            {viewed_video && <FullscreenVideoPlayer url={viewed_video} onClose={() => setViewedVideo(null)} />}
+            {!!viewed_video && <FullscreenVideoPlayer url={viewed_video} onClose={() => setViewedVideo(null)} />}
         </>
     )
 }

@@ -13,6 +13,7 @@ import { REPORT_REASONS, ReportReason } from "@/lib/api/endpoints/posts"
 import { reportUser, suspendUser } from "@/lib/api/endpoints/profile"
 import { MenuRow, useReportReasonLabels } from "@/components/features/posts/PostMenuSheet"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { formatUsername } from "@/lib/format"
 
 import type { Profile } from "@/types/models"
 
@@ -67,7 +68,7 @@ export default function UserMenuSheet({ profile, visible, onClose }:{ profile:Pr
         <Sheet
             visible={visible}
             onClose={() => view === "report" ? setView("main") : close()}
-            title={view === "report" ? t("Nahlásiť účet") : `@${profile.username}`}
+            title={view === "report" ? t("Nahlásiť účet") : formatUsername(profile.username)}
             subtitle={view === "report" ? t("Prečo tento účet nahlasujete?") : undefined}
             is_dismissable={!is_busy}
         >
@@ -85,7 +86,7 @@ export default function UserMenuSheet({ profile, visible, onClose }:{ profile:Pr
                             close()
                         }} />
 
-                        {logged_in_user && (
+                        {!!logged_in_user && (
                             <>
                                 <Divider inset={spacing.md} />
                                 <MenuRow icon="flag" label={t("Nahlásiť")} onPress={() => setView("report")} is_danger />

@@ -25,12 +25,12 @@ const daysAgo = (days:number):string => hoursAgo(days * 24)
 // ---------- Users ----------
 
 export const MOCK_USERS:UserListItem[] = [
-    { id: 2, first_name: "Lucia", last_name: "Novak", username: "lucia.lifts", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: true, has_pending_follow_request: false },
-    { id: 3, first_name: "Martin", last_name: "Kral", username: "martin_runs", profile_picture_name: null, private_account: false, subscription: null, has_follow: true, has_pending_follow_request: false },
-    { id: 4, first_name: "Eva", last_name: "Horvath", username: "eva.calisthenics", profile_picture_name: null, private_account: true, subscription: { plan: "basic", is_active: true }, has_follow: false, has_pending_follow_request: true },
-    { id: 5, first_name: "Tomas", last_name: "Varga", username: "tomas.v", profile_picture_name: null, private_account: false, subscription: null, has_follow: false, has_pending_follow_request: false },
-    { id: 6, first_name: "Sofia", last_name: "Bianchi", username: "sofia_mobility", profile_picture_name: null, private_account: false, subscription: null, has_follow: true, has_pending_follow_request: false },
-    { id: 7, first_name: "Jakub", last_name: "Mraz", username: "jakub.strength", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: false, has_pending_follow_request: false },
+    { id: 2, first_name: "Lucia", last_name: "Novak", username: "@lucia.lifts", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: true, has_pending_follow_request: false },
+    { id: 3, first_name: "Martin", last_name: "Kral", username: "@martin_runs", profile_picture_name: null, private_account: false, subscription: null, has_follow: true, has_pending_follow_request: false },
+    { id: 4, first_name: "Eva", last_name: "Horvath", username: "@eva.calisthenics", profile_picture_name: null, private_account: true, subscription: { plan: "basic", is_active: true }, has_follow: false, has_pending_follow_request: true },
+    { id: 5, first_name: "Tomas", last_name: "Varga", username: "@tomas.v", profile_picture_name: null, private_account: false, subscription: null, has_follow: false, has_pending_follow_request: false },
+    { id: 6, first_name: "Sofia", last_name: "Bianchi", username: "@sofia_mobility", profile_picture_name: null, private_account: false, subscription: null, has_follow: true, has_pending_follow_request: false },
+    { id: 7, first_name: "Jakub", last_name: "Mraz", username: "@jakub.strength", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: false, has_pending_follow_request: false },
 ]
 
 const [lucia, martin, eva, tomas, sofia, jakub] = MOCK_USERS as [UserListItem, UserListItem, UserListItem, UserListItem, UserListItem, UserListItem]
@@ -39,7 +39,7 @@ export const MOCK_LOGGED_IN_USER:LoggedInUser = {
     id: 1,
     first_name: "Alex",
     last_name: "Demo",
-    username: "alex.demo",
+    username: "@alex.demo",
     role: "user",
     profile_picture_name: null,
     friend_code: "WSQ-4821",
@@ -101,7 +101,7 @@ export const MOCK_POSTS:Post[] = [
         id: "q7n2v8c4",
         user: author(martin),
         description: "Sunday long run along the Danube. 21 km at an easy pace, legs feel fresh. Who's joining next week?",
-        tagged_users: [{ id: 6, first_name: "Sofia", last_name: "Bianchi", username: "sofia_mobility" }],
+        tagged_users: [{ id: 6, first_name: "Sofia", last_name: "Bianchi", username: "@sofia_mobility" }],
         added_hashtags: ["running"],
         location: "Danube Embankment",
         coordinates: null,
@@ -209,7 +209,7 @@ export const MOCK_CHAT_PREVIEWS:{ unread_chats:ChatPreview[], read_chats:ChatPre
     ],
     read_chats: [
         { id: 903, sender: martin, content: "Great run today!" },
-        { id: 904, sender: sofia, content: "Thanks for the tips on hip mobility" },
+        { id: 904, sender: sofia, content: null },
     ],
 }
 
@@ -217,7 +217,7 @@ export const MOCK_CHAT_RECEIVER:ChatReceiver = { ...lucia, private_account: fals
 
 export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
     { id: 1201, sender: lucia, content: "Are we still on for leg day at 6?", attachments: [], is_read: false, is_edited: false, formatted_time: "17:42", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
-    { id: 1200, sender: { id: 1, username: "alex.demo", profile_picture_name: null, subscription: { is_active: true } }, content: "Yes! I'll bring the bands for warm up.", attachments: [], is_read: true, is_edited: false, formatted_time: "17:30", is_sender: true, message_reactions: [{ user: { username: "lucia.lifts" }, emoji: "👍" }], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
+    { id: 1200, sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } }, content: "Yes! I'll bring the bands for warm up.", attachments: [], is_read: true, is_edited: false, formatted_time: "17:30", is_sender: true, message_reactions: [{ user: { username: "@lucia.lifts" }, emoji: "👍" }], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
     { id: 1199, sender: lucia, content: "Check out my new PR", attachments: [], is_read: true, is_edited: false, formatted_time: "15:02", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: { id: "p3k9x2m1", user: lucia, description: MOCK_POSTS[0]?.description ?? null, public_visibility: true, allow_comments: true, hide_likes: false, likes: 128, comments: 14, created_at: hoursAgo(2), media: { id: 101, file: "mock/101.jpg", thumbnail: "mock/101_thumbnail.jpg", is_video: false } } },
 ]
 
@@ -288,7 +288,7 @@ export const MOCK_CUSTOM_TASKS:CustomTask[] = [
 // ---------- Blog ----------
 
 export const MOCK_ARTICLES:Article[] = [
-    { id: 1, title: "Front lever: a complete progression guide", description: "From tuck holds to the full lever, a structured plan with the exact progressions and volume to use.", image_name: null, html_filename: "front_lever.html", link: "front-lever", categories: ["calisthenics", "strength"], visitors: 4210, creation_time: daysAgo(40), average_rating: 4.7, user: { username: "wesiq" } },
-    { id: 2, title: "How to warm up properly", description: "Why five minutes of the right warm up beats twenty minutes of the wrong one.", image_name: null, html_filename: null, link: "warm-up", categories: ["mobility"], visitors: 2980, creation_time: daysAgo(18), average_rating: 4.4, user: { username: "wesiq" } },
-    { id: 3, title: "Sleep and recovery for lifters", description: "What the research says about sleep, muscle growth and performance.", image_name: null, html_filename: null, link: "sleep-recovery", categories: ["recovery"], visitors: 1630, creation_time: daysAgo(7), average_rating: 4.9, user: { username: "wesiq" } },
+    { id: 1, title: "Front lever: a complete progression guide", description: "From tuck holds to the full lever, a structured plan with the exact progressions and volume to use.", image_name: null, html_filename: "front_lever.html", link: "front-lever", categories: ["calisthenics", "strength"], visitors: 4210, creation_time: daysAgo(40), average_rating: 4.7, user: { username: "@wesiq" } },
+    { id: 2, title: "How to warm up properly", description: "Why five minutes of the right warm up beats twenty minutes of the wrong one.", image_name: null, html_filename: null, link: "warm-up", categories: ["mobility"], visitors: 2980, creation_time: daysAgo(18), average_rating: null, user: { username: "@wesiq" } },
+    { id: 3, title: "Sleep and recovery for lifters", description: "What the research says about sleep, muscle growth and performance.", image_name: null, html_filename: null, link: "sleep-recovery", categories: ["recovery"], visitors: 1630, creation_time: daysAgo(7), average_rating: 4.9, user: { username: "@wesiq" } },
 ]

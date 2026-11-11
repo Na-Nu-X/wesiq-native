@@ -14,6 +14,7 @@ import { apiGet } from "@/lib/api/client"
 import { envelopeWith, isArrayOf, isUserSummaryLike } from "@/lib/api/guards"
 import { useApiQuery } from "@/hooks/useApiQuery"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { formatUsername } from "@/lib/format"
 
 import type { PostId, UserSummary } from "@/types/models"
 
@@ -136,7 +137,7 @@ export default function SharePostSheet({ post, onClose }:SharePostSheetProps) {
             visible={post !== null}
             onClose={onClose}
             title={t("Zdieľať príspevok")}
-            subtitle={`@${shown_post.author_username}`}
+            subtitle={formatUsername(shown_post.author_username)}
             size="large"
             is_scrollable={false}
         >
@@ -159,9 +160,9 @@ export default function SharePostSheet({ post, onClose }:SharePostSheetProps) {
                     </Card>
                 </View>
 
-                {logged_in_user && <Text variant="overline" color="text_muted">{t("Poslať v správe")}</Text>}
+                {!!logged_in_user && <Text variant="overline" color="text_muted">{t("Poslať v správe")}</Text>}
 
-                {logged_in_user && (friends_state.data?.length ?? 0) >= SEARCH_THRESHOLD && (
+                {!!logged_in_user && (friends_state.data?.length ?? 0) >= SEARCH_THRESHOLD && (
                     <TextField
                         icon="magnifying-glass"
                         placeholder={t("Hľadať")}

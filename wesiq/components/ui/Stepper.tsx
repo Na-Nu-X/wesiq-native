@@ -77,7 +77,7 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
                     style={styles.input}
                 />
 
-                {label && <Text variant="caption" color="text_muted" align="center" numberOfLines={1}>{label}</Text>}
+                {!!label && <Text variant="caption" color="text_muted" align="center" numberOfLines={1}>{label}</Text>}
             </View>
 
             <IconButton

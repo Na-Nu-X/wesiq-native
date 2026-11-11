@@ -44,8 +44,8 @@ export default function Header({ title, subtitle, is_large = false, has_back_but
                     </View>
                 )}
 
-                {title && <Text variant="title" accessibilityRole="header" numberOfLines={2}>{title}</Text>}
-                {subtitle && <Text variant="callout" color="text_secondary">{subtitle}</Text>}
+                {!!title && <Text variant="title" accessibilityRole="header" numberOfLines={2}>{title}</Text>}
+                {!!subtitle && <Text variant="callout" color="text_secondary">{subtitle}</Text>}
             </View>
         )
     }
@@ -55,8 +55,8 @@ export default function Header({ title, subtitle, is_large = false, has_back_but
             <View style={styles.side}>{left_element}</View>
 
             <View style={styles.center}>
-                {title && <Text variant="subheading" align="center" numberOfLines={1} accessibilityRole="header">{title}</Text>}
-                {subtitle && <Text variant="caption" color="text_secondary" align="center" numberOfLines={1}>{subtitle}</Text>}
+                {!!title && <Text variant="subheading" align="center" numberOfLines={1} accessibilityRole="header">{title}</Text>}
+                {!!subtitle && <Text variant="caption" color="text_secondary" align="center" numberOfLines={1}>{subtitle}</Text>}
             </View>
 
             <View style={[styles.side, styles.side_right]}>{right}</View>

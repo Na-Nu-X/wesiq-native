@@ -169,7 +169,7 @@ export default function Sheet({
                                     <View style={styles.header}>
                                         <View style={styles.header_text}>
                                             <Text variant="heading" accessibilityRole="header" numberOfLines={2}>{title}</Text>
-                                            {subtitle && <Text variant="callout" color="text_secondary" numberOfLines={2}>{subtitle}</Text>}
+                                            {!!subtitle && <Text variant="callout" color="text_secondary" numberOfLines={2}>{subtitle}</Text>}
                                         </View>
 
                                         {header_right}
@@ -188,7 +188,7 @@ export default function Sheet({
 
                             {content}
 
-                            {footer && (
+                            {!!footer && (
                                 <View style={[styles.footer, { paddingBottom: is_wide ? spacing.lg : Math.max(insets.bottom, spacing.lg) }]}>
                                     {footer}
                                 </View>

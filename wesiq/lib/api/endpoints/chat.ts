@@ -8,7 +8,7 @@ import type { ApiEnvelope, ApiResult } from "@/types/api"
 import type { ChatMessage, ChatReceiver } from "@/types/models"
 
 const isMessage = (value:unknown):value is ChatMessage => {
-    return isRecord(value) && isNumber(value.id) && isString(value.content) && typeof value.is_sender === "boolean" && Array.isArray(value.attachments)
+    return isRecord(value) && isNumber(value.id) && (isString(value.content) || value.content === null) && typeof value.is_sender === "boolean" && Array.isArray(value.attachments)
 }
 
 export interface ChatPage extends ApiEnvelope {

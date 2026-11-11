@@ -66,7 +66,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                     is_disabled ? styles.field_disabled : null,
                 ]}
             >
-                {icon && (
+                {!!icon && (
                     <View style={[styles.icon, multiline ? styles.icon_multiline : null]}>
                         <Icon name={icon} size={15} color={is_focused ? "primary" : "text_muted"} />
                     </View>
@@ -115,7 +115,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
 
             {(error || helper) && (
                 <View style={styles.message_row}>
-                    {error && <Icon name="circle-exclamation" size={12} color="danger" />}
+                    {!!error && <Icon name="circle-exclamation" size={12} color="danger" />}
                     <Text variant="caption" color={error ? "danger" : "text_muted"} style={styles.message}>{error ?? helper}</Text>
                 </View>
             )}

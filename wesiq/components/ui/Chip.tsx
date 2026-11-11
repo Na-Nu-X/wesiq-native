@@ -46,7 +46,7 @@ export default function Chip({ label, is_selected = false, onPress, icon, is_dis
                 style,
             ]}
         >
-            {icon && <Icon name={icon} size={12} color={is_selected ? tone_style.text : "text_secondary"} />}
+            {!!icon && <Icon name={icon} size={12} color={is_selected ? tone_style.text : "text_secondary"} />}
             <Text variant="label" color={is_selected ? tone_style.text : "text_secondary"} numberOfLines={1}>{label}</Text>
         </Pressable>
     )

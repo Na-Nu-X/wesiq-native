@@ -63,7 +63,7 @@ function ExerciseCard({ exercise, index, count, dispatch, onDragStart, is_draggi
                 ]}
                 onAccessibilityAction={handleAccessibilityAction}
             >
-                {onDragStart && (
+                {!!onDragStart && (
                     <Pressable
                         onPressIn={onDragStart} // Dragging Starts Immediately From The Handle
                         hitSlop={10}

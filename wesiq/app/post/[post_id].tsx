@@ -56,7 +56,7 @@ export default function PostScreen() {
                         : <ErrorState error={state.error} onRetry={refetch} />
                 )}
 
-                {post && (
+                {!!post && (
                     <View style={styles.content}>
                         <PostCard
                             post={post}

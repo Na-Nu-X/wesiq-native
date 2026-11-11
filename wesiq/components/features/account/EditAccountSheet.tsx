@@ -15,6 +15,7 @@ import { setStoredString } from "@/lib/storage"
 import { requestAccountDeletion, saveAccount } from "@/lib/api/endpoints/account"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { openLegalPage } from "@/lib/legal"
+import { formatUsername } from "@/lib/format"
 
 import type { Profile } from "@/types/models"
 
@@ -289,7 +290,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
             visible={visible}
             onClose={requestClose}
             title={t("Upraviť profil")}
-            subtitle={`@${profile.username}`}
+            subtitle={formatUsername(profile.username)}
             size="large"
             is_dismissable={!is_busy}
             footer={<Button label={t("Uložiť zmeny")} icon="check" onPress={save} is_loading={is_saving} is_disabled={!is_dirty || is_deleting} is_full_width />}
@@ -477,7 +478,7 @@ function SectionTitle({ label, description }:{ label:string, description?:string
     return (
         <View style={styles.section_title}>
             <Text variant="overline" color="text_muted" accessibilityRole="header">{label}</Text>
-            {description && <Text variant="caption" color="text_muted">{description}</Text>}
+            {!!description && <Text variant="caption" color="text_muted">{description}</Text>}
         </View>
     )
 }

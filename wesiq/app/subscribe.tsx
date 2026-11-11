@@ -133,7 +133,7 @@ export default function SubscribeScreen() {
                 size="lg"
             />
 
-            {logged_in_user && <Button label={t("Obnoviť nákupy")} variant="ghost" size="sm" onPress={restore} is_loading={busy_action === "restore"} is_disabled={busy_action !== null} />}
+            {!!logged_in_user && <Button label={t("Obnoviť nákupy")} variant="ghost" size="sm" onPress={restore} is_loading={busy_action === "restore"} is_disabled={busy_action !== null} />}
         </View>
     ) : undefined
 

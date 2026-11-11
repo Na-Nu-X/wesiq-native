@@ -25,12 +25,12 @@ interface MessageActionsSheetProps {
 export default function MessageActionsSheet({ message, current_username, onClose, onReact, onEdit, onDelete }:MessageActionsSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const can_edit:boolean = message !== null && message.is_sender && !message.is_older_than_15_minutes && message.content.length > 0
+    const can_edit:boolean = message !== null && message.is_sender && !message.is_older_than_15_minutes && !!message.content
     const can_delete:boolean = message !== null && message.is_sender && !message.is_older_than_1_day
 
     return (
         <Sheet visible={message !== null} onClose={onClose} title={t("Možnosti správy")}>
-            {message && (
+            {!!message && (
                 <>
                     <View style={styles.reactions} accessibilityRole="toolbar" accessibilityLabel={t("Reakcie")}>
                         {REACTION_EMOJIS.map((emoji:string) => {
@@ -56,9 +56,9 @@ export default function MessageActionsSheet({ message, current_username, onClose
                     </View>
 
                     <Card padding="xs">
-                        {message.content.length > 0 && (
+                        {!!message.content && (
                             <MenuRow icon="copy" label={t("Kopírovať text")} onPress={async () => {
-                                await Clipboard.setStringAsync(message.content)
+                                await Clipboard.setStringAsync(message.content ?? "")
                                 haptics.success()
                                 onClose()
                             }} />

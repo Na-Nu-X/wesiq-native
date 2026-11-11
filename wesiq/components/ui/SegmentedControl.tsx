@@ -41,7 +41,7 @@ export default function SegmentedControl<T extends string>({ options, value, onC
 
                         style={[styles.segment, is_selected ? styles.segment_selected : null]}
                     >
-                        {option.icon && <Icon name={option.icon} size={13} color={is_selected ? "text" : "text_muted"} />}
+                        {!!option.icon && <Icon name={option.icon} size={13} color={is_selected ? "text" : "text_muted"} />}
                         <Text variant="label" color={is_selected ? "text" : "text_muted"} numberOfLines={1}>{option.label}</Text>
 
                         {option.badge !== undefined && option.badge > 0 && (

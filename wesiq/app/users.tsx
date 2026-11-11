@@ -14,6 +14,7 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 import { FollowState, getFollowState, getToggledFollowFlags, loadFirstUsers, SearchedUser, searchUsers, toggleFollow } from "@/lib/api/endpoints/users"
+import { formatUsername } from "@/lib/format"
 
 const HISTORY_LIMIT:number = 10 // Maximum Remembered Users
 
@@ -110,7 +111,7 @@ export default function UsersScreen() {
 
     // Function For Render One User
     const renderUser = ({ item }:ListRenderItemInfo<SearchedUser>) => {
-        const parts:string[] = [`@${item.username}`]
+        const parts:string[] = [formatUsername(item.username)]
         if(item.followers !== undefined) parts.push(t("Sledovatelia: {{count}}", { count: item.followers }))
 
         return <UserRow user={item} subtitle={parts.join(" · ")} onPress={() => openUser(item)} trailing={renderFollowButton(item)} accessibility_hint={t("Otvorí profil")} />

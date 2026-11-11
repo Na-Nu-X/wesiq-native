@@ -10,6 +10,7 @@ import { colors, radii, spacing } from "@/theme"
 import { DOMAIN } from "@/constants/general"
 import { getMediaUrl } from "@/lib/media"
 import { getReadableSize } from "@/utils/getReadableSize"
+import { formatUsername } from "@/lib/format"
 
 import type { IconName } from "@/components/ui"
 import type { Attachment, AttachmentType, ChatMessage, MessageReaction } from "@/types/models"
@@ -82,7 +83,7 @@ function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenI
 
                 {videos.map((attachment:Attachment) => (
                     <Pressable key={attachment.attachment_url} onPress={() => { const url = getAttachmentUrl(attachment.attachment_url); if(url) onOpenVideo(url) }} accessibilityRole="button" accessibilityLabel={t("Prehrať video")} style={styles.video}>
-                        {attachment.attachment_thumbnail && <Image source={{ uri: getAttachmentUrl(attachment.attachment_thumbnail) ?? undefined }} style={StyleSheet.absoluteFill} contentFit="cover" />}
+                        {!!attachment.attachment_thumbnail && <Image source={{ uri: getAttachmentUrl(attachment.attachment_thumbnail) ?? undefined }} style={StyleSheet.absoluteFill} contentFit="cover" />}
                         <View style={styles.play}><Icon name="play" size={18} color="white" /></View>
                     </Pressable>
                 ))}
@@ -100,12 +101,12 @@ function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenI
                     </Pressable>
                 ))}
 
-                {post && (
+                {!!post && (
                     <Pressable onPress={() => router.push({ pathname: "/post/[post_id]", params: { post_id: post.id } })} accessibilityRole="button" accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: post.user.username })} style={styles.post}>
                         {post_preview ? <Image source={{ uri: post_preview }} style={styles.post_image} contentFit="cover" /> : <View style={[styles.post_image, styles.post_placeholder]}><Icon name="image" size={18} color="text_muted" /></View>}
 
                         <View style={styles.post_text}>
-                            <Text variant="label" numberOfLines={1}>@{post.user.username}</Text>
+                            <Text variant="label" numberOfLines={1}>{formatUsername(post.user.username)}</Text>
                             {post.description ? <Text variant="caption" color="text_secondary" numberOfLines={2}>{post.description}</Text> : null}
                         </View>
                     </Pressable>

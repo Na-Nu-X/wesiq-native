@@ -13,6 +13,7 @@ import { changeChatBackground, deleteChatBackground, toggleMuteUser } from "@/li
 import { REPORT_REASONS, ReportReason } from "@/lib/api/endpoints/posts"
 import { reportUser } from "@/lib/api/endpoints/profile"
 import { MenuRow, useReportReasonLabels } from "@/components/features/posts/PostMenuSheet"
+import { formatUsername } from "@/lib/format"
 
 import type { ChatReceiver } from "@/types/models"
 
@@ -103,7 +104,7 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
         <Sheet
             visible={visible}
             onClose={() => view === "report" ? setView("main") : close()}
-            title={view === "report" ? t("Nahlásiť účet") : `@${receiver.username}`}
+            title={view === "report" ? t("Nahlásiť účet") : formatUsername(receiver.username)}
             is_dismissable={!is_busy}
         >
             {view === "report" ? (
@@ -130,7 +131,7 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
                         <Divider inset={spacing.md} />
                         <MenuRow icon="image" label={background_image ? t("Zmeniť pozadie chatu") : t("Nastaviť pozadie chatu")} onPress={pickBackground} is_disabled={is_busy} />
 
-                        {background_image && (
+                        {!!background_image && (
                             <>
                                 <Divider inset={spacing.md} />
                                 <MenuRow icon="eraser" label={t("Odstrániť pozadie chatu")} onPress={removeBackground} is_disabled={is_busy} />

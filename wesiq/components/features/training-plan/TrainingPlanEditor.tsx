@@ -246,7 +246,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
             }
             footer={
                 <View style={styles.footer}>
-                    {issue_message && (
+                    {!!issue_message && (
                         <View style={styles.issue_row} accessibilityLiveRegion="polite">
                             <Icon name="circle-exclamation" size={13} color="danger" />
                             <Text variant="caption" color="danger" style={styles.flex}>{issue_message}</Text>

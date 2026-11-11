@@ -7,6 +7,7 @@ import { router } from "expo-router"
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated"
 import { useTranslation } from "react-i18next"
 import { Avatar, Button, Icon, IconButton, Text } from "@/components/ui"
+import { formatUsername } from "@/lib/format"
 import { colors, layout, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { showAlert } from "@/lib/alert"
@@ -267,14 +268,14 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
             {/* ---------- Caption ---------- */}
             {(post.description || post.tagged_users.length > 0) && (
                 <View style={styles.caption}>
-                    {post.description && <Caption username={post.user.username} text={post.description} is_expanded_initially={is_detail} />}
+                    {!!post.description && <Caption username={post.user.username} text={post.description} is_expanded_initially={is_detail} />}
 
                     {post.tagged_users.length > 0 && (
                         <Text variant="caption" color="text_secondary">
                             {t("S používateľmi")}{" "}
                             {post.tagged_users.map((user, index:number) => (
                                 <Text key={user.id} variant="caption" color="primary_text" onPress={() => router.push({ pathname: "/profile/[username]", params: { username: user.username } })}>
-                                    @{user.username}{index < post.tagged_users.length - 1 ? ", " : ""}
+                                    {formatUsername(user.username)}{index < post.tagged_users.length - 1 ? ", " : ""}
                                 </Text>
                             ))}
                         </Text>
@@ -282,7 +283,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
                 </View>
             )}
 
-            {location && <Text variant="caption" color="text_muted" style={styles.time}>{getTimeAgo(post.created_at)}</Text>}
+            {!!location && <Text variant="caption" color="text_muted" style={styles.time}>{getTimeAgo(post.created_at)}</Text>}
         </View>
     )
 }

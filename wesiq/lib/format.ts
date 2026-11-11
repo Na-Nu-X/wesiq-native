@@ -8,3 +8,6 @@ export const formatDuration = (seconds:number):string => {
 
 // Function For Format Bytes As Megabytes
 export const formatMegabytes = (bytes:number):string => `${Math.round(bytes / 1_000_000)} MB`
+
+// Function For Show A Username With Exactly One "@" (Server Usernames Already Start With "@")
+export const formatUsername = (username:string):string => username.startsWith("@") ? username : `@${username}`

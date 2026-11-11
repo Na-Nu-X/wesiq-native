@@ -114,7 +114,7 @@ export default function HeartRateChip() {
                         <MenuRow key={one_source} icon={SOURCE_ICONS[one_source]} label={one_source === source ? `${source_labels[one_source]} · ${t("pripojené")}` : source_labels[one_source]} onPress={() => connect(one_source)} />
                     ))}
 
-                    {source && <MenuRow icon="link-slash" label={t("Odpojiť")} onPress={disconnect} is_danger />}
+                    {!!source && <MenuRow icon="link-slash" label={t("Odpojiť")} onPress={disconnect} is_danger />}
                 </View>
             </Sheet>
         </>
