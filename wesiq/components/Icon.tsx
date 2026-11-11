@@ -11,7 +11,8 @@ type IconProps = {
     style?:StyleProp<ViewStyle>,
     pressed_style?:StyleProp<ViewStyle>,
     color?:string,
-    pressed_color?:string
+    pressed_color?:string,
+    accessibility_label?:string // Required For Screen Readers When The Icon Is A Button
 }
 
 const AnimatedIcon = Animated.createAnimatedComponent(FontAwesome6) // Creates The Animated Icon
@@ -24,7 +25,8 @@ export default function Icon({
     style, 
     pressed_style, 
     color = BLUE_COLOR, 
-    pressed_color = DARK_BLUE_COLOR 
+    pressed_color = DARK_BLUE_COLOR,
+    accessibility_label
 }:IconProps) {
     const [is_pressed, setIsPressed] = useState<boolean>(false) // Stores The Information If The Button Is Pressed
     const animation_value = useState(() => new Animated.Value(0))[0] // Stores The Animation Value
@@ -63,6 +65,8 @@ export default function Icon({
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole={onPress ? "button" : undefined}
+            accessibilityLabel={accessibility_label}
             style={[style, is_pressed && pressed_style]}
         >
             <AnimatedIcon

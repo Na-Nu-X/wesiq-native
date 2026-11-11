@@ -4,6 +4,7 @@ import { SECONDARY_COLOR, BLUE_COLOR, transparentize, LIGHT_BLUE_COLOR, DARK_BLU
 import { BIG_BORDER_RADIUS } from "@/constants/borders"
 import Icon from "@/components/Icon"
 import { getFormattedTime } from "@/utils/time"
+import { formatDuration } from "@/lib/format"
 import { Slider } from "@miblanchard/react-native-slider"
 import { FontAwesome6 } from "@expo/vector-icons"
 import { VideoPlayer } from "expo-video"
@@ -239,11 +240,12 @@ export const CustomVideoControls = ({
             <View className="buttons" style={styles.buttons}>
                 <View 
                     className="play_pause" 
-                    accessibilityLabel={playing_video === one_post_media.id ? t("Pozastaviť...") : t("Prehrať...")}
+                   
                     style={styles.play_pause}
                 >
                     <Icon
                         icon_name={playing_video === one_post_media.id ? "pause" : "play"}
+                        accessibility_label={playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
                         onPress={() => onPlayPauseVideo(one_post_media.id)}
                         pressed_style={{ transform: [{ scale: 1.1 }] }}
                         color={SECONDARY_COLOR}
@@ -255,10 +257,10 @@ export const CustomVideoControls = ({
                     <>
                         <View 
                             className="step_back" 
-                            accessibilityLabel={t("O 5 sekúnd späť...")}
                         >
                             <Icon
                                 icon_name="arrow-rotate-left"
+                                accessibility_label={t("Späť o 5 sekúnd")}
                                 onPress={() => onStepBack(5)}
                                 pressed_style={{ transform: [{ scale: 1.1 }] }}
                                 color={SECONDARY_COLOR}
@@ -268,10 +270,10 @@ export const CustomVideoControls = ({
 
                         <View 
                             className="step_further" 
-                            accessibilityLabel={t("O 5 sekúnd ďalej...")}
                         >
                             <Icon
                                 icon_name="arrow-rotate-right"
+                                accessibility_label={t("Dopredu o 5 sekúnd")}
                                 onPress={() => onStepFurther(5)}
                                 pressed_style={{ transform: [{ scale: 1.1 }] }}
                                 color={SECONDARY_COLOR}
@@ -408,6 +410,7 @@ export const CustomVideoControls = ({
                             >
                                 <Icon
                                     icon_name={getVolumeIcon()}
+                                    accessibility_label={is_muted || volume === 0 ? t("Zapnúť zvuk") : t("Stlmiť")}
                                     onPress={onMuteUnmuteVideo}
                                     pressed_style={{ transform: [{ scale: 1.1 }] }}
                                     color={SECONDARY_COLOR}
@@ -435,11 +438,11 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="show_video_settings_button" 
-                    accessibilityLabel={t("Nastavenia...")}
                     style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
                         icon_name="gear"
+                        accessibility_label={t("Nastavenia videa")}
                         onPress={onShowVideoSettings}
                         pressed_style={{ transform: [{ scale: 1.1 }] }}
                         color={SECONDARY_COLOR}
@@ -449,11 +452,11 @@ export const CustomVideoControls = ({
 
                 <View 
                     className="fullscreen" 
-                    accessibilityLabel={t("Rozstiahnuť...")}
                     style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
                         icon_name={is_fullscreen ? "compress" : "expand"}
+                        accessibility_label={is_fullscreen ? t("Ukončiť celú obrazovku") : t("Na celú obrazovku")}
                         onPress={onToggleVideoFullscreen}
                         pressed_style={{ transform: [{ scale: 1.1 }] }}
                         color={SECONDARY_COLOR}
@@ -466,7 +469,13 @@ export const CustomVideoControls = ({
                 className="scrubber_hitbox" 
                 onLayout={(event:LayoutChangeEvent) => handleSetScrubberWidth(event)} 
                 style={styles.scrubber_hitbox}
-                {...scrubber_responder} 
+                {...scrubber_responder}
+                accessible
+                accessibilityRole="adjustable"
+                accessibilityLabel={t("Priebeh videa")}
+                accessibilityValue={{ text: t("{{elapsed}} z {{duration}}", { elapsed: formatDuration(elapsed_time / 1000), duration: formatDuration(duration / 1000) }) }}
+                accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+                onAccessibilityAction={(event) => event.nativeEvent.actionName === "increment" ? onStepFurther(5) : onStepBack(5)} 
             />
 
             <View className="scrubber" style={styles.scrubber}>

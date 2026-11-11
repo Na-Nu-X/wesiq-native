@@ -1,0 +1,5 @@
+{
+    "NSBluetoothAlwaysUsageDescription": "Wesiq používá Bluetooth k připojení snímače tepu během tréninku.",
+    "NSHealthShareUsageDescription": "Wesiq čte tvůj tep z aplikace Zdraví, aby ho zobrazil během nahrávání tréninku.",
+    "NSPhotoLibraryUsageDescription": "Wesiq potřebuje přístup k fotkám, abys je mohl sdílet v příspěvcích a zprávách a nastavit si profilovou fotku."
+}

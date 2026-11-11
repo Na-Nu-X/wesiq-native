@@ -498,6 +498,7 @@ export const DynamicVideo = ({
                     <View className="play_pause_indicator hidden" style={styles.play_pause_indicator}>
                         <Icon
                             icon_name={playing_video !== one_post_media.id ? "pause" : "play"}
+                            accessibility_label={playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
                             onPress={() => playPauseVideo(one_post_media.id)}
                             size={40}
                             style={playing_video === one_post_media.id ? { marginLeft: 8 } : { marginLeft: 0 }}
@@ -509,6 +510,7 @@ export const DynamicVideo = ({
                     <View className="step_back_indicator hidden" style={styles.step_back_indicator}>
                         <Icon
                             icon_name="angle-left"
+                            accessibility_label={t("Späť o 5 sekúnd")}
                             onPress={() => stepBack(5)}
                             size={40}
                             pressed_color={LIGHT_BLUE_COLOR}
@@ -542,6 +544,7 @@ export const DynamicVideo = ({
 
                         <Icon
                             icon_name="angle-right"
+                            accessibility_label={t("Dopredu o 5 sekúnd")}
                             onPress={() => stepFurther(5)}
                             size={40}
                             pressed_color={LIGHT_BLUE_COLOR}
@@ -570,6 +573,7 @@ export const DynamicVideo = ({
                         <View style={styles.play_pause_indicator}>
                             <Icon
                                 icon_name="download"
+                                accessibility_label={t("Načítať video")}
                                 onPress={initializeVideo}
                                 size={30}
                                 pressed_color={LIGHT_BLUE_COLOR}

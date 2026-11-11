@@ -13,7 +13,10 @@
       "bundleIdentifier": "com.tvoje.wesiq",
       "associatedDomains": [
         "applinks:wesiq.com"
-      ]
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.tvoje.wesiq",
@@ -34,7 +37,7 @@
         }
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#060b18",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -42,9 +45,7 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT"
+        "android.permission.health.READ_HEART_RATE"
       ]
     },
     "web": {
@@ -72,25 +73,42 @@
       "expo-web-browser",
       "expo-localization",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Wesiq needs access to your photos so you can share them in posts and chats and set a profile picture.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": true,
           "modes": [
-            "peripheral",
             "central"
-          ]
+          ],
+          "neverForLocation": true,
+          "bluetoothAlwaysPermission": "Wesiq uses Bluetooth to connect to your heart rate monitor during workouts."
         }
       ],
       [
         "react-native-health",
         {
-          "healthSharePermission": "Aplikácia potrebuje prístup k dátam o tepe pre meranie aktivity."
+          "healthSharePermission": "Wesiq reads your heart rate from Apple Health to show it while you record a workout.",
+          "healthUpdatePermission": "Wesiq only reads your heart rate and never changes your Apple Health data."
         }
       ],
       "react-native-health-connect",
       "expo-sharing",
       "expo-video",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -102,6 +120,17 @@
         "projectId": "c007e0da-9003-4e39-953f-bbc4e5f2a6f6"
       }
     },
-    "backgroundColor": "#060b18"
+    "backgroundColor": "#060b18",
+    "locales": {
+      "en": "./locales/native/en.json",
+      "sk": "./locales/native/sk.json",
+      "cs": "./locales/native/cs.json",
+      "de": "./locales/native/de.json",
+      "es": "./locales/native/es.json",
+      "fr": "./locales/native/fr.json",
+      "uk": "./locales/native/uk.json",
+      "ru": "./locales/native/ru.json",
+      "pt-BR": "./locales/native/pt-BR.json"
+    }
   }
 }

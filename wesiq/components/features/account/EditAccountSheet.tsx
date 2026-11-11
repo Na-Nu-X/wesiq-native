@@ -14,6 +14,7 @@ import { confirmAction, showAlert } from "@/lib/alert"
 import { setStoredString } from "@/lib/storage"
 import { requestAccountDeletion, saveAccount } from "@/lib/api/endpoints/account"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import { openLegalPage } from "@/lib/legal"
 
 import type { Profile } from "@/types/models"
 
@@ -445,6 +446,14 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
             <SectionTitle label={t("Účet")} />
 
             <Card padding="xs">
+                <Pressable onPress={() => openLegalPage("privacy")} accessibilityRole="link" style={({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}>
+                    <Icon name="shield-halved" size={15} color="text_secondary" />
+                    <Text variant="body_strong" style={styles.flex}>{t("Ochrana osobných údajov")}</Text>
+                    <Icon name="arrow-up-right-from-square" size={12} color="text_muted" />
+                </Pressable>
+
+                <Divider inset={spacing.md} />
+
                 <Pressable onPress={handleLogOut} disabled={is_busy} accessibilityRole="button" style={({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}>
                     <Icon name="arrow-right-from-bracket" size={15} color="text_secondary" />
                     <Text variant="body_strong" style={styles.flex}>{t("Odhlásiť sa")}</Text>

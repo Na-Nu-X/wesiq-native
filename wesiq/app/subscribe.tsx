@@ -13,6 +13,7 @@ import { are_purchases_supported, getPlanPackages, PaidPlan, purchasePackage, re
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 import { getMediaLimits, MediaLimits } from "@/components/features/upload-post/mediaRules"
+import LegalLinks from "@/components/features/legal/LegalLinks"
 
 import type { PurchasesPackage } from "react-native-purchases"
 import type { IconName } from "@/components/ui"
@@ -207,7 +208,10 @@ export default function SubscribeScreen() {
             </Card>
 
             {are_purchases_supported ? (
-                <Text variant="caption" color="text_muted" align="center">{t("Predplatné sa obnovuje automaticky každý mesiac. Zrušiť ho môžete kedykoľvek v nastaveniach obchodu.")}</Text>
+                <View style={styles.legal}>
+                    <Text variant="caption" color="text_muted" align="center">{t("Predplatné sa obnovuje automaticky každý mesiac. Zrušiť ho môžete kedykoľvek v nastaveniach obchodu.")}</Text>
+                    <LegalLinks />
+                </View>
             ) : (
                 <Card variant="outlined" padding="md" style={styles.current}>
                     <Icon name="mobile-screen" size={18} color="primary" />
@@ -327,6 +331,10 @@ const styles = StyleSheet.create({
 
     free: {
         gap: 2,
+    },
+
+    legal: {
+        gap: spacing.sm,
     },
 
     footer: {

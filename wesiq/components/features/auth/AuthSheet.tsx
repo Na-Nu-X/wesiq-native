@@ -13,6 +13,7 @@ import { setStoredString } from "@/lib/storage"
 import { login, register, requestPasswordResetCode, toServerLanguage } from "@/lib/api/endpoints/auth"
 import { generateKey } from "@/utils/generateKey"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
+import LegalLinks from "@/components/features/legal/LegalLinks"
 
 import type { LoggedInUser } from "@/types/models"
 
@@ -432,6 +433,13 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                     is_full_width
                 />
 
+                {!is_login && (
+                    <View style={styles.legal}>
+                        <Text variant="caption" color="text_muted" align="center">{t("Vytvorením účtu súhlasíte so zásadami ochrany osobných údajov.")}</Text>
+                        <LegalLinks pages={["privacy"]} />
+                    </View>
+                )}
+
                 <View style={styles.switch_row}>
                     <Text variant="callout" color="text_secondary">{is_login ? t("Ešte nemáte účet?") : t("Už máte účet?")}</Text>
 
@@ -445,6 +453,10 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 }
 
 const styles = StyleSheet.create({
+    legal: {
+        gap: 4,
+    },
+
     flex: {
         flex: 1,
     },
