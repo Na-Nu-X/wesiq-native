@@ -283,6 +283,9 @@ export const MOCK_CUSTOM_TASKS:CustomTask[] = [
     { id: 1, title: "Drink 3 liters of water", is_completed: true, order: 0, created_at: hoursAgo(8) },
     { id: 2, title: "Stretch for 10 minutes", is_completed: false, order: 1, created_at: hoursAgo(8) },
     { id: 3, title: "Sleep before 23:00", is_completed: false, order: 2, created_at: hoursAgo(8) },
+    { id: 4, title: "10 minutes of mobility", is_completed: false, order: 3, created_at: hoursAgo(6) },
+    { id: 5, title: "Take creatine", is_completed: true, order: 4, created_at: hoursAgo(5) },
+    { id: 6, title: "Walk 8 000 steps", is_completed: false, order: 5, created_at: hoursAgo(3) },
 ]
 
 // ---------- Blog ----------
