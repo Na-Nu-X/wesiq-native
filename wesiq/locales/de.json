@@ -1348,5 +1348,20 @@
     "viac": "mehr",
     "Ďakujeme za nahlásenie": "Danke für deine Meldung",
     "Štatistiky videa": "Videostatistik",
-    "⌀ = priemerný čas pozerania na diváka": "⌀ = durchschnittliche Wiedergabezeit pro Zuschauer"
+    "⌀ = priemerný čas pozerania na diváka": "⌀ = durchschnittliche Wiedergabezeit pro Zuschauer",
+    "Kopírovať odkaz na profil": "Profillink kopieren",
+    "Možnosti": "Optionen",
+    "Nahlásiť účet": "Konto melden",
+    "Obmedziť účet": "Konto sperren",
+    "Obmedziť účet {{username}}?": "Konto {{username}} sperren?",
+    "Odkaz sa nepodarilo otvoriť.": "Link konnte nicht geöffnet werden.",
+    "Premium": "Premium",
+    "Prečo tento účet nahlasujete?": "Warum meldest du dieses Konto?",
+    "Príspevok užívateľa {{username}}": "Beitrag von {{username}}",
+    "Sledujte ho, aby ste videli príspevky a aktivitu.": "Folge diesem Konto, um Beiträge und Aktivität zu sehen.",
+    "Súkromný": "Privat",
+    "Uložené": "Gespeichert",
+    "Uložte si príspevok ikonou záložky a nájdete ho tu.": "Speichere einen Beitrag mit dem Lesezeichen, um ihn hier zu finden.",
+    "Účet mohol byť zrušený alebo bolo zmenené používateľské meno.": "Das Konto wurde möglicherweise gelöscht oder der Benutzername geändert.",
+    "Účet skontrolujeme. Nahlasovateľ zostáva anonymný.": "Wir prüfen das Konto. Meldungen sind anonym."
 }

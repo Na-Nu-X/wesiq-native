@@ -18,5 +18,5 @@ export default function MyProfileTab() {
         )
     }
 
-    return <ProfileScreen username={logged_in_user.username} />
+    return <ProfileScreen username={logged_in_user.username} is_tab />
 }

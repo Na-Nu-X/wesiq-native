@@ -1348,5 +1348,20 @@
     "viac": "більше",
     "Ďakujeme za nahlásenie": "Дякуємо за скаргу",
     "Štatistiky videa": "Статистика відео",
-    "⌀ = priemerný čas pozerania na diváka": "⌀ = середній час перегляду на глядача"
+    "⌀ = priemerný čas pozerania na diváka": "⌀ = середній час перегляду на глядача",
+    "Kopírovať odkaz na profil": "Копіювати посилання на профіль",
+    "Možnosti": "Параметри",
+    "Nahlásiť účet": "Поскаржитися на обліковий запис",
+    "Obmedziť účet": "Заблокувати обліковий запис",
+    "Obmedziť účet {{username}}?": "Заблокувати {{username}}?",
+    "Odkaz sa nepodarilo otvoriť.": "Не вдалося відкрити посилання.",
+    "Premium": "Преміум",
+    "Prečo tento účet nahlasujete?": "Чому ви скаржитеся на цей обліковий запис?",
+    "Príspevok užívateľa {{username}}": "Допис {{username}}",
+    "Sledujte ho, aby ste videli príspevky a aktivitu.": "Стежте за цим обліковим записом, щоб бачити дописи й активність.",
+    "Súkromný": "Приватний",
+    "Uložené": "Збережені",
+    "Uložte si príspevok ikonou záložky a nájdete ho tu.": "Збережіть допис значком закладки, щоб знайти його тут.",
+    "Účet mohol byť zrušený alebo bolo zmenené používateľské meno.": "Можливо, обліковий запис видалено або змінено ім'я користувача.",
+    "Účet skontrolujeme. Nahlasovateľ zostáva anonymný.": "Ми перевіримо обліковий запис. Скарги анонімні."
 }

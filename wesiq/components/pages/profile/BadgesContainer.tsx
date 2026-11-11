@@ -8,6 +8,7 @@ import { useState } from "react"
 import { Tooltip } from "@/components/Tooltip"
 
 import type { Profile } from "@/types/models"
+import { colors, radii, spacing } from "@/theme"
 
 type BadgesContainerProps = {
     is_found:boolean,
@@ -849,23 +850,12 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 const styles = StyleSheet.create({
     badges_container: {
         position: "relative",
-        marginBottom: 40,
-        padding: 10,
-        backgroundColor: transparentize(DARK_BLUE_COLOR, 0.95),
+        padding: spacing.sm,
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: transparentize(BLUE_COLOR, 0.5),
-        borderRadius: MEDIUM_BORDER_RADIUS,
-        // backdrop-filter: blur(5px);
+        borderColor: colors.border,
+        borderRadius: radii.lg,
         overflow: "visible",
-        // transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
-
-        // &:hover,
-        // &:focus-visible {
-        //     transform: translateY(-2px);
-        //     background: transparent;
-        //     border-color: transparentize($blue-color, 0.25);
-        //     box-shadow: 0 10px 30px transparentize($blue-color, 0.8);
-        // }
     },
 
     badges: {

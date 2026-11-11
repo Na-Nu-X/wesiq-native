@@ -1348,5 +1348,20 @@
     "viac": "ещё",
     "Ďakujeme za nahlásenie": "Спасибо за жалобу",
     "Štatistiky videa": "Статистика видео",
-    "⌀ = priemerný čas pozerania na diváka": "⌀ = среднее время просмотра на зрителя"
+    "⌀ = priemerný čas pozerania na diváka": "⌀ = среднее время просмотра на зрителя",
+    "Kopírovať odkaz na profil": "Копировать ссылку на профиль",
+    "Možnosti": "Параметры",
+    "Nahlásiť účet": "Пожаловаться на аккаунт",
+    "Obmedziť účet": "Заблокировать аккаунт",
+    "Obmedziť účet {{username}}?": "Заблокировать {{username}}?",
+    "Odkaz sa nepodarilo otvoriť.": "Не удалось открыть ссылку.",
+    "Premium": "Премиум",
+    "Prečo tento účet nahlasujete?": "Почему вы жалуетесь на этот аккаунт?",
+    "Príspevok užívateľa {{username}}": "Публикация {{username}}",
+    "Sledujte ho, aby ste videli príspevky a aktivitu.": "Подпишитесь, чтобы видеть публикации и активность.",
+    "Súkromný": "Закрытый",
+    "Uložené": "Сохранённые",
+    "Uložte si príspevok ikonou záložky a nájdete ho tu.": "Сохраните публикацию значком закладки, чтобы найти её здесь.",
+    "Účet mohol byť zrušený alebo bolo zmenené používateľské meno.": "Возможно, аккаунт удалён или имя пользователя изменено.",
+    "Účet skontrolujeme. Nahlasovateľ zostáva anonymný.": "Мы проверим аккаунт. Жалобы анонимны."
 }

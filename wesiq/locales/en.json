@@ -1348,5 +1348,20 @@
     "viac": "more",
     "Ďakujeme za nahlásenie": "Thanks for reporting",
     "Štatistiky videa": "Video statistics",
-    "⌀ = priemerný čas pozerania na diváka": "⌀ = average watch time per viewer"
+    "⌀ = priemerný čas pozerania na diváka": "⌀ = average watch time per viewer",
+    "Kopírovať odkaz na profil": "Copy profile link",
+    "Možnosti": "Options",
+    "Nahlásiť účet": "Report account",
+    "Obmedziť účet": "Suspend account",
+    "Obmedziť účet {{username}}?": "Suspend the account {{username}}?",
+    "Odkaz sa nepodarilo otvoriť.": "Couldn't open the link.",
+    "Premium": "Premium",
+    "Prečo tento účet nahlasujete?": "Why are you reporting this account?",
+    "Príspevok užívateľa {{username}}": "Post by {{username}}",
+    "Sledujte ho, aby ste videli príspevky a aktivitu.": "Follow this account to see posts and activity.",
+    "Súkromný": "Private",
+    "Uložené": "Saved",
+    "Uložte si príspevok ikonou záložky a nájdete ho tu.": "Save a post with the bookmark icon to find it here.",
+    "Účet mohol byť zrušený alebo bolo zmenené používateľské meno.": "The account may have been deleted or the username changed.",
+    "Účet skontrolujeme. Nahlasovateľ zostáva anonymný.": "We'll review the account. Reports are anonymous."
 }
