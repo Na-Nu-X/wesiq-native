@@ -25,7 +25,7 @@ export const DynamicImage = ({ uri, style, scale_by_aspect_ratio = false }: Dyna
                 },
 
                 (error) => {
-                    console.error(t("Nepodarilo sa zistiť veľkosť obrázka:"), error)
+                    console.warn(t("Nepodarilo sa zistiť veľkosť obrázka:"), error)
                 }
             )
         }

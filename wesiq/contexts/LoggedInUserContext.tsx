@@ -57,9 +57,9 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
         }
     }, [])
 
-    // Function For Log Out (Removes The Token And The User)
+    // Function For Log Out (Removes The Token, The User And Their Device Data; The Notification Socket Closes With The User)
     const logOut = useCallback(async ():Promise<void> => {
-        await removeStoredValue("user_token")
+        await Promise.all([removeStoredValue("user_token"), removeStoredValue("searched_users_history"), removeStoredValue("processing_posts")])
         setLoggedInUser(null)
     }, [])
 

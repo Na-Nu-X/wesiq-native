@@ -195,7 +195,7 @@ export const CustomVideoControls = ({
         } 
         
         catch {
-            console.error(t("Pri získavaní náhľadov pre video došlo k chybe."))
+            console.warn(t("Pri získavaní náhľadov pre video došlo k chybe."))
         } 
     }
 

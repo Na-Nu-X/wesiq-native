@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
     password_reset_start_time: "password_reset_start_time",
     processing_posts: "processing_posts",
     searched_users_history: "searched_users_history",
+    notifications_prompt_dismissed: "notifications_prompt_dismissed",
 } as const
 
 export type StorageKey = keyof typeof STORAGE_KEYS

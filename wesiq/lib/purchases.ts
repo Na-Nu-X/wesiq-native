@@ -1,4 +1,4 @@
-// In-App Subscription Purchases Through RevenueCat (Configured In The Root Layout After Login; Not Available On Web)
+// In-App Subscription Purchases Through RevenueCat (Configured By usePurchasesUser After Login; Not Available On Web)
 
 import { Platform } from "react-native"
 import Purchases, { CustomerInfo, PurchasesError, PurchasesPackage } from "react-native-purchases"
@@ -57,5 +57,36 @@ export const restorePurchases = async ():Promise<boolean|null> => {
 
     catch {
         return null
+    }
+}
+
+let configured_user_id:string|null = null // RevenueCat Can Be Configured Only Once Per App Launch
+
+// Function For Link The Store Customer To The Logged In User (Null = Logged Out)
+export const syncPurchasesUser = async (api_key:string, user_id:number|null):Promise<void> => {
+    if(!are_purchases_supported) return
+
+    const is_real_key:boolean = /^(appl|goog)_/.test(api_key) // Placeholder Keys Would Only Log Store Errors
+
+    try {
+        if(user_id === null) {
+            if(configured_user_id !== null && !(await Purchases.isAnonymous())) await Purchases.logOut()
+            return
+        }
+
+        const app_user_id:string = user_id.toString()
+
+        if(!(await Purchases.isConfigured())) {
+            if(!is_real_key) return
+            Purchases.configure({ apiKey: api_key, appUserID: app_user_id })
+        }
+
+        else if(configured_user_id !== app_user_id) await Purchases.logIn(app_user_id) // Another Account On The Same Device
+
+        configured_user_id = app_user_id
+    }
+
+    catch {
+        // Store Unavailable, The Subscribe Screen Falls Back To Default Prices
     }
 }

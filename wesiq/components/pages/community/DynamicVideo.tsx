@@ -190,7 +190,7 @@ export const DynamicVideo = ({
                 }, 
 
                 (error) => {
-                    console.error(t("Nepodarilo sa zistiť veľkosť náhľadu videa:"), error)
+                    console.warn(t("Nepodarilo sa zistiť veľkosť náhľadu videa:"), error)
                 }
             )
         }

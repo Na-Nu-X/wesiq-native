@@ -11,6 +11,7 @@ import { envelopeWith, isArrayOf, isRecord } from "@/lib/api/guards"
 import { useApiQuery } from "@/hooks/useApiQuery"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
+import NotificationPrompt from "@/components/features/chat/NotificationPrompt"
 
 import type { ChatPreview, UserSummary } from "@/types/models"
 
@@ -114,18 +115,24 @@ export default function ChatsScreen() {
                 keyboardDismissMode="on-drag"
                 contentContainerStyle={styles.list_content}
 
-                ListHeaderComponent={conversations.length > 0 || search ? (
-                    <TextField
-                        icon="magnifying-glass"
-                        placeholder={t("Hľadať v správach")}
-                        accessibilityLabel={t("Hľadať v správach")}
-                        value={search}
-                        onChangeText={setSearch}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        container_style={styles.search}
-                    />
-                ) : undefined}
+                ListHeaderComponent={
+                    <>
+                        <NotificationPrompt />
+
+                        {(conversations.length > 0 || search) ? (
+                            <TextField
+                                icon="magnifying-glass"
+                                placeholder={t("Hľadať v správach")}
+                                accessibilityLabel={t("Hľadať v správach")}
+                                value={search}
+                                onChangeText={setSearch}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                                container_style={styles.search}
+                            />
+                        ) : null}
+                    </>
+                }
 
                 ListEmptyComponent={
                     state.status === "loading" ? <View>{[0, 1, 2, 3].map((index:number) => <UserRowSkeleton key={index} />)}</View>
