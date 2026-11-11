@@ -1,8 +1,30 @@
 // User Relationship Endpoints (Follow, Followers, Follow Requests)
 
 import { apiPost } from "@/lib/api/client"
+import { envelopeWith, isArrayOf, isNumber, isRecord, isString } from "@/lib/api/guards"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
+import type { UserListItem } from "@/types/models"
+
+// ---------- Search ----------
+
+export interface SearchedUser extends UserListItem {
+    friend_code?:string|null,
+    followers?:number // Followers Count
+}
+
+const isSearchedUser = (value:unknown):value is SearchedUser => isRecord(value) && isNumber(value.id) && isString(value.username)
+const usersGuard = envelopeWith({ users: (value:unknown):value is SearchedUser[] => isArrayOf(value, isSearchedUser) })
+
+// Loads The Recently Opened Users (By Username, In Order) Filled Up With The Newest Users To 3
+export const loadFirstUsers = (history:string[], signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:SearchedUser[] }>> => {
+    return apiPost("load-first-users/", history, { signal, guard: usersGuard })
+}
+
+// Searches By Name, Username Or Friend Code
+export const searchUsers = (searched_text:string, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:SearchedUser[] }>> => {
+    return apiPost("search-users/", { searched_text }, { signal, guard: usersGuard })
+}
 
 // Follows / Unfollows / Sends Or Cancels A Follow Request (The Server Decides Which By The Current Relation)
 export const toggleFollow = (user_to_follow_id:number):Promise<ApiResult<ApiEnvelope>> => {

@@ -48,14 +48,23 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "POST", pattern: "login/", handler: () => ok({ access: "mock-access-token", refresh: "mock-refresh-token" }) },
     { method: "GET", pattern: "get-logged-in-user/", handler: () => ok({ logged_in_user: MOCK_LOGGED_IN_USER }) },
 
-    { method: "GET", pattern: "load-first-users/", handler: () => ok({ users: MOCK_USERS.map(withFollowers) }) },
+    {
+        method: "POST",
+        pattern: "load-first-users/",
+        handler: ({ raw_body }) => {
+            const history:string[] = Array.isArray(raw_body) ? raw_body.filter((item):item is string => typeof item === "string") : [] // Gets The History
+            const from_history:UserListItem[] = history.map((username:string) => MOCK_USERS.find((user:UserListItem) => user.username === username)).filter((user):user is UserListItem => Boolean(user))
+            const newest:UserListItem[] = [...MOCK_USERS].reverse().filter((user:UserListItem) => !from_history.includes(user)).slice(0, Math.max(0, 3 - from_history.length))
+            return ok({ users: [...from_history, ...newest].map(withFollowers) })
+        }
+    },
 
     {
         method: "POST",
         pattern: "search-users/",
         handler: ({ body }) => {
             const searched_text:string = (typeof body.searched_text === "string" ? body.searched_text : "").toLowerCase() // Gets The Searched Text
-            return ok({ users: MOCK_USERS.filter((user:UserListItem) => user.username.includes(searched_text)).map(withFollowers) })
+            return ok({ users: MOCK_USERS.filter((user:UserListItem) => `${user.first_name ?? ""} ${user.last_name ?? ""} ${user.username}`.toLowerCase().includes(searched_text)).map(withFollowers) })
         }
     },
 

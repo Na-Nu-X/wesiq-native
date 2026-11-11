@@ -1416,5 +1416,15 @@
     "Zdieľať článok": "Sdílet článek",
     "{{count}} z 5": "{{count}} z 5",
     "Články: {{count}}": "Články: {{count}}",
-    "Článok sa nenašiel": "Článek nebyl nalezen"
+    "Článok sa nenašiel": "Článek nebyl nalezen",
+    "Nedávno a navrhované": "Nedávné a navrhované",
+    "Meno, užívateľské meno alebo kód priateľa": "Jméno, uživatelské jméno nebo kód přítele",
+    "Zatiaľ tu nikto nie je": "Zatím tu nikdo není",
+    "Vymazať históriu vyhľadávania?": "Vymazat historii vyhledávání?",
+    "Sledovatelia: {{count}}": "Sledující: {{count}}",
+    "Skúste iné meno alebo kód priateľa.": "Zkuste jiné jméno nebo kód přítele.",
+    "Navrhovaní ľudia": "Navrhovaní lidé",
+    "Otvorí profil": "Otevře profil",
+    "Vymazať históriu": "Vymazat historii",
+    "Výsledky": "Výsledky"
 }

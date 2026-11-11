@@ -1416,5 +1416,15 @@
     "Zdieľať článok": "Share article",
     "{{count}} z 5": "{{count}} of 5",
     "Články: {{count}}": "Articles: {{count}}",
-    "Článok sa nenašiel": "Article not found"
+    "Článok sa nenašiel": "Article not found",
+    "Nedávno a navrhované": "Recent and suggested",
+    "Meno, užívateľské meno alebo kód priateľa": "Name, username or friend code",
+    "Zatiaľ tu nikto nie je": "No one here yet",
+    "Vymazať históriu vyhľadávania?": "Clear search history?",
+    "Sledovatelia: {{count}}": "Followers: {{count}}",
+    "Skúste iné meno alebo kód priateľa.": "Try another name or friend code.",
+    "Navrhovaní ľudia": "Suggested people",
+    "Otvorí profil": "Opens the profile",
+    "Vymazať históriu": "Clear history",
+    "Výsledky": "Results"
 }
