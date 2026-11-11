@@ -85,6 +85,8 @@ const loadVttPreviews = async (vtt_url:string):Promise<vtt[]> => {
     }
 }
 
+const COMPACT_CONTROLS_WIDTH:number = 480 // Below This The Full Row Doesn't Fit
+
 export const CustomVideoControls = ({ 
     one_post_media,
     onPlayPauseVideo, 
@@ -115,6 +117,7 @@ export const CustomVideoControls = ({
 }:CustomVideoControlsProps) => {
     const { t } = useTranslation() // Initializes The Translations
 
+    const [controls_width, setControlsWidth] = useState<number>(0) // Stores The Width Of The Controls (For The Compact Layout)
     const [scrubber_progress, setScrubberProgress] = useState<number>(0) // Stores The Scrubber Progress
     
     const [scrubber_time, setScrubberTime] = useState<number>(0) // Stores The Scrubber Time
@@ -235,8 +238,10 @@ export const CustomVideoControls = ({
         },
     }
 
+    const is_compact:boolean = controls_width > 0 && controls_width < COMPACT_CONTROLS_WIDTH // Narrow Post: Drops The Volume Slider And Step Buttons So Settings And Fullscreen Stay Visible
+
     return (
-        <View className="controls" style={styles.controls}>
+        <View className="controls" style={styles.controls} onLayout={(event:LayoutChangeEvent) => setControlsWidth(event.nativeEvent.layout.width)}>
             <View className="buttons" style={styles.buttons}>
                 <View 
                     className="play_pause" 
@@ -253,7 +258,7 @@ export const CustomVideoControls = ({
                     />
                 </View>
 
-                {Platform.OS === "web" && (
+                {Platform.OS === "web" && !is_compact && (
                     <>
                         <View 
                             className="step_back" 
@@ -359,7 +364,7 @@ export const CustomVideoControls = ({
                 <View className="volume_container" style={styles.volume_container}>
                     {!one_post_media.is_muted && (
                         <>
-                            <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            {!is_compact && <View style={{ flexDirection: "row", alignItems: "center" }}>
                                 <Slider
                                     minimumValue={0}
                                     maximumValue={1}
@@ -401,7 +406,7 @@ export const CustomVideoControls = ({
                                 >
                                     {is_muted ? "0%" : `${Math.round(volume * 100)}%`}
                                 </Text>
-                            </View>
+                            </View>}
 
                             <View 
                                 className="mute_unmute" 

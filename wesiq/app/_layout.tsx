@@ -16,10 +16,14 @@ import { Platform, StyleSheet } from "react-native"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import useNotificationSocket from "@/hooks/useNotificationSocket"
 import { syncPurchasesUser } from "@/lib/purchases"
+import * as ScreenOrientation from "expo-screen-orientation"
 
 installMockApi() // Enables Mock Data In Development When EXPO_PUBLIC_USE_MOCKS=1
 
 SplashScreen.preventAutoHideAsync()
+
+// The App Is Portrait; Only A Fullscreen Landscape Video Unlocks Landscape (app.json Allows Rotation For That)
+if(Platform.OS === "ios" || Platform.OS === "android") ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {})
 
 // Navigation Theme (Dark Only) So Native Containers, Headers And Transitions Never Flash White
 const NAVIGATION_THEME:Theme = {

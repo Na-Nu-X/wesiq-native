@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react"
-import { Pressable, StyleProp, ViewStyle, Animated } from "react-native"
+import { Pressable, StyleProp, ViewStyle, Animated, GestureResponderEvent } from "react-native"
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6"
 import { BLUE_COLOR, DARK_BLUE_COLOR } from "@/constants/colors"
 
@@ -61,7 +61,7 @@ export default function Icon({
 
     return (
         <Pressable
-            onPress={onPress}
+            onPress={onPress ? (event:GestureResponderEvent) => { event.stopPropagation() /* Keeps The Tap From Reaching The Video Behind (Web Bubbles Nested Presses) */; onPress() } : undefined}
             onPressIn={handlePressIn}
             onPressOut={handlePressOut}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
