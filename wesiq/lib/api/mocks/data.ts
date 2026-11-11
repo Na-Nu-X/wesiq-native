@@ -272,10 +272,11 @@ export const MOCK_ACTIVITY_HISTORY:Activity[] = [
     { end_time: daysAgo(3), elapsed_time: 3310, gained_xp: 410, type: "Leg day", training_plan_day: 3, training_plan_summary: [{ color: "#5b8cff", exercise: "Squats", gained_xp: 220, elapsed_time: 1700 }, { color: "#ff5c6a", exercise: "Lunges", gained_xp: 190, elapsed_time: 1610 }] },
 ]
 
-export const MOCK_OFFICIAL_TASKS:OfficialTask[] = [
-    { title: "complete_activity", data: "1", xp: 50, progress_percentage: 100, is_completed: true },
-    { title: "train_minutes", data: "45", xp: 80, progress_percentage: 62, is_completed: false },
-    { title: "like_posts", data: "5", xp: 20, progress_percentage: 40, is_completed: false },
+export const MOCK_OFFICIAL_TASKS:OfficialTask[] = [ // "title" Is Server Text, The App Shows Its Own Label By "data"
+    { title: "Pridaj vlastnú úlohu.", data: "add_custom_task", xp: 20, progress_percentage: 100, is_completed: true },
+    { title: "Zaznamenaj 30 minút aktivity.", data: "30_minutes_activity", xp: 50, progress_percentage: 0, is_completed: false },
+    { title: "Zaznamenaj 2 aktivity.", data: "2_activities", xp: 60, progress_percentage: 50, is_completed: false },
+    { title: "Získaj 50 XP za aktivitu.", data: "50_xp_activity", xp: 80, progress_percentage: 0, is_completed: false },
 ]
 
 export const MOCK_CUSTOM_TASKS:CustomTask[] = [

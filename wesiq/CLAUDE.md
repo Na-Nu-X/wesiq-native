@@ -27,8 +27,8 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 
 **Routing (expo-router, typed routes, React Compiler enabled).**
 - `app/_layout.tsx` is the root `Stack`. It installs the mock API (when enabled), loads the brand fonts, wraps everything in `LoggedInUserProvider` and a dark React Navigation theme, holds the splash screen until the user and fonts are loaded, configures RevenueCat, requests notification permissions, and opens a global WebSocket (`/ws/notifications/?token=…`) that schedules a local notification for new chat messages unless the user is already in that chat.
-- `app/(tabs)/_layout.tsx` is the main bottom tab bar. It hides itself on `/activity`, `/profile`, `/post`, `/chat`, `/blog`, because each of those folders has its **own nested `Tabs` layout** with its own tab bar.
-- Those nested layouts include `homepage_dummy.tsx` / `profile_dummy.tsx` screens that render `null`; they exist only as tab buttons whose `tabPress` listener calls `preventDefault()` and navigates elsewhere (e.g. to `/`). Dynamic routes (`[username]`, `[post_id]`, `[article]`) are hidden with `tabBarButton: () => null`. Follow this pattern when adding sections.
+- `app/(tabs)/_layout.tsx` is the one permanent bottom tab bar: Home (`index`), `chat`, `activity`, `blog` and Profile (`me`, opens the login sheet when logged out). `chat`, `activity` and `blog` are folders with their own native `Stack` (`initialRouteName: "index"`), so detail screens (`chat/[username]`, `blog/[article]`, `activity/new|edit|copy`) push inside the tab with a back button.
+- Screens outside the tabs live in the root stack: `post/[post_id]`, `profile/[username]`, `users` (find people), `subscribe`, `(auth)/password-reset`, `dev/ui-kit`.
 - Every file in `app/` becomes a route, so don't put non-route modules there.
 - `app/(auth)/password-reset.tsx` handles the `https://wesiq.com/password-reset` deep link (configured in `app.json`).
 
@@ -40,9 +40,11 @@ There is no test suite. `/dev/ui-kit` is a development-only gallery of the share
 - Mock mode: `EXPO_PUBLIC_USE_MOCKS=1` in a development build makes `lib/api/mocks/install.ts` intercept every `fetch` to the API and answer from `lib/api/mocks/handlers.ts` + `data.ts`. Unknown GETs return 404 so missing mocks are visible.
 - `lib/storage.ts` holds the typed AsyncStorage keys.
 
-**Components.** Redesigned feature components live in `components/features/<feature>/` (auth, account, profile, posts, upload-post, training-plan) and use `components/ui`; older page-specific components are still in `components/pages/<feature>/` (activity, blog, chat, community, manage_training_plans, post, profile, subscribe, …). Route files in `app/` are mostly thin and compose these. Platform-specific variants use the `.web.tsx` / `.ios.tsx` suffix (e.g. `ImageViewer.web.tsx`).
+**Components.** Feature components live in `components/features/<feature>/` (activity, auth, account, chat, posts, profile, training-plan, upload-post) and use `components/ui`; a few older components remain in `components/pages/` (e.g. `community/DynamicVideo`, `activity/CustomVideoControls`, `articles/front_lever`). Route files in `app/` are mostly thin and compose these. Platform-specific variants use the `.web.tsx` / `.ios.tsx` suffix (e.g. `ImageViewer.web.tsx`).
 
 **Training plans.** The server stores a plan as one `TrainingPlan` row per exercise sharing `training_plan_key`; `type` is the plan title, `periods` the value of each set, `day` 0 = Sunday. The new / edit / copy tabs under `app/(tabs)/activity/` all use `components/features/training-plan/TrainingPlanEditor`; `model.ts` converts rows ↔ the editor draft (grouped sets) and validates, `useTrainingPlanEditor` is the reducer. Saving posts the rows to `manage-training-plan/` (edit sends `edited_training_plan` with the same key, which replaces the plan). Screens that stay mounted reload via `onAppEvent("training_plans_changed")` from `lib/events.ts`.
+
+**Activity.** `app/(tabs)/activity/index.tsx` composes `components/features/activity`: `useActivityTimer` (wall-clock stopwatch), `useWorkoutSession` (reducer for exercise → sets → break → finish), `xp.ts` (XP formula and daily challenge rules keyed by the server `data` field; time/XP challenges complete on the device while recording). `ActivityScroll` / `TaskList` have `.web.tsx` variants because the nestable draggable list needs `findNodeHandle`, which web lacks.
 
 **Heart rate.** `classes/HeartRate.ts` has `HeartRateManager`, which switches between `HeartRateProvider` implementations: `TEST`, `BLE` (react-native-ble-plx), `APPLE_HEALTH` (react-native-health) and `HEALTH_CONNECT` (Android).
 

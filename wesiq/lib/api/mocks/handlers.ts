@@ -18,7 +18,7 @@ import {
     MOCK_USERS,
 } from "./data"
 
-import type { Post, TrainingPlanExercise, UserListItem } from "@/types/models"
+import type { OfficialTask, Post, TrainingPlanExercise, UserListItem } from "@/types/models"
 
 export interface MockResponse {
     status:number,
@@ -129,9 +129,25 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "GET", pattern: "get-activity-history/", handler: () => ok({ activity_history: MOCK_ACTIVITY_HISTORY }) },
     { method: "GET", pattern: "get-official-tasks/", handler: () => ok({ official_tasks: MOCK_OFFICIAL_TASKS, official_tasks_remaining_hours: 7 }) },
     { method: "GET", pattern: "get-custom-tasks/", handler: () => ok({ custom_tasks: MOCK_CUSTOM_TASKS }) },
-    { method: "POST", pattern: "add-custom-task/", handler: () => ok({ custom_task: { id: Date.now(), title: "New task", is_completed: false, order: MOCK_CUSTOM_TASKS.length, created_at: new Date().toISOString() } }, 201) },
+    { method: "POST", pattern: "add-custom-task/", handler: ({ body }) => ok({ custom_task: { id: Date.now(), title: typeof body.custom_task_title === "string" ? body.custom_task_title : "New task", is_completed: false, order: MOCK_CUSTOM_TASKS.length, created_at: new Date().toISOString() } }, 201) },
+    { method: "POST", pattern: "complete-official-task/", handler: ({ body }) => {
+        const task:OfficialTask|undefined = MOCK_OFFICIAL_TASKS.find((one_task:OfficialTask) => one_task.data === body.task_data) // Gets The Task
+        if(!task) return notFound("Úloha neexistuje. (mock)")
+
+        const progress_percentage:number = body.task_data === "2_activities" ? Math.min(100, task.progress_percentage + 50) : 100
+        const is_completed:boolean = progress_percentage >= 100
+        const first_completion:boolean = is_completed && !task.is_completed
+        Object.assign(task, { progress_percentage, is_completed })
+        return ok({ task: { progress_percentage, is_completed, first_completion, gained_xp: first_completion ? task.xp : 0 } })
+    } },
+
+    { method: "POST", pattern: "new-activity/", handler: () => ok({}, 201) },
+    { method: "POST", pattern: "toggle-complete-custom-task/", handler: () => ok({}) },
+    { method: "POST", pattern: "delete-custom-task/", handler: () => ok({}) },
+    { method: "POST", pattern: "delete-completed-custom-tasks/", handler: () => ok({}) },
+    { method: "POST", pattern: "change-custom-tasks-order/", handler: () => ok({}) },
     { method: "GET", pattern: "get-xp-boost/", handler: () => ok({ xp_boost_expiration_time: null, is_xp_boost_available: true, is_xp_boost_active: false }) },
-    { method: "POST", pattern: "use-xp-boost/", handler: () => ok({ xp_boost_expiration_time: new Date(Date.now() + 30 * 60 * 1000).toISOString() }) },
+    { method: "GET", pattern: "use-xp-boost/", handler: () => ok({ xp_boost_expiration_time: new Date(Date.now() + 30 * 60 * 1000).toISOString() }) },
 
     {
         method: "GET",

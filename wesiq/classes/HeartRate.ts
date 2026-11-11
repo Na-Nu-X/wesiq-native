@@ -22,7 +22,7 @@ export class HeartRateManager {
         source_type:HeartRateSourceType,
         onBpmChange:(bpm: number) => void,
         ble_device_id?:string
-    ) {
+    ):Promise<boolean> {
         if(this.active_provider) this.active_provider.disconnect() // Disconnects The Active Provider
 
         if(source_type === "TEST") this.active_provider = new TestHeartRateProvider() // Sets "Test" As An Active Provider
@@ -33,6 +33,7 @@ export class HeartRateManager {
         const is_connected:boolean = (await this.active_provider?.connect(ble_device_id)) || false // Gets The Information If The Device Is Connected
 
         if(is_connected) this.active_provider?.onHeartRateUpdate(onBpmChange) // Updates The Heart Rate
+        return is_connected
     }
 
     // Function For Stop Monitoring
