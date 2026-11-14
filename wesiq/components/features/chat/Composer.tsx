@@ -1,6 +1,7 @@
 // Message Composer: Text, Attachments (Photos / Videos / Files) And Editing
 
-import { ScrollView, StyleSheet, View } from "react-native"
+import { ComponentRef, useEffect, useRef } from "react"
+import { ScrollView, StyleSheet, TextInput, View } from "react-native"
 import { Image } from "expo-image"
 import * as DocumentPicker from "expo-document-picker"
 import * as ImagePicker from "expo-image-picker"
@@ -44,6 +45,14 @@ export default function Composer({ value, onChange, attachments, onAttachmentsCh
     const limits = getMediaLimits(plan) // Same Limits As The Server
     const max_file_bytes:number = plan === "free" ? 5_000_000 : 10_000_000 // Documents (Same As The Server)
     const remaining:number = MAX_ATTACHMENTS - attachments.length
+    const input_reference = useRef<ComponentRef<typeof TextInput>>(null) // Focuses The Input When Editing Starts
+
+    const editing_id:number|null = editing?.id ?? null
+
+    // Initializes The Focus Of The Input When Editing Starts (Long-Press Menu Or Swipe), So The Keyboard Opens
+    useEffect(() => {
+        if(editing_id !== null) input_reference.current?.focus()
+    }, [editing_id])
 
     // Function For Add Picked Files (Skips Files Over The Server Limits And Says Which)
     const addFiles = (picked:PendingAttachment[], durations:Map<string, number|null> = new Map()):void => {
@@ -155,6 +164,7 @@ export default function Composer({ value, onChange, attachments, onAttachmentsCh
                 )}
 
                 <TextField
+                    ref={input_reference}
                     placeholder={t("Napíšte správu")}
                     accessibilityLabel={t("Napíšte správu")}
                     value={value}

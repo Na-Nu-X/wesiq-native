@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { FlatList, ListRenderItemInfo, StyleSheet, View } from "react-native"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { Button, EmptyState, ErrorState, Header, Screen, Skeleton, Text, TextField, UserRow } from "@/components/ui"
+import { Button, EmptyState, ErrorState, Header, Screen, Skeleton, Text, TextField, UserRow, ThemedRefreshControl } from "@/components/ui"
 import { layout, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
@@ -149,8 +149,7 @@ export default function UsersScreen() {
                 keyExtractor={(user:SearchedUser) => String(user.id)}
                 renderItem={renderUser}
                 ListHeaderComponent={list_header}
-                refreshing={active.is_refreshing}
-                onRefresh={active.refetch}
+                refreshControl={<ThemedRefreshControl refreshing={active.is_refreshing} onRefresh={active.refetch} />}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 contentContainerStyle={styles.list_content}

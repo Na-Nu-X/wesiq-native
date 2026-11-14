@@ -31,7 +31,7 @@ export default function ArticleScreen() {
     const [is_comments_open, setIsCommentsOpen] = useState<boolean>(false)
     const [is_rating, setIsRating] = useState<boolean>(false)
 
-    const { state, refetch, is_refreshing, setData } = useApiQuery(`article:${link ?? ""}`, (signal:AbortSignal) => getArticle(link ?? "", signal), { is_enabled: Boolean(link) })
+    const { state, refetch, reload, is_refreshing, setData } = useApiQuery(`article:${link ?? ""}`, (signal:AbortSignal) => getArticle(link ?? "", signal), { is_enabled: Boolean(link) })
     const article:ArticleDetail|null = state.data && !state.data.not_found && state.data.article ? state.data.article : null
 
     const updateArticle = useCallback((changes:Partial<ArticleDetail>) => setData((previous) => previous?.article ? { ...previous, article: { ...previous.article, ...changes } } : previous), [setData])
@@ -70,7 +70,7 @@ export default function ArticleScreen() {
 
         haptics.success()
         updateArticle({ given_rating: rating })
-        refetch() // Reloads The Average
+        reload() // Reloads The Average (Silently, refetch Would Scroll The Screen To The Top On iOS)
     }
 
     // Labels Of The Statistics (Same Thresholds As Before)

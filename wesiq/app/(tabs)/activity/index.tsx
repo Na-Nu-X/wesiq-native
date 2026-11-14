@@ -1,10 +1,10 @@
 // Activity: Stopwatch, Guided Training Plan, Weekly Stats, Daily Challenges, My Tasks And History
 
 import { useEffect, useRef, useState } from "react"
-import { RefreshControl, ScrollView, StyleSheet, View } from "react-native"
+import { ScrollView, StyleSheet, View } from "react-native"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { Button, Card, Chip, Header, Icon, Screen, Skeleton, Text } from "@/components/ui"
+import { Button, Card, Chip, Header, Icon, Screen, Skeleton, Text, ThemedRefreshControl } from "@/components/ui"
 import { colors, layout, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
@@ -210,8 +210,8 @@ export default function ActivityScreen() {
         completeChallenge("2_activities")
         if(is_plan_finished) completeChallenge("complete_training_plan_activity")
 
-        stats_query.refetch()
-        history_query.refetch()
+        stats_query.reload() // Silent Reloads (refetch Would Scroll The Screen To The Top On iOS)
+        history_query.reload()
     }
 
     // Function For Keep The Stopwatch Running While Moving Through The Plan
@@ -236,7 +236,7 @@ export default function ActivityScreen() {
                 contentContainerStyle={styles.content}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
-                refreshControl={is_logged_in ? <RefreshControl refreshing={is_refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} progressBackgroundColor={colors.surface_raised} /> : undefined}
+                refreshControl={is_logged_in ? <ThemedRefreshControl refreshing={is_refreshing} onRefresh={refresh} /> : undefined}
             >
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
                     <Chip label={t("Nový plán")} icon="plus" onPress={() => router.push("/activity/new")} />
@@ -325,8 +325,9 @@ const styles = StyleSheet.create({
     },
 
     chips: {
+        flexGrow: 1, // Fills The Row, So The Chips Are Centered When They Fit (Longer Translations Still Scroll)
+        justifyContent: "center",
         gap: spacing.sm,
-        paddingRight: spacing.lg,
     },
 
     sign_in: {

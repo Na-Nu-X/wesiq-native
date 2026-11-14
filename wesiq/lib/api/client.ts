@@ -1,9 +1,11 @@
 // Typed API Client For The Django "native-api" (One Place For Auth, Timeouts, Errors And Response Validation)
 
+import { Platform } from "react-native"
 import { API_URL } from "@/constants/general"
 import i18n from "@/lib/i18n"
 import { getStoredString, removeStoredValue } from "@/lib/storage"
 import { isApiEnvelope, isRecord } from "@/lib/api/guards"
+import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 
 import type { ApiEnvelope, ApiError, ApiErrorKind, ApiResult, HttpMethod, ResponseGuard } from "@/types/api"
 
@@ -84,6 +86,55 @@ const getMessage = (body:unknown):string|undefined => {
     return isRecord(body) && typeof body.message === "string" ? body.message : undefined
 }
 
+// The Part Of A Response The Client Reads (fetch's Response And The XMLHttpRequest Result Both Match It)
+interface HttpResponse {
+    status:number,
+    ok:boolean,
+    json:() => Promise<unknown>
+}
+
+// Function For Send FormData Through React Native's Networking (XMLHttpRequest)
+// Expo Replaces The Global fetch With expo/fetch, Which Rejects React Native File Parts ({ uri, name, type }) With "Unsupported FormDataPart implementation".
+// XMLHttpRequest Still Uses React Native's Networking, Which Reads The File From Disk (Also Fine For Large Videos)
+const sendFormDataWithXhr = (url:string, method:HttpMethod, headers:Record<string, string>, form_data:FormData, signal:AbortSignal):Promise<HttpResponse> => {
+    return new Promise<HttpResponse>((resolve, reject) => {
+        const xhr:XMLHttpRequest = new XMLHttpRequest()
+        xhr.open(method, url)
+        Object.entries(headers).forEach(([name, value]) => xhr.setRequestHeader(name, value)) // No Content-Type: The Boundary Is Added Automatically
+
+        const abort = ():void => xhr.abort()
+
+        xhr.onload = () => {
+            signal.removeEventListener("abort", abort)
+            const response_text:string = xhr.responseText
+
+            resolve({
+                status: xhr.status,
+                ok: xhr.status >= 200 && xhr.status < 300,
+                json: async ():Promise<unknown> => JSON.parse(response_text) as unknown,
+            })
+        }
+
+        xhr.onerror = () => {
+            signal.removeEventListener("abort", abort)
+            reject(new TypeError("Network request failed"))
+        }
+
+        xhr.onabort = () => {
+            signal.removeEventListener("abort", abort)
+            reject(new DOMException("Aborted", "AbortError"))
+        }
+
+        if(signal.aborted) {
+            reject(new DOMException("Aborted", "AbortError"))
+            return
+        }
+
+        signal.addEventListener("abort", abort)
+        xhr.send(form_data)
+    })
+}
+
 // ---------- Request ----------
 
 // Function For Send The Request To The API
@@ -124,20 +175,25 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
         else signal.addEventListener("abort", abortFromCaller)
     }
 
-    let response:Response
+    let response:HttpResponse
+    const url:string = buildApiUrl(path, query) // Gets The URL
+    const is_native_upload:boolean = form_data !== undefined && Platform.OS !== "web" && !IS_MOCK_MODE // The Mock API Patches fetch, So Mock Uploads Stay On fetch
 
     try {
-        response = await fetch(buildApiUrl(path, query), {
-            method,
-            headers,
-            body: form_data ?? (body !== undefined ? JSON.stringify(body) : undefined),
-            signal: controller.signal,
-        })
+        response = is_native_upload && form_data
+            ? await sendFormDataWithXhr(url, method, headers, form_data, controller.signal)
+            : await fetch(url, {
+                method,
+                headers,
+                body: form_data ?? (body !== undefined ? JSON.stringify(body) : undefined),
+                signal: controller.signal,
+            })
     }
 
-    catch {
+    catch(error) {
         if(is_timed_out) return createError<T>("timeout", null)
         if(signal?.aborted) return createError<T>("aborted", null)
+        if(__DEV__) console.warn(`[api] Request to "${path}" failed before a response`, error) // Shows The Real Reason In Development (The User Sees The Generic Network Message)
         return createError<T>("network", null)
     }
 

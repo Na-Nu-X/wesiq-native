@@ -13,7 +13,7 @@ import { setStoredString } from "@/lib/storage"
 import { login, register, requestPasswordResetCode, toServerLanguage } from "@/lib/api/endpoints/auth"
 import { generateKey } from "@/utils/generateKey"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import LegalLinks from "@/components/features/legal/LegalLinks"
+import { openLegalPage } from "@/lib/legal"
 
 import type { LoggedInUser } from "@/types/models"
 
@@ -260,6 +260,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
             <>
                 <TextField
                     label={t("Používateľské meno alebo e-mail")}
+                    placeholder={t("Vaše používateľské meno alebo e-mail")}
                     icon="user"
                     value={identifier}
                     onChangeText={setIdentifier}
@@ -277,6 +278,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                     <TextField
                         ref={password_input}
                         label={t("Heslo")}
+                        placeholder={t("Vaše heslo")}
                         icon="lock"
                         value={password}
                         onChangeText={setPassword}
@@ -309,12 +311,13 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         return (
             <>
                 <View style={styles.name_row}>
-                    <TextField label={t("Meno")} value={first_name} onChangeText={setFirstName} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
-                    <TextField label={t("Priezvisko")} value={last_name} onChangeText={setLastName} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
+                    <TextField label={t("Meno")} placeholder={t("Vaše meno")} value={first_name} onChangeText={setFirstName} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
+                    <TextField label={t("Priezvisko")} placeholder={t("Vaše priezvisko")} value={last_name} onChangeText={setLastName} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
                 </View>
 
                 <TextField
                     label={t("Používateľské meno")}
+                    placeholder={t("napr. jan_novak")}
                     icon="at"
                     value={username}
                     onChangeText={(text:string) => setUsername(text.replace(/\s/g, ""))}
@@ -328,6 +331,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
                 <TextField
                     label={t("E-mail")}
+                    placeholder={t("vas@priklad.sk")}
                     icon="envelope"
                     value={email_address}
                     onChangeText={setEmailAddress}
@@ -357,6 +361,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
                 <TextField
                     label={t("Heslo")}
+                    placeholder={t("Aspoň {{count}} znakov", { count: MIN_PASSWORD_LENGTH })}
                     icon="lock"
                     value={new_password}
                     onChangeText={(text:string) => {
@@ -375,6 +380,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
                 <TextField
                     label={t("Zopakujte heslo")}
+                    placeholder={t("Zadajte heslo znova")}
                     icon="lock"
                     value={password_check}
                     onChangeText={setPasswordCheck}
@@ -420,6 +426,20 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         )
     }
 
+    // Function For Render The Privacy Policy Notice (The Part Wrapped In <link></link> Opens The Privacy Policy)
+    function renderPrivacyNotice() {
+        const notice:string = is_login ? t("Prihlásením súhlasíte so <link>zásadami ochrany osobných údajov</link>.") : t("Vytvorením účtu súhlasíte so <link>zásadami ochrany osobných údajov</link>.")
+        const [before = "", link = "", after = ""] = notice.split(/<link>|<\/link>/) // Splits The Sentence Around The Link
+
+        return (
+            <Text variant="caption" color="text_muted" align="center">
+                {before}
+                <Text variant="caption" color="primary_text" accessibilityRole="link" onPress={() => openLegalPage("privacy")} style={styles.legal_link}>{link}</Text>
+                {after}
+            </Text>
+        )
+    }
+
     // Function For Render The Footer
     function renderFooter() {
         if(!is_login && registered_email) return <Button label={t("Prejsť na prihlásenie")} onPress={goToLogin} is_full_width />
@@ -433,12 +453,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                     is_full_width
                 />
 
-                {!is_login && (
-                    <View style={styles.legal}>
-                        <Text variant="caption" color="text_muted" align="center">{t("Vytvorením účtu súhlasíte so zásadami ochrany osobných údajov.")}</Text>
-                        <LegalLinks pages={["privacy"]} />
-                    </View>
-                )}
+                {renderPrivacyNotice()}
 
                 <View style={styles.switch_row}>
                     <Text variant="callout" color="text_secondary">{is_login ? t("Ešte nemáte účet?") : t("Už máte účet?")}</Text>
@@ -453,8 +468,8 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 }
 
 const styles = StyleSheet.create({
-    legal: {
-        gap: 4,
+    legal_link: {
+        textDecorationLine: "underline",
     },
 
     flex: {

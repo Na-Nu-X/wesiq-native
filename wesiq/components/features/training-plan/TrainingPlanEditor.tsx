@@ -37,6 +37,11 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
     const [is_deleting, setIsDeleting] = useState<boolean>(false) // Stores The Information If The Plan Is Being Deleted
     const [has_tried_saving, setHasTriedSaving] = useState<boolean>(false) // Shows Validation Errors After The First Save Attempt
     const [dragging_id, setDraggingId] = useState<string|null>(null) // Stores The Exercise Being Dragged
+    const [drop_count, setDropCount] = useState<number>(0) // Part Of The Row Keys, So Every Drop Remounts The Rows
+
+    // After A Drop The Library Holds Each Row's Last Drag Offset Until The Row Reports A New Layout, Which On The New
+    // Architecture Can Race With The Animation And Leave The Offset In Place (Empty Gaps Between Exercises).
+    // New Keys Remount Only The Rows (Starting Without Any Offset); The List And Its Scroll Position Stay
 
     // Counts How Many Times Each Library Exercise Is In The Plan (Shown In The Library)
     const added_counts:Map<number, number> = useMemo(() => {
@@ -266,7 +271,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
         >
             <DraggableFlatList
                 data={draft.exercises}
-                keyExtractor={(exercise:DraftExercise) => exercise.local_id}
+                keyExtractor={(exercise:DraftExercise) => `${exercise.local_id}:${drop_count}`}
                 renderItem={renderItem}
                 onDragBegin={(index:number) => {
                     haptics.light()
@@ -274,6 +279,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
                 }}
                 onDragEnd={({ data }:{ data:DraftExercise[] }) => {
                     setDraggingId(null)
+                    setDropCount((count:number) => count + 1) // Also When Dropped In Place (The Rows It Passed Hold Offsets Too)
                     dispatch({ type: "reorder_exercises", exercises: data })
                 }}
                 ListHeaderComponent={list_header}

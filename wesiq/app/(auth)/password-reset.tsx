@@ -165,6 +165,7 @@ export default function PasswordResetScreen() {
                     <View style={styles.section}>
                         <TextField
                             label={t("Nové heslo")}
+                            placeholder={t("Zadajte nové heslo")}
                             icon="lock"
                             is_password
                             value={new_password}

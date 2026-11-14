@@ -1,7 +1,7 @@
 // Modal Sheet: A Bottom Sheet On Phones (Drag Down To Close) And A Centered Dialog On Tablets And Web
 
-import { ReactNode, useEffect, useState } from "react"
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native"
+import { ReactNode, useCallback, useEffect, useRef, useState } from "react"
+import { HostInstance, Keyboard, KeyboardAvoidingView, LayoutChangeEvent, Modal, ModalProps, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, ScrollViewInstance, StyleSheet, TextInput, useWindowDimensions, View } from "react-native"
 import { GestureDetector, GestureHandlerRootView, usePanGesture } from "react-native-gesture-handler"
 import Animated, { Easing, interpolate, useAnimatedStyle, useSharedValue, withSpring, withTiming } from "react-native-reanimated"
 import { scheduleOnRN } from "react-native-worklets"
@@ -11,6 +11,7 @@ import { colors, durations, layout, radii, shadows, spacing } from "@/theme"
 import Text from "./Text"
 import IconButton from "./IconButton"
 import ListContextReset from "./ListContextReset"
+import { SheetScrollContext } from "./SheetScroll"
 
 export interface SheetProps {
     visible:boolean,
@@ -22,12 +23,14 @@ export interface SheetProps {
     header_right?:ReactNode, // Extra Header Action Next To The Close Button
     size?:"auto"|"large", // "auto" Fits The Content (Up To 90%), "large" Always Takes 90%
     is_scrollable?:boolean, // Wraps The Children In A ScrollView (Disable When The Children Are A FlatList)
-    is_dismissable?:boolean // False While Saving (Blocks Backdrop / Drag / Back Button)
+    is_dismissable?:boolean, // False While Saving (Blocks Backdrop / Drag / Back Button)
+    supported_orientations?:ModalProps["supportedOrientations"] // iOS: Allow Landscape When Opened Over A Landscape Screen (Fullscreen Video)
 }
 
 const WIDE_BREAKPOINT:number = 700 // Width From Which The Sheet Is Shown As A Centered Dialog
 const DISMISS_DISTANCE:number = 120 // Drag Distance That Closes The Sheet
 const DISMISS_VELOCITY:number = 900 // Drag Velocity That Closes The Sheet
+const REVEAL_DELAY_MS:number = 120 // Waits For The Sheet To Shrink Above The Keyboard Before Measuring
 
 export default function Sheet({
     visible,
@@ -40,6 +43,7 @@ export default function Sheet({
     size = "auto",
     is_scrollable = true,
     is_dismissable = true,
+    supported_orientations,
 }:SheetProps) {
     const { t } = useTranslation() // Initializes The Translations
     const { width, height } = useWindowDimensions() // Gets The Window Size
@@ -54,6 +58,68 @@ export default function Sheet({
         setPreviousVisible(visible)
         if(visible) setIsMounted(true)
     }
+
+    const [is_keyboard_open, setIsKeyboardOpen] = useState<boolean>(false) // Stores The Information If The Keyboard Is Shown
+
+    const scroll_ref = useRef<ScrollViewInstance>(null) // Scrolls The Focused Input Into View
+    const scroll_offset = useRef<number>(0) // Stores The Current Scroll Position
+    const viewport_height = useRef<number>(0) // Stores The Visible Height Of The ScrollView
+    const reveal_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Debounces The Reveal
+
+    // Function For Scroll The Focused Input Above The Keyboard (The Keyboard Avoiding View Only Shrinks The Sheet)
+    const revealFocusedInput = useCallback((target?:HostInstance|null):void => {
+        if(Platform.OS === "web") return // Browsers Scroll Focused Inputs Into View Themselves
+
+        if(reveal_timeout.current) clearTimeout(reveal_timeout.current)
+
+        reveal_timeout.current = setTimeout(() => {
+            const input:HostInstance|null = target ?? TextInput.State.currentlyFocusedInput() ?? null // Gets The Target Or The Focused Input
+            const content = scroll_ref.current?.getInnerViewRef() // Gets The Scroll Content
+            if(!input || !content || viewport_height.current <= 0) return
+
+            // Measures The Input Inside The Scroll Content (Fails For Inputs Outside Of It, E.g. In The Footer)
+            input.measureLayout(content, (_x:number, y:number, _width:number, input_height:number) => {
+                const visible_top:number = scroll_offset.current
+                const visible_bottom:number = visible_top + viewport_height.current
+                const margin:number = spacing.lg
+
+                const is_too_tall:boolean = input_height + margin * 2 > viewport_height.current // Stores The Information If The View Doesn't Fit Above The Keyboard
+
+                let scroll_target:number|null = null
+
+                if(target && is_too_tall) scroll_target = y - margin // A Tall Target (Input With Suggestions) Is Aligned To Its Top So The Input Stays Visible
+                else if(y + input_height + margin > visible_bottom) scroll_target = y + input_height + margin - viewport_height.current // Below The Visible Area (Shows The Bottom, Where The Caret Is While Typing)
+                else if(y - margin < visible_top) scroll_target = y - margin // Above The Visible Area
+
+                if(scroll_target !== null) scroll_ref.current?.scrollTo({ y: Math.max(0, scroll_target), animated: true })
+            }, () => {})
+        }, REVEAL_DELAY_MS)
+    }, [])
+
+    // Initializes The Cleanup Of The Reveal Timeout
+    useEffect(() => {
+        return () => {
+            if(reveal_timeout.current) clearTimeout(reveal_timeout.current)
+        }
+    }, [])
+
+    // Initializes The Keyboard Listeners (The Footer Drops The Home Indicator Inset While Typing)
+    useEffect(() => {
+        if(!is_mounted) return
+
+        const show_event = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow"
+        const hide_event = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide"
+        const show_subscription = Keyboard.addListener(show_event, () => {
+            setIsKeyboardOpen(true)
+            revealFocusedInput()
+        })
+        const hide_subscription = Keyboard.addListener(hide_event, () => setIsKeyboardOpen(false))
+
+        return () => {
+            show_subscription.remove()
+            hide_subscription.remove()
+        }
+    }, [is_mounted, revealFocusedInput])
 
     const progress = useSharedValue<number>(0) // 0 = Hidden, 1 = Shown
     const drag_offset = useSharedValue<number>(0) // Current Drag Distance
@@ -118,13 +184,27 @@ export default function Sheet({
 
     const content:ReactNode = is_scrollable ? (
         <ScrollView
+            ref={scroll_ref}
             style={size === "large" ? styles.flex : styles.scroll} // Large Sheets Keep The Footer Pinned To The Bottom
+            scrollEventThrottle={32}
+
+            onScroll={(event:NativeSyntheticEvent<NativeScrollEvent>) => {
+                scroll_offset.current = event.nativeEvent.contentOffset.y
+            }}
+
+            onLayout={(event:LayoutChangeEvent) => {
+                viewport_height.current = event.nativeEvent.layout.height
+                if(is_keyboard_open) revealFocusedInput() // The Sheet Shrank Above The Keyboard
+            }}
+
             contentContainerStyle={[styles.scroll_content, size === "large" ? styles.scroll_content_large : null,!footer ? { paddingBottom: spacing.xl + (is_wide ? 0 : insets.bottom) } : null]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             bounces={false}
         >
-            {children}
+            <SheetScrollContext.Provider value={revealFocusedInput}>
+                {children}
+            </SheetScrollContext.Provider>
         </ScrollView>
     ) : (
         <View style={[styles.static_content, !footer && !is_wide ? { paddingBottom: insets.bottom } : null]}>{children}</View>
@@ -137,12 +217,13 @@ export default function Sheet({
             animationType="none"
             statusBarTranslucent
             navigationBarTranslucent
+            supportedOrientations={supported_orientations}
             onRequestClose={requestClose} // Android Back Button
         >
             <GestureHandlerRootView style={styles.flex}>
                 <ListContextReset>
                 <KeyboardAvoidingView style={styles.flex} behavior="padding" enabled={Platform.OS !== "web"}>
-                    <View style={[styles.flex, is_wide ? styles.center : styles.bottom]}>
+                    <View style={[styles.flex, is_wide ? styles.center : [styles.bottom, { paddingTop: insets.top + spacing.sm }]]}>
                         <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdrop_style]}>
                             <Pressable
                                 style={StyleSheet.absoluteFill}
@@ -189,7 +270,7 @@ export default function Sheet({
                             {content}
 
                             {!!footer && (
-                                <View style={[styles.footer, { paddingBottom: is_wide ? spacing.lg : Math.max(insets.bottom, spacing.lg) }]}>
+                                <View style={[styles.footer, { paddingBottom: is_wide || is_keyboard_open ? spacing.md : Math.max(insets.bottom, spacing.lg) }]}>
                                     {footer}
                                 </View>
                             )}
@@ -222,6 +303,8 @@ const styles = StyleSheet.create({
     },
 
     panel: {
+        flexShrink: 1, // Shrinks Above The Keyboard Instead Of Overflowing The Screen (Large Sheets Have A Fixed Height)
+        minHeight: 0,
         backgroundColor: colors.surface,
         borderColor: colors.border,
         borderWidth: layout.hairline,

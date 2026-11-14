@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Pressable, StyleSheet, View } from "react-native"
 import { router, useFocusEffect } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { Avatar, EmptyState, ErrorState, Header, IconButton, Screen, Text, TextField, UserRowSkeleton } from "@/components/ui"
+import { Avatar, EmptyState, ErrorState, Header, IconButton, Screen, Text, TextField, UserRowSkeleton, ThemedRefreshControl } from "@/components/ui"
 import { colors, layout, radii, spacing } from "@/theme"
 import { apiGet } from "@/lib/api/client"
 import { envelopeWith, isArrayOf, isRecord } from "@/lib/api/guards"
@@ -21,7 +21,7 @@ interface Conversation {
     unread_count:number
 }
 
-const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && (typeof value.content === "string" || value.content === null)
+const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && (typeof value.content === "string" || value.content === null || value.content === undefined) // Older Servers Send Unread Chats Without "content"
 
 const isChatsResponse = envelopeWith<{ unread_chats:ChatPreview[], read_chats:ChatPreview[] }>({
     unread_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
@@ -34,7 +34,7 @@ const groupConversations = (unread:ChatPreview[], read:ChatPreview[]):Conversati
 
     unread.forEach((message:ChatPreview) => {
         const existing:Conversation|undefined = by_user.get(message.sender.id)
-        by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: (existing?.unread_count ?? 0) + 1 })
+        by_user.set(message.sender.id, { user: message.sender, preview: existing?.preview ?? message.content ?? "", unread_count: (existing?.unread_count ?? 0) + 1 }) // Keeps The First (Newest) Message As The Preview
     })
 
     read.forEach((message:ChatPreview) => {
@@ -51,12 +51,12 @@ export default function ChatsScreen() {
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
     const [search, setSearch] = useState<string>("") // Stores The Search
 
-    const { state, refetch, is_refreshing } = useApiQuery("chats", (signal:AbortSignal) => apiGet("get-chats/", { signal, guard: isChatsResponse }), { is_enabled: logged_in_user !== null })
+    const { state, refetch, reload, is_refreshing } = useApiQuery("chats", (signal:AbortSignal) => apiGet("get-chats/", { signal, guard: isChatsResponse }), { is_enabled: logged_in_user !== null })
 
     // Initializes The Reload When The Tab Gets Focus Again (Returning From A Conversation Marks It As Read)
     useFocusEffect(useCallback(() => {
-        if(logged_in_user) refetch()
-    }, [logged_in_user, refetch]))
+        if(logged_in_user) reload() // Silent, So The Pull-To-Refresh Spinner Doesn't Show On Every Visit
+    }, [logged_in_user, reload]))
 
     const conversations:Conversation[] = useMemo(() => state.data ? groupConversations(state.data.unread_chats, state.data.read_chats) : [], [state.data])
     const query:string = search.trim().toLowerCase() // Gets The Query
@@ -109,8 +109,7 @@ export default function ChatsScreen() {
                 data={visible}
                 keyExtractor={(conversation:Conversation) => String(conversation.user.id)}
                 renderItem={renderConversation}
-                refreshing={is_refreshing}
-                onRefresh={refetch}
+                refreshControl={<ThemedRefreshControl refreshing={is_refreshing} onRefresh={refetch} />}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 contentContainerStyle={styles.list_content}

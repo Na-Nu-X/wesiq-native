@@ -13,6 +13,9 @@ import type { ChatMessage } from "@/types/models"
 // Same Reactions As Before (The Server Keeps Up To 3 Per Message)
 export const REACTION_EMOJIS:readonly string[] = ["👍", "👎", "👏", "💪", "😀", "😂", "😍", "🙌", "🙏", "🤝", "🤣", "🤯"]
 
+// Function For Check If A Message Can Be Edited (Own Text Message, Max. 15 Minutes Old; The Server Enforces The Same Rule)
+export const canEditMessage = (message:ChatMessage):boolean => message.is_sender && !message.is_older_than_15_minutes && !!message.content
+
 interface MessageActionsSheetProps {
     message:ChatMessage|null,
     current_username:string|null,
@@ -25,7 +28,7 @@ interface MessageActionsSheetProps {
 export default function MessageActionsSheet({ message, current_username, onClose, onReact, onEdit, onDelete }:MessageActionsSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const can_edit:boolean = message !== null && message.is_sender && !message.is_older_than_15_minutes && !!message.content
+    const can_edit:boolean = message !== null && canEditMessage(message)
     const can_delete:boolean = message !== null && message.is_sender && !message.is_older_than_1_day
 
     return (

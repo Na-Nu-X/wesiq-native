@@ -4,7 +4,7 @@ import { useCallback, useState } from "react"
 import { ActivityIndicator, FlatList, ListRenderItemInfo, StyleSheet, View } from "react-native"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { EmptyState, ErrorState, Header, IconButton, Screen, Skeleton, Text, TextField } from "@/components/ui"
+import { EmptyState, ErrorState, Header, IconButton, Screen, Skeleton, Text, TextField, ThemedRefreshControl } from "@/components/ui"
 import { colors, fonts, layout, radii, spacing } from "@/theme"
 import { emitAppEvent } from "@/lib/events"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
@@ -113,11 +113,10 @@ export default function HomeScreen() {
                     renderItem={renderPost}
                     ListHeaderComponent={list_header}
                     ListEmptyComponent={renderEmpty}
-                    ListFooterComponent={feed.is_loading_more ? <ActivityIndicator color={colors.primary} style={styles.footer} /> : feed.posts.length > 0 && !feed.has_next ? <Text variant="caption" color="text_muted" align="center" style={styles.footer}>{t("Videli ste všetky príspevky.")}</Text> : undefined}
+                    ListFooterComponent={feed.is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.footer} /> : feed.posts.length > 0 && !feed.has_next ? <Text variant="caption" color="text_muted" align="center" style={styles.footer}>{t("Videli ste všetky príspevky.")}</Text> : undefined}
                     onEndReached={feed.loadMore}
                     onEndReachedThreshold={0.6}
-                    refreshing={feed.is_refreshing}
-                    onRefresh={feed.refresh}
+                    refreshControl={<ThemedRefreshControl refreshing={feed.is_refreshing} onRefresh={feed.refresh} />}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="on-drag"
                     showsVerticalScrollIndicator={false}

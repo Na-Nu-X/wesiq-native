@@ -21,6 +21,7 @@ import UserMenuSheet from "./UserMenuSheet"
 import PostGrid from "./PostGrid"
 import BadgesContainer from "@/components/pages/profile/BadgesContainer"
 import { formatUsername } from "@/lib/format"
+import { getLinkDomain, getLinkIcon } from "@/lib/links"
 
 import type { BioLink, Profile } from "@/types/models"
 
@@ -30,9 +31,6 @@ interface ProfileScreenProps {
     username:string|undefined,
     is_tab?:boolean // The Own Profile In The Tab Bar (No Back Button)
 }
-
-// Function For Get The Display Domain Of A Link
-const getDomain = (url:string):string => url.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split(/[/?#]/)[0] ?? url
 
 export default function ProfileScreen({ username, is_tab = false }:ProfileScreenProps) {
     const { t } = useTranslation() // Initializes The Translations
@@ -45,7 +43,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
     const [grid_tab, setGridTab] = useState<GridTab>("posts")
     const [is_follow_busy, setIsFollowBusy] = useState<boolean>(false)
 
-    const { state, refetch, is_refreshing, setData } = useApiQuery(`profile:${username ?? ""}`, (signal:AbortSignal) => getProfile(username ?? "", signal), { is_enabled: Boolean(username) })
+    const { state, refetch, reload, is_refreshing, setData } = useApiQuery(`profile:${username ?? ""}`, (signal:AbortSignal) => getProfile(username ?? "", signal), { is_enabled: Boolean(username) })
 
     const profile:Profile|null = state.data?.is_found && state.data.user ? state.data.user : null // Gets The Profile
     const is_own:boolean = profile !== null && logged_in_user?.id === profile.id
@@ -72,7 +70,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
         }
 
         haptics.success()
-        refetch() // Reloads Followers And Visibility Of Private Content
+        reload() // Reloads Followers And Visibility Of Private Content (Silently, Without Jumping To The Top)
         updateProfile({ ...profile, ...getToggledFollowFlags(profile) })
     }
 
@@ -153,7 +151,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
                     {profile.bio_links.length > 0 && (
                         <View style={styles.chips}>
                             {profile.bio_links.map((link:BioLink) => (
-                                <Chip key={link.id} label={getDomain(link.url)} icon="link" onPress={() => openLink(link)} />
+                                <Chip key={link.id} label={getLinkDomain(link.url)} icon={getLinkIcon(link.url)} onPress={() => openLink(link)} />
                             ))}
                         </View>
                     )}

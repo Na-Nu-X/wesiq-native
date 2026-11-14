@@ -533,6 +533,7 @@ const styles = StyleSheet.create({
         bottom: BIG_BORDER_RADIUS / 2,
         gap: 10,
         width: "100%",
+        paddingBottom: 18, // Keeps The Buttons Above The Scrubber (It Is Absolute At The Bottom And Its Thumb Reaches 5px Above The Bar)
         // transition: display 0.3s ease allow-discrete 1s, opacity 0.3s ease 1s;
         zIndex: 100,
     },

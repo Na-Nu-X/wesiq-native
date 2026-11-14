@@ -140,16 +140,16 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
                         <Card padding="md" style={styles.stats}>
                             <Text variant="overline" color="text_muted">{t("Štatistiky videa")}</Text>
 
-                            {shown_post.media.filter((media) => media.is_video).map((media, index:number) => (
-                                <View key={media.id} style={styles.stat_row}>
-                                    <Icon name="film" size={13} color="primary" />
-                                    <Text variant="callout" style={styles.flex}>{t("Video {{position}}", { position: index + 1 })}</Text>
-                                    <Text variant="caption" color="text_secondary" is_tabular>{t("Zobrazenia")}: {media.video_views ?? 0}</Text>
-                                    <Text variant="caption" color="text_secondary" is_tabular>⌀ {formatDuration(media.average_watch_time ?? 0)}</Text>
+                            {shown_post.media.filter((media) => media.is_video).map((media, index:number, videos) => (
+                                <View key={media.id} style={styles.stat_group}>
+                                    {videos.length > 1 && <Text variant="caption" color="text_secondary">{t("Video {{position}}", { position: index + 1 })}</Text>}
+
+                                    <View style={styles.stat_tiles}>
+                                        <StatTile icon="eye" value={String(media.video_views ?? 0)} label={t("Zobrazenia")} />
+                                        <StatTile icon="clock" value={formatDuration(media.average_watch_time ?? 0)} label={t("Priemerný čas pozerania")} />
+                                    </View>
                                 </View>
                             ))}
-
-                            <Text variant="caption" color="text_muted">{t("⌀ = priemerný čas pozerania na diváka")}</Text>
                         </Card>
                     )}
 
@@ -194,12 +194,24 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
     )
 }
 
-// Function For Render One Menu Row
-export function MenuRow({ icon, label, onPress, is_danger = false, is_disabled = false }:{ icon:IconName, label:string, onPress:() => void, is_danger?:boolean, is_disabled?:boolean }) {
+// Function For Render One Video Statistic
+function StatTile({ icon, value, label }:{ icon:IconName, value:string, label:string }) {
     return (
-        <Pressable onPress={onPress} disabled={is_disabled} accessibilityRole="button" style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null, is_disabled ? styles.disabled : null]}>
+        <View accessible accessibilityLabel={`${label}: ${value}`} style={styles.stat_tile}>
+            <Icon name={icon} size={14} color="primary" />
+            <Text variant="heading" is_tabular numberOfLines={1}>{value}</Text>
+            <Text variant="caption" color="text_secondary" numberOfLines={2}>{label}</Text>
+        </View>
+    )
+}
+
+// Function For Render One Menu Row
+export function MenuRow({ icon, label, value, onPress, is_danger = false, is_disabled = false }:{ icon:IconName, label:string, value?:string, onPress:() => void, is_danger?:boolean, is_disabled?:boolean }) {
+    return (
+        <Pressable onPress={onPress} disabled={is_disabled} accessibilityRole="button" accessibilityLabel={value ? `${label}, ${value}` : undefined} style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null, is_disabled ? styles.disabled : null]}>
             <Icon name={icon} size={15} color={is_danger ? "danger" : "text_secondary"} />
             <Text variant="body_strong" color={is_danger ? "danger" : "text"} style={styles.flex}>{label}</Text>
+            {!!value && <Text variant="callout" color="text_secondary" is_tabular>{value}</Text>}
             <Icon name="chevron-right" size={12} color="text_muted" />
         </Pressable>
     )
@@ -228,12 +240,23 @@ const styles = StyleSheet.create({
     },
 
     stats: {
+        gap: spacing.md,
+    },
+
+    stat_group: {
+        gap: spacing.xs,
+    },
+
+    stat_tiles: {
+        flexDirection: "row",
         gap: spacing.sm,
     },
 
-    stat_row: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: spacing.md,
+    stat_tile: {
+        flex: 1,
+        gap: spacing.xxs,
+        padding: spacing.md,
+        backgroundColor: colors.surface_raised,
+        borderRadius: radii.md,
     },
 })

@@ -16,6 +16,7 @@ import { requestAccountDeletion, saveAccount } from "@/lib/api/endpoints/account
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { openLegalPage } from "@/lib/legal"
 import { formatUsername } from "@/lib/format"
+import { getLinkDomain, getLinkIcon } from "@/lib/links"
 
 import type { Profile } from "@/types/models"
 
@@ -67,11 +68,6 @@ const createForm = (profile:Profile):FormState => ({
     data_saving_mode: profile.data_saving_mode ?? false,
     picture: null,
 })
-
-// Function For Get The Domain Of A Link (For Display)
-const getDomain = (url:string):string => {
-    return url.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split(/[/?#]/)[0] ?? url
-}
 
 // Function For Normalize A Typed Link (Adds https:// When Missing)
 const normalizeLink = (url:string):string|null => {
@@ -205,8 +201,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
         onSaved()
         onClose()
 
-        // The Server Also Answers With Success When The 7 Day Limit Blocks The Changes, So Its Message Is Always Shown
-        if(response.message) showAlert(t("Nastavenia účtu"), response.message)
+        if(response.message) showAlert(t("Nastavenia účtu"), response.message) // Confirms The Save (A Blocked 7 Day Edit Comes Back As An Error Above)
     }
 
     // Function For Close (Asks Before Throwing Away Changes)
@@ -323,8 +318,8 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
             <SectionTitle label={t("Profil")} />
 
             <View style={styles.name_row}>
-                <TextField label={t("Meno")} value={form.first_name} onChangeText={(value:string) => update("first_name", value)} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
-                <TextField label={t("Priezvisko")} value={form.last_name} onChangeText={(value:string) => update("last_name", value)} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
+                <TextField label={t("Meno")} placeholder={t("Vaše meno")} value={form.first_name} onChangeText={(value:string) => update("first_name", value)} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
+                <TextField label={t("Priezvisko")} placeholder={t("Vaše priezvisko")} value={form.last_name} onChangeText={(value:string) => update("last_name", value)} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
             </View>
 
             <TextField
@@ -347,9 +342,9 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
                                 {index > 0 && <Divider inset={spacing.md} />}
 
                                 <View style={styles.link_row}>
-                                    <Icon name="link" size={13} color="primary" />
-                                    <Text variant="callout" numberOfLines={1} style={styles.flex}>{getDomain(link)}</Text>
-                                    <IconButton icon="xmark" accessibility_label={`${t("Odstrániť odkaz")}: ${getDomain(link)}`} onPress={() => update("bio_links", form.bio_links.filter((other:string) => other !== link))} size={30} icon_color="text_muted" />
+                                    <View style={styles.link_icon}><Icon name={getLinkIcon(link)} size={15} color="primary" /></View>
+                                    <Text variant="callout" numberOfLines={1} style={styles.flex}>{getLinkDomain(link)}</Text>
+                                    <IconButton icon="xmark" accessibility_label={`${t("Odstrániť odkaz")}: ${getLinkDomain(link)}`} onPress={() => update("bio_links", form.bio_links.filter((other:string) => other !== link))} size={30} icon_color="text_muted" />
                                 </View>
                             </View>
                         ))}
@@ -361,7 +356,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
                         <TextField
                             placeholder={t("Pridať odkaz")}
                             accessibilityLabel={t("Pridať odkaz")}
-                            icon="link"
+                            icon={getLinkIcon(new_link)} // Shows The Brand While Typing
                             value={new_link}
                             onChangeText={(value:string) => {
                                 setNewLink(value)
@@ -387,6 +382,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
             <TextField
                 label={t("E-mail")}
+                placeholder={t("vas@priklad.sk")}
                 icon="envelope"
                 value={form.email_address}
                 onChangeText={(value:string) => update("email_address", value)}
@@ -401,6 +397,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
             <TextField
                 label={`${t("Telefónne číslo")} (${t("nepovinné")})`}
+                placeholder="+421 900 123 456"
                 icon="phone"
                 value={form.phone_number}
                 onChangeText={(value:string) => update("phone_number", new AsYouType().input(value))}
@@ -533,6 +530,11 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
         paddingLeft: spacing.md,
         paddingRight: spacing.xs,
+    },
+
+    link_icon: {
+        width: 18,
+        alignItems: "center",
     },
 
     add_link_row: {

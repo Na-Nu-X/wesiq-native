@@ -1,26 +1,32 @@
-import { SplashScreen, Stack } from "expo-router"
+import { ErrorBoundaryProps, SplashScreen, Stack } from "expo-router"
+import * as NativeSplashScreen from "expo-splash-screen"
+import { useTranslation } from "react-i18next"
+import { EmptyState } from "@/components/ui"
 import { StatusBar } from "expo-status-bar"
 import "react-native-reanimated"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import "@/lib/i18n"
 import { installMockApi } from "@/lib/api/mocks/install"
+import { installInteractionManagerShim } from "@/lib/interactionManager"
 import { DarkTheme, Theme, ThemeProvider } from "@react-navigation/native"
 import { useFonts } from "expo-font"
 import { Bungee_400Regular } from "@expo-google-fonts/bungee"
 import { Orbitron_400Regular } from "@expo-google-fonts/orbitron"
-import { colors } from "@/theme"
+import { colors, spacing } from "@/theme"
 import { AuthSheetProvider } from "@/components/features/auth/AuthSheetProvider"
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet" // Older Components Still Use @gorhom Sheets
 import { useEffect } from "react"
-import { Platform, StyleSheet } from "react-native"
+import { Platform, StyleSheet, View } from "react-native"
 import { LoggedInUserProvider, useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import useNotificationSocket from "@/hooks/useNotificationSocket"
 import { syncPurchasesUser } from "@/lib/purchases"
 import * as ScreenOrientation from "expo-screen-orientation"
 
 installMockApi() // Enables Mock Data In Development When EXPO_PUBLIC_USE_MOCKS=1
+installInteractionManagerShim() // Lets The Draggable Lists Reset After A Drop (React Native 0.88 Removed InteractionManager)
 
 SplashScreen.preventAutoHideAsync()
+NativeSplashScreen.setOptions({ duration: 250, fade: true }) // Cross-Fades The Native Splash Into The First Screen (No Hard Cut)
 
 // The App Is Portrait; Only A Fullscreen Landscape Video Unlocks Landscape (app.json Allows Rotation For That)
 if(Platform.OS === "ios" || Platform.OS === "android") ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP).catch(() => {})
@@ -96,9 +102,44 @@ function AppContent() {
     )
 }
 
+// Function For Render The Crash Screen (Expo Router Shows It Instead Of A Screen That Threw While Rendering)
+export function ErrorBoundary({ error, retry }:ErrorBoundaryProps) {
+    const { t } = useTranslation() // Initializes The Translations
+
+    // Initializes The Hide Of The Splash Screen (A Crash Before The App Was Ready Would Otherwise Keep It Up)
+    useEffect(() => {
+        SplashScreen.hideAsync()
+    }, [])
+
+    // Initializes The Log Of The Error (Development Only)
+    useEffect(() => {
+        if(__DEV__) console.error(error)
+    }, [error])
+
+    return (
+        <View style={styles.error_root}>
+            <StatusBar style="light" />
+
+            <EmptyState
+                icon="triangle-exclamation"
+                title={t("Niečo sa pokazilo")}
+                message={__DEV__ ? error.message : undefined}
+                action={{ label: t("Skúsiť znova"), onPress: retry }}
+            />
+        </View>
+    )
+}
+
 const styles = StyleSheet.create({
     root: {
         flex: 1,
+        backgroundColor: colors.background,
+    },
+
+    error_root: {
+        flex: 1,
+        justifyContent: "center",
+        padding: spacing.xl,
         backgroundColor: colors.background,
     },
 })

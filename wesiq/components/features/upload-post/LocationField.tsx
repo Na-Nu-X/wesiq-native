@@ -1,9 +1,10 @@
 // Location Search (OpenStreetMap Nominatim, Max. 1 Request Per Second By Their Usage Policy)
 
 import { useEffect, useRef, useState } from "react"
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View } from "react-native"
+import { ActivityIndicator, HostInstance, Platform, Pressable, StyleSheet, View } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Icon, IconButton, Text, TextField } from "@/components/ui"
+import { useRevealFocusedInput } from "@/components/ui/SheetScroll"
 import { colors, layout, radii, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { isArrayOf, isRecord } from "@/lib/api/guards"
@@ -39,6 +40,15 @@ export default function LocationField({ value, onChange }:LocationFieldProps) {
     const [has_error, setHasError] = useState<boolean>(false) // Stores The Information If The Search Failed
     const debounce_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Stores The Debounce Timeout
     const search_controller = useRef<AbortController|null>(null) // Cancels The Previous Search
+    const container_reference = useRef<HostInstance>(null) // Scrolls The Suggestions Into View Inside The Upload Sheet
+    const revealFocusedInput = useRevealFocusedInput() // Scrolls Above The Keyboard Inside A Sheet
+
+    const results_count:number = results.length
+
+    // Initializes The Reveal Of The Suggestions (They Appear Below The Input, Often Behind The Keyboard)
+    useEffect(() => {
+        if(results_count > 0) revealFocusedInput?.(container_reference.current)
+    }, [results_count, revealFocusedInput])
 
     // Initializes The Cleanup On Unmount
     useEffect(() => {
@@ -132,26 +142,25 @@ export default function LocationField({ value, onChange }:LocationFieldProps) {
     const has_coordinates:boolean = value.latitude !== null && value.longitude !== null // Stores The Information If A Place Was Picked
 
     return (
-        <View style={styles.container}>
-            <View>
-                <TextField
-                    label={t("Miesto")}
-                    icon="location-dot"
-                    placeholder={t("Pridať miesto")}
-                    value={value.name}
-                    onChangeText={handleChangeText}
-                    maxLength={255}
-                    autoCorrect={false}
-                    returnKeyType="search"
-                    helper={has_coordinates ? t("Miesto je zobrazené na mape") : undefined}
-                    error={has_error ? t("Pri načítaní polohy došlo k chybe.") : null}
-                />
+        <View ref={container_reference} style={styles.container}>
+            <TextField
+                label={t("Miesto")}
+                icon="location-dot"
+                placeholder={t("Pridať miesto")}
+                value={value.name}
+                onChangeText={handleChangeText}
+                maxLength={255}
+                autoCorrect={false}
+                returnKeyType="search"
+                helper={has_coordinates ? t("Miesto je zobrazené na mape") : undefined}
+                error={has_error ? t("Pri načítaní polohy došlo k chybe.") : null}
 
-                <View style={styles.trailing} pointerEvents="box-none">
-                    {is_searching && <ActivityIndicator size="small" color={colors.primary} />}
-                    {!is_searching && value.name.length > 0 && <IconButton icon="xmark" accessibility_label={t("Odstrániť miesto")} onPress={clear} size={28} icon_color="text_muted" />}
-                </View>
-            </View>
+                trailing={
+                    is_searching ? <ActivityIndicator size="small" color={colors.spinner} />
+                    : value.name.length > 0 ? <IconButton icon="xmark" accessibility_label={t("Odstrániť miesto")} onPress={clear} size={28} icon_color="text_muted" />
+                    : undefined
+                }
+            />
 
             {results.length > 0 && (
                 <View style={styles.results} accessibilityRole="list">
@@ -178,14 +187,6 @@ export default function LocationField({ value, onChange }:LocationFieldProps) {
 const styles = StyleSheet.create({
     container: {
         gap: spacing.sm,
-    },
-
-    trailing: {
-        position: "absolute",
-        right: spacing.sm,
-        top: 30,
-        height: 50,
-        justifyContent: "center",
     },
 
     results: {

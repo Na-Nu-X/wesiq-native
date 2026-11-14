@@ -388,7 +388,7 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
                     : <EmptyState icon="comment-slash" title={t("Komentáre sú vypnuté")} is_compact />
                 }
 
-                ListFooterComponent={state?.is_loading_more ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : undefined}
+                ListFooterComponent={state?.is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.loader} /> : undefined}
             />
 
             <Sheet

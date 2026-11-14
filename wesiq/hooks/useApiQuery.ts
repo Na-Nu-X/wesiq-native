@@ -21,7 +21,8 @@ interface UseApiQueryOptions {
 
 export interface UseApiQueryResult<T> {
     state:QueryState<T>,
-    refetch:() => Promise<void>,
+    refetch:() => Promise<void>, // Pull-To-Refresh (Sets "is_refreshing", Which Shows The Spinner)
+    reload:() => Promise<void>, // Silent Reload After An Action (On iOS A Refresh Control Switched On From Code Scrolls The Screen To The Top)
     is_refreshing:boolean, // True While A Manual Refetch Runs (For Pull To Refresh)
     setData:(updater:(previous:T|null) => T|null) => void // Optimistic Local Updates
 }
@@ -80,6 +81,12 @@ export function useApiQuery<T>(
         }
     }, [key, is_enabled, run])
 
+    // Function For Reload Silently (Keeps The Current Data Visible And Doesn't Touch "is_refreshing")
+    const reload = useCallback(async ():Promise<void> => {
+        if(!is_enabled) return
+        await run(key, new AbortController().signal)
+    }, [key, is_enabled, run])
+
     // Function For Update The Data Locally
     const setData = useCallback((updater:(previous:T|null) => T|null):void => {
         setResult((previous:StoredResult<T>|null) => ({
@@ -98,5 +105,5 @@ export function useApiQuery<T>(
     else if(result.data !== null) state = { status: "success", data: result.data, error: null }
     else state = { status: "loading", data: null, error: null }
 
-    return { state, refetch, is_refreshing, setData }
+    return { state, refetch, reload, is_refreshing, setData }
 }

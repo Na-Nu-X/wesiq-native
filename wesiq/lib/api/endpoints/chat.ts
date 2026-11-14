@@ -5,7 +5,12 @@ import { envelopeWith, isArrayOf, isBoolean, isNumber, isRecord, isString } from
 import { toFormDataFile, UploadableFile } from "@/lib/api/upload"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
-import type { ChatMessage, ChatReceiver } from "@/types/models"
+import type { ChatMessage, ChatReceiver, SharedPost } from "@/types/models"
+
+// Function For Get The Shared Post Of A Message (The Server Sends An Empty Object "{}" When No Post Is Shared)
+export const toSharedPost = (value:unknown):SharedPost|null => {
+    return isRecord(value) && isString(value.id) && isRecord(value.user) && isString(value.user.username) ? value as unknown as SharedPost : null
+}
 
 const isMessage = (value:unknown):value is ChatMessage => {
     return isRecord(value) && isNumber(value.id) && (isString(value.content) || value.content === null) && typeof value.is_sender === "boolean" && Array.isArray(value.attachments)

@@ -55,6 +55,8 @@ export const colors = {
     text_muted: palette.slate_500, // Placeholders, Timestamps (5.7:1 On Surface)
     text_accent: palette.blue_300, // Soft Light Blue Highlights
 
+    spinner: "#999999", // Every Loading Spinner And Pull-To-Refresh (The iOS System Spinner Gray, As On The Home Feed)
+
     success: palette.green_500,
     success_soft: "rgba(61, 214, 140, 0.14)",
     danger: palette.red_500,

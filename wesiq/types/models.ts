@@ -268,7 +268,7 @@ export interface ChatReceiver extends UserListItem {
 export interface ChatPreview {
     id:number,
     sender:UserSummary,
-    content:string|null // Null For A Shared Post
+    content?:string|null // Null For A Shared Post, Missing In Unread Chats From Older Servers
 }
 
 export type ChatSocketAction = "new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification"

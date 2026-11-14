@@ -11,7 +11,7 @@ import { showAlert } from "@/lib/alert"
 import { HeartRateManager } from "@/classes/HeartRate"
 import { MenuRow } from "@/components/features/posts/PostMenuSheet"
 
-import type { HeartRateSourceType } from "@/classes/HeartRate"
+import type { HeartRateConnectError, HeartRateConnectResult, HeartRateSourceType } from "@/classes/HeartRate"
 import type { IconName } from "@/components/ui"
 
 const SOURCE_ICONS:Record<HeartRateSourceType, IconName> = {
@@ -61,18 +61,40 @@ export default function HeartRateChip() {
         ...(__DEV__ ? ["TEST" as const] : []),
     ]
 
+    // Function For Get The Message Of A Failed Connection
+    const getErrorMessage = (error:HeartRateConnectError, failed_source:HeartRateSourceType):string => {
+        if(error === "permission") return t("Povoľte aplikácii prístup v nastaveniach zariadenia a skúste to znova.")
+        if(error === "bluetooth_off") return t("Zapnite Bluetooth a skúste to znova.")
+        if(error === "not_found") return t("Nenašiel sa žiadny snímač tepu. Skontrolujte, či je zapnutý a nasadený.")
+        if(error === "unavailable" && failed_source === "HEALTH_CONNECT") return t("Health Connect nie je dostupný. Nainštalujte alebo aktualizujte aplikáciu Health Connect.")
+        if(error === "unavailable") return t("Táto možnosť nie je v tomto zariadení dostupná.")
+        return t("Skontrolujte, či je zariadenie zapnuté a aplikácia má povolený prístup.")
+    }
+
+    // Function For Reset After The Sensor Disconnected By Itself
+    const handleConnectionLost = ():void => {
+        manager.stopMonitoring()
+        setSource(null)
+        setBpm(null)
+        haptics.error()
+        showAlert(t("Snímač tepu sa odpojil"))
+    }
+
     // Function For Connect A Source
     const connect = async (next_source:HeartRateSourceType):Promise<void> => {
         setIsSheetOpen(false)
         setIsConnecting(true)
+        setSource(null)
         setBpm(null)
 
-        const is_connected:boolean = await manager.startMonitoring(next_source, setBpm).catch(() => false) // Connects
+        const result:HeartRateConnectResult = await manager.startMonitoring(next_source, setBpm, handleConnectionLost) // Connects
+        if(!result.ok && result.error === "cancelled") return // Another Source Was Picked Or The Connection Was Stopped
+
         setIsConnecting(false)
 
-        if(!is_connected) {
-            setSource(null)
-            showAlert(t("Pripojenie zlyhalo"), t("Skontrolujte, či je zariadenie zapnuté a aplikácia má povolený prístup."))
+        if(!result.ok) {
+            haptics.error()
+            showAlert(t("Pripojenie zlyhalo"), getErrorMessage(result.error, next_source))
             return
         }
 
@@ -80,9 +102,10 @@ export default function HeartRateChip() {
         setSource(next_source)
     }
 
-    // Function For Disconnect
+    // Function For Disconnect (Also Stops A Running Search)
     const disconnect = ():void => {
         manager.stopMonitoring()
+        setIsConnecting(false)
         setSource(null)
         setBpm(null)
         setIsSheetOpen(false)
@@ -114,7 +137,7 @@ export default function HeartRateChip() {
                         <MenuRow key={one_source} icon={SOURCE_ICONS[one_source]} label={one_source === source ? `${source_labels[one_source]} · ${t("pripojené")}` : source_labels[one_source]} onPress={() => connect(one_source)} />
                     ))}
 
-                    {!!source && <MenuRow icon="link-slash" label={t("Odpojiť")} onPress={disconnect} is_danger />}
+                    {(!!source || is_connecting) && <MenuRow icon={is_connecting ? "xmark" : "link-slash"} label={is_connecting ? t("Zrušiť") : t("Odpojiť")} onPress={disconnect} is_danger />}
                 </View>
             </Sheet>
         </>

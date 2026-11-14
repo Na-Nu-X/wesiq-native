@@ -182,7 +182,7 @@ export default function CustomTasksCard({ onTaskAdded }:CustomTasksCardProps) {
             ) : tasks.length === 0 ? (
                 <EmptyState icon="list-check" title={t("Žiadne úlohy")} message={t("Pridajte si napríklad pitný režim alebo strečing.")} is_compact />
             ) : (
-                <TaskList tasks={tasks} renderTask={renderTask} onReorder={saveOrder} />
+                <TaskList tasks={tasks} renderTask={renderTask} onReorder={saveOrder} style={styles.task_list} />
             )}
 
             <Sheet visible={menu_task !== null} onClose={() => setMenuTask(null)} title={menu_task?.title ?? ""}>
@@ -198,6 +198,8 @@ export default function CustomTasksCard({ onTaskAdded }:CustomTasksCardProps) {
         </Card>
     )
 }
+
+const TASK_INSET:number = spacing.sm // Horizontal Inset Of A Task Row Inside Its (Drag) Border
 
 const styles = StyleSheet.create({
     flex: {
@@ -225,18 +227,24 @@ const styles = StyleSheet.create({
         gap: spacing.sm,
     },
 
+    task_list: {
+        marginHorizontal: -TASK_INSET, // Bleeds Into The Card's Padding, So The Rows' Inset Keeps The Content Aligned With The Header
+    },
+
     task: {
         minHeight: 48,
         flexDirection: "row",
         alignItems: "center",
         gap: spacing.xs,
+        paddingHorizontal: TASK_INSET - 1, // Leaves Room Between The Drag Border And The Checkbox / Menu Button
         backgroundColor: colors.surface,
+        borderWidth: 1, // Always Present (Transparent At Rest), So The Content Doesn't Shift When Dragging Starts
+        borderColor: "transparent",
         borderRadius: radii.md,
     },
 
     task_dragging: {
         backgroundColor: colors.surface_raised,
-        borderWidth: 1,
         borderColor: colors.border_strong,
     },
 

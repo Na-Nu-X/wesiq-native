@@ -1,7 +1,10 @@
 // One Chat Message (Text, Attachments, Shared Post, Reactions, Time, Edited And Read State)
 
 import { memo } from "react"
-import { Pressable, StyleSheet, View } from "react-native"
+import { Platform, Pressable, StyleSheet, View } from "react-native"
+import { GestureDetector, usePanGesture } from "react-native-gesture-handler"
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
+import { scheduleOnRN } from "react-native-worklets"
 import { Image } from "expo-image"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
@@ -11,9 +14,12 @@ import { DOMAIN } from "@/constants/general"
 import { getMediaUrl } from "@/lib/media"
 import { getReadableSize } from "@/utils/getReadableSize"
 import { formatUsername } from "@/lib/format"
+import { haptics } from "@/lib/haptics"
+import { canEditMessage } from "./MessageActionsSheet"
+import { toSharedPost } from "@/lib/api/endpoints/chat"
 
 import type { IconName } from "@/components/ui"
-import type { Attachment, AttachmentType, ChatMessage, MessageReaction } from "@/types/models"
+import type { Attachment, AttachmentType, ChatMessage, MessageReaction, SharedPost } from "@/types/models"
 
 // Function For Get The Full URL Of An Attachment (The Server Returns Paths Like "/media/...")
 export const getAttachmentUrl = (path:string|null|undefined):string|null => {
@@ -40,10 +46,14 @@ interface MessageBubbleProps {
     onLongPress:(message:ChatMessage) => void,
     onOpenImages:(urls:string[], index:number) => void,
     onOpenVideo:(url:string) => void,
-    onOpenFile:(attachment:Attachment) => void
+    onOpenFile:(attachment:Attachment) => void,
+    onSwipeEdit?:(message:ChatMessage) => void // Swipe Left Starts Editing An Own Message (Same Rule As The Menu)
 }
 
-function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenImages, onOpenVideo, onOpenFile }:MessageBubbleProps) {
+const SWIPE_EDIT_THRESHOLD:number = 60 // Swipe Distance That Starts Editing
+const SWIPE_MAX_DISTANCE:number = 80 // Distance After Which The Swipe Resists
+
+function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenImages, onOpenVideo, onOpenFile, onSwipeEdit }:MessageBubbleProps) {
     const { t } = useTranslation() // Initializes The Translations
     const is_own:boolean = message.is_sender // Stores The Information If The Logged In User Sent It
 
@@ -58,11 +68,65 @@ function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenI
         return groups
     }, {}))
 
-    const post = message.post // Gets The Shared Post
+    const can_swipe_edit:boolean = Platform.OS !== "web" && !!onSwipeEdit && canEditMessage(message) // Stores The Information If Swipe To Edit Is Enabled
+    const swipe_x = useSharedValue<number>(0) // Current Swipe Distance (Positive, The Bubble Moves Left)
+    const has_crossed_threshold = useSharedValue<boolean>(false) // Gives Haptic Feedback Once When The Swipe Is Far Enough
+
+    // Function For Start Editing The Message (Called From The Gesture)
+    const startEdit = ():void => {
+        onSwipeEdit?.(message)
+    }
+
+    // Swipe Left To Edit (Own Messages Are On The Right; Activates Only When Moving Left, So It Never Fights With Scrolling The Chat)
+    const swipe_gesture = usePanGesture({
+        enabled: can_swipe_edit,
+        activeOffsetX: -15,
+        failOffsetY: [-12, 12],
+
+        onUpdate: (event) => {
+            const distance:number = Math.max(0, -event.translationX)
+            swipe_x.set(distance > SWIPE_MAX_DISTANCE ? SWIPE_MAX_DISTANCE + (distance - SWIPE_MAX_DISTANCE) * 0.2 : distance)
+
+            const is_past_threshold:boolean = distance >= SWIPE_EDIT_THRESHOLD
+
+            if(is_past_threshold !== has_crossed_threshold.get()) {
+                has_crossed_threshold.set(is_past_threshold)
+                if(is_past_threshold) scheduleOnRN(haptics.selection)
+            }
+        },
+
+        onDeactivate: (event) => {
+            if(-event.translationX >= SWIPE_EDIT_THRESHOLD) scheduleOnRN(startEdit)
+        },
+
+        onFinalize: () => {
+            has_crossed_threshold.set(false)
+            swipe_x.set(withSpring(0, { damping: 20, stiffness: 240 }))
+        },
+    })
+
+    const swipe_content_style = useAnimatedStyle(() => ({
+        transform: [{ translateX: -swipe_x.get() }],
+    }))
+
+    const swipe_icon_style = useAnimatedStyle(() => ({
+        opacity: interpolate(swipe_x.get(), [16, SWIPE_EDIT_THRESHOLD], [0, 1], "clamp"),
+        transform: [{ scale: interpolate(swipe_x.get(), [16, SWIPE_EDIT_THRESHOLD], [0.6, 1], "clamp") }],
+    }))
+
+    const post:SharedPost|null = toSharedPost(message.post) // Gets The Shared Post (Null For The Empty Object Of A Plain Message)
     const post_preview:string|null = post?.media ? getMediaUrl(post.media.is_video ? (post.media.thumbnail ?? post.media.file) : post.media.file) : null
 
     return (
+        <GestureDetector gesture={swipe_gesture}>
         <View style={[styles.row, is_own ? styles.row_own : styles.row_other, is_grouped_with_previous ? styles.row_grouped : null]}>
+            {can_swipe_edit && (
+                <Animated.View pointerEvents="none" style={[styles.swipe_icon, swipe_icon_style]}>
+                    <Icon name="pen" size={16} color="primary" />
+                </Animated.View>
+            )}
+
+            <Animated.View style={[styles.swipe_content, is_own ? styles.row_own : styles.row_other, swipe_content_style]}>
             <Pressable
                 onLongPress={() => onLongPress(message)}
                 delayLongPress={300}
@@ -130,7 +194,9 @@ function MessageBubble({ message, is_grouped_with_previous, onLongPress, onOpenI
                     ))}
                 </View>
             )}
+            </Animated.View>
         </View>
+        </GestureDetector>
     )
 }
 
@@ -148,6 +214,18 @@ const styles = StyleSheet.create({
 
     row_grouped: {
         marginTop: 3,
+    },
+
+    swipe_content: {
+        maxWidth: "100%",
+    },
+
+    swipe_icon: {
+        position: "absolute",
+        right: spacing.xs,
+        top: 0,
+        bottom: 0,
+        justifyContent: "center", // Revealed Behind The Bubble While It Slides Left
     },
 
     row_own: {

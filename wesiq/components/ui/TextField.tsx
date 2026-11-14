@@ -1,10 +1,11 @@
-import { ComponentRef, forwardRef, useState } from "react"
+import { ComponentRef, forwardRef, ReactNode, useState } from "react"
 import { Platform, StyleProp, StyleSheet, TextInput, TextInputProps, View, ViewStyle } from "react-native"
 import { useTranslation } from "react-i18next"
 import { colors, layout, radii, spacing, typography } from "@/theme"
 import Text from "./Text"
 import Icon, { IconName } from "./Icon"
 import IconButton from "./IconButton"
+import { useRevealFocusedInput } from "./SheetScroll"
 
 export interface TextFieldProps extends Omit<TextInputProps, "style"|"placeholderTextColor"|"editable"> {
     label?:string,
@@ -15,6 +16,7 @@ export interface TextFieldProps extends Omit<TextInputProps, "style"|"placeholde
     is_disabled?:boolean,
     is_counter_visible?:boolean, // Shows "length / maxLength"
     multiline_min_height?:number, // Starting Height Of A Multiline Field (Grows With The Text)
+    trailing?:ReactNode, // Content At The End Of The Field (E.g. A Clear Button), The Text Stops Before It
     container_style?:StyleProp<ViewStyle>
 }
 
@@ -27,18 +29,21 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
     is_disabled = false,
     is_counter_visible = false,
     multiline_min_height,
+    trailing,
     container_style,
     multiline,
     maxLength,
     value,
     onFocus,
     onBlur,
+    onContentSizeChange,
     accessibilityLabel,
     ...props
 }, ref) {
     const { t } = useTranslation() // Initializes The Translations
     const [is_focused, setIsFocused] = useState<boolean>(false) // Stores The Information If The Input Is Focused
     const [is_secure, setIsSecure] = useState<boolean>(is_password) // Stores The Information If The Password Is Hidden
+    const revealFocusedInput = useRevealFocusedInput() // Scrolls The Field Above The Keyboard Inside A Sheet
 
     const has_error:boolean = Boolean(error) // Stores The Information If There Is An Error
     const border_color:string = has_error ? colors.danger : is_focused ? colors.primary : colors.border // Gets The Border Color
@@ -90,6 +95,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
 
                     onFocus={(event) => {
                         setIsFocused(true)
+                        revealFocusedInput?.() // Also Covers Moving Between Fields While The Keyboard Stays Open
                         onFocus?.(event)
                     }}
 
@@ -98,9 +104,16 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                         onBlur?.(event)
                     }}
 
+                    onContentSizeChange={(event) => {
+                        if(multiline && is_focused) revealFocusedInput?.() // Keeps The Caret Visible While A Multiline Field Grows
+                        onContentSizeChange?.(event)
+                    }}
+
                     style={[styles.input, multiline ? styles.input_multiline : null, multiline && multiline_min_height !== undefined ? { minHeight: multiline_min_height } : null, Platform.OS === "web" ? styles.input_web : null]}
                     {...props}
                 />
+
+                {!!trailing && <View style={styles.trailing}>{trailing}</View>}
 
                 {is_password && (
                     <IconButton
@@ -177,6 +190,13 @@ const styles = StyleSheet.create({
         color: colors.text,
         ...typography.body,
         lineHeight: undefined, // A Fixed Line Height Misaligns The Caret On iOS
+    },
+
+    trailing: {
+        marginLeft: spacing.sm,
+        marginRight: -spacing.xs, // Pulls Round Buttons Closer To The Edge Like The Password Toggle
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     input_web: {

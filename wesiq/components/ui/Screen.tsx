@@ -1,8 +1,9 @@
 import { ReactNode, useId } from "react"
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
+import { KeyboardAvoidingView, Platform, ScrollView, StyleProp, StyleSheet, View, ViewStyle } from "react-native"
 import { Edge, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg"
 import { colors, layout, spacing } from "@/theme"
+import ThemedRefreshControl from "./ThemedRefreshControl"
 
 export interface ScreenProps {
     children:ReactNode,
@@ -50,12 +51,9 @@ export default function Screen({
             contentInsetAdjustmentBehavior="never"
 
             refreshControl={refresh ? (
-                <RefreshControl
+                <ThemedRefreshControl
                     refreshing={refresh.is_refreshing}
                     onRefresh={refresh.onRefresh}
-                    tintColor={colors.primary}
-                    colors={[colors.primary]}
-                    progressBackgroundColor={colors.surface_raised}
                 />
             ) : undefined}
         >

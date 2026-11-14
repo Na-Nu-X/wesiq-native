@@ -11,7 +11,7 @@ import { Avatar, EmptyState, ErrorState, IconButton, Screen, Text } from "@/comp
 import { colors, layout, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
-import { getChat, getChatSettings, uploadChatAttachments } from "@/lib/api/endpoints/chat"
+import { getChat, getChatSettings, toSharedPost, uploadChatAttachments } from "@/lib/api/endpoints/chat"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
@@ -127,7 +127,7 @@ export default function ConversationScreen() {
                         message_reactions: [],
                         is_older_than_15_minutes: false,
                         is_older_than_1_day: false,
-                        post: event.post ?? null,
+                        post: toSharedPost(event.post), // A Plain Message Has "post": {}
                     }
 
                     return { ...previous, messages: [message, ...previous.messages] }
@@ -252,6 +252,12 @@ export default function ConversationScreen() {
         }
     }
 
+    // Function For Start Editing A Message (Long-Press Menu Or Swipe Left)
+    const startEditing = (message:ChatMessage):void => {
+        setEditing(message)
+        setDraft(message.content ?? "")
+    }
+
     // Function For Load Older Messages
     const loadMore = async ():Promise<void> => {
         if(!current || !current.has_next || is_loading_more || !username) return
@@ -281,6 +287,7 @@ export default function ConversationScreen() {
             onOpenImages={(urls:string[], image_index:number) => setViewedImages({ urls, index: image_index })}
             onOpenVideo={setViewedVideo}
             onOpenFile={openFile}
+            onSwipeEdit={startEditing}
         />
     )
 
@@ -352,7 +359,7 @@ export default function ConversationScreen() {
                 )}
 
                 {!current ? (
-                    <ActivityIndicator color={colors.primary} style={styles.loader} />
+                    <ActivityIndicator color={colors.spinner} style={styles.loader} />
                 ) : current.error ? (
                     <ErrorState error={current.error} />
                 ) : is_locked ? (
@@ -368,7 +375,7 @@ export default function ConversationScreen() {
                         keyboardShouldPersistTaps="handled"
                         keyboardDismissMode="interactive"
                         contentContainerStyle={styles.list_content}
-                        ListFooterComponent={is_loading_more ? <ActivityIndicator color={colors.primary} style={styles.loader} /> : undefined}
+                        ListFooterComponent={is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.loader} /> : undefined}
                         ListEmptyComponent={<View style={styles.empty}><EmptyState icon="hand" title={t("Povedzte ahoj")} message={t("Toto je začiatok vašej konverzácie.")} is_compact /></View>}
                     />
                 )}
@@ -379,10 +386,7 @@ export default function ConversationScreen() {
                 current_username={logged_in_user.username}
                 onClose={() => setSelected(null)}
                 onReact={react}
-                onEdit={(message:ChatMessage) => {
-                    setEditing(message)
-                    setDraft(message.content ?? "")
-                }}
+                onEdit={startEditing}
                 onDelete={deleteMessage}
             />
 

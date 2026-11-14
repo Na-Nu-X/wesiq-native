@@ -7,6 +7,7 @@ import i18n from "@/lib/i18n"
 import { DOMAIN } from "@/constants/general"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 import { getStoredString } from "@/lib/storage"
+import { toSharedPost } from "@/lib/api/endpoints/chat"
 import { are_notifications_supported, cancelLocalNotification, getNotificationPermission, scheduleLocalNotification } from "@/lib/notifications"
 
 import type { ChatSocketEvent } from "@/types/models"
@@ -23,7 +24,7 @@ const getSocketUrl = (user_token:string):string => {
 // Function For The Notification Text Of A Message
 const getMessagePreview = (event:ChatSocketEvent):string => {
     if(event.message?.trim()) return event.message
-    if(event.post) return i18n.t("Zdieľaný príspevok")
+    if(toSharedPost(event.post)) return i18n.t("Zdieľaný príspevok") // A Plain Message Has "post": {}
     return i18n.t("Príloha")
 }
 

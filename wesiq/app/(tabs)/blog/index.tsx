@@ -6,7 +6,7 @@ import { Image } from "expo-image"
 import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
 import { useTranslation } from "react-i18next"
-import { Card, Chip, EmptyState, ErrorState, Header, Icon, IconButton, Screen, Skeleton, Text, TextField } from "@/components/ui"
+import { Card, Chip, EmptyState, ErrorState, Header, Icon, IconButton, Screen, Skeleton, Text, TextField, ThemedRefreshControl } from "@/components/ui"
 import { colors, layout, radii, spacing } from "@/theme"
 import { useApiQuery } from "@/hooks/useApiQuery"
 import { ArticleSort, getArticleImageUrl, getArticleWebLink, getArticles } from "@/lib/api/endpoints/blog"
@@ -130,8 +130,7 @@ export default function BlogScreen() {
                 keyExtractor={(article:Article) => String(article.id)}
                 renderItem={renderArticle}
                 ListHeaderComponent={list_header}
-                refreshing={is_refreshing}
-                onRefresh={refetch}
+                refreshControl={<ThemedRefreshControl refreshing={is_refreshing} onRefresh={refetch} />}
                 keyboardShouldPersistTaps="handled"
                 keyboardDismissMode="on-drag"
                 contentContainerStyle={styles.list_content}
