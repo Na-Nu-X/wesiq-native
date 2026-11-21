@@ -574,8 +574,6 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
             return (
                 <Button
                     label={has_invalid_media ? t("Odstráňte označené súbory") : t("Pokračovať")}
-                    icon="arrow-right"
-                    icon_position="right"
                     onPress={() => dispatch({ type: "set_step", step: "details" })}
                     is_disabled={state.media.length === 0 || has_invalid_media}
                     is_full_width

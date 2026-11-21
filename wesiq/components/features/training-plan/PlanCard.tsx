@@ -13,13 +13,14 @@ interface PlanCardProps {
     plan:PlanSummary,
     action_label:string, // E.g. "Edit", "Use This Plan"
     action_icon:"pen"|"copy",
-    onPress:() => void
+    onPress:() => void,
+    is_subscriber_plan?:boolean
 }
 
-export default function PlanCard({ plan, action_label, action_icon, onPress }:PlanCardProps) {
+export default function PlanCard({ plan, action_label, action_icon, onPress, is_subscriber_plan }:PlanCardProps) {
     const { t } = useTranslation() // Initializes The Translations
-    const warm_up_seconds:number|undefined = plan.rows.find((row) => row.is_warm_up)?.periods[0] // Gets The Warm Up
-    const exercise_names:string[] = plan.rows.filter((row) => !row.is_warm_up).map((row) => row.exercise) // Gets The Exercise Names
+    const warm_up_seconds:number|undefined = plan.rows.find((row) => row.is_warm_up)?.periods?.[0] // Gets The Warm Up
+    const exercise_names:string[] = plan.rows.filter((row) => !row.is_warm_up).flatMap((row) => row.exercise !== null ? [row.exercise] : []) // Gets The Exercise Names (Locked Rows Have No Name)
     const title:string = plan.title || t("Tréningový plán") // Gets The Title
 
     return (

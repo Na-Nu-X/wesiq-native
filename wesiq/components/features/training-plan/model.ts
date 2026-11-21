@@ -83,13 +83,31 @@ export const createDefaultSets = (unit:ExerciseUnit):SetGroup[] => [{ value: UNI
 
 // ---------- Conversion ----------
 
-type PlanRow = Pick<TrainingPlanExercise, "exercise"|"periods"|"unit"|"order"|"is_warm_up"> & { id?:number, day?:Day|null, type:string|null, training_plan_key:string, is_custom_exercise?:boolean }
+type PlanRow = {
+    [K in "exercise"|"periods"|"unit"|"order"|"is_warm_up"]: TrainingPlanExercise[K]|null
+} & {
+    id?:number,
+    day?:Day|null,
+    type:string|null,
+    training_plan_key:string,
+    is_custom_exercise?:boolean
+}
+
+type UnlockedPlanRow = PlanRow & {
+    exercise:string,
+    periods:number[],
+    unit:ExerciseUnit,
+}
+
+const isUnlockedRow = (row:PlanRow):row is UnlockedPlanRow => {
+    return row.exercise !== null && row.periods !== null && row.unit !== null
+}
 
 // Function For Build A Draft From Server Rows Of One Plan
 export const draftFromRows = (rows:readonly PlanRow[], mode:EditorMode, library_ids:ReadonlyMap<string, number> = new Map()):PlanDraft => {
-    const ordered:PlanRow[] = [...rows].sort((a:PlanRow, b:PlanRow) => a.order - b.order) // Orders The Rows
-    const warm_up:PlanRow|undefined = ordered.find((row:PlanRow) => row.is_warm_up) // Gets The Warm Up
-    const first:PlanRow|undefined = ordered[0] // Gets The First Row
+    const first:PlanRow|undefined = rows[0] // Gets The First Row
+    const ordered:UnlockedPlanRow[] = rows.filter(isUnlockedRow).sort((a:UnlockedPlanRow, b:UnlockedPlanRow) => (a.order ?? 0) - (b.order ?? 0)) // Filters And Orders The Rows
+    const warm_up:UnlockedPlanRow|undefined = ordered.find((row:UnlockedPlanRow) => row.is_warm_up) // Gets The Warm Up
 
     return {
         key: mode === "edit" ? (first?.training_plan_key ?? null) : null,
@@ -97,7 +115,7 @@ export const draftFromRows = (rows:readonly PlanRow[], mode:EditorMode, library_
         day: mode === "edit" ? (first?.day ?? null) : null,
         warm_up_seconds: warm_up ? clampValue(warm_up.periods[0] ?? DEFAULT_WARM_UP_SECONDS, "seconds") : null,
 
-        exercises: ordered.filter((row:PlanRow) => !row.is_warm_up).map((row:PlanRow):DraftExercise => {
+        exercises: ordered.filter((row:UnlockedPlanRow) => !row.is_warm_up).map((row:UnlockedPlanRow):DraftExercise => {
             const sets:SetGroup[] = groupSets(row.periods.map((value:number) => clampValue(value, row.unit))) // Groups The Sets
 
             return {
@@ -206,8 +224,8 @@ export function groupPlans<T extends PlanRow>(rows:readonly T[]):PlanSummary<T>[
     })
 
     return [...by_key.entries()].map(([key, plan_rows]) => {
-        const ordered:T[] = [...plan_rows].sort((a:T, b:T) => a.order - b.order) // Orders The Rows
-        const exercises:T[] = ordered.filter((row:T) => !row.is_warm_up) // Gets The Exercises
+        const ordered:T[] = [...plan_rows].sort((a:T, b:T) => (a.order ?? 0) - (b.order ?? 0)) // Orders The Rows
+        const exercises:T[] = ordered.filter((row:T) => row.exercise !== null && !row.is_warm_up) // Gets The Exercises
 
         return {
             key,
@@ -215,7 +233,7 @@ export function groupPlans<T extends PlanRow>(rows:readonly T[]):PlanSummary<T>[
             day: ordered[0]?.day ?? null,
             rows: ordered,
             exercise_count: exercises.length,
-            set_count: exercises.reduce((total:number, row:T) => total + row.periods.length, 0),
+            set_count: exercises.reduce((total:number, row:T) => total + (row.periods?.length ?? 0), 0),
         }
     })
 }

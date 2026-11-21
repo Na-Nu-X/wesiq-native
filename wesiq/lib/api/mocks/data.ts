@@ -215,10 +215,111 @@ export const MOCK_CHAT_PREVIEWS:{ unread_chats:ChatPreview[], read_chats:ChatPre
 
 export const MOCK_CHAT_RECEIVER:ChatReceiver = { ...lucia, private_account: false, has_follow: true, is_muted: false }
 
+// export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
+//     { id: 1201, sender: lucia, content: "Are we still on for leg day at 6?", attachments: [], is_read: false, is_edited: false, formatted_time: "17:42", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
+//     { id: 1200, sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } }, content: "Yes! I'll bring the bands for warm up.", attachments: [], is_read: true, is_edited: false, formatted_time: "17:30", is_sender: true, message_reactions: [{ user: { username: "@lucia.lifts" }, emoji: "👍" }], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
+//     { id: 1199, sender: lucia, content: "Check out my new PR", attachments: [], is_read: true, is_edited: false, formatted_time: "15:02", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: { id: "p3k9x2m1", user: lucia, description: MOCK_POSTS[0]?.description ?? null, public_visibility: true, allow_comments: true, hide_likes: false, likes: 128, comments: 14, created_at: hoursAgo(2), media: { id: 101, file: "mock/101.jpg", thumbnail: "mock/101_thumbnail.jpg", is_video: false } } },
+// ]
+
 export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
-    { id: 1201, sender: lucia, content: "Are we still on for leg day at 6?", attachments: [], is_read: false, is_edited: false, formatted_time: "17:42", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
-    { id: 1200, sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } }, content: "Yes! I'll bring the bands for warm up.", attachments: [], is_read: true, is_edited: false, formatted_time: "17:30", is_sender: true, message_reactions: [{ user: { username: "@lucia.lifts" }, emoji: "👍" }], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },
-    { id: 1199, sender: lucia, content: "Check out my new PR", attachments: [], is_read: true, is_edited: false, formatted_time: "15:02", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: { id: "p3k9x2m1", user: lucia, description: MOCK_POSTS[0]?.description ?? null, public_visibility: true, allow_comments: true, hide_likes: false, likes: 128, comments: 14, created_at: hoursAgo(2), media: { id: 101, file: "mock/101.jpg", thumbnail: "mock/101_thumbnail.jpg", is_video: false } } },
+    {
+        id: 1201,
+        sender: lucia,
+        content: "Are we still on for leg day at 6?",
+        attachments: [],
+        voice_message: null,
+        post: null,
+        article: null,
+        is_read: false,
+        is_edited: false,
+        formatted_time: "17:42",
+        is_sender: false,
+        message_reactions: [],
+        is_older_than_15_minutes: true,
+        is_older_than_1_day: false,
+    },
+    {
+        id: 1200,
+        sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } },
+        content: "Yes! I'll bring the bands for warm up.",
+        attachments: [],
+        voice_message: null,
+        post: null,
+        article: null,
+        is_read: true,
+        is_edited: false,
+        formatted_time: "17:30",
+        is_sender: true,
+        message_reactions: [{ user: { username: "@lucia.lifts" }, emoji: "👍" }],
+        is_older_than_15_minutes: true,
+        is_older_than_1_day: false,
+    },
+    {
+        id: 1199,
+        sender: lucia,
+        content: "Check out my new PR",
+        attachments: [],
+        voice_message: null,
+        post: { id: "p3k9x2m1", user: lucia, description: MOCK_POSTS[0]?.description ?? null, public_visibility: true, allow_comments: true, hide_likes: false, likes: 128, comments: 14, created_at: hoursAgo(2), media: { id: 101, file: "mock/101.jpg", thumbnail: "mock/101_thumbnail.jpg", is_video: false } },
+        article: null,
+        is_read: true,
+        is_edited: false,
+        formatted_time: "15:02",
+        is_sender: false,
+        message_reactions: [],
+        is_older_than_15_minutes: true,
+        is_older_than_1_day: false,
+    },
+    // Ukážka správy so zdieľaným článkom:
+    {
+        id: 1198,
+        sender: lucia,
+        content: null,
+        attachments: [],
+        voice_message: null,
+        post: null,
+        article: {
+            id: 1,
+            title: "Ako správne nastaviť objemový tréning",
+            description: "Praktický sprievodca počtom sérií a progresívnym preťažením.",
+            image_name: "mock/article_1.jpg",
+            html_filename: "objemovy-trening.html",
+            link: "objemovy-trening",
+            categories: ["Tréning"],
+            visitors: 342,
+            creation_time: hoursAgo(5),
+            average_rating: 4.8,
+        },
+        is_read: true,
+        is_edited: false,
+        formatted_time: "14:15",
+        is_sender: false,
+        message_reactions: [],
+        is_older_than_15_minutes: true,
+        is_older_than_1_day: false,
+    },
+    // Ukážka hlasovej správy:
+    {
+        id: 1197,
+        sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } },
+        content: null,
+        attachments: [],
+        voice_message: {
+            id: 501,
+            file: "mock/voice_501.m4a",
+            duration: 4200,
+            waveform: [0.2, 0.5, 0.8, 0.4, 0.9, 0.6, 0.3, 0.7, 0.5, 0.2],
+        },
+        post: null,
+        article: null,
+        is_read: true,
+        is_edited: false,
+        formatted_time: "13:50",
+        is_sender: true,
+        message_reactions: [],
+        is_older_than_15_minutes: true,
+        is_older_than_1_day: false,
+    },
 ]
 
 // ---------- Training Plans ----------
@@ -256,13 +357,13 @@ export const MOCK_TRAINING_PLANS:TrainingPlanExercise[] = [
 ]
 
 export const MOCK_OFFICIAL_TRAINING_PLANS:OfficialTrainingPlanExercise[] = [
-    { id: 101, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Warm up", periods: [300], unit: "seconds", order: 0, is_warm_up: true },
-    { id: 102, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Squats", periods: [12, 12, 12], unit: "reps", order: 1, is_warm_up: false },
-    { id: 103, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Push-ups", periods: [8, 8, 8], unit: "reps", order: 2, is_warm_up: false },
-    { id: 104, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Plank", periods: [30, 30], unit: "seconds", order: 3, is_warm_up: false },
-    { id: 111, training_plan_key: "official_push", type: "Push day", exercise: "Bench press", periods: [8, 8, 6, 6], unit: "reps", order: 0, is_warm_up: false },
-    { id: 112, training_plan_key: "official_push", type: "Push day", exercise: "Overhead press", periods: [10, 8, 8], unit: "reps", order: 1, is_warm_up: false },
-    { id: 113, training_plan_key: "official_push", type: "Push day", exercise: "Dips", periods: [12, 10, 10], unit: "reps", order: 2, is_warm_up: false },
+    { id: 101, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Warm up", periods: [300], unit: "seconds", order: 0, is_warm_up: true, is_for_subscribers: false, is_locked: false },
+    { id: 102, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Squats", periods: [12, 12, 12], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 103, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Push-ups", periods: [8, 8, 8], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 104, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Plank", periods: [30, 30], unit: "seconds", order: 3, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 111, training_plan_key: "official_push", type: "Push day", exercise: "Bench press", periods: [8, 8, 6, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 112, training_plan_key: "official_push", type: "Push day", exercise: "Overhead press", periods: [10, 8, 8], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 113, training_plan_key: "official_push", type: "Push day", exercise: "Dips", periods: [12, 10, 10], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
 ]
 
 // ---------- Activity & Tasks ----------

@@ -242,7 +242,7 @@ export interface VoiceMessage {
     id:number,
     file:string,
     duration:number,
-    waveform:[]
+    waveform:number[]
 }
 
 export interface MessageReaction {
@@ -257,7 +257,7 @@ export interface ChatMessage {
     attachments:Attachment[],
     post:SharedPost|null,
     voice_message:VoiceMessage|null,
-    article:Article,
+    article:Article|null,
     is_read:boolean,
     is_edited:boolean,
     formatted_time:string,
@@ -324,7 +324,18 @@ export interface TrainingPlanExercise {
     is_custom_exercise:boolean
 }
 
-export type OfficialTrainingPlanExercise = Omit<TrainingPlanExercise, "day"|"is_custom_exercise">
+export interface OfficialTrainingPlanExercise {
+    id:number,
+    training_plan_key:string,
+    type:string|null, // Title Of The Training Plan (Same For Every Row Of One Plan)
+    exercise:string|null,
+    periods:number[]|null, // Reps / Seconds / Steps For Each Set
+    unit:ExerciseUnit|null,
+    order:number|null,
+    is_warm_up:boolean|null
+    is_for_subscribers:boolean,
+    is_locked:boolean
+}
 
 // Training Plan Grouped On The Client
 export interface TrainingPlan {
