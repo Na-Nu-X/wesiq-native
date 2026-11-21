@@ -16,42 +16,53 @@ import { getTimeAgo } from "@/utils/time"
 import { togglePostLike, togglePostSave } from "@/lib/api/endpoints/posts"
 import { getFollowState, getToggledFollowFlags, toggleFollow } from "@/lib/api/endpoints/users"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
-import PostVideo from "./PostVideo"
+import PostVideo, { usePlayingVideo } from "./PostVideo"
 import Caption from "./Caption"
 import HeartParticles, { createHeartParticles, HeartParticle } from "./HeartParticles"
 
 import type { Post, PostAuthor, PostMedia } from "@/types/models"
 
-const DEFAULT_IMAGE_RATIO:number = 4 / 5 // Until The First Photo Size Is Known
+const DEFAULT_IMAGE_RATIO:number = 4 / 5 // Until The Photo Size Is Known
 const DEFAULT_VIDEO_RATIO:number = 16 / 9 // Videos Without A Thumbnail
-const MIN_MEDIA_RATIO:number = 4 / 5 // Tallest Frame (Portrait)
+const MIN_MEDIA_RATIO:number = 9 / 16 // Tallest Frame (Vertical Phone Photo / Video)
 const MAX_MEDIA_RATIO:number = 1.91 // Widest Frame (Landscape)
 
 const aspect_ratio_cache:Map<string, number> = new Map() // Keeps Measured Sizes While Scrolling The Feed
 
-// Function For Measure The Frame Shape From The First Photo Or Video Thumbnail (Landscape Posts Get A Landscape Frame)
-function useMediaAspectRatio(first_media:PostMedia|undefined):number {
-    const uri:string|null = first_media ? getMediaUrl(first_media.is_video ? first_media.thumbnail : first_media.file) : null
-    const fallback:number = first_media?.is_video ? DEFAULT_VIDEO_RATIO : DEFAULT_IMAGE_RATIO
-    const [measured, setMeasured] = useState<{ uri:string, ratio:number }|null>(null)
+// Function For Get The URL Whose Size Gives The Shape Of One Media (The Thumbnail For Videos)
+const getRatioUri = (media:PostMedia):string|null => getMediaUrl(media.is_video ? media.thumbnail : media.file)
 
-    // Initializes The Measurement Of The First Media
+// Function For Get The Ratio Used Before The Size Of One Media Is Known
+const getFallbackRatio = (media:PostMedia):number => media.is_video ? DEFAULT_VIDEO_RATIO : DEFAULT_IMAGE_RATIO
+
+// Function For Measure The Shape Of Every Photo / Video Thumbnail (Each Slide Gets Its Own Frame Shape)
+function useMediaAspectRatios(media:PostMedia[]):number[] {
+    const [measured, setMeasured] = useState<Record<string, number>>({})
+    const uris_key:string = media.map((item:PostMedia) => getRatioUri(item) ?? "").join("|")
+
+    // Initializes The Measurement Of Every Media
     useEffect(() => {
-        if(!uri || aspect_ratio_cache.has(uri)) return
         let is_active:boolean = true
 
-        NativeImage.getSize(uri, (width:number, height:number) => {
-            if(height <= 0) return
-            const ratio:number = Math.min(MAX_MEDIA_RATIO, Math.max(MIN_MEDIA_RATIO, width / height))
-            aspect_ratio_cache.set(uri, ratio)
-            if(is_active) setMeasured({ uri, ratio })
-        }, () => {})
+        for(const uri of uris_key.split("|")) {
+            if(!uri || aspect_ratio_cache.has(uri)) continue
+
+            NativeImage.getSize(uri, (width:number, height:number) => {
+                if(height <= 0) return
+                const ratio:number = Math.min(MAX_MEDIA_RATIO, Math.max(MIN_MEDIA_RATIO, width / height))
+                aspect_ratio_cache.set(uri, ratio)
+                if(is_active) setMeasured((previous:Record<string, number>) => ({ ...previous, [uri]: ratio }))
+            }, () => {})
+        }
 
         return () => { is_active = false }
-    }, [uri])
+    }, [uris_key])
 
-    if(!uri) return fallback
-    return aspect_ratio_cache.get(uri) ?? (measured?.uri === uri ? measured.ratio : fallback)
+    return media.map((item:PostMedia) => {
+        const uri:string|null = getRatioUri(item)
+        if(!uri) return getFallbackRatio(item)
+        return aspect_ratio_cache.get(uri) ?? measured[uri] ?? getFallbackRatio(item)
+    })
 }
 const DOUBLE_TAP_MS:number = 280
 
@@ -75,8 +86,11 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
     const [is_follow_busy, setIsFollowBusy] = useState<boolean>(false)
     const last_tap = useRef<number>(0) // Detects Double Taps
     const heart_scale = useSharedValue<number>(0) // Big Heart On Double Tap
-    const media_ratio:number = useMediaAspectRatio(post.media[0]) // Shape Of The Media Frame
+    const media_ratios:number[] = useMediaAspectRatios(post.media) // Shape Of Every Slide
+    const active_media_index:number = Math.min(media_index, Math.max(0, post.media.length - 1)) // Guards Against A Shorter Media List After An Edit
+    const media_ratio:number = media_ratios[active_media_index] ?? DEFAULT_IMAGE_RATIO // The Frame Follows The Visible Slide
     const media_height:number = media_width > 0 ? media_width / media_ratio : 0
+    const { playing_media_id, setPlayingMediaId } = usePlayingVideo() // Pauses A Video That Was Swiped Away
     const [particles, setParticles] = useState<HeartParticle[]>([]) // Small Hearts Bursting From The Like Button
 
     const is_own:boolean = logged_in_user?.id === post.user.id // Stores The Information If The Post Belongs To The Logged In User
@@ -175,6 +189,16 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
         Linking.openURL(url).catch(() => Linking.openURL(`https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=15/${latitude}/${longitude}`))
     }
 
+    // Function For Switch The Visible Slide (Pauses The Video Of The Previous Slide)
+    const changeMediaIndex = (event:NativeSyntheticEvent<NativeScrollEvent>):void => {
+        const next_index:number = Math.max(0, Math.min(post.media.length - 1, Math.round(event.nativeEvent.contentOffset.x / media_width)))
+        if(next_index === media_index) return
+
+        const previous_media:PostMedia|undefined = post.media[media_index]
+        if(previous_media?.is_video && playing_media_id === previous_media.id) setPlayingMediaId(null)
+        setMediaIndex(next_index)
+    }
+
     const heart_style = useAnimatedStyle(() => ({ opacity: heart_scale.get(), transform: [{ scale: 0.6 + heart_scale.get() * 0.6 }] }))
 
     // The Server Puts "<span></span>" Into Locations With Coordinates (Used As A Line Break On The Website)
@@ -227,21 +251,25 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
                             pagingEnabled
                             showsHorizontalScrollIndicator={false}
                             scrollEnabled={post.media.length > 1}
-                            onMomentumScrollEnd={(event:NativeSyntheticEvent<NativeScrollEvent>) => setMediaIndex(Math.round(event.nativeEvent.contentOffset.x / media_width))}
-                            onScroll={Platform.OS === "web" ? (event:NativeSyntheticEvent<NativeScrollEvent>) => setMediaIndex(Math.round(event.nativeEvent.contentOffset.x / media_width)) : undefined}
+                            onMomentumScrollEnd={changeMediaIndex}
+                            onScroll={Platform.OS === "web" ? changeMediaIndex : undefined}
                             scrollEventThrottle={64}
                         >
-                            {post.media.map((media:PostMedia, index:number) => (
-                                <View key={media.id} style={[styles.media_page, { width: media_width, height: media_height }]}>
-                                    {media.is_video ? (
-                                        <PostVideo post={post} media={media} />
-                                    ) : (
-                                        <Pressable onPress={handleMediaPress} accessibilityLabel={t("Fotka {{position}} z {{count}}", { position: index + 1, count: post.media.length })} accessibilityHint={t("Dvojitým ťuknutím označíte páči sa mi to")}>
-                                            <PostImage media={media} width={media_width} height={media_height} />
-                                        </Pressable>
-                                    )}
-                                </View>
-                            ))}
+                            {post.media.map((media:PostMedia, index:number) => {
+                                const item_height:number = media_width / (media_ratios[index] ?? media_ratio) // Each Slide Keeps Its Own Shape (No Cropping)
+
+                                return (
+                                    <View key={media.id} style={[styles.media_page, { width: media_width, height: media_height }]}>
+                                        {media.is_video ? (
+                                            <PostVideo post={post} media={media} is_active={index === active_media_index} />
+                                        ) : (
+                                            <Pressable onPress={handleMediaPress} accessibilityLabel={t("Fotka {{position}} z {{count}}", { position: index + 1, count: post.media.length })} accessibilityHint={t("Dvojitým ťuknutím označíte páči sa mi to")}>
+                                                <PostImage media={media} width={media_width} height={item_height} />
+                                            </Pressable>
+                                        )}
+                                    </View>
+                                )
+                            })}
                         </ScrollView>
                     )}
 
@@ -251,7 +279,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
 
                     {post.media.length > 1 && (
                         <View style={styles.counter} pointerEvents="none">
-                            <Text variant="caption" color="white" is_tabular>{media_index + 1}/{post.media.length}</Text>
+                            <Text variant="caption" color="white" is_tabular>{active_media_index + 1}/{post.media.length}</Text>
                         </View>
                     )}
                 </View>
@@ -260,7 +288,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
             {post.media.length > 1 && (
                 <View style={styles.dots} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
                     {post.media.map((media:PostMedia, index:number) => (
-                        <View key={media.id} style={[styles.dot, index === media_index ? styles.dot_active : null]} />
+                        <View key={media.id} style={[styles.dot, index === active_media_index ? styles.dot_active : null]} />
                     ))}
                 </View>
             )}
@@ -400,7 +428,8 @@ const styles = StyleSheet.create({
     },
 
     media_page: {
-        justifyContent: "center", // Centers A Video Whose Shape Differs From The Frame
+        justifyContent: "center", // Centers A Slide Whose Shape Differs From The Frame While Swiping
+        overflow: "hidden", // Keeps Video Controls And Taller Slides Inside Their Own Page
     },
 
     image: {

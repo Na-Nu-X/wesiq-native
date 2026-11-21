@@ -255,6 +255,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
         const is_double_confirmed:boolean = await confirmAction({
             title: t("Naozaj odstrániť účet {{username}}?", { username: profile.username }),
+            message: t("Odstránením účtu sa nezruší predplatné v Google Play ani v App Store. Ak ho máte, zrušte ho v nastaveniach obchodu, inak sa bude naďalej účtovať."), // Store Subscriptions Can Only Be Cancelled In The Store (Required By The Stores)
             confirm_label: t("Odstrániť účet"),
             is_destructive: true,
         })
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
     photo_preview: {
         width: 76,
         height: 76,
-        borderRadius: radii.pill,
+        borderRadius: 38, // Half The Size (A Larger Radius Can Render Square On Android)
         backgroundColor: colors.surface_pressed,
     },
 

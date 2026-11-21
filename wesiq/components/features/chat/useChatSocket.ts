@@ -19,6 +19,7 @@ export type OutgoingChatAction =
     | { action:"remove_reaction", chat_id:number, emoji:string }
     | { action:"mark_as_read" }
     | { action:"send_attachment", attachment_ids:number[], message:string|null }
+    | { action: "send_voice_message", voice_message_id:number, message:string|null }
 
 const MAX_RETRY_DELAY_MS:number = 15000
 

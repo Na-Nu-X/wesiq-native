@@ -21,15 +21,19 @@ export function PlayingVideoProvider({ children }:{ children:ReactNode }) {
     return <PlayingVideoContext.Provider value={{ playing_media_id, setPlayingMediaId }}>{children}</PlayingVideoContext.Provider>
 }
 
+// Function For Get The Playing Video And Its Setter
+export const usePlayingVideo = ():PlayingVideoValue => useContext(PlayingVideoContext)
+
 // ---------- Player ----------
 
 interface PostVideoProps {
     post:Post,
     media:PostMedia,
-    onDurationLoad?:(seconds:number) => void
+    onDurationLoad?:(seconds:number) => void,
+    is_active?:boolean // False While Another Slide Of The Carousel Is Visible (Hides The Controls)
 }
 
-export default function PostVideo({ post, media, onDurationLoad }:PostVideoProps) {
+export default function PostVideo({ post, media, onDurationLoad, is_active = true }:PostVideoProps) {
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const { playing_media_id, setPlayingMediaId } = useContext(PlayingVideoContext) // Gets The Playing Video
 
@@ -54,7 +58,7 @@ export default function PostVideo({ post, media, onDurationLoad }:PostVideoProps
             onSetIsVideoInitialized={setIsInitialized}
             is_video_initialized={is_initialized}
             onShowControls={setShowControls}
-            show_controls={show_controls}
+            show_controls={show_controls && is_active} // Controls Belong Only To The Visible Slide
             onIsScrubberDragged={setIsScrubberDragged}
             is_scrubber_dragged={is_scrubber_dragged}
             onVttVideoScrubberPreviewUpdate={setScrubberPreview}

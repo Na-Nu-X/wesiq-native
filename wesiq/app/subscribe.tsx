@@ -12,6 +12,7 @@ import { getActiveSubscriptionPlan } from "@/lib/subscription"
 import { are_purchases_supported, getPlanPackages, PaidPlan, purchasePackage, restorePurchases } from "@/lib/purchases"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
+import { syncSubscription } from "@/lib/api/endpoints/account"
 import { getMediaLimits, MediaLimits } from "@/components/features/upload-post/mediaRules"
 import LegalLinks from "@/components/features/legal/LegalLinks"
 
@@ -19,7 +20,6 @@ import type { PurchasesPackage } from "react-native-purchases"
 import type { IconName } from "@/components/ui"
 import type { SubscriptionPlan } from "@/types/models"
 
-const FALLBACK_PRICES:Record<PaidPlan, string> = { basic: "0,99 €", premium: "2,99 €" } // Shown When The Store Isn't Available
 const PLANS:readonly PaidPlan[] = ["basic", "premium"]
 
 export default function SubscribeScreen() {
@@ -43,7 +43,7 @@ export default function SubscribeScreen() {
         }
     }, [user_id])
 
-    const getPrice = (plan:PaidPlan):string => packages?.[plan]?.product.priceString ?? FALLBACK_PRICES[plan]
+    const getPrice = (plan:PaidPlan):string|null => packages?.[plan]?.product.priceString ?? null // Only The Store's Price (Null When The Store Didn't Return The Plan)
 
     const plan_names:Record<SubscriptionPlan, string> = {
         free: t("Zadarmo"),
@@ -84,7 +84,8 @@ export default function SubscribeScreen() {
         }
 
         setBusyAction("purchase")
-        const result = await purchasePackage(store_package) // Opens The Store
+        const result = await purchasePackage(store_package, selected_plan, logged_in_user.id) // Opens The Store
+        if(result.status === "purchased") await syncSubscription() // Updates The Plan On The Server Right Away (The Webhook Also Follows)
         setBusyAction(null)
 
         if(result.status === "cancelled") return
@@ -101,8 +102,11 @@ export default function SubscribeScreen() {
 
     // Function For Restore Earlier Purchases
     const restore = async ():Promise<void> => {
+        if(!logged_in_user) return
+
         setBusyAction("restore")
-        const has_subscription:boolean|null = await restorePurchases() // Asks The Store
+        const has_subscription:boolean|null = await restorePurchases(logged_in_user.id) // Asks The Store
+        if(has_subscription) await syncSubscription() // Updates The Plan On The Server Right Away
         setBusyAction(null)
 
         if(has_subscription === null) {
@@ -124,7 +128,7 @@ export default function SubscribeScreen() {
     const footer = are_purchases_supported ? (
         <View style={styles.footer}>
             <Button
-                label={!logged_in_user ? t("Prihlásiť sa a predplatiť") : is_current_selected ? t("Váš aktuálny plán") : t("Predplatiť {{plan}} · {{price}}", { plan: plan_names[selected_plan], price: getPrice(selected_plan) })}
+                label={!logged_in_user ? t("Prihlásiť sa a predplatiť") : is_current_selected ? t("Váš aktuálny plán") : (getPrice(selected_plan) ? t("Predplatiť {{plan}} · {{price}}", { plan: plan_names[selected_plan], price: getPrice(selected_plan) }) : t("Predplatiť"))}
                 icon={is_current_selected ? "check" : "crown"}
                 onPress={purchase}
                 is_loading={busy_action === "purchase"}
@@ -166,7 +170,7 @@ export default function SubscribeScreen() {
                             }}
                             accessibilityRole="radio"
                             accessibilityState={{ checked: is_selected }}
-                            accessibilityLabel={`${plan_names[plan]}, ${getPrice(plan)} ${t("mesačne")}`}
+                            accessibilityLabel={`${plan_names[plan]}, ${getPrice(plan) ?? "—"} ${t("mesačne")}`}
                             style={({ pressed }:PressableStateCallbackType) => [styles.plan, is_selected ? styles.plan_selected : null, pressed ? styles.plan_pressed : null]}
                         >
                             <View style={styles.plan_top}>
@@ -179,7 +183,7 @@ export default function SubscribeScreen() {
                             <Text variant="callout" color="text_secondary">{plan_descriptions[plan]}</Text>
 
                             <View style={styles.price_row}>
-                                {is_loading_prices ? <Skeleton width={80} height={28} radius={radii.sm} /> : <Text variant="title" is_tabular>{getPrice(plan)}</Text>}
+                                {is_loading_prices ? <Skeleton width={80} height={28} radius={radii.sm} /> : <Text variant="title" is_tabular>{getPrice(plan) ?? "—"}</Text>}
                                 <Text variant="callout" color="text_muted">/ {t("mesiac")}</Text>
                             </View>
 

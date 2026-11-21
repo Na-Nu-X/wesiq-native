@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { StyleSheet, View } from "react-native"
 import { Image } from "expo-image"
-import { colors, radii } from "@/theme"
+import { colors } from "@/theme"
 import { getInitials, getProfilePictureUrl } from "@/lib/media"
 import Text from "./Text"
 
@@ -29,6 +29,10 @@ export default function Avatar({ user, size = 40, is_ring_hidden = false }:Avata
     const ring_width:number = size >= 56 ? 3 : 2 // Gets The Ring Width
     const inner_size:number = is_premium ? size - ring_width * 2 - 2 : size // Gets The Size Inside The Ring
 
+    // Exact Half Sizes Instead Of radii.pill: On Android A Radius Larger Than The View (With A Border Or On expo-image) Can Render As A Square
+    const outer_radius:number = size / 2
+    const inner_radius:number = inner_size / 2
+
     return (
         <View
             accessibilityRole="image"
@@ -36,21 +40,21 @@ export default function Avatar({ user, size = 40, is_ring_hidden = false }:Avata
 
             style={[
                 styles.container,
-                { width: size, height: size },
+                { width: size, height: size, borderRadius: outer_radius },
                 is_premium ? { borderWidth: ring_width, borderColor: colors.premium, padding: 1 } : null,
             ]}
         >
             {has_picture && picture_url ? (
                 <Image
                     source={{ uri: picture_url }}
-                    style={{ width: inner_size, height: inner_size, borderRadius: radii.pill }}
+                    style={{ width: inner_size, height: inner_size, borderRadius: inner_radius }}
                     contentFit="cover"
                     transition={150}
                     recyclingKey={picture_url}
                     onError={() => setFailedUrl(picture_url)}
                 />
             ) : (
-                <View style={[styles.fallback, { width: inner_size, height: inner_size }]}>
+                <View style={[styles.fallback, { width: inner_size, height: inner_size, borderRadius: inner_radius }]}>
                     <Text variant="label" color="text_accent" style={{ fontSize: Math.max(10, Math.round(inner_size * 0.38)), lineHeight: Math.round(inner_size * 0.5) }}>
                         {getInitials(user)}
                     </Text>
@@ -62,15 +66,15 @@ export default function Avatar({ user, size = 40, is_ring_hidden = false }:Avata
 
 const styles = StyleSheet.create({
     container: {
+        flexShrink: 0, // Never Squeezed Into An Oval In A Tight Row
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: radii.pill,
+        overflow: "hidden", // Clips The Picture To The Circle Even Where The Image Ignores Its Own Radius
     },
 
     fallback: {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.surface_pressed,
-        borderRadius: radii.pill,
     },
 })

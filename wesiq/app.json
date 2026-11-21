@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tvoje.wesiq",
+      "bundleIdentifier": "com.behul.wesiq",
       "associatedDomains": [
         "applinks:wesiq.com"
       ],
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.tvoje.wesiq",
+      "package": "com.behul.wesiq",
       "intentFilters": [
         {
           "action": "VIEW",
@@ -44,6 +44,9 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.health.READ_HEART_RATE"
+      ],
+      "blockedPermissions": [
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "web": {
@@ -51,6 +54,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/withDisableExtraTranslationLint",
+      
       "expo-router",
       [
         "expo-splash-screen",

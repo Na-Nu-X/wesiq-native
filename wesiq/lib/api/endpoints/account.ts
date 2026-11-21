@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/api/client"
 import { toFormDataFile, UploadableFile } from "@/lib/api/upload"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
+import type { SubscriptionInfo } from "@/types/models"
 
 export interface AccountChanges {
     first_name:string,
@@ -47,4 +48,11 @@ export const requestAccountDeletion = ():Promise<ApiResult<ApiEnvelope>> => {
     form_data.append("delete_account", toFlag(true))
 
     return apiRequest("edit-account/", { method: "POST", form_data })
+}
+
+// ---------- Subscription ----------
+
+// Function For Sync The Google Play / App Store Subscription Right After A Purchase Or Restore (The Server Asks RevenueCat)
+export const syncSubscription = ():Promise<ApiResult<ApiEnvelope & { subscription:SubscriptionInfo|null }>> => {
+    return apiRequest("sync-subscription/", { method: "POST", timeout_ms: 30000 })
 }

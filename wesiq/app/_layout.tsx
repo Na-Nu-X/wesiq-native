@@ -56,8 +56,8 @@ function AppContent() {
 
     // Initializes The Store Customer For RevenueCat (Linked To The Logged In User)
     useEffect(() => {
-        if(Platform.OS === "ios") syncPurchasesUser("apple_revenuecat_api_key", user_id) // iOS
-        else if(Platform.OS === "android") syncPurchasesUser("google_revenuecat_api_key", user_id) // Android
+        if(Platform.OS === "ios") syncPurchasesUser(process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? "", user_id) // iOS (Public "appl_" Key From .env.local / EAS Environment Variables)
+        else if(Platform.OS === "android") syncPurchasesUser(process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? "", user_id) // Android (Public "goog_" Key)
     }, [user_id])
 
     // Loads The Brand Fonts (UI Text Uses The System Font)

@@ -74,3 +74,40 @@ export const uploadChatAttachments = async (files:UploadableFile[]):Promise<ApiR
         guard: envelopeWith({ sent_attachments: (value:unknown):value is SentAttachment[] => isArrayOf(value, (item:unknown):item is SentAttachment => isRecord(item) && isNumber(item.attachment_id)) }),
     })
 }
+
+export interface SentVoiceMessage {
+    voice_message_id:number,
+    voice_message_url:string,
+    duration:number,
+    waveform:number[]
+}
+
+export interface SendVoiceMessagePayload {
+    file:UploadableFile,
+    duration:number,
+    waveform:number[]
+}
+
+// Function For Send The Voice Message
+export const sendVoiceMessage = async ({ file, duration, waveform }:SendVoiceMessagePayload):Promise<ApiResult<ApiEnvelope & { sent_voice_message:SentVoiceMessage }>> => {
+    const form_data:FormData = new FormData() // Creates The Form Data
+
+    form_data.append("voice_message_file", await toFormDataFile(file) as Blob) // Appends The Voice Message File To The Form Data
+    form_data.append("voice_message_duration", String(Math.round(duration))) // Appends Duration To The Form Data
+    form_data.append("voice_message_waveform", JSON.stringify(waveform)) // Appends Waveform To The Form Data
+
+    return apiRequest("send-voice-message/", {
+        method: "POST",
+        form_data,
+        timeout_ms: 15000,
+
+        guard: envelopeWith({
+            sent_voice_message:(value:unknown):value is SentVoiceMessage =>
+                isRecord(value) &&
+                isNumber(value.voice_message_id) &&
+                typeof value.voice_message_url === "string" &&
+                isNumber(value.duration) &&
+                Array.isArray(value.waveform)
+        })
+    })
+}

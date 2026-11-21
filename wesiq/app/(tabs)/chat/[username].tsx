@@ -11,7 +11,7 @@ import { Avatar, EmptyState, ErrorState, IconButton, Screen, Text } from "@/comp
 import { colors, layout, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 import { confirmAction, showAlert } from "@/lib/alert"
-import { getChat, getChatSettings, toSharedPost, uploadChatAttachments } from "@/lib/api/endpoints/chat"
+import { getChat, getChatSettings, sendVoiceMessage, toSharedPost, uploadChatAttachments } from "@/lib/api/endpoints/chat"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
@@ -25,6 +25,7 @@ import { FullscreenVideoPlayer } from "@/components/pages/chat/FullscreenVideoPl
 
 import type { ApiError } from "@/types/api"
 import type { Attachment, ChatMessage, ChatReceiver, ChatSocketEvent, MessageReaction } from "@/types/models"
+import type { UploadableFile } from "@/lib/api/upload"
 
 interface ConversationState {
     username:string,
@@ -33,6 +34,12 @@ interface ConversationState {
     page:number,
     has_next:boolean,
     error:ApiError|null
+}
+
+export interface RecordedVoiceMessage {
+    file:UploadableFile,
+    duration:number,
+    waveform:number[]
 }
 
 const MAX_REACTIONS:number = 3 // The Server Keeps The Latest 3 Reactions Per Message
@@ -48,6 +55,7 @@ export default function ConversationScreen() {
     const [background, setBackground] = useState<string|null>(null)
     const [draft, setDraft] = useState<string>("")
     const [attachments, setAttachments] = useState<PendingAttachment[]>([])
+    const [voice_message, setVoiceMessage] = useState<RecordedVoiceMessage|null>(null) // Stores The Voice Message
     const [editing, setEditing] = useState<ChatMessage|null>(null)
     const [is_sending, setIsSending] = useState<boolean>(false)
     const [selected, setSelected] = useState<ChatMessage|null>(null)
@@ -120,14 +128,15 @@ export default function ConversationScreen() {
                         sender,
                         content: event.message ?? "",
                         attachments: event.attachments ?? [],
+                        post: toSharedPost(event.post), // A Plain Message Has "post": {}
+                        voice_message: event.voice_message,
                         is_read: false,
                         is_edited: false,
                         formatted_time: event.formatted_time ?? "",
                         is_sender,
                         message_reactions: [],
                         is_older_than_15_minutes: false,
-                        is_older_than_1_day: false,
-                        post: toSharedPost(event.post), // A Plain Message Has "post": {}
+                        is_older_than_1_day: false
                     }
 
                     return { ...previous, messages: [message, ...previous.messages] }
@@ -164,7 +173,7 @@ export default function ConversationScreen() {
     }, [socket.send])
 
     // Function For Send A Mock Echo (Mock Mode Has No Server To Echo Messages Back)
-    const echoInMockMode = (event:Omit<ChatSocketEvent, "sender_id"|"sender_profile_picture_name"|"attachments"|"post"> & { attachments?:Attachment[] }):void => {
+    const echoInMockMode = (event:Omit<ChatSocketEvent, "sender_id"|"sender_profile_picture_name"|"attachments"|"post"|"voice_message"> & { attachments?:Attachment[] }):void => {
         if(!IS_MOCK_MODE || !logged_in_user) return
         handleEvent({ attachments: [], post: null, sender_id: logged_in_user.id, sender_profile_picture_name: logged_in_user.profile_picture_name, ...event } as ChatSocketEvent)
     }
@@ -201,6 +210,35 @@ export default function ConversationScreen() {
             socket.send({ action: "send_attachment", attachment_ids: response.data.sent_attachments.map((attachment) => attachment.attachment_id), message: text || null })
             setAttachments([])
             setDraft("")
+            haptics.light()
+            return
+        }
+
+        if(voice_message) {
+            setIsSending(true)
+
+            // Sends The Voice Message
+            const response = await sendVoiceMessage({
+                file: voice_message.file,
+                duration: voice_message.duration,
+                waveform: voice_message.waveform,
+            })
+
+            setIsSending(false)
+    
+            if(!response.ok) {
+                haptics.error()
+                showAlert(t("Chyba"), response.error.message)
+                return
+            }
+    
+            socket.send({
+                action: "send_voice_message",
+                voice_message_id: response.data.sent_voice_message.voice_message_id,
+                message: text || null
+            })
+    
+            setVoiceMessage(null)
             haptics.light()
             return
         }
@@ -279,10 +317,18 @@ export default function ConversationScreen() {
 
     const messages:ChatMessage[] = current?.messages ?? []
 
+    const [active_voice_id, setActiveVoiceId] = useState<number|null>(null)
+
+    const toggleVoiceMessage = (voice_id:number):void => {
+        setActiveVoiceId((prev_id:number|null) => prev_id === voice_id ? null : voice_id)
+    }
+
     const renderMessage = ({ item, index }:ListRenderItemInfo<ChatMessage>) => (
         <MessageBubble
             message={item}
             is_grouped_with_previous={messages[index + 1]?.is_sender === item.is_sender} // The List Is Inverted, So The Message Above Is The Next Item
+            is_voice_active={!!item.voice_message && active_voice_id === item.voice_message.id}
+            onToggleVoice={toggleVoiceMessage}
             onLongPress={setSelected}
             onOpenImages={(urls:string[], image_index:number) => setViewedImages({ urls, index: image_index })}
             onOpenVideo={setViewedVideo}
@@ -340,6 +386,8 @@ export default function ConversationScreen() {
                         onChange={setDraft}
                         attachments={attachments}
                         onAttachmentsChange={setAttachments}
+                        onVoiceMessageUpdate={setVoiceMessage}
+                        voice_message={voice_message}
                         editing={editing}
                         onCancelEdit={() => {
                             setEditing(null)

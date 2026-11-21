@@ -42,7 +42,8 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
 }, ref) {
     const { t } = useTranslation() // Initializes The Translations
     const [is_focused, setIsFocused] = useState<boolean>(false) // Stores The Information If The Input Is Focused
-    const [is_secure, setIsSecure] = useState<boolean>(is_password) // Stores The Information If The Password Is Hidden
+    const [is_password_visible, setIsPasswordVisible] = useState<boolean>(false) // Stores The Information If The Password Is Shown (Hidden By Default)
+    const is_secure:boolean = is_password && !is_password_visible // Derived, So It Can't Drift Out Of Sync With The Icon
     const revealFocusedInput = useRevealFocusedInput() // Scrolls The Field Above The Keyboard Inside A Sheet
 
     const has_error:boolean = Boolean(error) // Stores The Information If There Is An Error
@@ -83,7 +84,6 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                     editable={!is_disabled}
                     multiline={multiline}
                     maxLength={maxLength}
-                    secureTextEntry={is_secure}
                     placeholderTextColor={colors.text_muted}
                     selectionColor={colors.primary}
                     cursorColor={colors.primary}
@@ -111,15 +111,16 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
 
                     style={[styles.input, multiline ? styles.input_multiline : null, multiline && multiline_min_height !== undefined ? { minHeight: multiline_min_height } : null, Platform.OS === "web" ? styles.input_web : null]}
                     {...props}
+                    secureTextEntry={is_secure} // After The Props, So A Passed Value Can't Override The Toggle
                 />
 
                 {!!trailing && <View style={styles.trailing}>{trailing}</View>}
 
                 {is_password && (
                     <IconButton
-                        icon={is_secure ? "eye" : "eye-slash"}
+                        icon={is_secure ? "eye-slash" : "eye"} // Shows The Current State: Crossed Eye While Hidden
                         accessibility_label={is_secure ? t("Zobraziť heslo") : t("Skryť heslo")}
-                        onPress={() => setIsSecure((previous:boolean) => !previous)}
+                        onPress={() => setIsPasswordVisible((previous:boolean) => !previous)}
                         size={36}
                         icon_color="text_muted"
                     />

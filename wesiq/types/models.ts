@@ -238,6 +238,13 @@ export interface Attachment {
     compressed_size:number
 }
 
+export interface VoiceMessage {
+    id:number,
+    file:string,
+    duration:number,
+    waveform:[]
+}
+
 export interface MessageReaction {
     user:{ username:string },
     emoji:string
@@ -248,14 +255,15 @@ export interface ChatMessage {
     sender:UserSummary,
     content:string|null, // Null For A Shared Post Or Attachments Only
     attachments:Attachment[],
+    post:SharedPost|null,
+    voice_message:VoiceMessage|null,
     is_read:boolean,
     is_edited:boolean,
     formatted_time:string,
     is_sender:boolean,
     message_reactions:MessageReaction[],
     is_older_than_15_minutes:boolean,
-    is_older_than_1_day:boolean,
-    post:SharedPost|null
+    is_older_than_1_day:boolean
 }
 
 export interface ChatReceiver extends UserListItem {
@@ -279,6 +287,7 @@ export interface ChatSocketEvent {
     message:string|null,
     attachments:Attachment[],
     post:SharedPost|null,
+    voice_message:VoiceMessage|null,
     formatted_time?:string,
     sender_id:number,
     sender_username?:string,

@@ -26,10 +26,17 @@ export default function CodeInput({ value, onChange, length = 6, has_error = fal
             <View style={styles.boxes} pointerEvents="none">
                 {Array.from({ length }, (_, index:number) => {
                     const is_active:boolean = is_focused && index === active_index
+                    const digit:string|undefined = value[index]
 
                     return (
-                        <View key={index} style={[styles.box, value[index] ? styles.box_filled : null, is_active ? styles.box_active : null, has_error ? styles.box_error : null]}>
-                            <Text variant="title" is_tabular>{value[index] ?? ""}</Text>
+                        <View key={index} style={[styles.box, digit ? styles.box_filled : null, is_active ? styles.box_active : null, has_error ? styles.box_error : null]}>
+                            {digit ? (
+                                <Text variant="title" is_tabular style={styles.digit}>{digit}</Text>
+                            ) : is_active ? (
+                                <View style={styles.caret} />
+                            ) : (
+                                <View style={styles.placeholder_dot} />
+                            )}
                         </View>
                     )
                 })}
@@ -60,33 +67,58 @@ const styles = StyleSheet.create({
 
     boxes: {
         flexDirection: "row",
-        justifyContent: "space-between",
+        justifyContent: "center",
         gap: spacing.sm,
     },
 
     box: {
         flex: 1,
-        maxWidth: 56,
-        height: 60,
+        maxWidth: 54,
+        aspectRatio: 0.85, // Slightly Taller Than Wide, Scales Down On Narrow Phones
+        maxHeight: 64,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: colors.surface,
+        backgroundColor: colors.surface_raised, // Lighter Than The Screen, So Empty Boxes Stay Visible
         borderWidth: 1.5,
-        borderColor: colors.border,
+        borderColor: colors.border_strong,
         borderRadius: radii.md,
     },
 
     box_filled: {
-        borderColor: colors.border_strong,
+        borderColor: colors.primary_text,
+        backgroundColor: colors.surface_pressed,
     },
 
     box_active: {
+        borderWidth: 2,
         borderColor: colors.primary,
-        backgroundColor: colors.primary_soft,
+        backgroundColor: colors.surface_pressed,
     },
 
     box_error: {
         borderColor: colors.danger,
+        backgroundColor: colors.danger_soft,
+    },
+
+    digit: {
+        fontSize: 26,
+        lineHeight: 32,
+        color: colors.text,
+    },
+
+    caret: {
+        width: 2,
+        height: 26,
+        backgroundColor: colors.primary,
+        borderRadius: 1,
+    },
+
+    placeholder_dot: {
+        width: 8,
+        height: 8,
+        backgroundColor: colors.text_muted,
+        borderRadius: 4,
+        opacity: 0.5,
     },
 
     input: {

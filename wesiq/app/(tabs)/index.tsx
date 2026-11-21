@@ -4,7 +4,7 @@ import { useCallback, useState } from "react"
 import { ActivityIndicator, FlatList, ListRenderItemInfo, StyleSheet, View } from "react-native"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { EmptyState, ErrorState, Header, IconButton, Screen, Skeleton, Text, TextField, ThemedRefreshControl } from "@/components/ui"
+import { Button, EmptyState, ErrorState, Header, IconButton, Screen, Skeleton, Text, TextField, ThemedRefreshControl } from "@/components/ui"
 import { colors, fonts, layout, radii, spacing } from "@/theme"
 import { emitAppEvent } from "@/lib/events"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
@@ -88,6 +88,19 @@ export default function HomeScreen() {
         )
     }
 
+    // Function For Render The End Of The Feed (Always The Same Height, So Showing The Spinner Doesn't Move The List And Re-Trigger Loading)
+    const renderFooter = () => (
+        <View style={styles.footer}>
+            {feed.is_loading_more ? (
+                <ActivityIndicator color={colors.spinner} />
+            ) : feed.load_more_error ? (
+                <Button label={t("Skúsiť znova")} icon="rotate-right" variant="ghost" size="sm" onPress={() => feed.loadMore(true)} />
+            ) : !feed.has_next ? (
+                <Text variant="caption" color="text_muted" align="center">{t("Videli ste všetky príspevky.")}</Text>
+            ) : null}
+        </View>
+    )
+
     return (
         <PlayingVideoProvider>
             <Screen
@@ -113,9 +126,9 @@ export default function HomeScreen() {
                     renderItem={renderPost}
                     ListHeaderComponent={list_header}
                     ListEmptyComponent={renderEmpty}
-                    ListFooterComponent={feed.is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.footer} /> : feed.posts.length > 0 && !feed.has_next ? <Text variant="caption" color="text_muted" align="center" style={styles.footer}>{t("Videli ste všetky príspevky.")}</Text> : undefined}
-                    onEndReached={feed.loadMore}
-                    onEndReachedThreshold={0.6}
+                    ListFooterComponent={feed.posts.length > 0 ? renderFooter : undefined}
+                    onEndReached={() => { feed.loadMore() }}
+                    onEndReachedThreshold={1.5} // Starts Loading About 1.5 Screens Early, So The Spinner Rarely Shows
                     refreshControl={<ThemedRefreshControl refreshing={feed.is_refreshing} onRefresh={feed.refresh} />}
                     keyboardShouldPersistTaps="handled"
                     keyboardDismissMode="on-drag"
@@ -159,6 +172,8 @@ const styles = StyleSheet.create({
     },
 
     footer: {
-        paddingVertical: spacing.xl,
+        height: 80, // Fixed, So The List Height Doesn't Change When The Spinner Appears Or Hides
+        alignItems: "center",
+        justifyContent: "center",
     },
 })

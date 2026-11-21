@@ -13,9 +13,12 @@ interface LoginResponse extends ApiEnvelope {
 
 const isLoginResponse = envelopeWith<{ access:string, refresh:string }>({ access: isString, refresh: isString })
 
-// Function For Log In (Stores The Token On Success)
+// Function For Clean A Login Identifier (E-mail, Username Or @username; Removes Spaces And Invisible Characters Mobile Keyboards Insert)
+export const normalizeLoginIdentifier = (identifier:string):string => identifier.replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").trim()
+
+// Function For Log In (Stores The Token On Success; The Server Accepts An E-mail, A Username Or An @username)
 export const login = async (identifier:string, password:string):Promise<ApiResult<LoginResponse>> => {
-    const response:ApiResult<LoginResponse> = await apiPost<LoginResponse>("login/", { identifier, password }, { is_authenticated: false, guard: isLoginResponse })
+    const response:ApiResult<LoginResponse> = await apiPost<LoginResponse>("login/", { identifier: normalizeLoginIdentifier(identifier), password }, { is_authenticated: false, guard: isLoginResponse })
 
     if(response.ok) await setStoredString("user_token", response.data.access)
     return response
