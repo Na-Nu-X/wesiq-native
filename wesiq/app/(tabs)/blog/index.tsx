@@ -1,7 +1,7 @@
 // Blog: Articles With Search, Sorting And Categories
 
 import { useState } from "react"
-import { FlatList, ListRenderItemInfo, ScrollView, Share, StyleSheet, View } from "react-native"
+import { FlatList, ListRenderItemInfo, Pressable, ScrollView, Share, StyleSheet, View } from "react-native"
 import { Image } from "expo-image"
 import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
@@ -11,6 +11,7 @@ import { colors, layout, radii, spacing } from "@/theme"
 import { useApiQuery } from "@/hooks/useApiQuery"
 import { ArticleSort, getArticleImageUrl, getArticleWebLink, getArticles } from "@/lib/api/endpoints/blog"
 import { getFormattedDate } from "@/utils/time"
+import { useArticleSheets } from "@/components/features/blog/useArticleSheets"
 
 import type { Article } from "@/types/models"
 
@@ -24,6 +25,8 @@ export default function BlogScreen() {
     const [search, setSearch] = useState<string>("")
 
     const { state, refetch, is_refreshing } = useApiQuery(`articles:${sort}:${category}`, (signal:AbortSignal) => getArticles(sort, category, signal))
+
+    const sheets = useArticleSheets()
 
     const sort_labels:Record<ArticleSort, string> = {
         latest: t("Najnovšie články"),
@@ -64,45 +67,46 @@ export default function BlogScreen() {
 
         return (
             <View>
-            <Card padding="none" onPress={() => openArticle(item)} accessibility_label={item.title} style={styles.card}>
-                <View style={styles.image}>
-                    {image_url ? <Image source={{ uri: image_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : <Icon name="book-open" size={28} color="text_muted" />}
-                </View>
-
-                <View style={styles.card_body}>
-                    <Text variant="heading" numberOfLines={2} style={styles.title}>{item.title}</Text>
-
-                    <Text variant="callout" color="text_secondary" numberOfLines={2}>{item.description}</Text>
-
-                    <View style={styles.meta}>
-                        {item.average_rating !== null && (
-                            <View style={styles.meta_item}>
-                                <Icon name="star" size={12} color="premium" />
-                                <Text variant="caption" color="text_secondary" is_tabular>{item.average_rating.toFixed(1)}</Text>
-                            </View>
-                        )}
-
-                        <View style={styles.meta_item}>
-                            <Icon name="eye" size={12} color="text_muted" is_solid={false} />
-                            <Text variant="caption" color="text_secondary" is_tabular>{item.visitors}</Text>
-                        </View>
-
-                        <Text variant="caption" color="text_muted">{getFormattedDate(item.creation_time)}</Text>
-
-                        {!item.html_filename && (
-                            <View style={styles.meta_item}>
-                                <Icon name="arrow-up-right-from-square" size={10} color="text_muted" />
-                                <Text variant="caption" color="text_muted">{t("Na webe")}</Text>
-                            </View>
-                        )}
+                <Card padding="none" onPress={() => openArticle(item)} accessibility_label={item.title} style={styles.card}>
+                    <View style={styles.image}>
+                        {image_url ? <Image source={{ uri: image_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : <Icon name="book-open" size={28} color="text_muted" />}
                     </View>
-                </View>
-            </Card>
 
-            {/* Outside The Pressable Card, Because Buttons Can't Be Nested On Web */}
-            <View style={styles.share}>
-                <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => Share.share({ title: item.title, message: `Wesiq - ${item.title}\n${getArticleWebLink(item)}`, url: getArticleWebLink(item) }).catch(() => {})} variant="soft" size={36} />
-            </View>
+                    <View style={styles.card_body}>
+                        <Text variant="heading" numberOfLines={2} style={styles.title}>{item.title}</Text>
+                        <Text variant="callout" color="text_secondary" numberOfLines={2}>{item.description}</Text>
+
+                        <View style={styles.meta}>
+                            {item.average_rating !== null && (
+                                <View style={styles.meta_item}>
+                                    <Icon name="star" size={12} color="premium" />
+                                    <Text variant="caption" color="text_secondary" is_tabular>{item.average_rating.toFixed(1)}</Text>
+                                </View>
+                            )}
+
+                            <View style={styles.meta_item}>
+                                <Icon name="eye" size={12} color="text_muted" is_solid={false} />
+                                <Text variant="caption" color="text_secondary" is_tabular>{item.visitors}</Text>
+                            </View>
+
+                            <Text variant="caption" color="text_muted">{getFormattedDate(item.creation_time)}</Text>
+
+                            {!item.html_filename && (
+                                <View style={styles.meta_item}>
+                                    <Icon name="arrow-up-right-from-square" size={10} color="text_muted" />
+                                    <Text variant="caption" color="text_muted">{t("Na webe")}</Text>
+                                </View>
+                            )}
+                        </View>
+                    </View>
+                </Card>
+
+                {/* Outside The Pressable Card, Because Buttons Can't Be Nested On Web */}
+                <View style={styles.share}>
+                    <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => sheets.openShare(item)} variant="soft" size={36} />
+                </View>
+
+                {sheets.sheets}
             </View>
         )
     }

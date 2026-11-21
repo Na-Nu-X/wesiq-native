@@ -17,6 +17,7 @@ import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 import CommentsSheet, { CommentsSource } from "@/components/features/posts/CommentsSheet"
 import FrontLever from "@/components/pages/articles/front_lever"
+import { useArticleSheets } from "@/components/features/blog/useArticleSheets"
 
 // In-App Article Bodies By Their Server File Name
 const ARTICLE_BODIES:Record<string, ComponentType> = {
@@ -33,6 +34,8 @@ export default function ArticleScreen() {
 
     const { state, refetch, reload, is_refreshing, setData } = useApiQuery(`article:${link ?? ""}`, (signal:AbortSignal) => getArticle(link ?? "", signal), { is_enabled: Boolean(link) })
     const article:ArticleDetail|null = state.data && !state.data.not_found && state.data.article ? state.data.article : null
+
+    const sheets = useArticleSheets()
 
     const updateArticle = useCallback((changes:Partial<ArticleDetail>) => setData((previous) => previous?.article ? { ...previous, article: { ...previous.article, ...changes } } : previous), [setData])
 
@@ -83,7 +86,8 @@ export default function ArticleScreen() {
             has_back_button
 
             right={article ? (
-                <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => Share.share({ title: article.title, message: `Wesiq - ${article.title}\n${getArticleWebLink(article)}`, url: getArticleWebLink(article) }).catch(() => {})} variant="soft" size={38} />
+                // <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => Share.share({ title: article.title, message: `Wesiq - ${article.title}\n${getArticleWebLink(article)}`, url: getArticleWebLink(article) }).catch(() => {})} variant="soft" size={38} />
+                <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => sheets.openShare(article)} variant="soft" size={36} />
             ) : undefined}
         />
     )
@@ -184,6 +188,8 @@ export default function ArticleScreen() {
                 onRequireLogin={() => auth_sheet.open("login_form")}
                 onCommentsCountChange={(delta:number) => updateArticle({ comments_amount: Math.max(0, article.comments_amount + delta) })}
             />
+
+            {sheets.sheets}
         </>
     )
 }

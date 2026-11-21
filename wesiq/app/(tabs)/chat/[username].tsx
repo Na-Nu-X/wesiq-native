@@ -130,6 +130,7 @@ export default function ConversationScreen() {
                         attachments: event.attachments ?? [],
                         post: toSharedPost(event.post), // A Plain Message Has "post": {}
                         voice_message: event.voice_message,
+                        article: event.article,
                         is_read: false,
                         is_edited: false,
                         formatted_time: event.formatted_time ?? "",
@@ -173,7 +174,7 @@ export default function ConversationScreen() {
     }, [socket.send])
 
     // Function For Send A Mock Echo (Mock Mode Has No Server To Echo Messages Back)
-    const echoInMockMode = (event:Omit<ChatSocketEvent, "sender_id"|"sender_profile_picture_name"|"attachments"|"post"|"voice_message"> & { attachments?:Attachment[] }):void => {
+    const echoInMockMode = (event:Omit<ChatSocketEvent, "sender_id"|"sender_profile_picture_name"|"attachments"|"post"|"voice_message"|"article"> & { attachments?:Attachment[] }):void => {
         if(!IS_MOCK_MODE || !logged_in_user) return
         handleEvent({ attachments: [], post: null, sender_id: logged_in_user.id, sender_profile_picture_name: logged_in_user.profile_picture_name, ...event } as ChatSocketEvent)
     }

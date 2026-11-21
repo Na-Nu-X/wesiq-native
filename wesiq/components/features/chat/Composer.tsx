@@ -1,13 +1,13 @@
 // Message Composer: Text, Attachments (Photos / Videos / Files) And Editing
 
 import { ComponentRef, useEffect, useRef, useState } from "react"
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native"
+import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native"
 import { Image } from "expo-image"
 import * as DocumentPicker from "expo-document-picker"
 import * as ImagePicker from "expo-image-picker"
 import { useTranslation } from "react-i18next"
-import { Button, Icon, IconButton, Text, TextField } from "@/components/ui"
-import { colors, layout, radii, spacing } from "@/theme"
+import { Icon, IconButton, Text, TextField } from "@/components/ui"
+import { colors, radii, spacing } from "@/theme"
 import { showAlert } from "@/lib/alert"
 import { formatMegabytes } from "@/lib/format"
 import { getActiveSubscriptionPlan } from "@/lib/subscription"
@@ -15,13 +15,12 @@ import { getMediaLimits } from "@/components/features/upload-post/mediaRules"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { AudioModule, AudioRecorder, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio"
 import { haptics } from "@/lib/haptics"
-import { Ionicons } from "@expo/vector-icons"
+import { SECONDARY_COLOR } from "@/constants/colors"
+import { getFormattedTime } from "@/utils/time"
 
 import type { UploadableFile } from "@/lib/api/upload"
 import type { ChatMessage } from "@/types/models"
 import type { RecordedVoiceMessage } from "@/app/(tabs)/chat/[username]"
-import { BLUE_COLOR, MAIN_COLOR, RED_COLOR, SECONDARY_COLOR } from "@/constants/colors"
-import { getFormattedTime, getMinimalistFormattedTime } from "@/utils/time"
 
 export interface PendingAttachment extends UploadableFile {
     key:string,
