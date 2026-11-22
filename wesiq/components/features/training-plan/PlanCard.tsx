@@ -3,7 +3,7 @@
 import { StyleSheet, View } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Card, Chip, Icon, Text } from "@/components/ui"
-import { colors, radii, spacing } from "@/theme"
+import { colors, spacing } from "@/theme"
 import { getDayName, getShortDayName } from "@/lib/days"
 import { formatDuration } from "@/lib/format"
 
@@ -14,10 +14,10 @@ interface PlanCardProps {
     action_label:string, // E.g. "Edit", "Use This Plan"
     action_icon:"pen"|"copy",
     onPress:() => void,
-    is_subscriber_plan?:boolean
+    is_subscriber_plan?:boolean // Official Plan For Subscribers (Shows The Premium Badge)
 }
 
-export default function PlanCard({ plan, action_label, action_icon, onPress, is_subscriber_plan }:PlanCardProps) {
+export default function PlanCard({ plan, action_label, action_icon, onPress, is_subscriber_plan = false }:PlanCardProps) {
     const { t } = useTranslation() // Initializes The Translations
     const warm_up_seconds:number|undefined = plan.rows.find((row) => row.is_warm_up)?.periods?.[0] // Gets The Warm Up
     const exercise_names:string[] = plan.rows.filter((row) => !row.is_warm_up).flatMap((row) => row.exercise !== null ? [row.exercise] : []) // Gets The Exercise Names (Locked Rows Have No Name)
@@ -26,7 +26,7 @@ export default function PlanCard({ plan, action_label, action_icon, onPress, is_
     return (
         <Card
             onPress={onPress}
-            accessibility_label={`${title}${plan.day !== null ? `, ${getDayName(plan.day)}` : ""}, ${t("Cviky")}: ${plan.exercise_count}. ${action_label}`}
+            accessibility_label={`${title}${is_subscriber_plan ? `, ${t("Prémiový plán")}` : ""}${plan.day !== null ? `, ${getDayName(plan.day)}` : ""}, ${t("Cviky")}: ${plan.exercise_count}. ${action_label}`}
             style={styles.card}
         >
             <View style={styles.header}>
@@ -39,6 +39,7 @@ export default function PlanCard({ plan, action_label, action_icon, onPress, is_
                     </Text>
                 </View>
 
+                {is_subscriber_plan && <Chip label={t("Prémiový plán")} icon="crown" tone="premium" is_selected />}
                 {plan.day !== null && <Chip label={getShortDayName(plan.day)} icon="calendar-day" is_selected />}
             </View>
 
@@ -78,6 +79,5 @@ const styles = StyleSheet.create({
         paddingTop: spacing.md,
         borderTopWidth: 1,
         borderTopColor: colors.divider,
-        borderRadius: radii.xs,
     },
 })

@@ -1,6 +1,6 @@
 // One Chat Message (Text, Attachments, Shared Post, Reactions, Time, Edited And Read State)
 
-import { memo, useEffect, useState } from "react"
+import { memo } from "react"
 import { Platform, Pressable, StyleSheet, View } from "react-native"
 import { GestureDetector, usePanGesture } from "react-native-gesture-handler"
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
@@ -8,7 +8,7 @@ import { scheduleOnRN } from "react-native-worklets"
 import { Image } from "expo-image"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { Icon, Text } from "@/components/ui"
+import { Avatar, Icon, Text } from "@/components/ui"
 import { colors, radii, spacing } from "@/theme"
 import { DOMAIN } from "@/constants/general"
 import { getMediaUrl } from "@/lib/media"
@@ -17,14 +17,13 @@ import { formatUsername } from "@/lib/format"
 import { haptics } from "@/lib/haptics"
 import { canEditMessage } from "./MessageActionsSheet"
 import { toSharedPost } from "@/lib/api/endpoints/chat"
-import { BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 
-import type { Article } from "@/types/models"
-import type { IconName } from "@/components/ui"
-import type { Attachment, AttachmentType, ChatMessage, MessageReaction, SharedPost, VoiceMessage } from "@/types/models"
-import VoiceMessagePlayer from "./VoiceMessagePlayer"
 import { getArticleImageUrl } from "@/lib/api/endpoints/blog"
 import { getFormattedDate } from "@/utils/time"
+import VoiceMessagePlayer from "./VoiceMessagePlayer"
+
+import type { IconName } from "@/components/ui"
+import type { Article, Attachment, AttachmentType, ChatMessage, MessageReaction, SharedPost, VoiceMessage } from "@/types/models"
 
 // Function For Get The Full URL Of An Attachment (The Server Returns Paths Like "/media/...")
 export const getAttachmentUrl = (path:string|null|undefined):string|null => {
@@ -188,40 +187,45 @@ function MessageBubble({
                     ))}
 
                     {!!post && (
-                        <Pressable onPress={() => router.push({ pathname: "/post/[post_id]", params: { post_id: post.id } })} accessibilityRole="button" accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: post.user.username })} style={styles.post}>
-                            {post_preview ? <Image source={{ uri: post_preview }} style={styles.post_image} contentFit="cover" /> : <View style={[styles.post_image, styles.post_placeholder]}><Icon name="image" size={18} color="text_muted" /></View>}
+                        <Pressable
+                            onPress={() => router.push({ pathname: "/post/[post_id]", params: { post_id: post.id } })}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: post.user.username })}
+                            style={({ pressed }) => [styles.shared_card, pressed ? styles.card_pressed : null]}
+                        >
+                            {post_preview ? (
+                                <View style={styles.post_media}>
+                                    <Image source={{ uri: post_preview }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} />
+                                    {post.media?.is_video && <View style={styles.play}><Icon name="play" size={16} color="white" /></View>}
+                                </View>
+                            ) : null}
 
-                            <View style={styles.post_text}>
-                                <Text variant="label" numberOfLines={1}>{formatUsername(post.user.username)}</Text>
-                                {post.description ? <Text variant="caption" color="text_secondary" numberOfLines={2}>{post.description}</Text> : null}
+                            <View style={styles.card_body}>
+                                <View style={styles.meta_item}>
+                                    <Icon name="images" size={10} color="primary_text" is_solid={false} />
+                                    <Text variant="overline" color="primary_text">{t("Príspevok")}</Text>
+                                </View>
 
-                                <View 
-                                    style={{ 
-                                        flexDirection: "row",
-                                        gap: 10,
-                                    }}
-                                >
-                                    <View 
-                                        style={{ 
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: 5,
-                                        }}
-                                    >
-                                        <Icon name="heart" size={15} color="text" is_solid={false} />
-                                        {show_likes && <Text variant="body_strong" is_tabular>{post.likes}</Text>}
+                                <View style={styles.post_author}>
+                                    <Avatar user={post.user} size={22} is_ring_hidden />
+                                    <Text variant="label" numberOfLines={1} style={styles.flex_shrink}>{formatUsername(post.user.username)}</Text>
+                                    {post.user.subscription?.is_active && <Icon name="crown" size={10} color="premium" />}
+                                </View>
+
+                                {post.description ? <Text variant={post_preview ? "caption" : "callout"} color="text_secondary" numberOfLines={post_preview ? 2 : 4}>{post.description}</Text> : null}
+
+                                <View style={styles.card_meta}>
+                                    <View style={styles.meta_item}>
+                                        <Icon name="heart" size={11} color="text_muted" is_solid={false} />
+                                        {show_likes && <Text variant="caption" color="text_secondary" is_tabular>{post.likes}</Text>}
                                     </View>
 
-                                    <View 
-                                        style={{ 
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: 5,
-                                        }}
-                                    >
-                                        <Icon name={post.allow_comments ? "comment" : "comment-slash"} size={15} color="text" is_solid={false} />
-                                        {post.allow_comments && <Text variant="body_strong" is_tabular>{post.comments}</Text>}
+                                    <View style={styles.meta_item}>
+                                        <Icon name={post.allow_comments ? "comment" : "comment-slash"} size={11} color="text_muted" is_solid={false} />
+                                        {post.allow_comments && <Text variant="caption" color="text_secondary" is_tabular>{post.comments}</Text>}
                                     </View>
+
+                                    <Text variant="caption" color="text_muted">{getFormattedDate(post.created_at)}</Text>
                                 </View>
                             </View>
                         </Pressable>
@@ -237,26 +241,42 @@ function MessageBubble({
                     ) : null}
 
                     {article ? (
-                        <Pressable onPress={() => router.push({ pathname: "/blog/[article]", params: { article: article.link } })} accessibilityRole="button" accessibilityLabel={t("Článok {{article_title}}", { article_title: article.title })} style={styles.article}>
-                            {article_image ? <Image source={{ uri: article_image }} style={styles.article_image} contentFit="cover" /> : <View style={[styles.article_image, styles.article_placeholder]}><Icon name="image" size={18} color="text_muted" /></View>}
+                        <Pressable
+                            onPress={() => router.push({ pathname: "/blog/[article]", params: { article: article.link } })}
+                            accessibilityRole="button"
+                            accessibilityLabel={t("Článok {{article_title}}", { article_title: article.title })}
+                            style={({ pressed }) => [styles.shared_card, pressed ? styles.card_pressed : null]}
+                        >
+                            {article_image ? (
+                                <Image source={{ uri: article_image }} style={styles.article_image} contentFit="cover" transition={150} />
+                            ) : (
+                                <View style={[styles.article_image, styles.article_placeholder]}><Icon name="newspaper" size={22} color="text_muted" is_solid={false} /></View>
+                            )}
 
-                            <Text variant="heading" numberOfLines={2} style={styles.title}>{article.title}</Text>
-                            <Text variant="callout" color="text_secondary" numberOfLines={2}>{article.description}</Text>
-
-                            <View style={styles.article_meta}>
-                                {article.average_rating !== null && (
-                                    <View style={styles.meta_item}>
-                                        <Icon name="star" size={12} color="premium" />
-                                        <Text variant="caption" color="text_secondary" is_tabular>{article.average_rating.toFixed(1)}</Text>
-                                    </View>
-                                )}
-
+                            <View style={styles.card_body}>
                                 <View style={styles.meta_item}>
-                                    <Icon name="eye" size={12} color="text_muted" is_solid={false} />
-                                    <Text variant="caption" color="text_secondary" is_tabular>{article.visitors}</Text>
+                                    <Icon name="newspaper" size={10} color="primary_text" />
+                                    <Text variant="overline" color="primary_text">{t("Článok")}</Text>
                                 </View>
 
-                                <Text variant="caption" color="text_muted">{getFormattedDate(article.creation_time)}</Text>
+                                <Text variant="subheading" numberOfLines={2}>{article.title}</Text>
+                                {article.description ? <Text variant="caption" color="text_secondary" numberOfLines={2}>{article.description}</Text> : null}
+
+                                <View style={styles.card_meta}>
+                                    {article.average_rating !== null && (
+                                        <View style={styles.meta_item}>
+                                            <Icon name="star" size={11} color="premium" />
+                                            <Text variant="caption" color="text_secondary" is_tabular>{article.average_rating.toFixed(1)}</Text>
+                                        </View>
+                                    )}
+
+                                    <View style={styles.meta_item}>
+                                        <Icon name="eye" size={11} color="text_muted" is_solid={false} />
+                                        <Text variant="caption" color="text_secondary" is_tabular>{article.visitors}</Text>
+                                    </View>
+
+                                    <Text variant="caption" color="text_muted">{getFormattedDate(article.creation_time)}</Text>
+                                </View>
                             </View>
                         </Pressable>
                     ) : null}
@@ -402,30 +422,21 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255, 255, 255, 0.14)",
     },
 
-    post: {
-        width: 232,
-        flexDirection: "row",
-        gap: spacing.sm,
-        padding: spacing.sm,
-        backgroundColor: colors.surface,
-        borderRadius: radii.md,
-    },
-
-    post_image: {
-        width: 52,
-        height: 64,
-        borderRadius: radii.sm,
+    post_media: {
+        height: 200,
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: colors.surface_pressed,
     },
 
-    post_placeholder: {
+    post_author: {
+        flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
+        gap: spacing.xs + 2,
     },
 
-    post_text: {
-        flex: 1,
-        gap: 2,
+    flex_shrink: {
+        flexShrink: 1,
     },
 
     meta: {
@@ -458,17 +469,36 @@ const styles = StyleSheet.create({
         marginRight: spacing.sm,
     },
 
-    article: {
-        width: 232,
-        gap: spacing.sm,
-        padding: spacing.sm,
+    card_pressed: {
+        opacity: 0.85,
+    },
+
+    card_meta: {
+        flexDirection: "row",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: spacing.md,
+        marginTop: 2,
+    },
+
+    meta_item: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: spacing.xs,
+    },
+
+    shared_card: {
+        width: 240,
+        overflow: "hidden",
         backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
         borderRadius: radii.md,
+        marginHorizontal: -spacing.xs,
     },
 
     article_image: {
-        height: 150,
-        borderRadius: radii.sm,
+        height: 128,
         backgroundColor: colors.surface_pressed,
     },
 
@@ -477,20 +507,8 @@ const styles = StyleSheet.create({
         justifyContent: "center",
     },
 
-    title: {
-        paddingRight: spacing.xxl,
-    },
-
-    article_meta: {
-        flexDirection: "row",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: spacing.md,
-    },
-
-    meta_item: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 4,
+    card_body: {
+        gap: spacing.xs,
+        padding: spacing.md,
     },
 })

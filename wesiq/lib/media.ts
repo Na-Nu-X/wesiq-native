@@ -30,5 +30,5 @@ export const getInitials = (user:{ first_name?:string|null, last_name?:string|nu
     const last:string = user.last_name?.trim().charAt(0) ?? "" // Gets The Last Initial
     const initials:string = `${first}${last}`.toUpperCase() // Gets The Initials
 
-    return initials || user.username.charAt(0).toUpperCase() || "?"
+    return initials || user.username.replace(/^@+/, "").charAt(0).toUpperCase() || "?" // Usernames Start With "@", Which Isn't An Initial
 }

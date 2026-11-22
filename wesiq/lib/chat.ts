@@ -114,3 +114,44 @@ export const shareArticleToChat = async (article_id:number, receiver_username:st
         socket.onclose = () => finish({ ok: false, message: i18n.t("Spojenie sa neočakávane prerušilo.") })
     })
 }
+
+// Function For Fit Waveform Samples (0 - 1) To An Exact Number Of Bars
+export const fitWaveformToBars = (samples:readonly number[], target_bars:number):number[] => {
+    if(!samples || samples.length === 0) return Array(target_bars).fill(0.2)
+    if(samples.length === 1) return Array(target_bars).fill(samples[0])
+    if(samples.length === target_bars) return [...samples]
+
+    // Fewer Samples Than Bars (Interpolates Between Them)
+    if(samples.length < target_bars) {
+        const result:number[] = []
+        const max_index:number = samples.length - 1
+
+        for(let i:number = 0; i < target_bars; i++) {
+            const exact_pos:number = (i / (target_bars - 1)) * max_index
+            const low:number = Math.floor(exact_pos)
+            const high:number = Math.ceil(exact_pos)
+            const weight:number = exact_pos - low
+
+            const interpolated:number = samples[low] * (1 - weight) + samples[high] * weight
+
+            result.push(Number(interpolated.toFixed(3)))
+        }
+
+        return result
+    }
+
+    // More Samples Than Bars (Averages Them)
+    const step:number = samples.length / target_bars
+    const result:number[] = []
+
+    for(let i:number = 0; i < target_bars; i++) {
+        const start:number = Math.floor(i * step)
+        const end:number = Math.floor((i + 1) * step)
+        const slice:number[] = samples.slice(start, Math.max(start + 1, end))
+        const avg:number = slice.reduce((sum, val) => sum + val, 0) / slice.length
+
+        result.push(Number(avg.toFixed(3)))
+    }
+
+    return result
+}

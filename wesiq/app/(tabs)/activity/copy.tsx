@@ -1,19 +1,19 @@
 // Copy An Official Training Plan (List → Editor Prefilled With The Plan)
 
-import { useState } from "react"
+import { ReactNode, useState } from "react"
 import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
-import { Card, Chip, EmptyState, ErrorState, Header, Screen, Skeleton, Text } from "@/components/ui"
+import { EmptyState, ErrorState, Header, Screen, Skeleton } from "@/components/ui"
 import { radii } from "@/theme"
 import TrainingPlanEditor from "@/components/features/training-plan/TrainingPlanEditor"
 import PlanCard from "@/components/features/training-plan/PlanCard"
+import LockedPlanCard from "@/components/features/training-plan/LockedPlanCard"
 import SignInRequired from "@/components/features/training-plan/SignInRequired"
 import { draftFromRows, PlanSummary } from "@/components/features/training-plan/model"
 import { getTakenDays, useMyPlans, useOfficialPlans } from "@/components/features/training-plan/usePlans"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 
 import type { OfficialTrainingPlanExercise } from "@/types/models"
-import { View } from "react-native"
 
 export default function CopyTrainingPlanScreen() {
     const { t } = useTranslation() // Initializes The Translations
@@ -24,51 +24,20 @@ export default function CopyTrainingPlanScreen() {
 
     const selected_plan:PlanSummary<OfficialTrainingPlanExercise>|undefined = plans.find((plan) => plan.key === selected_key) // Gets The Selected Plan
 
-    const renderPlan = (plan:PlanSummary<OfficialTrainingPlanExercise>) => {
-        const first_row:OfficialTrainingPlanExercise|undefined = plan.rows[0]
-        const is_for_subscribers:boolean = first_row?.is_for_subscribers === true
-        const is_locked:boolean = first_row?.is_locked === true
-    
-        // Locked Plan
-        if(is_locked) {
-            return (
-                <Card
-                    key={plan.key}
-                    padding="lg"
-                    onPress={() => router.push("/subscribe")}
-                    accessibility_label={t("Prémiový plán: {{title}}", { title: plan.title })}
-                    style={{ gap: 16 }}
-                >
-                    <View>
-                        <Text variant="heading" numberOfLines={1}>{plan.title}</Text>
-                        <Text variant="caption" color="text_secondary">{t("Dostupné s aktívnym predplatným")}</Text>
-                    </View>
+    // Function For Render One Plan (Locked Plans Lead To The Subscription Screen)
+    const renderPlan = (plan:PlanSummary<OfficialTrainingPlanExercise>):ReactNode => {
+        const first_row:OfficialTrainingPlanExercise|undefined = plan.rows[0] // Gets The First Row (Every Row Of A Plan Shares The Flags)
 
-                    <View style={{ alignItems: "center" }}>
-                        <Chip 
-                            label={t("Prémiový plán")} 
-                            icon="lock" 
-                            
-                            style={{ 
-                                flexDirection: "column",
-                                paddingVertical: 10,
-                                paddingHorizontal: 20,
-                            }}
-                        />
-                    </View>
-                </Card>
-            )
-        }
-    
-        // Plan
+        if(first_row?.is_locked) return <LockedPlanCard key={plan.key} plan={plan} onPress={() => router.push("/subscribe")} />
+
         return (
-            <PlanCard 
-                key={plan.key} 
-                plan={plan} 
-                action_label={t("Použiť tento plán")} 
-                action_icon="copy" 
-                onPress={() => setSelectedKey(plan.key)} 
-                is_subscriber_plan={is_for_subscribers}
+            <PlanCard
+                key={plan.key}
+                plan={plan}
+                action_label={t("Použiť tento plán")}
+                action_icon="copy"
+                onPress={() => setSelectedKey(plan.key)}
+                is_subscriber_plan={first_row?.is_for_subscribers === true}
             />
         )
     }
@@ -101,7 +70,7 @@ export default function CopyTrainingPlanScreen() {
             {state.status === "error" && <ErrorState error={state.error} onRetry={refetch} />}
             {state.status === "success" && plans.length === 0 && <EmptyState icon="clipboard-list" title={t("Žiadne plány")} />}
 
-            {plans.map((plan) => (renderPlan(plan)))}
+            {plans.map(renderPlan)}
         </Screen>
     )
 }

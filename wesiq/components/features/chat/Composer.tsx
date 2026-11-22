@@ -1,7 +1,8 @@
 // Message Composer: Text, Attachments (Photos / Videos / Files) And Editing
 
 import { ComponentRef, useEffect, useRef, useState } from "react"
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from "react-native"
+import { ScrollView, StyleSheet, TextInput, View } from "react-native"
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated"
 import { Image } from "expo-image"
 import * as DocumentPicker from "expo-document-picker"
 import * as ImagePicker from "expo-image-picker"
@@ -15,8 +16,8 @@ import { getMediaLimits } from "@/components/features/upload-post/mediaRules"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { AudioModule, AudioRecorder, RecordingPresets, setAudioModeAsync, useAudioRecorder, useAudioRecorderState } from "expo-audio"
 import { haptics } from "@/lib/haptics"
-import { SECONDARY_COLOR } from "@/constants/colors"
 import { getFormattedTime } from "@/utils/time"
+import { fitWaveformToBars } from "@/lib/chat"
 
 import type { UploadableFile } from "@/lib/api/upload"
 import type { ChatMessage } from "@/types/models"
@@ -32,6 +33,9 @@ export const MAX_MESSAGE_LENGTH:number = 250 // Same As Before
 const MAX_ATTACHMENTS:number = 5
 
 export const WAVEFORM_BARS:number = 35 // Defines The Waveform Bars
+const MAX_LIVE_BARS:number = 120 // Most Bars The Live Waveform Can Show (Wide Screens)
+const BAR_WIDTH:number = 3 // Width Of One Waveform Bar
+const BAR_GAP:number = 2 // Gap Between Waveform Bars
 
 interface ComposerProps {
     value:string,
@@ -45,6 +49,47 @@ interface ComposerProps {
     onSend:() => void,
     is_sending:boolean,
     is_disabled:boolean // Not Connected Yet
+}
+
+// Converts Decibels (From -60 dB - 0 dB To 0.05 - 1.0)
+const dbToNormalized = (db?:number):number => {
+    if(typeof db !== "number" || Number.isNaN(db)) return 0.1
+    const clamped:number = Math.max(-60, Math.min(0, db))
+    return Number((0.05 + ((clamped + 60) / 60) * 0.95).toFixed(3))
+}
+
+// Function For Normalize Wave Form
+const normalizeWaveform = (samples:number[], targetBars:number = WAVEFORM_BARS):number[] => {
+    if(samples.length === 0) return Array(targetBars).fill(0.15)
+    if(samples.length <= targetBars) return samples
+
+    const step:number = samples.length / targetBars // Gets The Step
+    const result:number[] = [] // Stores The Result
+
+    for(let i:number = 0; i < targetBars; i++) {
+        const start:number = Math.floor(i * step)
+        const end:number = Math.floor((i + 1) * step)
+        const slice:number[] = samples.slice(start, Math.max(start + 1, end))
+        const average:number = slice.reduce((sum, val) => sum + val, 0) / slice.length
+
+        result.push(Number(average.toFixed(3)))
+    }
+
+    return result // Returns Result
+}
+
+// Pulsing Red Dot Shown While Recording
+function RecordingDot() {
+    const opacity = useSharedValue<number>(1) // Opacity Of The Dot
+
+    // Initializes The Pulse Animation
+    useEffect(() => {
+        opacity.set(withRepeat(withTiming(0.25, { duration: 700 }), -1, true))
+    }, [opacity])
+
+    const dot_style = useAnimatedStyle(() => ({ opacity: opacity.get() }))
+
+    return <Animated.View style={[styles.recording_dot, dot_style]} />
 }
 
 export default function Composer({ 
@@ -72,6 +117,7 @@ export default function Composer({
 
     const raw_samples_reference = useRef<number[]>([]) // Stores The Raw Samples Reference
     const [live_waveform, setLiveWaveform] = useState<number[]>([]) // Stores The Live Waveform
+    const [waveform_width, setWaveformWidth] = useState<number>(0) // Stores The Width Available For The Waveform
 
     // Initializes The Focus Of The Input When Editing Starts (Long-Press Menu Or Swipe), So The Keyboard Opens
     useEffect(() => {
@@ -94,8 +140,16 @@ export default function Composer({
 
         const sample = dbToNormalized(audio_recorder_state.metering)
         raw_samples_reference.current.push(sample)
-        setLiveWaveform(raw_samples_reference.current.slice(-WAVEFORM_BARS))
+        setLiveWaveform(raw_samples_reference.current.slice(-MAX_LIVE_BARS))
     }, [audio_recorder_state.isRecording, audio_recorder_state.durationMillis, audio_recorder_state.metering])
+
+    const is_recording:boolean = audio_recorder_state.isRecording // Stores The Information If A Voice Message Is Being Recorded
+    const is_voice_mode:boolean = is_recording || !!voice_message // The Recorder Replaces The Text Input
+    const voice_seconds:number = (is_recording ? audio_recorder_state.durationMillis : (voice_message?.duration ?? 0)) / 1000 // Gets The Shown Duration
+
+    const bar_capacity:number = Math.min(MAX_LIVE_BARS, Math.max(1, Math.floor((waveform_width + BAR_GAP) / (BAR_WIDTH + BAR_GAP)))) // Bars That Fit The Width
+    const live_samples:number[] = live_waveform.slice(-bar_capacity) // Newest Samples That Fit
+    const live_bars:(number|null)[] = [...Array<null>(bar_capacity - live_samples.length).fill(null), ...live_samples] // Dots Fill The Rest Until The Recording Is Long Enough
 
     const can_send:boolean = !is_disabled && !is_sending && (value.trim().length > 0 || attachments.length > 0 || !!voice_message)
 
@@ -219,7 +273,7 @@ export default function Composer({
             // Creates The File
             const file:UploadableFile = {
                 uri,
-                name: `voice_${Date.now()}.m4a`,
+                name: uri.split("/").pop() || "voice_message.m4a", // The Recorder Already Gives The File A Unique Name
                 mime_type: "audio/mp4"
             }
 
@@ -260,33 +314,6 @@ export default function Composer({
         }
     }
 
-    // Converts Decibels (From -60 dB - 0 dB To 0.05 - 1.0)
-    const dbToNormalized = (db?:number):number => {
-        if(typeof db !== "number" || Number.isNaN(db)) return 0.1
-        const clamped:number = Math.max(-60, Math.min(0, db))
-        return Number((0.05 + ((clamped + 60) / 60) * 0.95).toFixed(3))
-    }
-
-    // Function For Normalize Wave Form
-    const normalizeWaveform = (samples:number[], targetBars:number = WAVEFORM_BARS):number[] => {
-        if(samples.length === 0) return Array(targetBars).fill(0.15)
-        if(samples.length <= targetBars) return samples
-
-        const step:number = samples.length / targetBars // Gets The Step
-        const result:number[] = [] // Stores The Result
-
-        for(let i:number = 0; i < targetBars; i++) {
-            const start:number = Math.floor(i * step)
-            const end:number = Math.floor((i + 1) * step)
-            const slice:number[] = samples.slice(start, Math.max(start + 1, end))
-            const average:number = slice.reduce((sum, val) => sum + val, 0) / slice.length
-
-            result.push(Number(average.toFixed(3)))
-        }
-
-        return result // Returns Result
-    }
-
     return (
         <View style={styles.container}>
             {!!editing && (
@@ -324,95 +351,38 @@ export default function Composer({
             )}
 
             <View style={styles.row}>
-                {!editing && (
+                {!editing && !is_voice_mode && (
                     <>
                         <IconButton icon="image" accessibility_label={t("Pridať fotky alebo videá")} onPress={pickMedia} is_disabled={remaining <= 0} size={40} icon_color="primary" is_solid_icon={false} />
                         <IconButton icon="paperclip" accessibility_label={t("Pridať súbor")} onPress={pickDocuments} is_disabled={remaining <= 0} size={40} icon_color="primary" />
                     </>
                 )}
 
-                {audio_recorder_state.isRecording ? (
-                    <View style={styles.recording_container}>
-                        <Pressable 
-                            onPress={discardVoiceMessage} 
-                            accessibilityLabel={t("Vymazať nahrávku")}
-                            style={styles.delete_button}
-                        >
-                            <Icon name="trash" size={20} color="danger" />
-                        </Pressable>
+                {is_voice_mode ? (
+                    <>
+                        <IconButton icon="trash" accessibility_label={t("Vymazať nahrávku")} onPress={discardVoiceMessage} is_disabled={is_sending} size={40} icon_color="danger" />
 
-                        <View style={styles.recording_info}>
-                            <View 
-                                style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: 4,
-                                    backgroundColor: colors.danger,
-                                }} 
-                            />
+                        <View style={styles.voice_pill} accessibilityLiveRegion="polite" accessibilityLabel={is_recording ? t("Nahrávanie") : t("Hlasová správa")}>
+                            {is_recording ? <RecordingDot /> : <Icon name="microphone" size={14} color="primary" />}
 
-                            <Text style={styles.timer_text}>{getFormattedTime("minutes", audio_recorder_state.durationMillis / 1000)}:{getFormattedTime("seconds", audio_recorder_state.durationMillis / 1000, true)}</Text>
+                            <Text variant="label" color={is_recording ? "text" : "text_secondary"} is_tabular style={styles.voice_time}>
+                                {getFormattedTime("minutes", voice_seconds)}:{getFormattedTime("seconds", voice_seconds, true)}
+                            </Text>
 
-                            <View style={styles.waveform_container}>
-                                {live_waveform.map((value:number, index:number) => (
-                                    <View
-                                        key={index}
-
-                                        style={[
-                                            styles.waveform_bar,
-                                            { height: Math.max(4, value * 24) },
-                                        ]}
-                                    />
+                            <View style={styles.waveform_container} onLayout={(event) => setWaveformWidth(event.nativeEvent.layout.width)}>
+                                {(is_recording ? live_bars : fitWaveformToBars(voice_message?.waveform ?? [], bar_capacity)).map((value:number|null, index:number) => (
+                                    <View key={index} style={styles.waveform_slot}>
+                                        <View style={[styles.waveform_bar, value === null ? styles.waveform_bar_empty : is_recording ? null : styles.waveform_bar_ready, { height: value === null ? BAR_WIDTH : Math.max(4, Math.min(22, value * 22)) }]} />
+                                    </View>
                                 ))}
                             </View>
                         </View>
 
-                        <Pressable 
-                            onPress={stopRecording} 
-                            accessibilityLabel={t("Ukončiť nahrávanie")}
-
-                            style={[
-                                styles.stop_button,
-                                { marginLeft: "auto" },
-                            ]}
-                        >
-                            <Icon name="stop" size={20} color="danger" />
-                        </Pressable>
-                    </View>
-                ) : voice_message ? (
-                    <View style={styles.recording_container}>
-                        <Pressable 
-                            onPress={discardVoiceMessage} 
-                            disabled={is_sending}
-                            accessibilityLabel={t("Vymazať nahrávku")}
-                            style={styles.delete_button}
-                        >
-                            <Icon name="trash" size={20} color="danger" />
-                        </Pressable>
-
-                        <View style={styles.recording_info}>
-                            <Icon name="microphone" size={20} color="primary" />
-
-                            <Text style={styles.timer_text}>{getFormattedTime("minutes", voice_message.duration / 1000)}:{getFormattedTime("seconds", voice_message.duration / 1000, true)}</Text>
-
-                            <View style={styles.waveform_container}>
-                                {voice_message.waveform.map((value:number, index:number) => (
-                                    <View
-                                        key={index}
-
-                                        style={[
-                                            styles.waveform_bar,
-                                            styles.waveform_bar_ready,
-                                            { height: Math.max(4, value * 24) },
-                                        ]}
-                                    />
-                                ))}
-                            </View>
-                        </View>
-                    </View>
+                        {is_recording && <IconButton icon="stop" accessibility_label={t("Ukončiť nahrávanie")} onPress={stopRecording} variant="danger" size={40} />}
+                    </>
                 ) : (
                     <>
-                        <IconButton icon="microphone" accessibility_label={t("Spustiť nahrávanie")} onPress={startRecording} size={40} icon_color="primary" />
+                        {!editing && <IconButton icon="microphone" accessibility_label={t("Spustiť nahrávanie")} onPress={startRecording} size={40} icon_color="primary" />}
 
                         <TextField
                             ref={input_reference}
@@ -427,7 +397,6 @@ export default function Composer({
                         />
                     </>
                 )}
-
 
                 <IconButton icon="paper-plane" accessibility_label={editing ? t("Uložiť zmeny") : t("Odoslať")} onPress={onSend} is_disabled={!can_send} variant="solid" size={44} />
             </View>
@@ -486,67 +455,54 @@ const styles = StyleSheet.create({
         gap: spacing.xs,
     },
 
-    recording_container: {
+    voice_pill: {
+        flex: 1,
+        minHeight: 44,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
-        gap: 10,
-        flex: 1,
-        minHeight: 40,
-        marginRight: 10,
+        gap: spacing.sm,
+        paddingHorizontal: spacing.md,
+        backgroundColor: colors.surface_raised,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: radii.pill,
     },
 
-    recording_info: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 10,
-        width: "100%",
-        height: 40,
-        paddingHorizontal: 10,
+    recording_dot: {
+        width: 8,
+        height: 8,
+        backgroundColor: colors.danger,
+        borderRadius: radii.pill,
     },
 
-    timer_text: {
-        fontSize: 12,
-        fontWeight: "600",
-        fontVariant: ["tabular-nums"],
-        color: SECONDARY_COLOR,
+    voice_time: {
+        minWidth: 34,
     },
 
     waveform_container: {
+        flex: 1,
+        height: 24,
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "center",
-        flex: 1,
-        gap: 5,
-        height: 25,
         overflow: "hidden",
     },
 
+    waveform_slot: {
+        flex: 1,
+        alignItems: "center", // Each Bar Gets An Equal Share Of The Width, So The Bars Span The Whole Space
+    },
+
     waveform_bar: {
-        width: 2.5,
-        borderRadius: 2,
+        width: BAR_WIDTH,
+        borderRadius: radii.pill,
         backgroundColor: colors.text_muted,
+    },
+
+    waveform_bar_empty: {
+        opacity: 0.35,
     },
 
     waveform_bar_ready: {
         backgroundColor: colors.primary,
-    },
-
-    delete_button: {
-        alignItems: "center",
-        justifyContent: "center",
-        width: 40,
-        height: 40,
-    },
-
-    stop_button: {
-        alignItems: "center",
-        justifyContent: "center",
-        width: 40,
-        height: 40,
-        borderWidth: 1,
-        borderColor: colors.danger,
-        borderRadius: "50%",
     },
 })

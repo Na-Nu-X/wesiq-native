@@ -6,8 +6,8 @@ import { colors, radii, spacing } from "@/theme"
 import { getMediaUrl } from "@/lib/media"
 import { AudioPlayer, AudioStatus, setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from "expo-audio"
 import { getFormattedTime } from "@/utils/time"
-import { BLUE_COLOR, SECONDARY_COLOR, transparentize } from "@/constants/colors"
 import { WAVEFORM_BARS } from "./Composer"
+import { fitWaveformToBars } from "@/lib/chat"
 
 import type { VoiceMessage } from "@/types/models"
 
@@ -82,13 +82,18 @@ export default function VoiceMessagePlayer({ voice_message, is_own, is_active, o
     const progress:number = is_active && total_seconds > 0 ? Math.min(1, Math.max(0, current_seconds / total_seconds)) : 0
     const is_playing:boolean = is_active && !is_paused
 
-    useEffect(() => {
+    // Resets The Playback State When Another Voice Message Starts Playing (Adjusted During Render)
+    const [was_active, setWasActive] = useState<boolean>(is_active)
+
+    if(was_active !== is_active) {
+        setWasActive(is_active)
+
         if(!is_active) {
             setIsPaused(false)
             setCurrentSeconds(0)
             setSeekToSeconds(null)
         }
-    }, [is_active])
+    }
 
     const handlePressPlayPause = ():void => {
         if(!audio_url) return
@@ -116,46 +121,6 @@ export default function VoiceMessagePlayer({ voice_message, is_own, is_active, o
         }
     }
 
-    const fitWaveformToBars = (samples:number[], target_bars:number = WAVEFORM_BARS):number[] => {
-        if(!samples || samples.length === 0) return Array(target_bars).fill(0.2)
-        if(samples.length === 1) return Array(target_bars).fill(samples[0])
-        if(samples.length === target_bars) return samples
-
-        // Shorter Recording (Less Than 35 Samples)
-        if(samples.length < target_bars) {
-            const result:number[] = []
-            const max_index:number = samples.length - 1
-
-            for(let i:number = 0; i < target_bars; i++) {
-                const exact_pos:number = (i / (target_bars - 1)) * max_index
-                const low:number = Math.floor(exact_pos)
-                const high:number = Math.ceil(exact_pos)
-                const weight:number = exact_pos - low
-
-                const interpolated:number = samples[low] * (1 - weight) + samples[high] * weight
-
-                result.push(Number(interpolated.toFixed(3)))
-            }
-
-            return result
-        }
-
-        // Longer Recording (More Than 35 Samples)
-        const step:number = samples.length / target_bars
-        const result:number[] = []
-
-        for(let i:number = 0; i < target_bars; i++) {
-            const start:number = Math.floor(i * step)
-            const end:number = Math.floor((i + 1) * step)
-            const slice:number[] = samples.slice(start, Math.max(start + 1, end))
-            const avg:number = slice.reduce((sum, val) => sum + val, 0) / slice.length
-
-            result.push(Number(avg.toFixed(3)))
-        }
-
-        return result
-    }
-
     const bars:number[] = fitWaveformToBars(voice_message.waveform, WAVEFORM_BARS) // Gets The Bars
 
     return (
@@ -181,23 +146,22 @@ export default function VoiceMessagePlayer({ voice_message, is_own, is_active, o
                 accessibilityLabel={is_playing ? t("Pozastaviť hlasovú správu") : t("Prehrať hlasovú správu")}
                 style={[styles.play_button, is_own ? styles.play_button_own : styles.play_button_other]}
             >
-                <Icon
-                    name={is_playing ? "pause" : "play"}
-                    size={16}
-                    color={is_own ? "on_primary" : "primary"}
-                />
+                <View style={is_playing ? null : styles.play_icon}>
+                    <Icon name={is_playing ? "pause" : "play"} size={14} color={is_own ? "primary_solid" : "on_primary"} />
+                </View>
             </Pressable>
 
             <View style={styles.voice_message_body}>
                 <View style={styles.waveform}>
                     {bars.map((value:number, index:number) => {
-                        const is_filled:boolean = (index / bars.length) <= progress
+                        const is_filled:boolean = progress > 0 && ((index + 0.5) / bars.length) <= progress // Bars Behind The Playback Position
 
                         return (
                             <Pressable
                                 key={index}
                                 onPress={() => handleSeekBar(index)}
                                 hitSlop={{ top: 8, bottom: 8 }}
+                                accessible={false}
                                 style={styles.bar_touch}
                             >
                                 <View
@@ -214,7 +178,7 @@ export default function VoiceMessagePlayer({ voice_message, is_own, is_active, o
                     })}
                 </View>
 
-                <Text variant="caption" color={is_own ? "on_primary" : "text_muted"} style={styles.duration}>
+                <Text variant="caption" color={is_own ? "on_primary" : "text_muted"} is_tabular style={[styles.duration, is_own ? styles.duration_own : null]}>
                     {is_active 
                         ? `${getFormattedTime("minutes", current_seconds)}:${getFormattedTime("seconds", current_seconds, true)}`
                         : `${getFormattedTime("minutes", total_seconds)}:${getFormattedTime("seconds", total_seconds, true)}`
@@ -229,69 +193,76 @@ const styles = StyleSheet.create({
     voice_message_container: {
         flexDirection: "row",
         alignItems: "center",
-        gap: 10,
-        minWidth: 190,
-        paddingVertical: 2,
+        gap: spacing.sm + 2,
+        minWidth: 200,
+        paddingVertical: spacing.xxs,
     },
 
     play_button: {
-        justifyContent: "center",
+        width: 36,
+        height: 36,
         alignItems: "center",
-        width: 32,
-        height: 32,
-        borderRadius: "50%",
+        justifyContent: "center",
+        borderRadius: radii.pill,
     },
 
     play_button_own: {
-        backgroundColor: transparentize(SECONDARY_COLOR, 0.8),
+        backgroundColor: colors.white,
     },
 
     play_button_other: {
-        backgroundColor: transparentize(BLUE_COLOR, 0.8),
+        backgroundColor: colors.primary_solid,
+    },
+
+    play_icon: {
+        marginLeft: 2, // Optically Centers The Play Triangle
     },
 
     voice_message_body: {
         flex: 1,
-        gap: 4,
+        gap: spacing.xxs,
     },
 
     waveform: {
         flexDirection: "row",
         alignItems: "center",
-        height: 24,
-        gap: 2,
+        height: 26,
+        gap: 1,
     },
 
     bar_touch: {
-        justifyContent: "center",
-        alignItems: "center",
         flex: 1,
-        height: 24,
+        height: 26,
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     bar: {
-        width: 2.5,
-        borderRadius: 2,
+        width: 3,
+        borderRadius: radii.pill,
     },
 
     bar_own_active: {
-        backgroundColor: SECONDARY_COLOR,
+        backgroundColor: colors.white,
     },
 
     bar_own_idle: {
-        backgroundColor: transparentize(SECONDARY_COLOR, 0.6),
+        backgroundColor: "rgba(255, 255, 255, 0.4)",
     },
 
     bar_other_active: {
-        backgroundColor: BLUE_COLOR,
+        backgroundColor: colors.primary,
     },
 
     bar_other_idle: {
-        backgroundColor: transparentize(SECONDARY_COLOR, 0.6),
+        backgroundColor: "rgba(129, 144, 181, 0.45)", // "text_muted" At 45%
     },
 
     duration: {
-        fontSize: 10,
-        fontVariant: ["tabular-nums"],
+        fontSize: 11,
+    },
+
+    duration_own: {
+        opacity: 0.85,
     },
 })

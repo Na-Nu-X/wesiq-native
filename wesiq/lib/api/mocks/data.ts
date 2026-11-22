@@ -364,6 +364,11 @@ export const MOCK_OFFICIAL_TRAINING_PLANS:OfficialTrainingPlanExercise[] = [
     { id: 111, training_plan_key: "official_push", type: "Push day", exercise: "Bench press", periods: [8, 8, 6, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: false, is_locked: false },
     { id: 112, training_plan_key: "official_push", type: "Push day", exercise: "Overhead press", periods: [10, 8, 8], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
     { id: 113, training_plan_key: "official_push", type: "Push day", exercise: "Dips", periods: [12, 10, 10], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 121, training_plan_key: "official_pull", type: "Pull day", exercise: "Pull-ups", periods: [8, 8, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: true, is_locked: false },
+    { id: 122, training_plan_key: "official_pull", type: "Pull day", exercise: "Rows", periods: [10, 10, 10], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: true, is_locked: false },
+    { id: 131, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
+    { id: 132, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
+    { id: 133, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
 ]
 
 // ---------- Activity & Tasks ----------

@@ -10,7 +10,7 @@ export interface ChipProps {
     onPress?:() => void,
     icon?:IconName,
     is_disabled?:boolean,
-    tone?:"primary"|"success"|"warning"|"danger",
+    tone?:"primary"|"success"|"warning"|"danger"|"premium",
     style?:StyleProp<ViewStyle>
 }
 
@@ -19,6 +19,7 @@ const TONES = {
     success: { background: colors.success_soft, border: "rgba(61, 214, 140, 0.32)", text: "success" },
     warning: { background: colors.warning_soft, border: "rgba(240, 193, 74, 0.32)", text: "warning" },
     danger: { background: colors.danger_soft, border: "rgba(255, 92, 106, 0.32)", text: "danger" },
+    premium: { background: colors.premium_soft, border: "rgba(240, 193, 74, 0.32)", text: "premium" },
 } as const
 
 export default function Chip({ label, is_selected = false, onPress, icon, is_disabled = false, tone = "primary", style }:ChipProps) {
