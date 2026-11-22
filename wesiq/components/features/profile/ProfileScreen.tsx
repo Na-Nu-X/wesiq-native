@@ -24,6 +24,7 @@ import { formatUsername } from "@/lib/format"
 import { getLinkDomain, getLinkIcon } from "@/lib/links"
 
 import type { BioLink, Profile } from "@/types/models"
+import EnlargingAvatar from "@/components/ui/EnlargingAvatar"
 
 type GridTab = "posts"|"saved"
 
@@ -132,7 +133,7 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
                 {/* ---------- Hero ---------- */}
                 <Card padding="lg" style={styles.hero}>
                     <View style={styles.hero_row}>
-                        <Avatar user={profile} size={84} />
+                        <EnlargingAvatar user={profile} size={84} />
 
                         <View style={styles.hero_text}>
                             {display_name ? <Text variant="heading" numberOfLines={2}>{display_name}</Text> : null}

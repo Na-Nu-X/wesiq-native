@@ -300,6 +300,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
                         <Icon name="heart" size={21} color={is_liked ? "danger" : "text"} is_solid={is_liked} />
                         <HeartParticles particles={particles} onComplete={(id:number) => setParticles((previous:HeartParticle[]) => previous.filter((particle:HeartParticle) => particle.id !== id))} />
                     </View>
+                    
                     {show_likes && <Text variant="body_strong" is_tabular>{post.likes}</Text>}
                 </Pressable>
 

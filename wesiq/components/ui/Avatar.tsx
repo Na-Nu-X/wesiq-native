@@ -20,7 +20,11 @@ export interface AvatarProps {
     is_ring_hidden?:boolean // Hides The Premium Ring (E.g. In Dense Lists)
 }
 
-export default function Avatar({ user, size = 40, is_ring_hidden = false }:AvatarProps) {
+export default function Avatar({ 
+    user, 
+    size = 40, 
+    is_ring_hidden = false 
+}:AvatarProps) {
     const picture_url:string|null = getProfilePictureUrl(user) // Gets The Picture URL
     const [failed_url, setFailedUrl] = useState<string|null>(null) // Stores The URL That Failed To Load
     const has_picture:boolean = picture_url !== null && failed_url !== picture_url // Stores The Information If The Picture Can Be Shown

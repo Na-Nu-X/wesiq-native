@@ -27,7 +27,11 @@ export interface ArticleDetail extends Article {
 export const getArticleWebLink = (article:Pick<Article, "link">):string => `${DOMAIN}/sk/blog/${encodeURIComponent(article.link)}`
 
 // Function For Get The Image URL Of An Article
-export const getArticleImageUrl = (image_name:string|null):string|null => image_name ? `${DOMAIN}/static/images/articles/${encodeURIComponent(image_name)}` : null
+export const getArticleImageUrl = (article:Pick<Article, "image_name"|"image_version">):string|null => {
+    if(!article.image_name) return null
+    const url:string = `${DOMAIN}/static/images/articles/${encodeURIComponent(article.image_name)}`
+    return article.image_version ? `${url}?v=${article.image_version}` : url // Version Changes When The Image Is Replaced, So The Cached Copy Isn't Reused
+}
 
 const isArticle = (value:unknown):value is Article => isRecord(value) && isNumber(value.id) && isString(value.title) && isString(value.link)
 

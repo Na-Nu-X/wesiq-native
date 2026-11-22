@@ -26,7 +26,7 @@ export interface DraftMedia {
     file_name:string,
     mime_type:string,
     file_size:number|null,
-    duration_seconds:number|null, // The Picker Reports Milliseconds, Converted When Picked
+    duration_seconds:number|null, // Always Seconds (Native Pickers Report Milliseconds, Web Seconds, Normalized When Picked)
     width:number,
     height:number,
     web_file:File|null,

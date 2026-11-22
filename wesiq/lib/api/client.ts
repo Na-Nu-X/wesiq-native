@@ -235,7 +235,6 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
         return createError<T>("invalid_response", response.status)
     }
 
-    console.log(json)
     return { ok: true, data: json as T, message: json.message ?? "", status: response.status }
 }
 

@@ -63,7 +63,7 @@ export default function BlogScreen() {
 
     // Function For Render One Article
     const renderArticle = ({ item }:ListRenderItemInfo<Article>) => {
-        const image_url:string|null = getArticleImageUrl(item.image_name)
+        const image_url:string|null = getArticleImageUrl(item)
 
         return (
             <View>

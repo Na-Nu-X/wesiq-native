@@ -385,6 +385,7 @@ export interface Article {
     title:string,
     description:string,
     image_name:string|null,
+    image_version?:number|null, // Modification Time Of The Image (Busts The Image Cache When It's Replaced)
     html_filename:string|null,
     link:string,
     categories:string[],

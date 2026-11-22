@@ -132,11 +132,12 @@ function MessageBubble({
 
     const post:SharedPost|null = toSharedPost(message.post) // Gets The Shared Post (Null For The Empty Object Of A Plain Message)
     const post_preview:string|null = post?.media ? getMediaUrl(post.media.is_video ? (post.media.thumbnail ?? post.media.file) : post.media.file) : null
+    const show_likes:boolean = !!post && (!post.hide_likes || is_own) // Stores The Information If The Like Count Is Visible
 
     const voice_message:VoiceMessage|null = message.voice_message // Gets The Voice Message
 
     const article:Article|null = message.article // Gets The Article
-    const article_image:string|null = article ? getArticleImageUrl(article.image_name) : null // Gets The Article Image
+    const article_image:string|null = article ? getArticleImageUrl(article) : null // Gets The Article Image
 
     return (    
         <GestureDetector gesture={swipe_gesture}>
@@ -193,6 +194,35 @@ function MessageBubble({
                             <View style={styles.post_text}>
                                 <Text variant="label" numberOfLines={1}>{formatUsername(post.user.username)}</Text>
                                 {post.description ? <Text variant="caption" color="text_secondary" numberOfLines={2}>{post.description}</Text> : null}
+
+                                <View 
+                                    style={{ 
+                                        flexDirection: "row",
+                                        gap: 10,
+                                    }}
+                                >
+                                    <View 
+                                        style={{ 
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            gap: 5,
+                                        }}
+                                    >
+                                        <Icon name="heart" size={15} color="text" is_solid={false} />
+                                        {show_likes && <Text variant="body_strong" is_tabular>{post.likes}</Text>}
+                                    </View>
+
+                                    <View 
+                                        style={{ 
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            gap: 5,
+                                        }}
+                                    >
+                                        <Icon name={post.allow_comments ? "comment" : "comment-slash"} size={15} color="text" is_solid={false} />
+                                        {post.allow_comments && <Text variant="body_strong" is_tabular>{post.comments}</Text>}
+                                    </View>
+                                </View>
                             </View>
                         </Pressable>
                     )}

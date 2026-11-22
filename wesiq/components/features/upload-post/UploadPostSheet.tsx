@@ -1,7 +1,7 @@
 // Create Post Flow: 1. Media → 2. Details → 3. Audience → Upload With Progress → Done
 
 import { useReducer, useRef } from "react"
-import { ScrollView, StyleSheet, View } from "react-native"
+import { Platform, ScrollView, StyleSheet, View } from "react-native"
 import { Image } from "expo-image"
 import * as ImagePicker from "expo-image-picker"
 import { useTranslation } from "react-i18next"
@@ -157,7 +157,7 @@ const toDraftMedia = (asset:ImagePicker.ImagePickerAsset, index:number, used_nam
         file_name: makeUniqueName(asset.fileName ?? fallback_name, used_names),
         mime_type: asset.mimeType ?? (is_video ? "video/mp4" : "image/jpeg"),
         file_size: typeof asset.fileSize === "number" ? asset.fileSize : (asset.file?.size ?? null),
-        duration_seconds: typeof asset.duration === "number" ? asset.duration / 1000 : null, // The Picker Reports Milliseconds
+        duration_seconds: typeof asset.duration === "number" ? (Platform.OS === "web" ? asset.duration : asset.duration / 1000) : null, // Native Pickers Report Milliseconds, Web Reports Seconds
         width: asset.width,
         height: asset.height,
         web_file: asset.file ?? null,
@@ -590,8 +590,6 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
                     <Button
                         label={is_last ? (state.error ? t("Skúsiť znova") : t("Zdieľať príspevok")) : t("Pokračovať")}
-                        icon={is_last ? "paper-plane" : "arrow-right"}
-                        icon_position={is_last ? "left" : "right"}
                         onPress={() => is_last ? uploadPost() : dispatch({ type: "set_step", step: "audience" })}
                         style={styles.flex}
                     />

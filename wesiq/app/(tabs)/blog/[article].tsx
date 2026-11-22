@@ -104,7 +104,7 @@ export default function ArticleScreen() {
     }
 
     const Body:ComponentType|undefined = article.html_filename ? ARTICLE_BODIES[article.html_filename] : undefined
-    const image_url:string|null = getArticleImageUrl(article.image_name)
+    const image_url:string|null = getArticleImageUrl(article)
 
     const stats:{ label:string, value:number|null, text?:string }[] = [
         { label: t("Obtiažnosť"), value: article.difficulty, text: article.difficulty !== null ? getDifficultyLabel(article.difficulty) : undefined },
