@@ -33,7 +33,7 @@ export default function HomeScreen() {
     const uploads = useUploadTracking(logged_in_user !== null) // Tracks Posts Being Processed
 
     const requireLogin = useCallback(() => auth_sheet.open("login_form"), [auth_sheet])
-    const sheets = usePostSheets({ updatePost: feed.updatePost, removePost: feed.removePost, onRequireLogin: requireLogin })
+    const sheets = usePostSheets({ updatePost: feed.updatePost, removePost: feed.removePost, updateAuthor: feed.updateAuthor, onRequireLogin: requireLogin })
 
     // Function For Handle A Finished Upload
     const handleUploaded = async (tasks:CompressTask[]):Promise<void> => {
@@ -50,9 +50,10 @@ export default function HomeScreen() {
             onOpenComments={sheets.openComments}
             onOpenMenu={sheets.openMenu}
             onShare={sheets.openShare}
+            onShowLikes={sheets.openUsersWhoLikedPost}
             onRequireLogin={requireLogin}
         />
-    ), [sheets.handlePostChange, feed.updateAuthor, sheets.openComments, sheets.openMenu, sheets.openShare, requireLogin])
+    ), [sheets.handlePostChange, feed.updateAuthor, sheets.openComments, sheets.openMenu, sheets.openShare, sheets.openUsersWhoLikedPost, requireLogin])
 
     const list_header = (
         <View style={styles.list_header}>

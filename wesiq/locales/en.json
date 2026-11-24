@@ -1841,5 +1841,8 @@
     "Vymazať nahrávku": "Delete recording",
     "Článok môžete poslať ľuďom, ktorých sledujete.": "You can send the article to people you follow.",
     "Článok {{article_title}}": "Article {{article_title}}",
-    "Článok:": "Article:"
+    "Článok:": "Article:",
+    "Označenia páči sa mi to": "Likes",
+    "Zatiaľ žiadne označenia páči sa mi to": "No likes yet",
+    "Zobraziť označenia páči sa mi to": "Show likes"
 }

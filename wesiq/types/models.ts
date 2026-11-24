@@ -334,6 +334,12 @@ export interface OfficialTrainingPlanExercise {
     order:number|null,
     is_warm_up:boolean|null
     is_for_subscribers:boolean,
+    duration:number|null,
+    difficulty:number|null,
+    requirements:string|null,
+    description:string|null,
+    goal:string|null,
+    target_muscles:string[],
     is_locked:boolean
 }
 

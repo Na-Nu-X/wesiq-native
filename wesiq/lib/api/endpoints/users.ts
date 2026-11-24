@@ -4,7 +4,7 @@ import { apiPost } from "@/lib/api/client"
 import { envelopeWith, isArrayOf, isNumber, isRecord, isString } from "@/lib/api/guards"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
-import type { UserListItem } from "@/types/models"
+import type { PostId, UserListItem } from "@/types/models"
 
 // ---------- Search ----------
 
@@ -42,6 +42,14 @@ export const approveFollowRequest = (follow_request_id:number):Promise<ApiResult
 
 export const rejectFollowRequest = (follow_request_id:number):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("reject-follow-request/", { follow_request_id })
+}
+
+// Loads The Users Who Liked A Post (With The Follow Flags Of The Logged In User)
+const isLikingUser = (value:unknown):value is UserListItem => isRecord(value) && isNumber(value.id) && isString(value.username)
+const likingUsersGuard = envelopeWith({ users: (value:unknown):value is UserListItem[] => isArrayOf(value, isLikingUser) })
+
+export const getUsersWhoLikedPost = (post_id:PostId, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:UserListItem[] }>> => {
+    return apiPost("get-users-who-liked-post/", { post_id }, { signal, guard: likingUsersGuard })
 }
 
 // ---------- Follow State ----------

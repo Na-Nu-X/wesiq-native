@@ -1,4 +1,4 @@
-// Password Reset: Emailed 6-Digit Code (Also From The https://wesiq.com/password-reset?code= Link) And A New Password
+// Password Reset: Emailed 6-Digit Code (Also From The Email Link, Rewritten To /password-reset?code= By app/+native-intent.tsx) And A New Password
 
 import { useEffect, useState } from "react"
 import { Keyboard, StyleSheet, View } from "react-native"

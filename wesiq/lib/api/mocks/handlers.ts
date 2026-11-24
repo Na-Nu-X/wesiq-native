@@ -94,6 +94,20 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         }
     },
 
+    {
+        method: "POST",
+        pattern: "get-users-who-liked-post/",
+        handler: ({ body }) => {
+            const post:Post|undefined = MOCK_POSTS.find((one_post:Post) => one_post.id === body.post_id) // Finds The Post
+            if(!post) return notFound("Post not found (mock)")
+
+            const { id, first_name, last_name, username, profile_picture_name, subscription } = MOCK_LOGGED_IN_USER // The Logged In User Can Be Among The Likers
+            const people:UserListItem[] = [{ id, first_name, last_name, username, profile_picture_name, subscription }, ...MOCK_USERS]
+
+            return ok({ users: people.filter((user:UserListItem) => post.likes_from_users.includes(user.id)) })
+        }
+    },
+
     { method: "GET", pattern: "get-post-comments/", handler: () => ok({ visible_comments: MOCK_COMMENTS, has_next: false }) },
     { method: "POST", pattern: "get-post-comments/", handler: () => ok({ visible_comments: MOCK_COMMENTS, has_next: false }) },
     { method: "GET", pattern: "get-processing-posts/", handler: () => ok({ processing_posts: [] }) },
@@ -172,7 +186,6 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
                     has_pending_follow_request: user.has_pending_follow_request ?? false,
                     saved_posts: null,
                     unread_messages_amount: null,
-                    subscription: null,
                 }
             })
         }

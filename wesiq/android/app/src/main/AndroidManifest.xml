@@ -39,9 +39,17 @@
         <data android:scheme="wesiq"/>
         <data android:scheme="exp+wesiq"/>
       </intent-filter>
-      <intent-filter data-generated="true">
+      <intent-filter android:autoVerify="true" data-generated="true">
         <action android:name="android.intent.action.VIEW"/>
-        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/password-reset"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/sk/obnova-hesla"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/cs/obnova-hesla"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/en/password-reset"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/es/recuperacion-de-contrasena"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/fr/recuperation-de-mot-de-passe"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/uk/vidnovlennya-parolya"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/ru/vosstanovleniye-parolya"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/pt-br/recuperacao-de-senha"/>
+        <data android:scheme="https" android:host="wesiq.com" android:pathPrefix="/de/passwortwiederherstellung"/>
         <data android:scheme="exp+wesiq"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>

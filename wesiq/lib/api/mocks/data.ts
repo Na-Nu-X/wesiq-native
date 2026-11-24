@@ -356,19 +356,27 @@ export const MOCK_TRAINING_PLANS:TrainingPlanExercise[] = [
     planRow(10, "plan_core", "Core finisher", null, 1, "Mountain climbers", [45, 45], "seconds"),
 ]
 
+// Plan Details (The Server Repeats Them On Every Row Of A Plan)
+type OfficialPlanDetails = Pick<OfficialTrainingPlanExercise, "duration" | "difficulty" | "requirements" | "description" | "goal" | "target_muscles">
+
+const BEGINNER_DETAILS:OfficialPlanDetails = { duration: 30, difficulty: 20, requirements: "No equipment", description: "A short full body routine for your first weeks of training.", goal: "endurance", target_muscles: ["legs", "chest", "core"] }
+const PUSH_DETAILS:OfficialPlanDetails = { duration: 60, difficulty: 55, requirements: "Bench, barbell, dip bars", description: "Chest, shoulders and triceps with compound presses.", goal: "hypertrophy", target_muscles: ["chest", "shoulders", "triceps"] }
+const PULL_DETAILS:OfficialPlanDetails = { duration: 45, difficulty: 60, requirements: "Pull-up bar, barbell", description: "Back and biceps built around pull-ups and rows.", goal: "strength", target_muscles: ["back", "biceps"] }
+const FRONT_LEVER_DETAILS:OfficialPlanDetails = { duration: 50, difficulty: 85, requirements: "Pull-up bar", description: "A progression from tuck to full front lever.", goal: "strength", target_muscles: ["back", "core", "shoulders"] }
+
 export const MOCK_OFFICIAL_TRAINING_PLANS:OfficialTrainingPlanExercise[] = [
-    { id: 101, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Warm up", periods: [300], unit: "seconds", order: 0, is_warm_up: true, is_for_subscribers: false, is_locked: false },
-    { id: 102, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Squats", periods: [12, 12, 12], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 103, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Push-ups", periods: [8, 8, 8], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 104, training_plan_key: "official_beginner", type: "Beginner full body", exercise: "Plank", periods: [30, 30], unit: "seconds", order: 3, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 111, training_plan_key: "official_push", type: "Push day", exercise: "Bench press", periods: [8, 8, 6, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 112, training_plan_key: "official_push", type: "Push day", exercise: "Overhead press", periods: [10, 8, 8], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 113, training_plan_key: "official_push", type: "Push day", exercise: "Dips", periods: [12, 10, 10], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
-    { id: 121, training_plan_key: "official_pull", type: "Pull day", exercise: "Pull-ups", periods: [8, 8, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: true, is_locked: false },
-    { id: 122, training_plan_key: "official_pull", type: "Pull day", exercise: "Rows", periods: [10, 10, 10], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: true, is_locked: false },
-    { id: 131, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
-    { id: 132, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
-    { id: 133, training_plan_key: "official_front_lever", type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
+    { id: 101, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Warm up", periods: [300], unit: "seconds", order: 0, is_warm_up: true, is_for_subscribers: false, is_locked: false },
+    { id: 102, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Squats", periods: [12, 12, 12], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 103, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Push-ups", periods: [8, 8, 8], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 104, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Plank", periods: [30, 30], unit: "seconds", order: 3, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 111, training_plan_key: "official_push", ...PUSH_DETAILS, type: "Push day", exercise: "Bench press", periods: [8, 8, 6, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 112, training_plan_key: "official_push", ...PUSH_DETAILS, type: "Push day", exercise: "Overhead press", periods: [10, 8, 8], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 113, training_plan_key: "official_push", ...PUSH_DETAILS, type: "Push day", exercise: "Dips", periods: [12, 10, 10], unit: "reps", order: 2, is_warm_up: false, is_for_subscribers: false, is_locked: false },
+    { id: 121, training_plan_key: "official_pull", ...PULL_DETAILS, type: "Pull day", exercise: "Pull-ups", periods: [8, 8, 6], unit: "reps", order: 0, is_warm_up: false, is_for_subscribers: true, is_locked: false },
+    { id: 122, training_plan_key: "official_pull", ...PULL_DETAILS, type: "Pull day", exercise: "Rows", periods: [10, 10, 10], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: true, is_locked: false },
+    { id: 131, training_plan_key: "official_front_lever", ...FRONT_LEVER_DETAILS, type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
+    { id: 132, training_plan_key: "official_front_lever", ...FRONT_LEVER_DETAILS, type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
+    { id: 133, training_plan_key: "official_front_lever", ...FRONT_LEVER_DETAILS, type: "Front lever program", exercise: null, periods: null, unit: null, order: null, is_warm_up: null, is_for_subscribers: true, is_locked: true },
 ]
 
 // ---------- Activity & Tasks ----------

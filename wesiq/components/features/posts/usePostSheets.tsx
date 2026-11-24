@@ -1,16 +1,21 @@
-// The Sheets Every Post List Needs (Comments, Options, Share) Wired To The List's Update Functions
+// The Sheets Every Post List Needs (Comments, Options, Share, Likes) Wired To The List's Update Functions
 
 import { useCallback, useMemo, useState } from "react"
-import CommentsSheet, { CommentsSource } from "./CommentsSheet"
+import CommentsSheet from "./CommentsSheet"
 import { addComment, deletePostComment, getPostComments, reportPostComment, togglePostCommentLike } from "@/lib/api/endpoints/posts"
 import PostMenuSheet from "./PostMenuSheet"
-import SharePostSheet, { SharedPostInfo } from "./SharePostSheet"
+import SharePostSheet from "./SharePostSheet"
+import UsersWhoLikedPostSheet from "./UsersWhoLikedPostSheet"
 
-import type { Post } from "@/types/models"
+import type { Post, PostAuthor, UserListItem } from "@/types/models"
+import type { UsersWhoLikedPostInfo } from "./UsersWhoLikedPostSheet"
+import type { SharedPostInfo } from "./SharePostSheet"
+import type { CommentsSource } from "./CommentsSheet"
 
 interface PostSheetsOptions {
     updatePost:(post:Post) => void,
     removePost:(post_id:string) => void,
+    updateAuthor?:(user_id:number, changes:Partial<PostAuthor>) => void, // Keeps The Author's Follow Button In Sync After A Follow From The Likes Sheet
     onRequireLogin:() => void
 }
 
@@ -26,10 +31,11 @@ const getPostCommentsSource = (post:Post):CommentsSource => ({
     remove: deletePostComment,
 })
 
-export function usePostSheets({ updatePost, removePost, onRequireLogin }:PostSheetsOptions) {
+export function usePostSheets({ updatePost, removePost, updateAuthor, onRequireLogin }:PostSheetsOptions) {
     const [comments_post, setCommentsPost] = useState<Post|null>(null)
     const [menu_post, setMenuPost] = useState<Post|null>(null)
     const [share_post, setSharePost] = useState<SharedPostInfo|null>(null)
+    const [users_who_liked_post, setUsersWhoLikedPost] = useState<UsersWhoLikedPostInfo|null>(null)
 
     // Function For Update A Post Everywhere (List And Open Sheets)
     const handlePostChange = useCallback((post:Post):void => {
@@ -59,6 +65,12 @@ export function usePostSheets({ updatePost, removePost, onRequireLogin }:PostShe
             />
 
             <SharePostSheet post={share_post} onClose={() => setSharePost(null)} />
+
+            <UsersWhoLikedPostSheet
+                post={users_who_liked_post}
+                onClose={() => setUsersWhoLikedPost(null)}
+                onFollowChange={(user:UserListItem) => updateAuthor?.(user.id, { has_follow: user.has_follow, has_pending_follow_request: user.has_pending_follow_request })}
+            />
         </>
     )
 
@@ -68,5 +80,6 @@ export function usePostSheets({ updatePost, removePost, onRequireLogin }:PostShe
         openComments: useCallback((post:Post) => setCommentsPost(post), []),
         openMenu: useCallback((post:Post) => setMenuPost(post), []),
         openShare: useCallback((post:Post) => setSharePost({ id: post.id, author_username: post.user.username }), []),
+        openUsersWhoLikedPost: useCallback((post:Post) => setUsersWhoLikedPost({ id: post.id, author_username: post.user.username }), []),
     }
 }

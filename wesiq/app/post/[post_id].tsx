@@ -31,6 +31,7 @@ export default function PostScreen() {
 
     const sheets = usePostSheets({
         updatePost,
+        updateAuthor,
         onRequireLogin: requireLogin,
 
         removePost: () => {
@@ -65,6 +66,7 @@ export default function PostScreen() {
                             onOpenComments={sheets.openComments}
                             onOpenMenu={sheets.openMenu}
                             onShare={sheets.openShare}
+                            onShowLikes={sheets.openUsersWhoLikedPost}
                             onRequireLogin={requireLogin}
                             is_detail
                         />

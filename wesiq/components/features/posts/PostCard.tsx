@@ -73,11 +73,22 @@ interface PostCardProps {
     onOpenComments:(post:Post) => void,
     onOpenMenu:(post:Post) => void,
     onShare:(post:Post) => void,
+    onShowLikes:(post:Post) => void, // Long Press On The Like Button
     onRequireLogin:() => void,
     is_detail?:boolean // On The Post Screen (Caption Fully Expanded)
 }
 
-function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMenu, onShare, onRequireLogin, is_detail = false }:PostCardProps) {
+function PostCard({ 
+    post, 
+    onPostChange, 
+    onAuthorChange, 
+    onOpenComments, 
+    onOpenMenu, 
+    onShare, 
+    onShowLikes,
+    onRequireLogin, 
+    is_detail = false 
+}:PostCardProps) {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
 
@@ -205,6 +216,7 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
     const location:string|null = post.location ? post.location.replace(/<span><\/span>/g, ", ").replace(/\s+,/g, ",") : null
 
     const show_likes:boolean = !post.hide_likes || is_own // Stores The Information If The Like Count Is Visible
+    const can_show_likers:boolean = show_likes && post.likes > 0 // Stores The Information If The Long Press Opens The Likes Sheet
 
     return (
         <View style={styles.card}>
@@ -295,7 +307,17 @@ function PostCard({ post, onPostChange, onAuthorChange, onOpenComments, onOpenMe
 
             {/* ---------- Actions ---------- */}
             <View style={styles.actions}>
-                <Pressable onPress={() => toggleLike()} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: is_liked }} accessibilityLabel={is_liked ? t("Zrušiť páči sa mi to") : t("Páči sa mi to")} style={styles.action}>
+                <Pressable 
+                    onPress={() => toggleLike()} 
+                    onLongPress={can_show_likers ? () => onShowLikes(post) : undefined}
+                    hitSlop={8} 
+                    accessibilityActions={can_show_likers ? [{ name: "longpress", label: t("Zobraziť označenia páči sa mi to") }] : undefined}
+                    onAccessibilityAction={() => onShowLikes(post)}
+                    accessibilityRole="button" 
+                    accessibilityState={{ selected: is_liked }} 
+                    accessibilityLabel={is_liked ? t("Zrušiť páči sa mi to") : t("Páči sa mi to")} 
+                    style={styles.action}
+                >
                     <View style={styles.heart}>
                         <Icon name="heart" size={21} color={is_liked ? "danger" : "text"} is_solid={is_liked} />
                         <HeartParticles particles={particles} onComplete={(id:number) => setParticles((previous:HeartParticle[]) => previous.filter((particle:HeartParticle) => particle.id !== id))} />
