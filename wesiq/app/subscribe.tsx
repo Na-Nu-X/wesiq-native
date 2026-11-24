@@ -170,7 +170,7 @@ export default function SubscribeScreen() {
                             }}
                             accessibilityRole="radio"
                             accessibilityState={{ checked: is_selected }}
-                            accessibilityLabel={`${plan_names[plan]}, ${getPrice(plan) ?? "—"} ${t("mesačne")}`}
+                            accessibilityLabel={`${plan_names[plan]}, ${getPrice(plan) ?? "-"} ${t("mesačne")}`}
                             style={({ pressed }:PressableStateCallbackType) => [styles.plan, is_selected ? styles.plan_selected : null, pressed ? styles.plan_pressed : null]}
                         >
                             <View style={styles.plan_top}>
@@ -183,7 +183,7 @@ export default function SubscribeScreen() {
                             <Text variant="callout" color="text_secondary">{plan_descriptions[plan]}</Text>
 
                             <View style={styles.price_row}>
-                                {is_loading_prices ? <Skeleton width={80} height={28} radius={radii.sm} /> : <Text variant="title" is_tabular>{getPrice(plan) ?? "—"}</Text>}
+                                {is_loading_prices ? <Skeleton width={80} height={28} radius={radii.sm} /> : <Text variant="title" is_tabular>{getPrice(plan) ?? "-"}</Text>}
                                 <Text variant="callout" color="text_muted">/ {t("mesiac")}</Text>
                             </View>
 

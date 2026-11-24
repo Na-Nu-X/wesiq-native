@@ -25,7 +25,9 @@ export function redirectSystemPath({ path }:{ path:string, initial:boolean }):st
             const code:string|null = url.searchParams.get("password-reset-code") ?? url.searchParams.get("code")
             return code ? `/password-reset?code=${encodeURIComponent(code)}` : "/password-reset"
         }
-    } catch {
+    } 
+    
+    catch {
         // Unparsable Links Fall Through Unchanged
     }
 

@@ -247,4 +247,47 @@ export const sortPlans = <T extends PlanRow>(plans:PlanSummary<T>[]):PlanSummary
     return [...plans].sort((a, b) => day_rank(a.day) - day_rank(b.day) || a.title.localeCompare(b.title))
 }
 
+// ---------- Official Plans (Sorting, Categories, Search) ----------
+
+export type OfficialPlanSort = "default"|"duration"|"difficulty"|"for_subscribers"
+
+// Function For Normalize A Server Tag ("Full Body" / "full-body" → "full_body")
+const normalizeTag = (value:string):string => value.trim().toLowerCase().replace(/[\s-]+/g, "_")
+
+// Function For Get The Category Tags Of An Official Plan (Its Goal And Target Muscles, Shared By Every Row)
+export const getOfficialPlanTags = (plan:PlanSummary<OfficialTrainingPlanExercise>):Set<string> => {
+    const first:OfficialTrainingPlanExercise|undefined = plan.rows[0] // Gets The First Row
+    const tags:string[] = [...(first?.target_muscles ?? []), ...(first?.goal ? [first.goal] : [])] // Gets The Raw Tags
+    return new Set(tags.map(normalizeTag))
+}
+
+// Function For Check If An Official Plan Belongs To A Category ("all" Matches Every Plan)
+export const isOfficialPlanInCategory = (plan:PlanSummary<OfficialTrainingPlanExercise>, category:string):boolean => {
+    return category === "all" || getOfficialPlanTags(plan).has(category)
+}
+
+// Function For Check If An Official Plan Matches A Search Query (Already Trimmed And Lowercase)
+export const isOfficialPlanMatchingQuery = (plan:PlanSummary<OfficialTrainingPlanExercise>, query:string):boolean => {
+    if(!query) return true
+
+    const first:OfficialTrainingPlanExercise|undefined = plan.rows[0] // Gets The First Row
+    const texts:(string|null|undefined)[] = [plan.title, first?.description, first?.requirements, first?.goal, ...(first?.target_muscles ?? []), ...plan.rows.map((row:OfficialTrainingPlanExercise) => row.exercise)] // Exercises Are Null In Locked Plans
+
+    return texts.some((text) => text?.toLowerCase().includes(query))
+}
+
+// Function For Sort Official Plans (Shortest / Easiest / Subscriber Plans First, Missing Values Last, Ties Keep The Server Order)
+export const sortOfficialPlans = (plans:readonly PlanSummary<OfficialTrainingPlanExercise>[], sort:OfficialPlanSort):PlanSummary<OfficialTrainingPlanExercise>[] => {
+    if(sort === "default") return [...plans]
+
+    const rank = (plan:PlanSummary<OfficialTrainingPlanExercise>):number => {
+        const first:OfficialTrainingPlanExercise|undefined = plan.rows[0] // Gets The First Row
+
+        if(sort === "for_subscribers") return first?.is_for_subscribers ? 0 : 1
+        return (sort === "duration" ? first?.duration : first?.difficulty) ?? Number.POSITIVE_INFINITY
+    }
+
+    return [...plans].sort((a, b) => rank(a) - rank(b)) // Array.sort Is Stable
+}
+
 export type { OfficialTrainingPlanExercise }
