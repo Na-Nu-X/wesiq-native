@@ -25,6 +25,7 @@ import { getLinkDomain, getLinkIcon } from "@/lib/links"
 
 import type { BioLink, Profile } from "@/types/models"
 import EnlargingAvatar from "@/components/ui/EnlargingAvatar"
+import MutualFollowers from "./MutualFollowers"
 
 type GridTab = "posts"|"saved"
 
@@ -35,6 +36,7 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ username, is_tab = false }:ProfileScreenProps) {
     const { t } = useTranslation() // Initializes The Translations
+    
     const { logged_in_user, setLoggedInUser } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
 
@@ -156,6 +158,8 @@ export default function ProfileScreen({ username, is_tab = false }:ProfileScreen
                             ))}
                         </View>
                     )}
+
+                    <MutualFollowers mutual_followers={profile.mutual_followers} mutual_followers_count={profile.mutual_followers_count} />
                 </Card>
 
                 {/* ---------- Stats ---------- */}

@@ -67,6 +67,15 @@ export interface FollowerRelation {
     created_at:ISODateString
 }
 
+export interface MutualFollower {
+    id:number,
+    first_name?:string,
+    last_name?:string,
+    username:string,
+    profile_picture_name:string,
+    subscription?:SubscriptionInfo|null
+}
+
 export interface FollowingRelation {
     to_user:UserListItem,
     status:string,
@@ -113,6 +122,8 @@ export interface Profile {
     data_saving_mode:boolean|null,
     followers:FollowerRelation[],
     following:FollowingRelation[],
+    mutual_followers:MutualFollower[],
+    mutual_followers_count:number,
     has_follow:boolean,
     has_pending_follow_request:boolean,
     posts:ProfilePostPreview[],
