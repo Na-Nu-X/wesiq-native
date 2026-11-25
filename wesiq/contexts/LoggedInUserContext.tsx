@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { apiGet, onUnauthorized } from "@/lib/api/client"
+import { clearSession } from "@/lib/api/session"
 import { envelopeWith, isRecord } from "@/lib/api/guards"
 import { getStoredString, removeStoredValue } from "@/lib/storage"
 
@@ -57,9 +58,9 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
         }
     }, [])
 
-    // Function For Log Out (Removes The Token, The User And Their Device Data; The Notification Socket Closes With The User)
+    // Function For Log Out (Removes The Tokens, The User And Their Device Data; The Notification Socket Closes With The User)
     const logOut = useCallback(async ():Promise<void> => {
-        await Promise.all([removeStoredValue("user_token"), removeStoredValue("searched_users_history"), removeStoredValue("processing_posts")])
+        await Promise.all([clearSession(), removeStoredValue("searched_users_history"), removeStoredValue("processing_posts")])
         setLoggedInUser(null)
     }, [])
 

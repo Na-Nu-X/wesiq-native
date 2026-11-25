@@ -2,7 +2,7 @@
 
 import { DOMAIN } from "@/constants/general"
 import i18n from "@/lib/i18n"
-import { getStoredString } from "@/lib/storage"
+import { getAccessToken } from "@/lib/api/session"
 import { isRecord } from "@/lib/api/guards"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 
@@ -26,7 +26,7 @@ export const sharePostToChat = async (post_id:PostId, receiver_username:string, 
         return { ok: true }
     }
 
-    const user_token:string|null = await getStoredString("user_token") // Gets The User Token
+    const user_token:string|null = await getAccessToken() // Gets The User Token
     if(!user_token) return { ok: false, message: i18n.t("Príspevok nie je možné zdielať bez prihlásenia.") }
 
     return new Promise<ShareResult>((resolve) => {
@@ -74,7 +74,7 @@ export const shareArticleToChat = async (article_id:number, receiver_username:st
         return { ok: true }
     }
 
-    const user_token:string|null = await getStoredString("user_token") // Gets The User Token
+    const user_token:string|null = await getAccessToken() // Gets The User Token
     if(!user_token) return { ok: false, message: i18n.t("Príspevok nie je možné zdielať bez prihlásenia.") }
 
     return new Promise<ShareResult>((resolve) => {

@@ -1,3 +1,4 @@
 "NSBluetoothAlwaysUsageDescription" = "O Wesiq usa o Bluetooth para conectar seu monitor de frequência cardíaca durante os treinos.";
 "NSHealthShareUsageDescription" = "O Wesiq lê sua frequência cardíaca do app Saúde para exibi-la enquanto você grava um treino.";
+"NSMicrophoneUsageDescription" = "O Wesiq usa o microfone para gravar mensagens de voz no chat.";
 "NSPhotoLibraryUsageDescription" = "O Wesiq precisa acessar suas fotos para que você possa compartilhá-las em publicações e conversas e definir uma foto de perfil.";

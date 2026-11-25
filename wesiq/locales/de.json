@@ -1876,5 +1876,12 @@
     "Cieľ": "Ziel",
     "Vybavenie": "Ausrüstung",
     "Svaly": "Muskeln",
-    "{{count}} min": "{{count}} Min."
+    "{{count}} min": "{{count}} Min.",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Ich bestätige, dass ich mindestens 13 Jahre alt bin.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Für die Registrierung müssen Sie bestätigen, dass Sie mindestens 13 Jahre alt sind.",
+    "Vybrať zo zariadenia": "Vom Gerät auswählen",
+    "Predvolené pozadia": "Standardhintergründe",
+    "Pozadie {{number}}": "Hintergrund {{number}}",
+    "Pozadie chatu": "Chat-Hintergrund",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Der Hintergrund konnte nicht geladen werden. Bitte versuche es erneut."
 }

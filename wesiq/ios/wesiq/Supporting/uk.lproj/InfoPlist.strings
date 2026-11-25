@@ -1,3 +1,4 @@
 "NSBluetoothAlwaysUsageDescription" = "Wesiq використовує Bluetooth, щоб під'єднати пульсометр під час тренування.";
 "NSHealthShareUsageDescription" = "Wesiq зчитує твій пульс з Apple Health, щоб показувати його під час запису тренування.";
+"NSMicrophoneUsageDescription" = "Wesiq використовує мікрофон для запису голосових повідомлень у чаті.";
 "NSPhotoLibraryUsageDescription" = "Wesiq потрібен доступ до фото, щоб ти міг ділитися ними в дописах і чатах та встановити фото профілю.";

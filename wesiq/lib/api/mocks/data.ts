@@ -182,6 +182,8 @@ export const MOCK_PROFILE:Profile = {
     data_saving_mode: false,
     followers: [lucia, martin, sofia, jakub].map((user:UserListItem, index:number) => ({ from_user: user, status: "accepted", created_at: daysAgo(10 + index * 7) })),
     following: [lucia, martin, sofia].map((user:UserListItem, index:number) => ({ to_user: { ...user, has_follow: true }, status: "accepted", created_at: daysAgo(12 + index * 5) })),
+    mutual_followers: [], // Own Profile (No Mutual Followers With Yourself)
+    mutual_followers_count: 0,
     has_follow: false,
     has_pending_follow_request: false,
     posts: MOCK_POSTS.slice(0, 3).map((post:Post) => ({ id: post.id, public_visibility: post.public_visibility, allow_comments: post.allow_comments, hide_likes: post.hide_likes, created_at: post.created_at, media: post.media })),

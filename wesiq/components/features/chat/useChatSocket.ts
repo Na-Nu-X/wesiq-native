@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AppState, AppStateStatus } from "react-native"
 import { getChatSocketUrl } from "@/lib/chat"
-import { getStoredString } from "@/lib/storage"
+import { getAccessToken } from "@/lib/api/session"
 import { isRecord } from "@/lib/api/guards"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 
@@ -44,7 +44,7 @@ export function useChatSocket(username:string|undefined, is_enabled:boolean, onE
         let retry_timeout:ReturnType<typeof setTimeout>|null = null
 
         const connect = async ():Promise<void> => {
-            const token:string|null = await getStoredString("user_token") // Gets The Token
+            const token:string|null = await getAccessToken() // Gets The Token (Refreshed When It's About To Expire)
             if(!token || is_disposed) return
 
             const ws:WebSocket = new WebSocket(getChatSocketUrl(username, token))

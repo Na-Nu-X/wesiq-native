@@ -67,6 +67,8 @@
     <string>Wesiq only reads your heart rate and never changes your Apple Health data.</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Expo Dev Launcher uses the local network to discover and connect to development servers running on your computer.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Wesiq uses the microphone to record voice messages in chats.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Wesiq needs access to your photos so you can share them in posts and chats and set a profile picture.</string>
     <key>NSUserActivityTypes</key>

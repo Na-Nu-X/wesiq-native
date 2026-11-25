@@ -1877,5 +1877,12 @@
     "Cieľ": "Objectif",
     "Vybavenie": "Équipement",
     "Svaly": "Muscles",
-    "{{count}} min": "{{count}} min"
+    "{{count}} min": "{{count}} min",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Je confirme avoir au moins 13 ans.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Pour vous inscrire, vous devez confirmer que vous avez au moins 13 ans.",
+    "Vybrať zo zariadenia": "Choisir depuis l'appareil",
+    "Predvolené pozadia": "Arrière-plans par défaut",
+    "Pozadie {{number}}": "Arrière-plan {{number}}",
+    "Pozadie chatu": "Arrière-plan du chat",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Impossible de charger l'arrière-plan. Réessayez."
 }

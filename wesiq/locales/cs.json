@@ -1886,5 +1886,12 @@
     "Cieľ": "Cíl",
     "Vybavenie": "Vybavení",
     "Svaly": "Svaly",
-    "{{count}} min": "{{count}} min"
+    "{{count}} min": "{{count}} min",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Potvrzuji, že je mi alespoň 13 let.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Pro registraci musíte potvrdit, že je vám alespoň 13 let.",
+    "Vybrať zo zariadenia": "Vybrat ze zařízení",
+    "Predvolené pozadia": "Výchozí pozadí",
+    "Pozadie {{number}}": "Pozadí {{number}}",
+    "Pozadie chatu": "Pozadí chatu",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Pozadí se nepodařilo načíst. Zkuste to znovu."
 }

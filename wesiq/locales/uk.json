@@ -1886,5 +1886,12 @@
     "Cieľ": "Мета",
     "Vybavenie": "Обладнання",
     "Svaly": "М'язи",
-    "{{count}} min": "{{count}} хв"
+    "{{count}} min": "{{count}} хв",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Я підтверджую, що мені щонайменше 13 років.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Для реєстрації ви маєте підтвердити, що вам щонайменше 13 років.",
+    "Vybrať zo zariadenia": "Вибрати з пристрою",
+    "Predvolené pozadia": "Стандартні фони",
+    "Pozadie {{number}}": "Фон {{number}}",
+    "Pozadie chatu": "Фон чату",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Не вдалося завантажити фон. Спробуйте ще раз."
 }

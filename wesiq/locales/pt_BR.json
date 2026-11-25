@@ -1877,5 +1877,12 @@
     "Cieľ": "Objetivo",
     "Vybavenie": "Equipamento",
     "Svaly": "Músculos",
-    "{{count}} min": "{{count}} min"
+    "{{count}} min": "{{count}} min",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Confirmo que tenho pelo menos 13 anos.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Para se cadastrar, você precisa confirmar que tem pelo menos 13 anos.",
+    "Vybrať zo zariadenia": "Escolher do dispositivo",
+    "Predvolené pozadia": "Fundos padrão",
+    "Pozadie {{number}}": "Fundo {{number}}",
+    "Pozadie chatu": "Fundo do chat",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Não foi possível carregar o fundo. Tente novamente."
 }

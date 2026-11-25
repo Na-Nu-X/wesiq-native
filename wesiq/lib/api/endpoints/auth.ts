@@ -2,7 +2,7 @@
 
 import { apiPost } from "@/lib/api/client"
 import { envelopeWith, isString } from "@/lib/api/guards"
-import { setStoredString } from "@/lib/storage"
+import { saveSession } from "@/lib/api/session"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
 
@@ -16,11 +16,11 @@ const isLoginResponse = envelopeWith<{ access:string, refresh:string }>({ access
 // Function For Clean A Login Identifier (E-mail, Username Or @username; Removes Spaces And Invisible Characters Mobile Keyboards Insert)
 export const normalizeLoginIdentifier = (identifier:string):string => identifier.replace(/[\u200B-\u200D\u2060\uFEFF]/g, "").trim()
 
-// Function For Log In (Stores The Token On Success; The Server Accepts An E-mail, A Username Or An @username)
+// Function For Log In (Stores The Tokens On Success; The Server Accepts An E-mail, A Username Or An @username)
 export const login = async (identifier:string, password:string):Promise<ApiResult<LoginResponse>> => {
     const response:ApiResult<LoginResponse> = await apiPost<LoginResponse>("login/", { identifier: normalizeLoginIdentifier(identifier), password }, { is_authenticated: false, guard: isLoginResponse })
 
-    if(response.ok) await setStoredString("user_token", response.data.access)
+    if(response.ok) await saveSession(response.data.access, response.data.refresh) // Keeps The Refresh Token, The Access Token Expires After 15 Minutes
     return response
 }
 
@@ -32,7 +32,8 @@ export interface RegistrationData {
     phone_number:string, // Optional (Empty String When Not Entered)
     password:string,
     password_check:string,
-    language:string // Language Of The Confirmation E-mail ("sk", "cs", "en", "es", "fr", "uk", "ru", "pt-br", "zh-hans")
+    language:string, // Language Of The Confirmation E-mail ("sk", "cs", "en", "es", "fr", "uk", "ru", "pt-br", "zh-hans")
+    age_confirmation:boolean // The User Confirmed Being At Least 13 Years Old (Required By The Server And The Privacy Policy)
 }
 
 // Function For Register (The Server Sends A Confirmation E-mail)

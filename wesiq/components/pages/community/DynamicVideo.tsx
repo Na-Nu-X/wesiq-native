@@ -11,8 +11,7 @@ import { MenuRow } from "@/components/features/posts/PostMenuSheet"
 import { colors, radii, spacing } from "@/theme"
 import * as ScreenOrientation from "expo-screen-orientation"
 import { CustomVideoControls } from "../activity/CustomVideoControls"
-import AsyncStorage from "@react-native-async-storage/async-storage"
-import { getStoredString } from "@/lib/storage"
+import { getAccessToken } from "@/lib/api/session"
 import { VideoScrubberPreview } from "./VideoScrubberPreview"
 import { useTranslation } from "react-i18next"
 import { SourceLoadEventPayload, useVideoPlayer, VideoPlayer, VideoView } from "expo-video"
@@ -134,7 +133,7 @@ export const DynamicVideo = ({
     // Initializes The Token For The Stream Requests (Changes With The Logged In User)
     useEffect(() => {
         let is_active:boolean = true
-        getStoredString("user_token").then((token:string|null) => { if(is_active) setUserToken(token) })
+        getAccessToken().then((token:string|null) => { if(is_active) setUserToken(token) })
         return () => { is_active = false }
     }, [logged_in_user?.id])
 
@@ -466,7 +465,7 @@ export const DynamicVideo = ({
                 return
             }
 
-            const user_token:string|null = await AsyncStorage.getItem("user_token") // Gets The User Token
+            const user_token:string|null = await getAccessToken() // Gets The User Token
     
             // Sends The POST Request To The Server
             const updated_video_watch_time_response:Response = await fetch(`${API_URL}/update-video-watch-time/`, {

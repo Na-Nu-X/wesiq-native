@@ -1886,5 +1886,12 @@
     "Cieľ": "Цель",
     "Vybavenie": "Оборудование",
     "Svaly": "Мышцы",
-    "{{count}} min": "{{count}} мин"
+    "{{count}} min": "{{count}} мин",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "Я подтверждаю, что мне не меньше 13 лет.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "Для регистрации вы должны подтвердить, что вам не меньше 13 лет.",
+    "Vybrať zo zariadenia": "Выбрать с устройства",
+    "Predvolené pozadia": "Стандартные фоны",
+    "Pozadie {{number}}": "Фон {{number}}",
+    "Pozadie chatu": "Фон чата",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Не удалось загрузить фон. Попробуйте ещё раз."
 }

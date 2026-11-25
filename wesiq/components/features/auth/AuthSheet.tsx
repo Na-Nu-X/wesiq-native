@@ -43,7 +43,8 @@ interface RegistrationErrors {
     email_address?:string,
     phone_number?:string,
     password?:string,
-    password_check?:string
+    password_check?:string,
+    age_confirmation?:string
 }
 
 export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin }:AuthSheetProps) {
@@ -72,6 +73,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     const [new_password, setNewPassword] = useState<string>("")
     const [password_check, setPasswordCheck] = useState<string>("")
     const [generated_password, setGeneratedPassword] = useState<string|null>(null) // Shows The Generated Password So It Can Be Saved
+    const [is_age_confirmed, setIsAgeConfirmed] = useState<boolean>(false) // Stores The Confirmation That The User Is At Least 13 Years Old
     const [registration_errors, setRegistrationErrors] = useState<RegistrationErrors>({})
     const [registered_email, setRegisteredEmail] = useState<string|null>(null) // Shows The "Confirm Your E-mail" State
 
@@ -164,6 +166,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         if(phone_number.trim() && !isValidPhoneNumber(phone_number)) errors.phone_number = t("Telefónne číslo nie je platné.")
         if(new_password.length < MIN_PASSWORD_LENGTH) errors.password = t("Heslo musí mať aspoň {{count}} znakov.", { count: MIN_PASSWORD_LENGTH })
         if(password_check !== new_password) errors.password_check = t("Heslá sa nezhodujú")
+        if(!is_age_confirmed) errors.age_confirmation = t("Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.")
 
         return errors
     }
@@ -192,6 +195,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
             password: new_password,
             password_check,
             language: phone_language ?? toServerLanguage(i18n.language),
+            age_confirmation: is_age_confirmed,
         })
 
         setIsSubmitting(false)
@@ -208,6 +212,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         setIdentifier(username.trim())
         setNewPassword("")
         setPasswordCheck("")
+        setIsAgeConfirmed(false)
         setGeneratedPassword(null)
     }
 
@@ -407,7 +412,44 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                 ) : (
                     <Chip label={t("Vygenerovať silné heslo")} icon="wand-magic-sparkles" onPress={generatePassword} style={styles.align_start} />
                 )}
+
+                {renderAgeConfirmation()}
             </>
+        )
+    }
+
+    // Function For Render The Required Minimum Age Confirmation (The Privacy Policy Sets The Minimum Age To 13)
+    function renderAgeConfirmation() {
+        const label:string = t("Potvrdzujem, že mám aspoň 13 rokov.")
+
+        const toggle = ():void => {
+            haptics.selection()
+            setIsAgeConfirmed(!is_age_confirmed)
+            setRegistrationErrors((previous:RegistrationErrors) => ({ ...previous, age_confirmation: undefined }))
+        }
+
+        return (
+            <View style={styles.age_confirmation}>
+                <Pressable
+                    onPress={toggle}
+                    disabled={is_submitting}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={label}
+                    accessibilityState={{ checked: is_age_confirmed, disabled: is_submitting }}
+                    hitSlop={6}
+                    style={styles.row}
+                >
+                    <Icon name={is_age_confirmed ? "square-check" : "square"} is_solid={is_age_confirmed} size={20} color={registration_errors.age_confirmation ? "danger" : is_age_confirmed ? "primary" : "text_muted"} />
+                    <Text variant="callout" color="text_secondary" style={styles.flex}>{label}</Text>
+                </Pressable>
+
+                {!!registration_errors.age_confirmation && (
+                    <View style={styles.row}>
+                        <Icon name="circle-exclamation" size={12} color="danger" />
+                        <Text variant="caption" color="danger" style={styles.flex}>{registration_errors.age_confirmation}</Text>
+                    </View>
+                )}
+            </View>
         )
     }
 
@@ -508,6 +550,11 @@ const styles = StyleSheet.create({
 
     align_start: {
         alignSelf: "flex-start",
+    },
+
+    age_confirmation: {
+        gap: spacing.xs,
+        marginTop: spacing.xs,
     },
 
     registered: {

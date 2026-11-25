@@ -3,7 +3,7 @@
 import { Platform } from "react-native"
 import { API_URL } from "@/constants/general"
 import i18n from "@/lib/i18n"
-import { getStoredString, removeStoredValue } from "@/lib/storage"
+import { endSession, getAccessToken, recoverFromUnauthorized } from "@/lib/api/session"
 import { isApiEnvelope, isRecord } from "@/lib/api/guards"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 
@@ -25,24 +25,8 @@ export interface ApiRequestOptions<T> {
     guard?:ResponseGuard<T> // Validates The Response Payload
 }
 
-// ---------- Unauthorized Listeners (The Logged In User Context Subscribes To Clear The User) ----------
-
-type UnauthorizedListener = () => void
-const unauthorized_listeners:Set<UnauthorizedListener> = new Set()
-
-// Function For Subscribe To Unauthorized Responses (Returns The Unsubscribe Function)
-export const onUnauthorized = (listener:UnauthorizedListener):(() => void) => {
-    unauthorized_listeners.add(listener)
-
-    return () => {
-        unauthorized_listeners.delete(listener)
-    }
-}
-
-// Function For Notify The Listeners (Also Used By The Upload Helper)
-export const notifyUnauthorized = ():void => {
-    unauthorized_listeners.forEach((listener:UnauthorizedListener) => listener())
-}
+// Unauthorized Listeners Live In The Session Module (Re-Exported For Existing Imports)
+export { notifyUnauthorized, onUnauthorized } from "@/lib/api/session"
 
 // ---------- Helpers ----------
 
@@ -138,7 +122,7 @@ const sendFormDataWithXhr = (url:string, method:HttpMethod, headers:Record<strin
 // ---------- Request ----------
 
 // Function For Send The Request To The API
-export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:string, options:ApiRequestOptions<T> = {}):Promise<ApiResult<T>> {
+export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:string, options:ApiRequestOptions<T> = {}, is_retry:boolean = false):Promise<ApiResult<T>> {
     const {
         method = "GET",
         query,
@@ -155,10 +139,8 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
 
     if(body !== undefined && !form_data) headers["Content-Type"] = "application/json"
 
-    if(is_authenticated) {
-        const user_token:string|null = await getStoredString("user_token") // Gets The User Token
-        if(user_token) headers["Authorization"] = `Bearer ${user_token}`
-    }
+    const user_token:string|null = is_authenticated ? await getAccessToken() : null // Gets The User Token (Refreshed When It's About To Expire)
+    if(user_token) headers["Authorization"] = `Bearer ${user_token}`
 
     // Combines The Caller Signal With The Timeout
     const controller:AbortController = new AbortController()
@@ -214,9 +196,17 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
     }
 
     if(response.status === 401) {
-        if(is_authenticated) {
-            await removeStoredValue("user_token") // Removes The Invalid Token
-            notifyUnauthorized() // Notifies The Listeners
+        if(is_authenticated && user_token) {
+            if(is_retry) {
+                await endSession() // Rejected Even With A Fresh Token, The Session Is Over
+            }
+
+            else {
+                const recovery:"retry"|"logged_out"|"failed" = await recoverFromUnauthorized(user_token) // Refreshes The Token (Logs Out Only When The Session Is Over)
+
+                if(recovery === "retry") return apiRequest<T>(path, options, true) // Sends The Request Again With The New Token
+                if(recovery === "failed") return createError<T>("network", null) // Couldn't Refresh Right Now, Keeps The User Logged In
+            }
         }
 
         return createError<T>("unauthorized", 401, getMessage(json))

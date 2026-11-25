@@ -1,5 +1,6 @@
 {
     "NSBluetoothAlwaysUsageDescription": "Wesiq usa Bluetooth para conectar tu monitor de frecuencia cardíaca durante los entrenamientos.",
     "NSHealthShareUsageDescription": "Wesiq lee tu frecuencia cardíaca de Apple Salud para mostrarla mientras grabas un entrenamiento.",
+    "NSMicrophoneUsageDescription": "Wesiq usa el micrófono para grabar mensajes de voz en el chat.",
     "NSPhotoLibraryUsageDescription": "Wesiq necesita acceso a tus fotos para que puedas compartirlas en publicaciones y chats y elegir una foto de perfil."
 }

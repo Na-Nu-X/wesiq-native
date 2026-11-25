@@ -2,9 +2,9 @@
 
 import { Platform } from "react-native"
 import i18n from "@/lib/i18n"
-import { buildApiUrl, notifyUnauthorized } from "@/lib/api/client"
+import { buildApiUrl } from "@/lib/api/client"
 import { isApiEnvelope, isRecord } from "@/lib/api/guards"
-import { getStoredString, removeStoredValue } from "@/lib/storage"
+import { endSession, getAccessToken, recoverFromUnauthorized } from "@/lib/api/session"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
@@ -37,10 +37,10 @@ interface UploadOptions {
 }
 
 // Function For Upload FormData With Progress
-export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, form_data:FormData, { onProgress, signal }:UploadOptions):Promise<ApiResult<T>> => {
+export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, form_data:FormData, { onProgress, signal }:UploadOptions, is_retry:boolean = false):Promise<ApiResult<T>> => {
     if(IS_MOCK_MODE) return simulateUpload<T>(onProgress, signal)
 
-    const user_token:string|null = await getStoredString("user_token") // Gets The User Token
+    const user_token:string|null = await getAccessToken() // Gets The User Token (Refreshed When It's About To Expire)
 
     return new Promise<ApiResult<T>>((resolve) => {
         const xhr:XMLHttpRequest = new XMLHttpRequest()
@@ -68,7 +68,18 @@ export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, for
             const message:string|undefined = isRecord(body) && typeof body.message === "string" ? body.message : undefined // Gets The Server Message
 
             if(xhr.status === 401) {
-                removeStoredValue("user_token").then(notifyUnauthorized)
+                if(user_token && !is_retry) {
+                    // Refreshes The Token And Uploads Again (Logs Out Only When The Session Is Over)
+                    recoverFromUnauthorized(user_token).then((recovery:"retry"|"logged_out"|"failed") => {
+                        if(recovery === "retry") resolve(uploadWithProgress<T>(path, form_data, { onProgress, signal }, true))
+                        else if(recovery === "failed") fail("network", null)
+                        else fail("unauthorized", 401, message)
+                    })
+
+                    return
+                }
+
+                if(user_token) endSession() // Rejected Even With A Fresh Token, The Session Is Over
                 fail("unauthorized", 401, message)
                 return
             }

@@ -1,4 +1,4 @@
-// Conversation Options: Profile, Mute, Chat Background, Report
+// Conversation Options: Profile, Mute, Chat Background (Device Or Built-In), Report
 
 import { useState } from "react"
 import { View } from "react-native"
@@ -14,8 +14,10 @@ import { REPORT_REASONS, ReportReason } from "@/lib/api/endpoints/posts"
 import { reportUser } from "@/lib/api/endpoints/profile"
 import { MenuRow, useReportReasonLabels } from "@/components/features/posts/PostMenuSheet"
 import { formatUsername } from "@/lib/format"
+import ChatBackgroundMenu, { getChatBackgroundFile } from "./ChatBackgroundMenu"
 
 import type { ChatReceiver } from "@/types/models"
+import type { UploadableFile } from "@/lib/api/upload"
 
 interface ConversationMenuSheetProps {
     visible:boolean,
@@ -29,8 +31,9 @@ interface ConversationMenuSheetProps {
 export default function ConversationMenuSheet({ visible, onClose, receiver, onReceiverChange, background_image, onBackgroundChanged }:ConversationMenuSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
-    const [view, setView] = useState<"main"|"report">("main")
+    const [view, setView] = useState<"main"|"report"|"background">("main")
     const [is_busy, setIsBusy] = useState<boolean>(false)
+    const [selected_background_index, setSelectedBackgroundIndex] = useState<number|null>(null) // The Built-In Background Being Uploaded
 
     // Function For Close And Reset
     const close = ():void => {
@@ -49,15 +52,12 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
         }
     }
 
-    // Function For Pick A New Background
-    const pickBackground = async ():Promise<void> => {
-        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
-        const asset = result.canceled ? null : result.assets[0] // Gets The Image
-        if(!asset) return
-
+    // Function For Upload The New Background
+    const applyBackground = async (image:UploadableFile):Promise<void> => {
         setIsBusy(true)
-        const response = await changeChatBackground(receiver.id, { uri: asset.uri, name: asset.fileName ?? `background_${Date.now()}.jpg`, mime_type: asset.mimeType ?? "image/jpeg", web_file: asset.file ?? null })
+        const response = await changeChatBackground(receiver.id, image) // Sends The Request
         setIsBusy(false)
+        setSelectedBackgroundIndex(null)
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -67,6 +67,32 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
         haptics.success()
         onBackgroundChanged()
         close()
+    }
+
+    // Function For Pick A New Background From The Device
+    const pickBackground = async ():Promise<void> => {
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
+        const asset = result.canceled ? null : result.assets[0] // Gets The Image
+        if(!asset) return
+
+        await applyBackground({ uri: asset.uri, name: asset.fileName ?? `background_${Date.now()}.jpg`, mime_type: asset.mimeType ?? "image/jpeg", web_file: asset.file ?? null })
+    }
+
+    // Function For Set One Of The Built-In Backgrounds
+    const selectBuiltInBackground = async (index:number):Promise<void> => {
+        setSelectedBackgroundIndex(index)
+        setIsBusy(true) // Blocks Other Taps While The Image Is Read
+
+        try {
+            const image:UploadableFile = await getChatBackgroundFile(index) // Gets The Bundled Image As A File
+            await applyBackground(image)
+        }
+
+        catch {
+            setIsBusy(false)
+            setSelectedBackgroundIndex(null)
+            showAlert(t("Chyba"), t("Pozadie sa nepodarilo načítať. Skúste to znova."))
+        }
     }
 
     // Function For Remove The Background
@@ -103,8 +129,8 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
     return (
         <Sheet
             visible={visible}
-            onClose={() => view === "report" ? setView("main") : close()}
-            title={view === "report" ? t("Nahlásiť účet") : formatUsername(receiver.username)}
+            onClose={() => view !== "main" ? setView("main") : close()}
+            title={view === "report" ? t("Nahlásiť účet") : view === "background" ? t("Pozadie chatu") : formatUsername(receiver.username)}
             is_dismissable={!is_busy}
         >
             {view === "report" ? (
@@ -116,6 +142,8 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
                         </View>
                     ))}
                 </Card>
+            ) : view === "background" ? (
+                <ChatBackgroundMenu onPickFromDevice={pickBackground} onSelectBackground={selectBuiltInBackground} is_busy={is_busy} selected_index={selected_background_index} />
             ) : (
                 <>
                     <Card padding="xs">
@@ -129,7 +157,7 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
                         }} />
 
                         <Divider inset={spacing.md} />
-                        <MenuRow icon="image" label={background_image ? t("Zmeniť pozadie chatu") : t("Nastaviť pozadie chatu")} onPress={pickBackground} is_disabled={is_busy} />
+                        <MenuRow icon="image" label={background_image ? t("Zmeniť pozadie chatu") : t("Nastaviť pozadie chatu")} onPress={() => setView("background")} is_disabled={is_busy} />
 
                         {!!background_image && (
                             <>

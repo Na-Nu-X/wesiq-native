@@ -46,6 +46,7 @@ const notFound = (message:string):MockResponse => ({ status: 404, body: { succes
 // Routes (":param" Matches One Path Segment)
 const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
     { method: "POST", pattern: "login/", handler: () => ok({ access: "mock-access-token", refresh: "mock-refresh-token" }) },
+    { method: "POST", pattern: "token/refresh/", handler: () => ok({ access: "mock-access-token", refresh: "mock-refresh-token" }) },
     { method: "POST", pattern: "get-password-reset-code/", handler: () => ok({ message: "Overovací kód bol odoslaný na váš e-mail. (mock)" }) },
 
     {

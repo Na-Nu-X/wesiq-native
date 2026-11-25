@@ -1876,5 +1876,12 @@
     "Cieľ": "Goal",
     "Vybavenie": "Equipment",
     "Svaly": "Muscles",
-    "{{count}} min": "{{count}} min"
+    "{{count}} min": "{{count}} min",
+    "Potvrdzujem, že mám aspoň 13 rokov.": "I confirm that I am at least 13 years old.",
+    "Pre registráciu musíte potvrdiť, že máte aspoň 13 rokov.": "To sign up, you must confirm that you are at least 13 years old.",
+    "Vybrať zo zariadenia": "Choose from device",
+    "Predvolené pozadia": "Default backgrounds",
+    "Pozadie {{number}}": "Background {{number}}",
+    "Pozadie chatu": "Chat background",
+    "Pozadie sa nepodarilo načítať. Skúste to znova.": "Couldn't load the background. Please try again."
 }

@@ -112,8 +112,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "Wesiq uses the microphone to record voice messages in chats.",
+          "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
       ],

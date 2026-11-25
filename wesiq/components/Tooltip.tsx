@@ -1,18 +1,20 @@
 import { SMALL_BORDER_RADIUS } from "@/constants/borders"
 import { SECONDARY_COLOR, transparentize } from "@/constants/colors"
-import { useEffect, useRef, useState } from "react"
-import { Animated, Text, View, StyleSheet } from "react-native"
+import { useEffect, useState } from "react"
+import { Animated, DimensionValue, Text, View, StyleSheet } from "react-native"
 
 type TooltipProps = {
     text:string,
     orientation?:"top"|"right",
-    width?:string,
+    width?:DimensionValue,
     top?:number
 }
 
+// Centering Uses Layout (Not A Percentage translateX): The Native Animated Driver On Android Crashes On Percentage Transforms
 export const Tooltip = ({ text, orientation = "top", width = "100%", top = -10 }:TooltipProps) => {
     const animated_scale = useState(() => new Animated.Value(0))[0] // Animates The Scale
 
+    // Initializes The Show Animation
     useEffect(() => {
         Animated.timing(animated_scale, {
             toValue: 1,
@@ -24,55 +26,57 @@ export const Tooltip = ({ text, orientation = "top", width = "100%", top = -10 }
     const is_top_oriented:boolean = orientation === "top" // Checks If The Tooltip Is Top Oriented
 
     return (
-        <Animated.View 
+        <View
             pointerEvents="none"
-
-            style={[
-                styles.tooltip_container,
-                is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
-                width ? { width: width } : {},
-                top ? { top: top } : {},
-
-                {
-                    transform: [
-                        is_top_oriented ? { translateX: "-50%" } : { translateY: "-50%" },
-                        { scale: animated_scale }
-                    ]
-                }
-            ]}
+            style={[styles.tooltip_wrapper, is_top_oriented ? styles.tooltip_wrapper_top : styles.tooltip_wrapper_right, is_top_oriented ? { top } : null]}
         >
-            {!is_top_oriented && <View style={styles.tooltip_triangle_right} />}
-            <Text style={styles.tooltip_body}>{text}</Text>
-            {is_top_oriented && <View style={styles.tooltip_triangle_top} />}
-        </Animated.View>
+            <Animated.View
+                style={[
+                    is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
+                    is_top_oriented ? { width } : null,
+                    { transform: [{ scale: animated_scale }] },
+                ]}
+            >
+                {!is_top_oriented && <View style={styles.tooltip_triangle_right} />}
+                <Text style={[styles.tooltip_body, is_top_oriented ? styles.tooltip_body_top : null]}>{text}</Text>
+                {is_top_oriented && <View style={styles.tooltip_triangle_top} />}
+            </Animated.View>
+        </View>
     )
 }
 
 const styles = StyleSheet.create({
-    tooltip_container: {
+    tooltip_wrapper: {
         position: "absolute",
-        top: -10,
         zIndex: 100,
+        elevation: 100, // Android Draws Siblings With Elevation Above zIndex
     },
 
-    tooltip_container_top: {
-        bottom: 30,
-        left: "50%",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
+    tooltip_wrapper_top: {
+        left: 0,
+        right: 0,
+        alignItems: "center", // Centers The Tooltip Horizontally
     },
 
-    tooltip_container_right: {
-        top: "50%",
+    tooltip_wrapper_right: {
+        top: 0,
+        bottom: 0,
         left: "100%",
-        flexDirection: "row",
-        alignItems: "center",
+        justifyContent: "center", // Centers The Tooltip Vertically
         marginLeft: 10,
     },
 
+    tooltip_container_top: {
+        flexDirection: "column",
+        alignItems: "center",
+    },
+
+    tooltip_container_right: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+
     tooltip_body: {
-        width: "100%",
         padding: 5,
         textAlign: "center",
         borderRadius: SMALL_BORDER_RADIUS,
@@ -80,6 +84,10 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(SECONDARY_COLOR, 0.8),
         color: SECONDARY_COLOR,
         overflow: "hidden",
+    },
+
+    tooltip_body_top: {
+        width: "100%",
     },
 
     tooltip_triangle_top: {

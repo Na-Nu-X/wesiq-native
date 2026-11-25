@@ -6,7 +6,7 @@ import { usePathname } from "expo-router"
 import i18n from "@/lib/i18n"
 import { DOMAIN } from "@/constants/general"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
-import { getStoredString } from "@/lib/storage"
+import { getAccessToken } from "@/lib/api/session"
 import { toSharedPost } from "@/lib/api/endpoints/chat"
 import { are_notifications_supported, cancelLocalNotification, getNotificationPermission, scheduleLocalNotification } from "@/lib/notifications"
 
@@ -58,7 +58,7 @@ export default function useNotificationSocket(user_id:number|null):void {
 
         // Function For Open The Socket
         const connect = async ():Promise<void> => {
-            const user_token:string|null = await getStoredString("user_token") // Gets The User Token
+            const user_token:string|null = await getAccessToken() // Gets The User Token (Refreshed When It's About To Expire)
             if(!user_token || is_closed_by_app) return
 
             socket = new WebSocket(getSocketUrl(user_token))

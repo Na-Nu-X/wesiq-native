@@ -895,6 +895,7 @@ const styles = StyleSheet.create({
         position: "absolute",
         fontSize: 22,
         fontWeight: "bold",
+        includeFontPadding: false, // Android: Centers The Number Vertically Like On iOS
 
         // span {
         //     text-align: center;
@@ -909,77 +910,49 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(BLUE_RARITY, 0.85),
         color: BLUE_RARITY,
         borderColor: transparentize(BLUE_RARITY, 0.7),
-        shadowColor: BLUE_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(BLUE_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_green_rarity: {
         backgroundColor: transparentize(GREEN_RARITY, 0.85),
         color: GREEN_RARITY,
         borderColor: transparentize(GREEN_RARITY, 0.7),
-        shadowColor: GREEN_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(GREEN_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_yellow_rarity: {
         backgroundColor: transparentize(YELLOW_RARITY, 0.85),
         color: YELLOW_RARITY,
         borderColor: transparentize(YELLOW_RARITY, 0.7),
-        shadowColor: YELLOW_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(YELLOW_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_orange_rarity: {
         backgroundColor: transparentize(ORANGE_RARITY, 0.85),
         color: ORANGE_RARITY,
         borderColor: transparentize(ORANGE_RARITY, 0.7),
-        shadowColor: ORANGE_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(ORANGE_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_red_rarity: {
         backgroundColor: transparentize(RED_RARITY, 0.85),
         color: RED_RARITY,
         borderColor: transparentize(RED_RARITY, 0.7),
-        shadowColor: RED_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(RED_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_developer: {
         backgroundColor: transparentize(RED_RARITY, 0.85),
         color: RED_RARITY,
         borderColor: transparentize(RED_RARITY, 0.7),
-        shadowColor: RED_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(RED_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_purple_rarity: {
         backgroundColor: transparentize(PURPLE_RARITY, 0.85),
         color: PURPLE_RARITY,
         borderColor: transparentize(PURPLE_RARITY, 0.7),
-        shadowColor: PURPLE_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(PURPLE_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_xp_text: {
@@ -997,54 +970,34 @@ const styles = StyleSheet.create({
         backgroundColor: transparentize(YELLOW_RARITY, 0.85),
         color: YELLOW_RARITY,
         borderColor: transparentize(YELLOW_RARITY, 0.7),
-        shadowColor: YELLOW_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(YELLOW_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_max_activity_streak: {
         backgroundColor: transparentize(YELLOW_RARITY, 0.85),
         color: YELLOW_RARITY,
         borderColor: transparentize(YELLOW_RARITY, 0.7),
-        shadowColor: YELLOW_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(YELLOW_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_no_day_off_week: {
         backgroundColor: transparentize(YELLOW_RARITY, 0.85),
         color: YELLOW_RARITY,
         borderColor: transparentize(YELLOW_RARITY, 0.7),
-        shadowColor: YELLOW_RARITY,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize(YELLOW_RARITY, 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_xmas_activity: {
         backgroundColor: transparentize("#dc2626", 0.88),
         color: "#dc2626",
         borderColor: transparentize("#dc2626", 0.6),
-        shadowColor: "#dc2626",
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize("#dc2626", 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 
     badge_new_year_new_goals: {
         backgroundColor: transparentize("#eab308", 0.9),
         color: "#a57e05",
         borderColor: transparentize("#eab308", 0.5),
-        shadowColor: "#eab308",
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 8,
-        elevation: 4,
+        boxShadow: `0px 0px 16px ${transparentize("#eab308", 0.5)}`, // Glow (Same On Android, iOS And Web; Android Elevation Shows A Dark Disc Through The Translucent Badge)
     },
 })
