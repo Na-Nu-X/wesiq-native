@@ -16,6 +16,7 @@ import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { openLegalPage } from "@/lib/legal"
 
 import type { LoggedInUser } from "@/types/models"
+import { SocialAuthButtons } from "./SocialAuthButtons"
 
 export type AuthForm = "login_form"|"registration_form"
 
@@ -495,6 +496,8 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                     is_full_width
                 />
 
+                {is_login && (<SocialAuthButtons onLoginSuccess={() => console.log("TEST")} />)}
+                    
                 {renderPrivacyNotice()}
 
                 <View style={styles.switch_row}>

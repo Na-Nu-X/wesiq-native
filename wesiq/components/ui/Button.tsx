@@ -83,12 +83,14 @@ export default function Button({
 
             style={({ pressed }:PressableStateCallbackType) => [
                 styles.button,
+
                 {
                     minHeight: size_style.height,
                     paddingHorizontal: size_style.padding_horizontal,
                     backgroundColor: pressed ? variant_style.background_pressed : variant_style.background,
                     borderColor: variant_style.border,
                 },
+                
                 variant === "primary" && !is_inactive ? shadows.glow : null,
                 is_full_width ? styles.full_width : null,
                 pressed ? styles.pressed : null,

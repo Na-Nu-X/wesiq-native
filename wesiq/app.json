@@ -15,7 +15,8 @@
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.behul.wesiq",
@@ -24,15 +25,51 @@
           "action": "VIEW",
           "autoVerify": true,
           "data": [
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/sk/obnova-hesla" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/cs/obnova-hesla" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/en/password-reset" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/es/recuperacion-de-contrasena" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/fr/recuperation-de-mot-de-passe" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/uk/vidnovlennya-parolya" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/ru/vosstanovleniye-parolya" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/pt-br/recuperacao-de-senha" },
-            { "scheme": "https", "host": "wesiq.com", "pathPrefix": "/de/passwortwiederherstellung" }
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/sk/obnova-hesla"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/cs/obnova-hesla"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/en/password-reset"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/es/recuperacion-de-contrasena"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/fr/recuperation-de-mot-de-passe"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/uk/vidnovlennya-parolya"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/ru/vosstanovleniye-parolya"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/pt-br/recuperacao-de-senha"
+            },
+            {
+              "scheme": "https",
+              "host": "wesiq.com",
+              "pathPrefix": "/de/passwortwiederherstellung"
+            }
           ],
           "category": [
             "BROWSABLE",
@@ -60,7 +97,6 @@
     },
     "plugins": [
       "./plugins/withDisableExtraTranslationLint",
-      
       "expo-router",
       [
         "expo-splash-screen",
@@ -125,7 +161,9 @@
             "minSdkVersion": 26
           }
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
