@@ -6,6 +6,9 @@ import {
     MOCK_CHAT_MESSAGES,
     MOCK_CHAT_PREVIEWS,
     MOCK_CHAT_RECEIVER,
+    MOCK_CHAT_ROOMS,
+    MOCK_GROUP_MESSAGES,
+    MOCK_GROUP_ROOM,
     MOCK_COMMENTS,
     MOCK_CUSTOM_TASKS,
     MOCK_EXERCISES,
@@ -192,8 +195,50 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         }
     },
 
-    { method: "GET", pattern: "get-chats/", handler: () => ok(MOCK_CHAT_PREVIEWS) },
-    { method: "GET", pattern: "get-chat/:username/", handler: () => ok({ receiver: MOCK_CHAT_RECEIVER, chats: MOCK_CHAT_MESSAGES, has_next: false }) },
+    { method: "GET", pattern: "get-chats/", handler: () => ok({ ...MOCK_CHAT_PREVIEWS, rooms: MOCK_CHAT_ROOMS }) },
+    { method: "GET", pattern: "get-chat/:username/", handler: () => ok({ receiver: MOCK_CHAT_RECEIVER, chats: MOCK_CHAT_MESSAGES, has_next: false, room_id: 3002, is_group: false }) },
+    { method: "GET", pattern: "get-chat-room/:room_id/", handler: () => ok({ room: MOCK_GROUP_ROOM, chats: MOCK_GROUP_MESSAGES, has_next: false }) },
+
+    {
+        method: "POST",
+        pattern: "create-group-chat/",
+        handler: ({ body }) => ok({
+            room: { ...MOCK_GROUP_ROOM, name: typeof body.name === "string" ? body.name : MOCK_GROUP_ROOM.name },
+            system_message: MOCK_GROUP_MESSAGES[MOCK_GROUP_MESSAGES.length - 1],
+        }),
+    },
+
+    {
+        method: "POST",
+        pattern: "remove-chat-room-member/",
+        handler: ({ body }) => {
+            const removed = MOCK_GROUP_ROOM.members.find((member) => member.id === body.user_id)
+            const members = MOCK_GROUP_ROOM.members.filter((member) => member.id !== body.user_id)
+
+            return ok({
+                room: { ...MOCK_GROUP_ROOM, members, members_count: members.length },
+                system_message: { ...MOCK_GROUP_MESSAGES[3], id: Date.now(), content: `@alex.demo odstránil používateľa ${removed?.username ?? ""}` },
+            })
+        },
+    },
+
+    // Multipart Bodies Aren't Parsed In Mock Mode, So The Photo Is Always "Changed" To None
+    { method: "POST", pattern: "change-chat-room-avatar/", handler: () => ok({ room: MOCK_GROUP_ROOM, system_message: { ...MOCK_GROUP_MESSAGES[3], id: Date.now(), content: "@alex.demo zmenil fotku skupiny" } }) },
+
+    {
+        method: "POST",
+        pattern: "add-chat-room-members/",
+        handler: ({ body }) => {
+            const user_ids:number[] = Array.isArray(body.user_ids) ? body.user_ids.filter((id:unknown):id is number => typeof id === "number") : []
+            const added:UserListItem[] = MOCK_USERS.filter((user:UserListItem) => user_ids.includes(user.id))
+            const members = [...MOCK_GROUP_ROOM.members, ...added.map((user:UserListItem) => ({ ...user, first_name: user.first_name, last_name: user.last_name, role: "member" as const }))]
+
+            return ok({
+                room: { ...MOCK_GROUP_ROOM, members, members_count: members.length },
+                system_message: { ...MOCK_GROUP_MESSAGES[3], id: Date.now(), content: `@alex.demo pridal používateľov ${added.map((user:UserListItem) => user.username).join(", ")}` },
+            })
+        },
+    },
     { method: "GET", pattern: "get-chat-settings/", handler: () => ok({ chat_settings: { background_image: null } }) },
 
     { method: "GET", pattern: "get-articles/", handler: () => ok({ articles: MOCK_ARTICLES, no_articles: false, articles_amount: MOCK_ARTICLES.length }) },

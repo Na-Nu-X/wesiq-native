@@ -10,11 +10,23 @@ import type { PostId } from "@/types/models"
 
 const SHARE_TIMEOUT_MS:number = 10000 // Gives Up When The Server Doesn't Confirm In Time
 
-// Function For Get The WebSocket URL Of A Chat
-export const getChatSocketUrl = (receiver_username:string, user_token:string):string => {
+// Which Conversation A Socket Joins: A Room (DMs And Groups) Or, For Servers Without Rooms, A DM By Username
+export type ChatSocketTarget = { room_id:number } | { username:string }
+
+// Function For Get A Stable Key Of A Socket Target (Reconnects Only When It Changes)
+export const getChatSocketKey = (target:ChatSocketTarget|null):string|null => {
+    if(!target) return null
+    return "room_id" in target ? `room:${target.room_id}` : `user:${target.username}`
+}
+
+// Function For Get The WebSocket URL Of A Chat (Accepts A Username For Callers That Only Know The Receiver)
+export const getChatSocketUrl = (target:ChatSocketTarget|string, user_token:string):string => {
     const protocol:"wss"|"ws" = DOMAIN.startsWith("https") ? "wss" : "ws" // Gets The Protocol
     const host:string = DOMAIN.replace(/^https?:\/\//, "") // Gets The Host
-    return `${protocol}://${host}/ws/chat/${encodeURIComponent(receiver_username)}/?token=${encodeURIComponent(user_token)}`
+    const resolved:ChatSocketTarget = typeof target === "string" ? { username: target } : target
+    const path:string = "room_id" in resolved ? `room/${resolved.room_id}` : encodeURIComponent(resolved.username)
+
+    return `${protocol}://${host}/ws/chat/${path}/?token=${encodeURIComponent(user_token)}`
 }
 
 export type ShareResult = { ok:true } | { ok:false, message:string }

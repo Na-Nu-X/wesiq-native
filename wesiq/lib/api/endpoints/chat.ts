@@ -5,7 +5,7 @@ import { envelopeWith, isArrayOf, isBoolean, isNumber, isRecord, isString } from
 import { toFormDataFile, UploadableFile } from "@/lib/api/upload"
 
 import type { ApiEnvelope, ApiResult } from "@/types/api"
-import type { ChatMessage, ChatReceiver, SharedPost } from "@/types/models"
+import type { ChatListRoom, ChatMessage, ChatReceiver, ChatRoom, SharedPost } from "@/types/models"
 
 // Function For Get The Shared Post Of A Message (The Server Sends An Empty Object "{}" When No Post Is Shared)
 export const toSharedPost = (value:unknown):SharedPost|null => {
@@ -19,7 +19,8 @@ const isMessage = (value:unknown):value is ChatMessage => {
 export interface ChatPage extends ApiEnvelope {
     receiver:ChatReceiver,
     chats:ChatMessage[], // Newest First
-    has_next:boolean
+    has_next:boolean,
+    room_id?:number|null // The DM Room (Missing On Older Servers, Then The Socket Connects By Username)
 }
 
 export const getChat = (username:string, page:number, signal?:AbortSignal):Promise<ApiResult<ChatPage>> => {
@@ -32,6 +33,64 @@ export const getChat = (username:string, page:number, signal?:AbortSignal):Promi
             has_next: isBoolean,
         }),
     })
+}
+
+// ---------- Rooms (DMs And Group Chats) ----------
+
+const isChatRoom = (value:unknown):value is ChatRoom => isRecord(value) && isNumber(value.id) && isBoolean(value.is_group) && isNumber(value.members_count) && isArrayOf(value.members, (member:unknown):member is Record<string, unknown> => isRecord(member) && isNumber(member.id) && isString(member.username))
+
+export const isChatListRoom = (value:unknown):value is ChatListRoom => isRecord(value) && isNumber(value.room_id) && isBoolean(value.is_group) && isNumber(value.unread_count) && isString(value.updated_at) && (value.user === null || (isRecord(value.user) && isString(value.user.username)))
+
+export interface ChatRoomPage extends ApiEnvelope {
+    room:ChatRoom,
+    chats:ChatMessage[], // Newest First
+    has_next:boolean
+}
+
+// Loads One Page Of A Room's Messages (Members Only)
+export const getChatRoom = (room_id:number, page:number, signal?:AbortSignal):Promise<ApiResult<ChatRoomPage>> => {
+    return apiGet(`get-chat-room/${room_id}/`, {
+        query: { page },
+        signal,
+        guard: envelopeWith<{ room:ChatRoom, chats:ChatMessage[], has_next:boolean }>({
+            room: isChatRoom,
+            chats: (value:unknown):value is ChatMessage[] => isArrayOf(value, isMessage),
+            has_next: isBoolean,
+        }),
+    })
+}
+
+export interface ChangedRoomResponse extends ApiEnvelope {
+    room:ChatRoom,
+    system_message:ChatMessage // "Group Created" / "Members Added" Message
+}
+
+const changedRoomGuard = envelopeWith<{ room:ChatRoom, system_message:ChatMessage }>({ room: isChatRoom, system_message: isMessage })
+
+// Creates A Group Chat (The Logged In User Becomes Its Admin)
+export const createGroupChat = (name:string, member_ids:number[]):Promise<ApiResult<ChangedRoomResponse>> => {
+    return apiPost("create-group-chat/", { name, member_ids }, { guard: changedRoomGuard })
+}
+
+// Adds People To A Group Chat (Any Member Can Add)
+export const addChatRoomMembers = (room_id:number, user_ids:number[]):Promise<ApiResult<ChangedRoomResponse>> => {
+    return apiPost("add-chat-room-members/", { room_id, user_ids }, { guard: changedRoomGuard })
+}
+
+// Removes A Member From A Group Chat (Admins Only)
+export const removeChatRoomMember = (room_id:number, user_id:number):Promise<ApiResult<ChangedRoomResponse>> => {
+    return apiPost("remove-chat-room-member/", { room_id, user_id }, { guard: changedRoomGuard })
+}
+
+// Sets The Group Photo, Or Removes It When No Image Is Given (Admins Only; The Server Resizes It)
+export const changeChatRoomAvatar = async (room_id:number, image:UploadableFile|null):Promise<ApiResult<ChangedRoomResponse>> => {
+    const form_data:FormData = new FormData()
+    form_data.append("room_id", String(room_id))
+
+    if(image) form_data.append("avatar", await toFormDataFile(image) as Blob) // React Native Accepts { uri, name, type }
+    else form_data.append("remove", "true")
+
+    return apiRequest("change-chat-room-avatar/", { method: "POST", form_data, timeout_ms: 60000, guard: changedRoomGuard })
 }
 
 // ---------- Settings ----------

@@ -53,8 +53,13 @@ interface MessageBubbleProps {
     onOpenImages:(urls:string[], index:number) => void,
     onOpenVideo:(url:string) => void,
     onOpenFile:(attachment:Attachment) => void,
-    onSwipeEdit?:(message:ChatMessage) => void // Swipe Left Starts Editing An Own Message (Same Rule As The Menu)
+    onSwipeEdit?:(message:ChatMessage) => void, // Swipe Left Starts Editing An Own Message (Same Rule As The Menu)
+    is_group?:boolean, // Group Chat: Shows Who Wrote Incoming Messages, Hides Read Receipts (They Are Per Person In DMs Only)
+    is_sender_name_visible?:boolean, // Group Chat: First Message Of A Run From One Sender (Shows The Username Above It)
+    is_sender_avatar_visible?:boolean // Group Chat: Last Message Of A Run From One Sender (Shows The Avatar Next To It)
 }
+
+const GROUP_AVATAR_SIZE:number = 28 // Avatar Next To Incoming Group Messages
 
 const SWIPE_EDIT_THRESHOLD:number = 60 // Swipe Distance That Starts Editing
 const SWIPE_MAX_DISTANCE:number = 80 // Distance After Which The Swipe Resists
@@ -68,10 +73,14 @@ function MessageBubble({
     onOpenImages, 
     onOpenVideo, 
     onOpenFile, 
-    onSwipeEdit 
+    onSwipeEdit,
+    is_group = false,
+    is_sender_name_visible = false,
+    is_sender_avatar_visible = false
 }:MessageBubbleProps) {
     const { t } = useTranslation() // Initializes The Translations
     const is_own:boolean = message.is_sender // Stores The Information If The Logged In User Sent It
+    const is_group_incoming:boolean = is_group && !is_own && !!message.sender // Incoming Group Message (Shows The Sender)
 
     const images:Attachment[] = message.attachments.filter((attachment:Attachment) => attachment.attachment_type === "image")
     const image_urls:string[] = images.map((attachment:Attachment) => getAttachmentUrl(attachment.attachment_url) ?? "")
@@ -138,9 +147,13 @@ function MessageBubble({
     const article:Article|null = message.article // Gets The Article
     const article_image:string|null = article ? getArticleImageUrl(article) : null // Gets The Article Image
 
-    return (    
+    const bubble_row = (
         <GestureDetector gesture={swipe_gesture}>
-            <View style={[styles.row, is_own ? styles.row_own : styles.row_other, is_grouped_with_previous ? styles.row_grouped : null]}>
+            <View style={[styles.row, is_own ? styles.row_own : styles.row_other, is_grouped_with_previous ? styles.row_grouped : null, is_group_incoming ? styles.row_in_group : null]}>
+                {is_group_incoming && is_sender_name_visible && (
+                    <Text variant="caption" color="text_secondary" numberOfLines={1} style={styles.sender_name}>{message.sender.username}</Text>
+                )}
+
                 {can_swipe_edit && (
                     <Animated.View pointerEvents="none" style={[styles.swipe_icon, swipe_icon_style]}>
                         <Icon name="pen" size={16} color="primary" />
@@ -288,7 +301,7 @@ function MessageBubble({
                     <View style={styles.meta}>
                         {message.is_edited && <Text variant="caption" color={is_own ? "on_primary" : "text_muted"} style={styles.meta_text}>{t("upravené")}</Text>}
                         <Text variant="caption" color={is_own ? "on_primary" : "text_muted"} style={styles.meta_text}>{message.formatted_time}</Text>
-                        {is_own && <Icon name={message.is_read ? "check-double" : "check"} size={10} color="on_primary" />}
+                        {is_own && !is_group && <Icon name={message.is_read ? "check-double" : "check"} size={10} color="on_primary" />}
                     </View>
                 </Pressable>
 
@@ -302,6 +315,28 @@ function MessageBubble({
                 </Animated.View>
             </View>
         </GestureDetector>
+    )
+
+    if(!is_group_incoming) return bubble_row
+
+    // Group Chat: The Avatar Sits Next To The Last Bubble Of A Run, Earlier Bubbles Keep Its Space So They Stay Aligned
+    return (
+        <View style={[styles.group_row, is_grouped_with_previous ? styles.row_grouped : null]}>
+            {is_sender_avatar_visible ? (
+                <Pressable
+                    onPress={() => router.push({ pathname: "/profile/[username]", params: { username: message.sender.username } })}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${message.sender.username}, ${t("Zobraziť profil")}`}
+                    style={styles.group_avatar}
+                >
+                    <Avatar user={message.sender} size={GROUP_AVATAR_SIZE} is_ring_hidden />
+                </Pressable>
+            ) : (
+                <View style={styles.group_avatar} />
+            )}
+
+            <View style={styles.group_bubble}>{bubble_row}</View>
+        </View>
     )
 }
 
@@ -319,6 +354,34 @@ const styles = StyleSheet.create({
 
     row_grouped: {
         marginTop: 3,
+    },
+
+    row_in_group: {
+        maxWidth: "100%", // The Group Row Already Limits The Width
+        marginTop: 0,
+    },
+
+    sender_name: {
+        marginBottom: spacing.xxs,
+        marginLeft: spacing.sm,
+    },
+
+    group_row: {
+        maxWidth: "88%",
+        flexDirection: "row",
+        alignItems: "flex-end",
+        alignSelf: "flex-start",
+        gap: spacing.xs,
+        marginTop: spacing.md,
+    },
+
+    group_avatar: {
+        width: GROUP_AVATAR_SIZE,
+        height: GROUP_AVATAR_SIZE,
+    },
+
+    group_bubble: {
+        flexShrink: 1,
     },
 
     swipe_content: {

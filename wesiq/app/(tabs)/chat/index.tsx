@@ -1,6 +1,6 @@
-// Messages: Conversations (Unread First)
+// Messages: DMs And Group Chats In One List (Newest Activity First)
 
-import { useCallback, useMemo, useState } from "react"
+import { ReactNode, useCallback, useMemo, useState } from "react"
 import { FlatList, ListRenderItemInfo, Pressable, StyleSheet, View } from "react-native"
 import { router, useFocusEffect } from "expo-router"
 import { useTranslation } from "react-i18next"
@@ -12,28 +12,86 @@ import { useApiQuery } from "@/hooks/useApiQuery"
 import { useLoggedInUser } from "@/contexts/LoggedInUserContext"
 import { useAuthSheet } from "@/components/features/auth/AuthSheetProvider"
 import NotificationPrompt from "@/components/features/chat/NotificationPrompt"
+import GroupAvatar from "@/components/features/chat/GroupAvatar"
+import CreateGroupSheet from "@/components/features/chat/CreateGroupSheet"
+import { isChatListRoom } from "@/lib/api/endpoints/chat"
+import i18n from "@/lib/i18n"
 
-import type { ChatPreview, UserSummary } from "@/types/models"
+import type { ChatListRoom, ChatPreview, ChatRoomLastMessage, UserSummary } from "@/types/models"
 
+// One Row Of The List (A DM Or A Group Chat)
 interface Conversation {
-    user:UserSummary,
+    key:string,
+    title:string,
     preview:string,
-    unread_count:number
+    unread_count:number,
+    avatar:ReactNode,
+    open:() => void
 }
 
 const isChatPreview = (value:unknown):value is ChatPreview => isRecord(value) && typeof value.id === "number" && isRecord(value.sender) && typeof value.sender.username === "string" && (typeof value.content === "string" || value.content === null || value.content === undefined) // Older Servers Send Unread Chats Without "content"
 
-const isChatsResponse = envelopeWith<{ unread_chats:ChatPreview[], read_chats:ChatPreview[] }>({
+const isChatsResponse = envelopeWith<{ unread_chats:ChatPreview[], read_chats:ChatPreview[], rooms?:ChatListRoom[] }>({
     unread_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
     read_chats: (value:unknown):value is ChatPreview[] => isArrayOf(value, isChatPreview),
+    rooms: (value:unknown):value is ChatListRoom[]|undefined => value === undefined || isArrayOf(value, isChatListRoom), // Missing On Servers Without Rooms
 })
 
-// Function For Group Messages Into One Row Per Person (Unread First, Then Read)
+// Function For Open A DM
+const openDirectChat = (username:string):void => {
+    router.push({ pathname: "/chat/[username]", params: { username } })
+}
+
+// Function For The Preview Text Of The Last Message
+const getMessagePreview = (message:ChatRoomLastMessage|null):string => {
+    if(!message) return ""
+
+    switch(message.message_type) {
+        case "system": return message.content ?? ""
+        case "post": return i18n.t("Zdieľaný príspevok")
+        case "article": return i18n.t("Zdieľaný článok")
+        case "voice": return i18n.t("Hlasová správa")
+        default: return message.content || (message.has_attachments ? i18n.t("Príloha") : "")
+    }
+}
+
+// Function For Turn The Server's Rooms Into Rows (Group Previews Start With Who Wrote The Message)
+const toConversations = (rooms:ChatListRoom[]):Conversation[] => rooms.flatMap((room:ChatListRoom):Conversation[] => {
+    const preview:string = getMessagePreview(room.last_message)
+
+    if(room.is_group) {
+        const author:string|null = room.last_message && room.last_message.message_type !== "system" ? (room.last_message.is_sender ? i18n.t("Vy") : room.last_message.sender?.username ?? null) : null
+        const title:string = room.name || i18n.t("Skupina")
+
+        return [{
+            key: `room:${room.room_id}`,
+            title,
+            preview: author && preview ? `${author}: ${preview}` : preview || i18n.t("Členovia: {{count}}", { count: room.members_count }),
+            unread_count: room.unread_count,
+            avatar: <GroupAvatar avatar={room.avatar} name={title} size={50} />,
+            open: () => router.push({ pathname: "/chat/group/[room_id]", params: { room_id: String(room.room_id) } }),
+        }]
+    }
+
+    const user:UserSummary|null = room.user
+    if(!user) return []
+
+    return [{
+        key: `room:${room.room_id}`,
+        title: user.username,
+        preview: room.last_message?.is_sender && preview ? `${i18n.t("Vy")}: ${preview}` : preview,
+        unread_count: room.unread_count,
+        avatar: <Avatar user={user} size={50} />,
+        open: () => openDirectChat(user.username),
+    }]
+})
+
+// Function For Group Messages Into One Row Per Person (Servers Without Rooms; Unread First, Then Read)
 const groupConversations = (unread:ChatPreview[], read:ChatPreview[]):Conversation[] => {
-    const by_user:Map<number, Conversation> = new Map()
+    const by_user:Map<number, { user:UserSummary, preview:string, unread_count:number }> = new Map()
 
     unread.forEach((message:ChatPreview) => {
-        const existing:Conversation|undefined = by_user.get(message.sender.id)
+        const existing = by_user.get(message.sender.id)
         by_user.set(message.sender.id, { user: message.sender, preview: existing?.preview ?? message.content ?? "", unread_count: (existing?.unread_count ?? 0) + 1 }) // Keeps The First (Newest) Message As The Preview
     })
 
@@ -42,7 +100,16 @@ const groupConversations = (unread:ChatPreview[], read:ChatPreview[]):Conversati
         by_user.set(message.sender.id, { user: message.sender, preview: message.content ?? "", unread_count: 0 })
     })
 
-    return [...by_user.values()].sort((a:Conversation, b:Conversation) => Number(b.unread_count > 0) - Number(a.unread_count > 0))
+    return [...by_user.values()]
+        .sort((a, b) => Number(b.unread_count > 0) - Number(a.unread_count > 0))
+        .map(({ user, preview, unread_count }):Conversation => ({
+            key: `user:${user.id}`,
+            title: user.username,
+            preview,
+            unread_count,
+            avatar: <Avatar user={user} size={50} />,
+            open: () => openDirectChat(user.username),
+        }))
 }
 
 export default function ChatsScreen() {
@@ -50,6 +117,7 @@ export default function ChatsScreen() {
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
     const [search, setSearch] = useState<string>("") // Stores The Search
+    const [is_create_group_open, setIsCreateGroupOpen] = useState<boolean>(false)
 
     const { state, refetch, reload, is_refreshing } = useApiQuery("chats", (signal:AbortSignal) => apiGet("get-chats/", { signal, guard: isChatsResponse }), { is_enabled: logged_in_user !== null })
 
@@ -58,9 +126,13 @@ export default function ChatsScreen() {
         if(logged_in_user) reload() // Silent, So The Pull-To-Refresh Spinner Doesn't Show On Every Visit
     }, [logged_in_user, reload]))
 
-    const conversations:Conversation[] = useMemo(() => state.data ? groupConversations(state.data.unread_chats, state.data.read_chats) : [], [state.data])
+    const conversations:Conversation[] = useMemo(() => {
+        if(!state.data) return []
+        return state.data.rooms ? toConversations(state.data.rooms) : groupConversations(state.data.unread_chats, state.data.read_chats)
+    }, [state.data])
+
     const query:string = search.trim().toLowerCase() // Gets The Query
-    const visible:Conversation[] = conversations.filter((conversation:Conversation) => conversation.user.username.toLowerCase().includes(query))
+    const visible:Conversation[] = conversations.filter((conversation:Conversation) => conversation.title.toLowerCase().includes(query))
 
     // Function For Render One Conversation
     const renderConversation = ({ item }:ListRenderItemInfo<Conversation>) => {
@@ -68,15 +140,15 @@ export default function ChatsScreen() {
 
         return (
             <Pressable
-                onPress={() => router.push({ pathname: "/chat/[username]", params: { username: item.user.username } })}
+                onPress={item.open}
                 accessibilityRole="button"
-                accessibilityLabel={is_unread ? `${item.user.username}, ${t("Neprečítané")}: ${item.unread_count}. ${item.preview}` : `${item.user.username}. ${item.preview}`}
+                accessibilityLabel={is_unread ? `${item.title}, ${t("Neprečítané")}: ${item.unread_count}. ${item.preview}` : `${item.title}. ${item.preview}`}
                 style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null]}
             >
-                <Avatar user={item.user} size={50} />
+                {item.avatar}
 
                 <View style={styles.row_text}>
-                    <Text variant="body_strong" numberOfLines={1}>{item.user.username}</Text>
+                    <Text variant="body_strong" numberOfLines={1}>{item.title}</Text>
                     <Text variant="callout" color={is_unread ? "text" : "text_secondary"} numberOfLines={1} style={is_unread ? styles.unread_preview : null}>
                         {item.preview || t("Príloha")}
                     </Text>
@@ -103,11 +175,23 @@ export default function ChatsScreen() {
         <Screen
             is_scrollable={false}
             is_padded={false}
-            header={<Header title={t("Správy")} is_large right={<IconButton icon="user-plus" accessibility_label={t("Hľadať ľudí")} onPress={() => router.push("/users")} variant="soft" size={38} />} />}
+            header={
+                <Header
+                    title={t("Správy")}
+                    is_large
+
+                    right={
+                        <View style={styles.header_actions}>
+                            <IconButton icon="user-group" accessibility_label={t("Nová skupina")} onPress={() => setIsCreateGroupOpen(true)} variant="soft" size={38} />
+                            <IconButton icon="user-plus" accessibility_label={t("Hľadať ľudí")} onPress={() => router.push("/users")} variant="soft" size={38} />
+                        </View>
+                    }
+                />
+            }
         >
             <FlatList
                 data={visible}
-                keyExtractor={(conversation:Conversation) => String(conversation.user.id)}
+                keyExtractor={(conversation:Conversation) => conversation.key}
                 renderItem={renderConversation}
                 refreshControl={<ThemedRefreshControl refreshing={is_refreshing} onRefresh={refetch} />}
                 keyboardShouldPersistTaps="handled"
@@ -140,11 +224,18 @@ export default function ChatsScreen() {
                     : <EmptyState icon="comments" title={t("Zatiaľ žiadne správy")} message={t("Napíšte niekomu z jeho profilu tlačidlom Správa.")} action={{ label: t("Hľadať ľudí"), onPress: () => router.push("/users") }} />
                 }
             />
+
+            <CreateGroupSheet visible={is_create_group_open} onClose={() => setIsCreateGroupOpen(false)} />
         </Screen>
     )
 }
 
 const styles = StyleSheet.create({
+    header_actions: {
+        flexDirection: "row",
+        gap: spacing.sm,
+    },
+
     list_content: {
         flexGrow: 1,
         paddingHorizontal: layout.screen_padding,

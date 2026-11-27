@@ -129,6 +129,25 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         onActiveFormChange(null)
     }
 
+    // Function For Finish A Google / Apple Login (SocialAuthButtons Already Saved The Session Tokens)
+    const handleSocialLogin = async ():Promise<void> => {
+        setIsSubmitting(true)
+        setFormError(null)
+
+        const user:LoggedInUser|null = await refreshLoggedInUser() // Loads The Logged In User
+        setIsSubmitting(false)
+
+        if(!user) {
+            haptics.error()
+            setFormError(t("Pri prihlasovaní došlo k chybe."))
+            return
+        }
+
+        haptics.success()
+        onUserLogin?.(user)
+        onActiveFormChange(null)
+    }
+
     // Function For Send The Password Reset Code And Open The Reset Screen
     const handleForgotPassword = async ():Promise<void> => {
         if(!identifier.trim()) {
@@ -496,7 +515,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
                     is_full_width
                 />
 
-                {is_login && (<SocialAuthButtons onLoginSuccess={() => console.log("TEST")} />)}
+                {is_login && (<SocialAuthButtons onLoginSuccess={handleSocialLogin} />)}
                     
                 {renderPrivacyNotice()}
 

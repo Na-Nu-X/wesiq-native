@@ -24,6 +24,22 @@ export const login = async (identifier:string, password:string):Promise<ApiResul
     return response
 }
 
+// Function For Log In With Google (The Server Verifies The ID Token, Then Finds Or Creates The Account; Stores The Tokens On Success)
+export const googleLogin = async (id_token:string, language:string):Promise<ApiResult<LoginResponse>> => {
+    const response:ApiResult<LoginResponse> = await apiPost<LoginResponse>("auth/google/", { id_token, language },{ is_authenticated: false, guard: isLoginResponse })
+
+    if(response.ok) await saveSession(response.data.access, response.data.refresh)
+    return response
+}
+
+// Function For Log In With Apple (Apple Only Gives The Name On The First Sign-In, So It Is Sent Along With The Identity Token)
+export const appleLogin = async (identity_token:string, first_name:string, last_name:string, language:string):Promise<ApiResult<LoginResponse>> => {
+    const response:ApiResult<LoginResponse> = await apiPost<LoginResponse>("auth/apple/", { identity_token, first_name, last_name, language },{ is_authenticated: false, guard: isLoginResponse })
+
+    if(response.ok) await saveSession(response.data.access, response.data.refresh)
+    return response
+}
+
 export interface RegistrationData {
     first_name:string,
     last_name:string,

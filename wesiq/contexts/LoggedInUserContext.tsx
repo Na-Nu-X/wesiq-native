@@ -3,6 +3,8 @@ import { apiGet, onUnauthorized } from "@/lib/api/client"
 import { clearSession } from "@/lib/api/session"
 import { envelopeWith, isRecord } from "@/lib/api/guards"
 import { getStoredString, removeStoredValue } from "@/lib/storage"
+import { GoogleSignin } from "@react-native-google-signin/google-signin"
+import i18n from "@/lib/i18n"
 
 import type { LoggedInUser } from "@/types/models"
 import type { ApiResult } from "@/types/api"
@@ -61,6 +63,16 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
     // Function For Log Out (Removes The Tokens, The User And Their Device Data; The Notification Socket Closes With The User)
     const logOut = useCallback(async ():Promise<void> => {
         await Promise.all([clearSession(), removeStoredValue("searched_users_history"), removeStoredValue("processing_posts")])
+
+        // Signs Out Of Google, So The Next Google Login Lets The User Pick An Account (Fails Harmlessly When Nobody Signed In With Google Or On Web)
+        try {
+            await GoogleSignin.signOut()
+        }
+
+        catch(error) {
+            console.warn(i18n.t("Odhlásenie z Google účtu zlyhalo."), error)
+        }
+
         setLoggedInUser(null)
     }, [])
 

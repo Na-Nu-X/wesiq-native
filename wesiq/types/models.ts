@@ -261,8 +261,12 @@ export interface MessageReaction {
     emoji:string
 }
 
+export type ChatMessageType = "text"|"post"|"article"|"voice"|"system"
+
 export interface ChatMessage {
     id:number,
+    room_id?:number|null, // Missing On Older Servers
+    message_type?:ChatMessageType, // "text" When Missing (Older Servers)
     sender:UserSummary,
     content:string|null, // Null For A Shared Post Or Attachments Only
     attachments:Attachment[],
@@ -291,11 +295,66 @@ export interface ChatPreview {
     content?:string|null // Null For A Shared Post, Missing In Unread Chats From Older Servers
 }
 
-export type ChatSocketAction = "new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification"
+// ---------- Chat Rooms (DMs And Group Chats) ----------
+
+export type ChatRoomRole = "admin"|"member"
+
+export interface ChatRoomMember extends UserSummary {
+    first_name:string|null,
+    last_name:string|null,
+    role:ChatRoomRole
+}
+
+// Room Of A Conversation (Header, Group Info)
+export interface ChatRoom {
+    id:number,
+    is_group:boolean,
+    name:string|null,
+    avatar:string|null, // Media Path Of The Group Photo
+    created_by_id:number|null,
+    my_role:ChatRoomRole|null,
+    members_count:number,
+    members:ChatRoomMember[]
+}
+
+// Last Message Shown In The Chat List
+export interface ChatRoomLastMessage {
+    id:number,
+    message_type:ChatMessageType,
+    content:string|null,
+    has_attachments:boolean,
+    is_sender:boolean,
+    sender:{ id:number, username:string }|null,
+    created_at:ISODateString
+}
+
+// One Row Of The Chat List (A DM Has "user", A Group Has "name")
+export interface ChatListRoom {
+    room_id:number,
+    is_group:boolean,
+    name:string|null,
+    avatar:string|null,
+    members_count:number,
+    unread_count:number,
+    updated_at:ISODateString,
+    user:UserListItem|null,
+    last_message:ChatRoomLastMessage|null
+}
+
+export type ChatSocketAction = "new"|"edit"|"delete"|"add_reaction"|"remove_reaction"|"new_message_notification"|"system"|"error"
 
 export interface ChatSocketEvent {
     action:ChatSocketAction,
     chat_id:number,
+    room_id?:number|null,
+    is_group?:boolean, // Notification Events
+    room_name?:string|null, // Notification Events
+    message_type?:ChatMessageType,
+    message_id?:number, // System Events
+    added_users?:UserSummary[], // System Events
+    removed_user_ids?:number[], // System Events (Members Removed By An Admin)
+    avatar_changed?:boolean, // System Events (The Group Photo Changed, "avatar" Holds The New One)
+    avatar?:string|null, // System Events
     message:string|null,
     attachments:Attachment[],
     post:SharedPost|null,

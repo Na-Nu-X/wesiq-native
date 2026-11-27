@@ -21,7 +21,7 @@ import { fitWaveformToBars } from "@/lib/chat"
 
 import type { UploadableFile } from "@/lib/api/upload"
 import type { ChatMessage } from "@/types/models"
-import type { RecordedVoiceMessage } from "@/app/(tabs)/chat/[username]"
+import type { RecordedVoiceMessage } from "./Conversation"
 
 export interface PendingAttachment extends UploadableFile {
     key:string,

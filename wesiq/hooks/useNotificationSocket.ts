@@ -30,11 +30,15 @@ const getMessagePreview = (event:ChatSocketEvent):string => {
 
 export default function useNotificationSocket(user_id:number|null):void {
     const pathname:string = usePathname() // Gets The Pathname
-    const active_chat_username = useRef<string|null>(null) // Stores The Username Of The Open Chat
+    const active_chat_username = useRef<string|null>(null) // Stores The Username Of The Open DM
+    const active_room_id = useRef<number|null>(null) // Stores The Room ID Of The Open Group Chat
 
-    // Initializes The Active Chat Username (No Notification For The Chat The User Is Reading)
+    // Initializes The Active Chat (No Notification For The Chat The User Is Reading)
     useEffect(() => {
-        active_chat_username.current = pathname.startsWith("/chat/") ? decodeURIComponent(pathname.replace("/chat/", "")) : null
+        const group_match:RegExpMatchArray|null = pathname.match(/^\/chat\/group\/(\d+)/)
+
+        active_room_id.current = group_match ? Number(group_match[1]) : null
+        active_chat_username.current = !group_match && pathname.startsWith("/chat/") ? decodeURIComponent(pathname.replace("/chat/", "")) : null
     }, [pathname])
 
     // Initializes The Socket For The Logged In User
@@ -49,11 +53,18 @@ export default function useNotificationSocket(user_id:number|null):void {
 
         // Function For Show The Message Notification (Only When The User Already Allowed Notifications)
         const notifyAboutMessage = async (event:ChatSocketEvent):Promise<void> => {
-            if(!are_notifications_supported || !event.sender_username || event.sender_username === active_chat_username.current) return
+            if(!are_notifications_supported || !event.sender_username) return
+
+            const is_open:boolean = event.is_group ? event.room_id === active_room_id.current : event.sender_username === active_chat_username.current
+            if(is_open) return
             if(await getNotificationPermission() !== "granted") return
 
+            // Group Chats: The Group Name As The Title, "username: message" As The Text
+            const title:string = event.is_group ? event.room_name || i18n.t("Skupina") : event.sender_username
+            const body:string = event.is_group ? `${event.sender_username}: ${getMessagePreview(event)}` : getMessagePreview(event)
+
             cancelLocalNotification(notification_id) // Keeps Only The Latest Message
-            notification_id = await scheduleLocalNotification("messages", { title: event.sender_username, body: getMessagePreview(event) }, NOTIFICATION_DELAY_SECONDS)
+            notification_id = await scheduleLocalNotification("messages", { title, body }, NOTIFICATION_DELAY_SECONDS)
         }
 
         // Function For Open The Socket

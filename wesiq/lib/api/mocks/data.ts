@@ -3,9 +3,11 @@
 import type {
     Activity,
     Article,
+    ChatListRoom,
     ChatMessage,
     ChatPreview,
     ChatReceiver,
+    ChatRoom,
     CustomTask,
     Exercise,
     LoggedInUser,
@@ -216,6 +218,51 @@ export const MOCK_CHAT_PREVIEWS:{ unread_chats:ChatPreview[], read_chats:ChatPre
 }
 
 export const MOCK_CHAT_RECEIVER:ChatReceiver = { ...lucia, private_account: false, has_follow: true, is_muted: false }
+
+export const MOCK_GROUP_ROOM:ChatRoom = {
+    id: 3001,
+    is_group: true,
+    name: "Ranné behanie",
+    avatar: null,
+    created_by_id: 1,
+    my_role: "admin",
+    members_count: 3,
+
+    members: [
+        { id: 1, username: "@alex.demo", first_name: "Alex", last_name: "Demo", profile_picture_name: null, subscription: { is_active: true }, role: "admin" },
+        { ...martin, first_name: martin.first_name, last_name: martin.last_name, role: "member" },
+        { ...sofia, first_name: sofia.first_name, last_name: sofia.last_name, role: "member" },
+    ],
+}
+
+const mockMessage = (fields:Partial<ChatMessage> & Pick<ChatMessage, "id"|"sender"|"content"|"formatted_time"|"is_sender">):ChatMessage => ({
+    room_id: MOCK_GROUP_ROOM.id,
+    message_type: "text",
+    attachments: [],
+    voice_message: null,
+    post: null,
+    article: null,
+    is_read: true,
+    is_edited: false,
+    message_reactions: [],
+    is_older_than_15_minutes: true,
+    is_older_than_1_day: false,
+    ...fields,
+})
+
+export const MOCK_GROUP_MESSAGES:ChatMessage[] = [
+    mockMessage({ id: 3105, sender: sofia, content: "Ja tiež 🙌", formatted_time: "07:12", is_sender: false }),
+    mockMessage({ id: 3104, sender: martin, content: "Zajtra o 6:30 pri parku?", formatted_time: "07:10", is_sender: false }),
+    mockMessage({ id: 3103, sender: martin, content: "Ahojte!", formatted_time: "07:09", is_sender: false }),
+    mockMessage({ id: 3102, sender: { id: 1, username: "@alex.demo", profile_picture_name: null }, content: "@alex.demo pridal používateľa @sofia_mobility", formatted_time: "07:05", is_sender: true, message_type: "system" }),
+    mockMessage({ id: 3101, sender: { id: 1, username: "@alex.demo", profile_picture_name: null }, content: "@alex.demo vytvoril skupinu Ranné behanie", formatted_time: "07:00", is_sender: true, message_type: "system" }),
+]
+
+export const MOCK_CHAT_ROOMS:ChatListRoom[] = [
+    { room_id: MOCK_GROUP_ROOM.id, is_group: true, name: MOCK_GROUP_ROOM.name, avatar: null, members_count: 3, unread_count: 2, updated_at: hoursAgo(0.2), user: null, last_message: { id: 3105, message_type: "text", content: "Ja tiež 🙌", has_attachments: false, is_sender: false, sender: { id: sofia.id, username: sofia.username }, created_at: hoursAgo(0.2) } },
+    { room_id: 3002, is_group: false, name: null, avatar: null, members_count: 2, unread_count: 1, updated_at: hoursAgo(0.5), user: lucia, last_message: { id: 901, message_type: "text", content: "Are we still on for leg day at 6?", has_attachments: false, is_sender: false, sender: { id: lucia.id, username: lucia.username }, created_at: hoursAgo(0.5) } },
+    { room_id: 3003, is_group: false, name: null, avatar: null, members_count: 2, unread_count: 0, updated_at: hoursAgo(5), user: martin, last_message: { id: 903, message_type: "text", content: "Great run today!", has_attachments: false, is_sender: true, sender: { id: 1, username: "@alex.demo" }, created_at: hoursAgo(5) } },
+]
 
 // export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
 //     { id: 1201, sender: lucia, content: "Are we still on for leg day at 6?", attachments: [], is_read: false, is_edited: false, formatted_time: "17:42", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: null },

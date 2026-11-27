@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { AppState, AppStateStatus } from "react-native"
-import { getChatSocketUrl } from "@/lib/chat"
+import { ChatSocketTarget, getChatSocketKey, getChatSocketUrl } from "@/lib/chat"
 import { getAccessToken } from "@/lib/api/session"
 import { isRecord } from "@/lib/api/guards"
 import { IS_MOCK_MODE } from "@/lib/api/mocks/install"
@@ -25,29 +25,33 @@ const MAX_RETRY_DELAY_MS:number = 15000
 
 const isSocketEvent = (value:unknown):value is ChatSocketEvent => isRecord(value) && typeof value.action === "string"
 
-export function useChatSocket(username:string|undefined, is_enabled:boolean, onEvent:(event:ChatSocketEvent) => void) {
+export function useChatSocket(target:ChatSocketTarget|null, is_enabled:boolean, onEvent:(event:ChatSocketEvent) => void) {
     const [status, setStatus] = useState<SocketStatus>("connecting")
     const socket = useRef<WebSocket|null>(null)
     const on_event = useRef(onEvent) // Always Calls The Latest Handler
     const retry_count = useRef<number>(0)
+    const target_key:string|null = getChatSocketKey(target) // Reconnects Only When The Conversation Changes
+    const target_reference = useRef<ChatSocketTarget|null>(target)
 
     // Initializes The Update Of The Handler Reference
     useEffect(() => {
         on_event.current = onEvent
+        target_reference.current = target
     })
 
     // Initializes The Connection (Reconnects With Backoff, Reconnects When The App Returns To The Foreground)
     useEffect(() => {
-        if(!username || !is_enabled || IS_MOCK_MODE) return
+        if(!target_key || !is_enabled || IS_MOCK_MODE) return
 
         let is_disposed:boolean = false
         let retry_timeout:ReturnType<typeof setTimeout>|null = null
 
         const connect = async ():Promise<void> => {
             const token:string|null = await getAccessToken() // Gets The Token (Refreshed When It's About To Expire)
-            if(!token || is_disposed) return
+            const current_target:ChatSocketTarget|null = target_reference.current
+            if(!token || !current_target || is_disposed) return
 
-            const ws:WebSocket = new WebSocket(getChatSocketUrl(username, token))
+            const ws:WebSocket = new WebSocket(getChatSocketUrl(current_target, token))
             socket.current = ws
 
             ws.onopen = () => {
@@ -97,7 +101,7 @@ export function useChatSocket(username:string|undefined, is_enabled:boolean, onE
             socket.current?.close()
             socket.current = null
         }
-    }, [username, is_enabled])
+    }, [target_key, is_enabled])
 
     // Function For Send An Action (Returns False When Not Connected)
     const send = useCallback((payload:OutgoingChatAction):boolean => {

@@ -5,23 +5,26 @@ import * as AppleAuthentication from "expo-apple-authentication"
 import { useTranslation } from "react-i18next"
 import { Button } from "@/components/ui"
 import { radii } from "@/theme"
+import { appleLogin, googleLogin, toServerLanguage } from "@/lib/api/endpoints/auth"
 
 const ENABLE_APPLE_AUTH:boolean = false
-const GOOGLE_WEB_CLIENT_ID:string = "540480595540-tntaf1q3pdefl5tjcsk445ircs19dtn6.apps.googleusercontent.com" // Defines The Google Web Client ID
+const GOOGLE_WEB_CLIENT_ID:string = "540480595540-tntaf1q3pdefl5tjcsk445ircs19dtn6.apps.googleusercontent.com" // Defines The Google Web Client ID (The ID Token's Audience, Must Match GOOGLE_WEB_CLIENT_ID On The Server)
+const GOOGLE_IOS_CLIENT_ID:string = "540480595540-hs88vg1pp6sju9k8n71nj58p247mo4nr.apps.googleusercontent.com" // Defines The Google iOS Client ID (Its Reversed Form Is The "iosUrlScheme" In app.json)
 
 type SocialAuthButtonsProps = {
-    onLoginSuccess:(access:string, refresh:string) => Promise<void>|void
+    onLoginSuccess:() => Promise<void>|void // Called After The Session Tokens Were Saved
 }
 
 export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
-    const { t } = useTranslation() // Initializes The Translations
+    const { t, i18n } = useTranslation() // Initializes The Translations
 
     const [is_loading, setIsLoading] = useState<boolean>(false) // Stores The Information If The Loading Is Active
 
     // Initializes The Google Sign-In Configuration
     useEffect(() => {
         GoogleSignin.configure({
-            webClientId: GOOGLE_WEB_CLIENT_ID
+            webClientId: GOOGLE_WEB_CLIENT_ID,
+            iosClientId: GOOGLE_IOS_CLIENT_ID
         })
     }, [])
 
@@ -37,24 +40,17 @@ export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
             const response:SignInResponse = await GoogleSignin.signIn() // Gets The Response From Google
 
             if(isSuccessResponse(response) && response.data.idToken) {
-                // Gets The Google Sign-In Response
-                const google_signin_response:Response = await fetch("https://wesiq.com/api/auth/google/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id_token: response.data.idToken })
-                })
+                const login_response = await googleLogin(response.data.idToken, toServerLanguage(i18n.language)) // Sends The Google ID Token To The Server (The Language Is Used Only For A New Account)
 
-                const google_signin_data = await google_signin_response.json() // Gets The Google Sign-In Data
-
-                if(google_signin_data.success && google_signin_data.access && google_signin_data.refresh) await onLoginSuccess(google_signin_data.access, google_signin_data.refresh)
-                else Alert.alert(t("Chyba"), google_signin_data.message || t("Prihlásenie cez Google zlyhalo.")) // Shows The Alert
+                if(login_response.ok) await onLoginSuccess()
+                else Alert.alert(t("Chyba"), login_response.error.message || t("Prihlásenie cez Google zlyhalo.")) // Shows The Alert
             }
-        } 
-        
+        }
+
         catch(error:any) {
             if(error.code !== statusCodes.SIGN_IN_CANCELLED) Alert.alert(t("Chyba"), t("Nepodarilo sa prihlásiť cez Google účet.")) // Shows The Alert
-        } 
-        
+        }
+
         finally {
             setIsLoading(false) // Deactivates The Loading
         }
@@ -75,28 +71,18 @@ export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
             })
 
             if(credential.identityToken) {
-                // Gets The Apple Sign-In Response
-                const apple_signin_response = await fetch("https://wesiq.com/api/auth/apple/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        identity_token: credential.identityToken,
-                        first_name: credential.fullName?.givenName ?? "",
-                        last_name: credential.fullName?.familyName ?? "",
-                    }),
-                })
+                // Apple Only Gives The Name On The First Sign-In, So It Is Sent Along With The Identity Token
+                const login_response = await appleLogin(credential.identityToken, credential.fullName?.givenName ?? "", credential.fullName?.familyName ?? "", toServerLanguage(i18n.language))
 
-                const apple_signin_data = await apple_signin_response.json() // Gets The Apple Sign-In Data
-
-                if(apple_signin_data.success && apple_signin_data.access && apple_signin_data.refresh) await onLoginSuccess(apple_signin_data.access, apple_signin_data.refresh)
-                else Alert.alert(t("Chyba"), apple_signin_data.message || t("Prihlásenie cez Apple zlyhalo.")) // Shows The Alert
+                if(login_response.ok) await onLoginSuccess()
+                else Alert.alert(t("Chyba"), login_response.error.message || t("Prihlásenie cez Apple zlyhalo.")) // Shows The Alert
             }
-        } 
-        
+        }
+
         catch(error:any) {
             if(error.code !== "ERR_REQUEST_CANCELED") Alert.alert(t("Chyba"), t("Nepodarilo sa prihlásiť cez Apple účet.")) // Shows The Alert
-        } 
-        
+        }
+
         finally {
             setIsLoading(false) // Deactivates The Loading
         }
