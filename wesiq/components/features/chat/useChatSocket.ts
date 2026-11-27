@@ -12,14 +12,14 @@ import type { ChatSocketEvent } from "@/types/models"
 export type SocketStatus = "connecting"|"open"|"closed"
 
 export type OutgoingChatAction =
-    | { action:"new", message:string }
+    | { action:"new", message:string, reply_on?:number }
     | { action:"edit", chat_id:number, message:string }
     | { action:"delete", chat_id:number }
     | { action:"add_reaction", chat_id:number, emoji:string }
     | { action:"remove_reaction", chat_id:number, emoji:string }
     | { action:"mark_as_read" }
-    | { action:"send_attachment", attachment_ids:number[], message:string|null }
-    | { action: "send_voice_message", voice_message_id:number, message:string|null }
+    | { action:"send_attachment", attachment_ids:number[], message:string|null, reply_on?:number }
+    | { action:"send_voice_message", voice_message_id:number, message:string|null, reply_on?:number }
 
 const MAX_RETRY_DELAY_MS:number = 15000
 

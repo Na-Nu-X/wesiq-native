@@ -23,6 +23,7 @@ import ConversationMenuSheet from "./ConversationMenuSheet"
 import GroupAvatar from "./GroupAvatar"
 import GroupInfoSheet from "./GroupInfoSheet"
 import SystemMessage, { GroupIntro } from "./SystemMessage"
+import { toReplyPreview } from "./ReplyQuote"
 import ImageViewer from "@/components/pages/chat/ImageViewer"
 import { FullscreenVideoPlayer } from "@/components/pages/chat/FullscreenVideoPlayer"
 
@@ -102,6 +103,15 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     const [is_group_info_open, setIsGroupInfoOpen] = useState<boolean>(false)
     const [viewed_images, setViewedImages] = useState<{ urls:string[], index:number }|null>(null)
     const [viewed_video, setViewedVideo] = useState<string|null>(null)
+    const [reply_on, setReplyOn] = useState<ChatMessage|null>(null) // Message Being Replied To
+    const [highlighted_id, setHighlightedId] = useState<number|null>(null) // Message Briefly Highlighted After Jumping To It From A Reply
+    const list_reference = useRef<FlatList<ChatMessage>>(null) // Scrolls To The Original Message Of A Reply
+    const highlight_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Removes The Highlight
+
+    // Initializes The Cleanup Of The Highlight Timer
+    useEffect(() => () => {
+        if(highlight_timeout.current) clearTimeout(highlight_timeout.current)
+    }, [])
 
     const current:ConversationState|null = state && state.key === conversation_key ? state : null // The Loaded Chat If It Belongs To The Route
     const receiver:ChatReceiver|null = current?.receiver ?? null
@@ -201,7 +211,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                         is_sender,
                         message_reactions: [],
                         is_older_than_15_minutes: false,
-                        is_older_than_1_day: false
+                        is_older_than_1_day: false,
+                        reply_on: event.reply_on ?? null
                     }
 
                     return { ...previous, messages: [message, ...previous.messages] }
@@ -243,8 +254,23 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                     }
                 }
 
-                case "edit": return updateMessage(event.chat_id, (message) => ({ ...message, content: event.message, is_edited: true }))
-                case "delete": return { ...previous, messages: previous.messages.filter((message:ChatMessage) => message.id !== event.chat_id) }
+                // Quotes Of The Edited Message Show The New Text Too
+                case "edit": return {
+                    ...previous,
+                    messages: previous.messages.map((message:ChatMessage) => {
+                        if(message.id === event.chat_id) return { ...message, content: event.message, is_edited: true }
+                        if(message.reply_on?.id === event.chat_id) return { ...message, reply_on: { ...message.reply_on, content: event.message } }
+                        return message
+                    }),
+                }
+
+                // Replies To The Deleted Message Lose Their Quote (Same As The Server After A Reload)
+                case "delete": return {
+                    ...previous,
+                    messages: previous.messages
+                        .filter((message:ChatMessage) => message.id !== event.chat_id)
+                        .map((message:ChatMessage) => message.reply_on?.id === event.chat_id ? { ...message, reply_on: null } : message),
+                }
 
                 case "add_reaction": return updateMessage(event.chat_id, (message) => {
                     const emoji:string = event.emoji ?? ""
@@ -263,6 +289,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
             }
         })
 
+        if(event.action === "delete") setReplyOn((previous:ChatMessage|null) => previous?.id === event.chat_id ? null : previous) // Stops Replying To A Deleted Message
         if((event.action === "new" || event.action === "system") && logged_in_user && event.sender_id !== logged_in_user.id) send_reference.current({ action: "mark_as_read" })
     }, [logged_in_user])
 
@@ -287,6 +314,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     // Function For Send, Edit Or Send Attachments
     const send = async ():Promise<void> => {
         const text:string = draft.trim() // Gets The Text
+        const reply_on_id:number|undefined = reply_on?.id // Sent Only When Replying
 
         if(editing) {
             if(!text) return
@@ -311,9 +339,10 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 return
             }
 
-            socket.send({ action: "send_attachment", attachment_ids: response.data.sent_attachments.map((attachment) => attachment.attachment_id), message: text || null })
+            socket.send({ action: "send_attachment", attachment_ids: response.data.sent_attachments.map((attachment) => attachment.attachment_id), message: text || null, reply_on: reply_on_id })
             setAttachments([])
             setDraft("")
+            setReplyOn(null)
             haptics.light()
             return
         }
@@ -339,19 +368,29 @@ export default function Conversation({ username, room_id }:ConversationProps) {
             socket.send({
                 action: "send_voice_message",
                 voice_message_id: response.data.sent_voice_message.voice_message_id,
-                message: text || null
+                message: text || null,
+                reply_on: reply_on_id
             })
 
             setVoiceMessage(null)
+            setReplyOn(null)
             haptics.light()
             return
         }
 
         if(!text) return
 
-        if(socket.send({ action: "new", message: text })) {
-            echoInMockMode({ action: "new", chat_id: Date.now(), message: text, formatted_time: new Date().toTimeString().slice(0, 5) })
+        if(socket.send({ action: "new", message: text, reply_on: reply_on_id })) {
+            echoInMockMode({
+                action: "new",
+                chat_id: Date.now(),
+                message: text,
+                formatted_time: new Date().toTimeString().slice(0, 5),
+                reply_on: reply_on ? toReplyPreview(reply_on) : null // The Server Sends Back The Quoted Preview, Not Just The ID
+            })
+
             setDraft("")
+            setReplyOn(null)
             haptics.light()
         }
 
@@ -396,8 +435,37 @@ export default function Conversation({ username, room_id }:ConversationProps) {
 
     // Function For Start Editing A Message (Long-Press Menu Or Swipe Left)
     const startEditing = (message:ChatMessage):void => {
+        setReplyOn(null) // Editing And Replying Share The Banner Above The Input
         setEditing(message)
         setDraft(message.content ?? "")
+    }
+
+    // Function For Reply To A Message (Long-Press Menu Or Swipe Right)
+    const replyOnMessage = (message:ChatMessage):void => {
+        if(editing) {
+            setEditing(null) // Leaves Editing, The Edited Text Isn't A Reply
+            setDraft("")
+        }
+
+        setReplyOn(message)
+    }
+
+    // Function For Jump To The Original Message Of A Reply And Highlight It
+    const jumpToMessage = (message_id:number):void => {
+        const index:number = messages.findIndex((message:ChatMessage) => message.id === message_id)
+
+        if(index === -1) {
+            haptics.error()
+            showAlert(t("Pôvodnú správu sa nepodarilo nájsť."), t("Je staršia ako načítané správy. Posuňte sa vyššie a skúste to znova."))
+            return
+        }
+
+        list_reference.current?.scrollToIndex({ index, viewPosition: 0.5, animated: true })
+        haptics.selection()
+
+        if(highlight_timeout.current) clearTimeout(highlight_timeout.current)
+        setHighlightedId(message_id)
+        highlight_timeout.current = setTimeout(() => setHighlightedId(null), 1600)
     }
 
     // Function For Load Older Messages
@@ -457,6 +525,10 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 onOpenVideo={setViewedVideo}
                 onOpenFile={openFile}
                 onSwipeEdit={startEditing}
+                onSwipeReply={replyOnMessage}
+                onOpenReply={jumpToMessage}
+                current_user_id={logged_in_user?.id ?? null}
+                is_highlighted={highlighted_id === item.id}
                 is_group={is_group}
                 is_sender_name_visible={!is_grouped_with_previous}
                 is_sender_avatar_visible={!isSameSender(item, messages[index - 1])}
@@ -549,6 +621,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                             setEditing(null)
                             setDraft("")
                         }}
+                        reply_on={reply_on ? toReplyPreview(reply_on) : null}
+                        onCancelReply={() => setReplyOn(null)}
                         onSend={send}
                         is_sending={is_sending}
                         is_disabled={socket.status !== "open"}
@@ -570,12 +644,17 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                     <EmptyState icon="lock" title={t("Účet používateľa je súkromný.")} />
                 ) : (
                     <FlatList
+                        ref={list_reference}
                         data={messages}
                         inverted
                         keyExtractor={(message:ChatMessage) => String(message.id)}
                         renderItem={renderMessage}
                         onEndReached={loadMore}
                         onEndReachedThreshold={0.3}
+                        onScrollToIndexFailed={(info) => {
+                            list_reference.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true }) // Item Not Measured Yet: Gets Close First, Then Retries
+                            setTimeout(() => list_reference.current?.scrollToIndex({ index: info.index, viewPosition: 0.5, animated: true }), 250)
+                        }}
                         keyboardShouldPersistTaps="handled"
                         keyboardDismissMode="interactive"
                         contentContainerStyle={styles.list_content}
@@ -591,6 +670,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 onClose={() => setSelected(null)}
                 onReact={react}
                 onEdit={startEditing}
+                onReply={replyOnMessage}
                 onDelete={deleteMessage}
             />
 

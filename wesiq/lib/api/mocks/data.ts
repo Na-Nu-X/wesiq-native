@@ -302,6 +302,7 @@ export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
         message_reactions: [{ user: { username: "@lucia.lifts" }, emoji: "👍" }],
         is_older_than_15_minutes: true,
         is_older_than_1_day: false,
+        reply_on: { id: 1199, message_type: "text", content: "Check out my new PR", has_attachments: false, sender: { id: lucia.id, username: lucia.username } },
     },
     {
         id: 1199,

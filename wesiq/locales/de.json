@@ -1911,5 +1911,11 @@
     "Odstrániť {{username}} zo skupiny?": "{{username}} aus der Gruppe entfernen?",
     "Prestane dostávať správy z tejto skupiny. Môžete ho neskôr znova pridať.": "Diese Person erhält keine Nachrichten mehr aus dieser Gruppe. Sie können sie später wieder hinzufügen.",
     "Už nie ste členom": "Sie sind kein Mitglied mehr",
-    "Zmeniť fotku skupiny": "Gruppenfoto ändern"
+    "Zmeniť fotku skupiny": "Gruppenfoto ändern",
+    "Odpovedáte {{username}}": "Antwort an {{username}}",
+    "Odpovedáte sebe": "Antwort an dich selbst",
+    "Zrušiť odpovedanie": "Antwort abbrechen",
+    "Zobraziť pôvodnú správu": "Ursprüngliche Nachricht anzeigen",
+    "Pôvodnú správu sa nepodarilo nájsť.": "Die ursprüngliche Nachricht wurde nicht gefunden.",
+    "Je staršia ako načítané správy. Posuňte sa vyššie a skúste to znova.": "Sie ist älter als die geladenen Nachrichten. Scrolle nach oben und versuche es erneut."
 }

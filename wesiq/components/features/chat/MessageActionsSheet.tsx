@@ -22,10 +22,19 @@ interface MessageActionsSheetProps {
     onClose:() => void,
     onReact:(message:ChatMessage, emoji:string) => void,
     onEdit:(message:ChatMessage) => void,
+    onReply:(message:ChatMessage) => void,
     onDelete:(message:ChatMessage) => void
 }
 
-export default function MessageActionsSheet({ message, current_username, onClose, onReact, onEdit, onDelete }:MessageActionsSheetProps) {
+export default function MessageActionsSheet({ 
+    message, 
+    current_username, 
+    onClose, 
+    onReact, 
+    onEdit, 
+    onReply,
+    onDelete
+}:MessageActionsSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     const can_edit:boolean = message !== null && canEditMessage(message)
@@ -76,6 +85,14 @@ export default function MessageActionsSheet({ message, current_username, onClose
                                 }} />
                             </>
                         )}
+
+                        <>
+                            <Divider inset={spacing.md} />
+                            <MenuRow icon="reply" label={t("Odpovedať")} onPress={() => {
+                                onReply(message)
+                                onClose()
+                            }} />
+                        </>
 
                         {can_delete && (
                             <>

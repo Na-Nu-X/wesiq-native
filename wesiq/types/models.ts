@@ -263,6 +263,15 @@ export interface MessageReaction {
 
 export type ChatMessageType = "text"|"post"|"article"|"voice"|"system"
 
+// Quoted Preview Of The Message Being Replied To (Same Shape In The WebSocket And The Native API)
+export interface ChatReplyPreview {
+    id:number,
+    message_type:ChatMessageType,
+    content:string|null,
+    has_attachments:boolean,
+    sender:{ id:number, username:string }|null
+}
+
 export interface ChatMessage {
     id:number,
     room_id?:number|null, // Missing On Older Servers
@@ -279,7 +288,8 @@ export interface ChatMessage {
     is_sender:boolean,
     message_reactions:MessageReaction[],
     is_older_than_15_minutes:boolean,
-    is_older_than_1_day:boolean
+    is_older_than_1_day:boolean,
+    reply_on?:ChatReplyPreview|null // Null When It Isn't A Reply Or The Original Was Deleted (Missing On Older Servers)
 }
 
 export interface ChatReceiver extends UserListItem {
@@ -365,7 +375,8 @@ export interface ChatSocketEvent {
     sender_username?:string,
     sender_profile_picture_name:string|null,
     emoji?:string,
-    emoji_sender_username?:string
+    emoji_sender_username?:string,
+    reply_on?:ChatReplyPreview|null // New Messages That Reply To Another Message
 }
 
 // ---------- Training Plans (Workouts) ----------

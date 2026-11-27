@@ -1921,5 +1921,11 @@
     "Odstrániť {{username}} zo skupiny?": "Odstrániť {{username}} zo skupiny?",
     "Prestane dostávať správy z tejto skupiny. Môžete ho neskôr znova pridať.": "Prestane dostávať správy z tejto skupiny. Môžete ho neskôr znova pridať.",
     "Už nie ste členom": "Už nie ste členom",
-    "Zmeniť fotku skupiny": "Zmeniť fotku skupiny"
+    "Zmeniť fotku skupiny": "Zmeniť fotku skupiny",
+    "Odpovedáte {{username}}": "Odpovedáte {{username}}",
+    "Odpovedáte sebe": "Odpovedáte sebe",
+    "Zrušiť odpovedanie": "Zrušiť odpovedanie",
+    "Zobraziť pôvodnú správu": "Zobraziť pôvodnú správu",
+    "Pôvodnú správu sa nepodarilo nájsť.": "Pôvodnú správu sa nepodarilo nájsť.",
+    "Je staršia ako načítané správy. Posuňte sa vyššie a skúste to znova.": "Je staršia ako načítané správy. Posuňte sa vyššie a skúste to znova."
 }

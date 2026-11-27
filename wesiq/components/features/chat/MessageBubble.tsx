@@ -3,7 +3,7 @@
 import { memo } from "react"
 import { Platform, Pressable, StyleSheet, View } from "react-native"
 import { GestureDetector, usePanGesture } from "react-native-gesture-handler"
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
+import Animated, { FadeIn, FadeOut, interpolate, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated"
 import { scheduleOnRN } from "react-native-worklets"
 import { Image } from "expo-image"
 import { router } from "expo-router"
@@ -21,9 +21,10 @@ import { toSharedPost } from "@/lib/api/endpoints/chat"
 import { getArticleImageUrl } from "@/lib/api/endpoints/blog"
 import { getFormattedDate } from "@/utils/time"
 import VoiceMessagePlayer from "./VoiceMessagePlayer"
+import ReplyQuote from "./ReplyQuote"
 
 import type { IconName } from "@/components/ui"
-import type { Article, Attachment, AttachmentType, ChatMessage, MessageReaction, SharedPost, VoiceMessage } from "@/types/models"
+import type { Article, Attachment, AttachmentType, ChatMessage, ChatReplyPreview, MessageReaction, SharedPost, VoiceMessage } from "@/types/models"
 
 // Function For Get The Full URL Of An Attachment (The Server Returns Paths Like "/media/...")
 export const getAttachmentUrl = (path:string|null|undefined):string|null => {
@@ -54,6 +55,10 @@ interface MessageBubbleProps {
     onOpenVideo:(url:string) => void,
     onOpenFile:(attachment:Attachment) => void,
     onSwipeEdit?:(message:ChatMessage) => void, // Swipe Left Starts Editing An Own Message (Same Rule As The Menu)
+    onSwipeReply?:(message:ChatMessage) => void, // Swipe Right Replies To Any Message
+    onOpenReply?:(reply_id:number) => void, // Tapping The Quote Jumps To The Original Message
+    current_user_id?:number|null, // Shows "You" In Quotes Of Own Messages
+    is_highlighted?:boolean, // Briefly Highlighted After Jumping To It From A Reply
     is_group?:boolean, // Group Chat: Shows Who Wrote Incoming Messages, Hides Read Receipts (They Are Per Person In DMs Only)
     is_sender_name_visible?:boolean, // Group Chat: First Message Of A Run From One Sender (Shows The Username Above It)
     is_sender_avatar_visible?:boolean // Group Chat: Last Message Of A Run From One Sender (Shows The Avatar Next To It)
@@ -61,8 +66,9 @@ interface MessageBubbleProps {
 
 const GROUP_AVATAR_SIZE:number = 28 // Avatar Next To Incoming Group Messages
 
-const SWIPE_EDIT_THRESHOLD:number = 60 // Swipe Distance That Starts Editing
+const SWIPE_THRESHOLD:number = 60 // Swipe Distance That Starts Editing Or Replying
 const SWIPE_MAX_DISTANCE:number = 80 // Distance After Which The Swipe Resists
+const DISABLED_OFFSET:number = 100000 // Gesture Offset That Is Never Reached (Turns One Swipe Direction Off)
 
 function MessageBubble({ 
     message, 
@@ -74,6 +80,10 @@ function MessageBubble({
     onOpenVideo, 
     onOpenFile, 
     onSwipeEdit,
+    onSwipeReply,
+    onOpenReply,
+    current_user_id = null,
+    is_highlighted = false,
     is_group = false,
     is_sender_name_visible = false,
     is_sender_avatar_visible = false
@@ -93,7 +103,8 @@ function MessageBubble({
     }, {}))
 
     const can_swipe_edit:boolean = Platform.OS !== "web" && !!onSwipeEdit && canEditMessage(message) // Stores The Information If Swipe To Edit Is Enabled
-    const swipe_x = useSharedValue<number>(0) // Current Swipe Distance (Positive, The Bubble Moves Left)
+    const can_swipe_reply:boolean = Platform.OS !== "web" && !!onSwipeReply // Stores The Information If Swipe To Reply Is Enabled
+    const swipe_x = useSharedValue<number>(0) // Current Swipe Distance (Negative: Left / Edit, Positive: Right / Reply)
     const has_crossed_threshold = useSharedValue<boolean>(false) // Gives Haptic Feedback Once When The Swipe Is Far Enough
 
     // Function For Start Editing The Message (Called From The Gesture)
@@ -101,17 +112,25 @@ function MessageBubble({
         onSwipeEdit?.(message)
     }
 
-    // Swipe Left To Edit (Own Messages Are On The Right; Activates Only When Moving Left, So It Never Fights With Scrolling The Chat)
+    // Function For Start Replying To The Message (Called From The Gesture)
+    const startReply = ():void => {
+        onSwipeReply?.(message)
+    }
+
+    // Swipe Left To Edit (Own Messages), Swipe Right To Reply (Any Message); Activates Only When Moving Sideways, So It Never Fights With Scrolling The Chat
     const swipe_gesture = usePanGesture({
-        enabled: can_swipe_edit,
-        activeOffsetX: -15,
+        enabled: can_swipe_edit || can_swipe_reply,
+        activeOffsetX: [can_swipe_edit ? -15 : -DISABLED_OFFSET, can_swipe_reply ? 15 : DISABLED_OFFSET],
         failOffsetY: [-12, 12],
 
         onUpdate: (event) => {
-            const distance:number = Math.max(0, -event.translationX)
-            swipe_x.set(distance > SWIPE_MAX_DISTANCE ? SWIPE_MAX_DISTANCE + (distance - SWIPE_MAX_DISTANCE) * 0.2 : distance)
+            const allowed:number = event.translationX < 0 ? (can_swipe_edit ? event.translationX : 0) : (can_swipe_reply ? event.translationX : 0) // Ignores The Direction That Is Turned Off
+            const distance:number = Math.abs(allowed)
+            const resisted:number = distance > SWIPE_MAX_DISTANCE ? SWIPE_MAX_DISTANCE + (distance - SWIPE_MAX_DISTANCE) * 0.2 : distance
 
-            const is_past_threshold:boolean = distance >= SWIPE_EDIT_THRESHOLD
+            swipe_x.set(allowed < 0 ? -resisted : resisted)
+
+            const is_past_threshold:boolean = distance >= SWIPE_THRESHOLD
 
             if(is_past_threshold !== has_crossed_threshold.get()) {
                 has_crossed_threshold.set(is_past_threshold)
@@ -120,7 +139,8 @@ function MessageBubble({
         },
 
         onDeactivate: (event) => {
-            if(-event.translationX >= SWIPE_EDIT_THRESHOLD) scheduleOnRN(startEdit)
+            if(can_swipe_edit && -event.translationX >= SWIPE_THRESHOLD) scheduleOnRN(startEdit)
+            else if(can_swipe_reply && event.translationX >= SWIPE_THRESHOLD) scheduleOnRN(startReply)
         },
 
         onFinalize: () => {
@@ -130,18 +150,24 @@ function MessageBubble({
     })
 
     const swipe_content_style = useAnimatedStyle(() => ({
-        transform: [{ translateX: -swipe_x.get() }],
+        transform: [{ translateX: swipe_x.get() }],
     }))
 
-    const swipe_icon_style = useAnimatedStyle(() => ({
-        opacity: interpolate(swipe_x.get(), [16, SWIPE_EDIT_THRESHOLD], [0, 1], "clamp"),
-        transform: [{ scale: interpolate(swipe_x.get(), [16, SWIPE_EDIT_THRESHOLD], [0.6, 1], "clamp") }],
+    const edit_icon_style = useAnimatedStyle(() => ({
+        opacity: interpolate(-swipe_x.get(), [16, SWIPE_THRESHOLD], [0, 1], "clamp"),
+        transform: [{ scale: interpolate(-swipe_x.get(), [16, SWIPE_THRESHOLD], [0.6, 1], "clamp") }],
+    }))
+
+    const reply_icon_style = useAnimatedStyle(() => ({
+        opacity: interpolate(swipe_x.get(), [16, SWIPE_THRESHOLD], [0, 1], "clamp"),
+        transform: [{ scale: interpolate(swipe_x.get(), [16, SWIPE_THRESHOLD], [0.6, 1], "clamp") }],
     }))
 
     const post:SharedPost|null = toSharedPost(message.post) // Gets The Shared Post (Null For The Empty Object Of A Plain Message)
     const post_preview:string|null = post?.media ? getMediaUrl(post.media.is_video ? (post.media.thumbnail ?? post.media.file) : post.media.file) : null
     const show_likes:boolean = !!post && (!post.hide_likes || is_own) // Stores The Information If The Like Count Is Visible
 
+    const reply_on:ChatReplyPreview|null = message.reply_on ?? null // Gets The Quoted Message Of A Reply
     const voice_message:VoiceMessage|null = message.voice_message // Gets The Voice Message
 
     const article:Article|null = message.article // Gets The Article
@@ -155,8 +181,14 @@ function MessageBubble({
                 )}
 
                 {can_swipe_edit && (
-                    <Animated.View pointerEvents="none" style={[styles.swipe_icon, swipe_icon_style]}>
+                    <Animated.View pointerEvents="none" style={[styles.swipe_icon, styles.swipe_icon_edit, edit_icon_style]}>
                         <Icon name="pen" size={16} color="primary" />
+                    </Animated.View>
+                )}
+
+                {can_swipe_reply && (
+                    <Animated.View pointerEvents="none" style={[styles.swipe_icon, styles.swipe_icon_reply, reply_icon_style]}>
+                        <View style={styles.swipe_icon_circle}><Icon name="reply" size={14} color="primary" /></View>
                     </Animated.View>
                 )}
 
@@ -169,6 +201,17 @@ function MessageBubble({
                     onAccessibilityAction={() => onLongPress(message)}
                     style={[styles.bubble, is_own ? styles.bubble_own : styles.bubble_other]}
                 >
+                    {is_highlighted && <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(500)} pointerEvents="none" style={styles.highlight} />}
+
+                    {reply_on ? (
+                        <ReplyQuote
+                            reply={reply_on}
+                            current_user_id={current_user_id}
+                            variant={is_own ? "own" : "other"}
+                            onPress={onOpenReply ? () => onOpenReply(reply_on.id) : undefined}
+                        />
+                    ) : null}
+
                     {images.length > 0 && (
                         <View style={styles.images}>
                             {images.map((attachment:Attachment, index:number) => (
@@ -390,10 +433,26 @@ const styles = StyleSheet.create({
 
     swipe_icon: {
         position: "absolute",
-        right: spacing.xs,
         top: 0,
         bottom: 0,
         justifyContent: "center",
+    },
+
+    swipe_icon_edit: {
+        right: spacing.xs,
+    },
+
+    swipe_icon_reply: {
+        left: spacing.xs,
+    },
+
+    swipe_icon_circle: {
+        width: 30,
+        height: 30,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: colors.primary_soft,
+        borderRadius: radii.pill,
     },
 
     row_own: {
@@ -424,6 +483,15 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
         borderBottomLeftRadius: radii.xs,
+    },
+
+    highlight: {
+        position: "absolute",
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        backgroundColor: "rgba(255, 255, 255, 0.16)",
     },
 
     text: {

@@ -18,9 +18,10 @@ import { AudioModule, AudioRecorder, RecordingPresets, setAudioModeAsync, useAud
 import { haptics } from "@/lib/haptics"
 import { getFormattedTime } from "@/utils/time"
 import { fitWaveformToBars } from "@/lib/chat"
+import ReplyQuote from "./ReplyQuote"
 
 import type { UploadableFile } from "@/lib/api/upload"
-import type { ChatMessage } from "@/types/models"
+import type { ChatMessage, ChatReplyPreview } from "@/types/models"
 import type { RecordedVoiceMessage } from "./Conversation"
 
 export interface PendingAttachment extends UploadableFile {
@@ -46,6 +47,8 @@ interface ComposerProps {
     voice_message:RecordedVoiceMessage|null,
     editing:ChatMessage|null,
     onCancelEdit:() => void,
+    reply_on:ChatReplyPreview|null, // Message Being Replied To
+    onCancelReply:() => void,
     onSend:() => void,
     is_sending:boolean,
     is_disabled:boolean // Not Connected Yet
@@ -101,6 +104,8 @@ export default function Composer({
     voice_message,
     editing, 
     onCancelEdit, 
+    reply_on,
+    onCancelReply,
     onSend, 
     is_sending, 
     is_disabled 
@@ -114,6 +119,7 @@ export default function Composer({
     const input_reference = useRef<ComponentRef<typeof TextInput>>(null) // Focuses The Input When Editing Starts
 
     const editing_id:number|null = editing?.id ?? null
+    const reply_on_id:number|null = reply_on?.id ?? null
 
     const raw_samples_reference = useRef<number[]>([]) // Stores The Raw Samples Reference
     const [live_waveform, setLiveWaveform] = useState<number[]>([]) // Stores The Live Waveform
@@ -123,6 +129,11 @@ export default function Composer({
     useEffect(() => {
         if(editing_id !== null) input_reference.current?.focus()
     }, [editing_id])
+
+    // Initializes The Focus Of The Input When Replying Starts (Unless A Voice Message Replaces The Input)
+    useEffect(() => {
+        if(reply_on_id !== null) input_reference.current?.focus()
+    }, [reply_on_id])
 
     // Creates The Audio Recorder
     const audio_recorder:AudioRecorder = useAudioRecorder({
@@ -329,6 +340,14 @@ export default function Composer({
                 </View>
             )}
 
+            {!!reply_on && !editing && (
+                <View style={[styles.banner, styles.reply_banner]}>
+                    <Icon name="reply" size={12} color="primary" />
+                    <ReplyQuote reply={reply_on} current_user_id={logged_in_user?.id ?? null} variant="composer" />
+                    <IconButton icon="xmark" accessibility_label={t("Zrušiť odpovedanie")} onPress={onCancelReply} size={28} icon_color="text_muted" />
+                </View>
+            )}
+
             {attachments.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previews}>
                     {attachments.map((attachment:PendingAttachment) => (
@@ -421,6 +440,14 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.xs,
         backgroundColor: colors.primary_soft,
         borderRadius: radii.md,
+    },
+
+    reply_banner: {
+        paddingVertical: 0,
+        paddingLeft: spacing.md,
+        backgroundColor: colors.surface_raised,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
 
     previews: {
