@@ -21,32 +21,55 @@ export interface SegmentedControlProps<T extends string> {
 
 export default function SegmentedControl<T extends string>({ options, value, onChange, accessibility_label, style }:SegmentedControlProps<T>) {
     return (
-        <View accessibilityRole="tablist" accessibilityLabel={accessibility_label} style={[styles.container, style]}>
+        <View
+            accessibilityRole = "tablist"
+            accessibilityLabel = {accessibility_label}
+            style = {[styles.container, style]}
+        >
             {options.map((option:SegmentOption<T>) => {
                 const is_selected:boolean = option.value === value // Stores The Information If The Option Is Selected
 
                 return (
                     <Pressable
-                        key={option.value}
-                        accessibilityRole="tab"
-                        accessibilityState={{ selected: is_selected }}
-                        accessibilityLabel={option.badge ? `${option.label} (${option.badge})` : option.label}
+                        key = {option.value}
+                        accessibilityRole = "tab"
+                        accessibilityState = {{ selected: is_selected }}
+                        accessibilityLabel = {option.badge ? `${option.label} (${option.badge})` : option.label}
 
-                        onPress={() => {
+                        onPress = {() => {
                             if(is_selected) return
 
                             haptics.selection() // Plays The Haptic Feedback
                             onChange(option.value)
                         }}
 
-                        style={[styles.segment, is_selected ? styles.segment_selected : null]}
+                        style = {[styles.segment, is_selected ? styles.segment_selected : null]}
                     >
-                        {!!option.icon && <Icon name={option.icon} size={13} color={is_selected ? "text" : "text_muted"} />}
-                        <Text variant="label" color={is_selected ? "text" : "text_muted"} numberOfLines={1}>{option.label}</Text>
+                        {!!option.icon &&
+                            <Icon
+                                name = {option.icon}
+                                size = {13}
+                                color = {is_selected ? "text" : "text_muted"}
+                            />
+                        }
+                        <Text
+                            variant = "label"
+                            color = {is_selected ? "text" : "text_muted"}
+                            numberOfLines = {1}
+                        >
+                            {option.label}
+                        </Text>
 
                         {option.badge !== undefined && option.badge > 0 && (
-                            <View style={styles.badge}>
-                                <Text variant="caption" color="on_primary" is_tabular style={styles.badge_text}>{option.badge}</Text>
+                            <View style = {styles.badge}>
+                                <Text
+                                    variant = "caption"
+                                    color = "on_primary"
+                                    is_tabular
+                                    style = {styles.badge_text}
+                                >
+                                    {option.badge}
+                                </Text>
                             </View>
                         )}
                     </Pressable>

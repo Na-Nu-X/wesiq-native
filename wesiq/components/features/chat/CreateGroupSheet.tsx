@@ -22,15 +22,15 @@ export default function CreateGroupSheet({ visible, onClose }:CreateGroupSheetPr
     const { t } = useTranslation() // Initializes The Translations
     const [name, setName] = useState<string>("") // Stores The Group Name
     const [selected_users, setSelectedUsers] = useState<PickedUser[]>([]) // Stores The Picked People
-    const [is_submitting, setIsSubmitting] = useState<boolean>(false)
+    const [is_submitting, setIsSubmitting] = useState<boolean>(false) // Stores If It Is Submitting
 
-    const trimmed_name:string = name.trim()
-    const can_submit:boolean = trimmed_name.length > 0 && selected_users.length > 0
+    const trimmed_name:string = name.trim() // Gets The Trimmed Name
+    const can_submit:boolean = trimmed_name.length > 0 && selected_users.length > 0 // Checks If It Can Submit
 
     // Function For Reset The Form
     const reset = ():void => {
-        setName("")
-        setSelectedUsers([])
+        setName("") // Sets The Name
+        setSelectedUsers([]) // Sets The Selected Users
     }
 
     // Function For Close The Sheet (Not While Creating)
@@ -43,9 +43,9 @@ export default function CreateGroupSheet({ visible, onClose }:CreateGroupSheetPr
     const submit = async ():Promise<void> => {
         if(!can_submit || is_submitting) return
 
-        setIsSubmitting(true)
+        setIsSubmitting(true) // Sets The Submitting State
         const response = await createGroupChat(trimmed_name, selected_users.map((user:PickedUser) => user.id)) // Sends The Request
-        setIsSubmitting(false)
+        setIsSubmitting(false) // Sets The Submitting State
 
         if(!response.ok) {
             haptics.error()
@@ -61,39 +61,39 @@ export default function CreateGroupSheet({ visible, onClose }:CreateGroupSheetPr
 
     return (
         <Sheet
-            visible={visible}
-            onClose={close}
-            title={t("Nová skupina")}
-            size="large"
-            is_scrollable={false}
-            is_dismissable={!is_submitting}
+            visible = {visible}
+            onClose = {close}
+            title = {t("Nová skupina")}
+            size = "large"
+            is_scrollable = {false}
+            is_dismissable = {!is_submitting}
 
-            footer={
+            footer = {
                 <Button
-                    label={selected_users.length > 0 ? t("Vytvoriť skupinu ({{count}})", { count: selected_users.length + 1 }) : t("Vytvoriť skupinu")}
-                    onPress={submit}
-                    icon="user-group"
-                    is_loading={is_submitting}
-                    is_disabled={!can_submit}
+                    label = {selected_users.length > 0 ? t("Vytvoriť skupinu ({{count}})", { count: selected_users.length + 1 }) : t("Vytvoriť skupinu")}
+                    onPress = {submit}
+                    icon = "user-group"
+                    is_loading = {is_submitting}
+                    is_disabled = {!can_submit}
                     is_full_width
                 />
             }
         >
             <UserPicker
-                is_active={visible}
-                selected_users={selected_users}
-                onSelectedUsersChange={setSelectedUsers}
+                is_active = {visible}
+                selected_users = {selected_users}
+                onSelectedUsersChange = {setSelectedUsers}
 
-                header={
+                header = {
                     <TextField
-                        label={t("Názov skupiny")}
-                        placeholder={t("Napr. Ranné behanie")}
-                        value={name}
-                        onChangeText={setName}
-                        maxLength={MAX_GROUP_NAME_LENGTH}
+                        label = {t("Názov skupiny")}
+                        placeholder = {t("Napr. Ranné behanie")}
+                        value = {name}
+                        onChangeText = {setName}
+                        maxLength = {MAX_GROUP_NAME_LENGTH}
                         is_counter_visible
-                        returnKeyType="done"
-                        container_style={styles.name}
+                        returnKeyType = "done"
+                        container_style = {styles.name}
                     />
                 }
             />

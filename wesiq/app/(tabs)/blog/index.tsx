@@ -15,19 +15,20 @@ import { useArticleSheets } from "@/components/features/blog/useArticleSheets"
 
 import type { Article } from "@/types/models"
 
-const CATEGORIES:readonly string[] = ["all", "static", "dynamic", "isotonic", "balance", "flexibility", "push", "pull", "legs", "beginner", "intermediate", "advanced", "elite"]
-const SORTS:readonly ArticleSort[] = ["latest", "popular", "best", "a-z", "z-a"]
+const CATEGORIES:readonly string[] = ["all", "static", "dynamic", "isotonic", "balance", "flexibility", "push", "pull", "legs", "beginner", "intermediate", "advanced", "elite"] // Defines The Categories
+const SORTS:readonly ArticleSort[] = ["latest", "popular", "best", "a-z", "z-a"] // Defines The Sorts
 
 export default function BlogScreen() {
     const { t } = useTranslation() // Initializes The Translations
-    const [sort, setSort] = useState<ArticleSort>("latest")
-    const [category, setCategory] = useState<string>("all")
-    const [search, setSearch] = useState<string>("")
+    const [sort, setSort] = useState<ArticleSort>("latest") // Stores The Sort
+    const [category, setCategory] = useState<string>("all") // Stores The Category
+    const [search, setSearch] = useState<string>("") // Stores The Search
 
-    const { state, refetch, is_refreshing } = useApiQuery(`articles:${sort}:${category}`, (signal:AbortSignal) => getArticles(sort, category, signal))
+    const { state, refetch, is_refreshing } = useApiQuery(`articles:${sort}:${category}`, (signal:AbortSignal) => getArticles(sort, category, signal)) // Gets The State, Refetch And Is Refreshing
 
-    const sheets = useArticleSheets()
+    const sheets = useArticleSheets() // Gets The Sheets
 
+    // Gets The Sort Labels
     const sort_labels:Record<ArticleSort, string> = {
         latest: t("Najnovšie články"),
         popular: t("Populárne články"),
@@ -36,6 +37,7 @@ export default function BlogScreen() {
         "z-a": t("Podľa abecedy (Z-A)"),
     }
 
+    // Gets The Category Labels
     const category_labels:Record<string, string> = {
         all: t("Všetky kategórie"),
         static: t("Statické prvky"),
@@ -53,7 +55,7 @@ export default function BlogScreen() {
     }
 
     const query:string = search.trim().toLowerCase() // Gets The Query
-    const articles:Article[] = (state.data?.articles ?? []).filter((article:Article) => !query || article.title.toLowerCase().includes(query) || article.description.toLowerCase().includes(query))
+    const articles:Article[] = (state.data?.articles ?? []).filter((article:Article) => !query || article.title.toLowerCase().includes(query) || article.description.toLowerCase().includes(query)) // Gets The Articles
 
     // Function For Open An Article (In-App Content When Available, Otherwise The Website)
     const openArticle = (article:Article):void => {
@@ -63,38 +65,89 @@ export default function BlogScreen() {
 
     // Function For Render One Article
     const renderArticle = ({ item }:ListRenderItemInfo<Article>) => {
-        const image_url:string|null = getArticleImageUrl(item)
+        const image_url:string|null = getArticleImageUrl(item) // Gets The Image URL
 
         return (
             <View>
-                <Card padding="none" onPress={() => openArticle(item)} accessibility_label={item.title} style={styles.card}>
-                    <View style={styles.image}>
-                        {image_url ? <Image source={{ uri: image_url }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} /> : <Icon name="book-open" size={28} color="text_muted" />}
+                <Card
+                    padding = "none"
+                    onPress = {() => openArticle(item)}
+                    accessibility_label = {item.title}
+                    style = {styles.card}
+                >
+                    <View style = {styles.image}>
+                        {image_url ? <Image
+                            source = {{ uri: image_url }}
+                            style = {StyleSheet.absoluteFill}
+                            contentFit = "cover"
+                            transition = {150}
+                        /> : <Icon
+                            name = "book-open"
+                            size = {28}
+                            color = "text_muted"
+                        />}
                     </View>
 
-                    <View style={styles.card_body}>
-                        <Text variant="heading" numberOfLines={2} style={styles.title}>{item.title}</Text>
-                        <Text variant="callout" color="text_secondary" numberOfLines={2}>{item.description}</Text>
+                    <View style = {styles.card_body}>
+                        <Text
+                            variant = "heading"
+                            numberOfLines = {2}
+                            style = {styles.title}
+                        >
+                            {item.title}
+                        </Text>
+                        <Text
+                            variant = "callout"
+                            color = "text_secondary"
+                            numberOfLines = {2}
+                        >
+                            {item.description}
+                        </Text>
 
-                        <View style={styles.meta}>
+                        <View style = {styles.meta}>
                             {item.average_rating !== null && (
-                                <View style={styles.meta_item}>
-                                    <Icon name="star" size={12} color="premium" />
-                                    <Text variant="caption" color="text_secondary" is_tabular>{item.average_rating.toFixed(1)}</Text>
+                                <View style = {styles.meta_item}>
+                                    <Icon
+                                        name = "star"
+                                        size = {12}
+                                        color = "premium"
+                                    />
+                                    <Text
+                                        variant = "caption"
+                                        color = "text_secondary"
+                                        is_tabular
+                                    >
+                                        {item.average_rating.toFixed(1)}
+                                    </Text>
                                 </View>
                             )}
 
-                            <View style={styles.meta_item}>
-                                <Icon name="eye" size={12} color="text_muted" is_solid={false} />
-                                <Text variant="caption" color="text_secondary" is_tabular>{item.visitors}</Text>
+                            <View style = {styles.meta_item}>
+                                <Icon
+                                    name = "eye"
+                                    size = {12}
+                                    color = "text_muted"
+                                    is_solid = {false}
+                                />
+                                <Text
+                                    variant = "caption"
+                                    color = "text_secondary"
+                                    is_tabular
+                                >
+                                    {item.visitors}
+                                </Text>
                             </View>
 
-                            <Text variant="caption" color="text_muted">{getFormattedDate(item.creation_time)}</Text>
+                            <Text variant = "caption" color = "text_muted">{getFormattedDate(item.creation_time)}</Text>
 
                             {!item.html_filename && (
-                                <View style={styles.meta_item}>
-                                    <Icon name="arrow-up-right-from-square" size={10} color="text_muted" />
-                                    <Text variant="caption" color="text_muted">{t("Na webe")}</Text>
+                                <View style = {styles.meta_item}>
+                                    <Icon
+                                        name = "arrow-up-right-from-square"
+                                        size = {10}
+                                        color = "text_muted"
+                                    />
+                                    <Text variant = "caption" color = "text_muted">{t("Na webe")}</Text>
                                 </View>
                             )}
                         </View>
@@ -102,8 +155,14 @@ export default function BlogScreen() {
                 </Card>
 
                 {/* Outside The Pressable Card, Because Buttons Can't Be Nested On Web */}
-                <View style={styles.share}>
-                    <IconButton icon="share-nodes" accessibility_label={t("Zdieľať článok")} onPress={() => sheets.openShare(item)} variant="soft" size={36} />
+                <View style = {styles.share}>
+                    <IconButton
+                        icon = "share-nodes"
+                        accessibility_label = {t("Zdieľať článok")}
+                        onPress = {() => sheets.openShare(item)}
+                        variant = "soft"
+                        size = {36}
+                    />
                 </View>
 
                 {sheets.sheets}
@@ -111,38 +170,92 @@ export default function BlogScreen() {
         )
     }
 
+    // Gets The List Header
     const list_header = (
-        <View style={styles.list_header}>
-            <TextField icon="magnifying-glass" placeholder={t("Hľadať články")} accessibilityLabel={t("Hľadať články")} value={search} onChangeText={setSearch} autoCorrect={false} returnKeyType="search" />
+        <View style = {styles.list_header}>
+            <TextField
+                icon = "magnifying-glass"
+                placeholder = {t("Hľadať články")}
+                accessibilityLabel = {t("Hľadať články")}
+                value = {search}
+                onChangeText = {setSearch}
+                autoCorrect = {false}
+                returnKeyType = "search"
+            />
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-                {SORTS.map((one_sort:ArticleSort) => <Chip key={one_sort} label={sort_labels[one_sort]} is_selected={sort === one_sort} onPress={() => setSort(one_sort)} />)}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator = {false}
+                contentContainerStyle = {styles.chips}
+                keyboardShouldPersistTaps = "handled"
+            >
+                {SORTS.map((one_sort:ArticleSort) => (
+                    <Chip
+                        key = {one_sort}
+                        label = {sort_labels[one_sort]}
+                        is_selected = {sort === one_sort}
+                        onPress = {() => setSort(one_sort)}
+                    />
+                ))}
             </ScrollView>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} keyboardShouldPersistTaps="handled">
-                {CATEGORIES.map((one_category:string) => <Chip key={one_category} label={category_labels[one_category] ?? one_category} is_selected={category === one_category} onPress={() => setCategory(one_category)} />)}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator = {false}
+                contentContainerStyle = {styles.chips}
+                keyboardShouldPersistTaps = "handled"
+            >
+                {CATEGORIES.map((one_category:string) => (
+                    <Chip
+                        key = {one_category}
+                        label = {category_labels[one_category] ?? one_category}
+                        is_selected = {category === one_category}
+                        onPress = {() => setCategory(one_category)}
+                    />
+                ))}
             </ScrollView>
 
-            {state.status === "success" && <Text variant="caption" color="text_muted">{t("Články: {{count}}", { count: articles.length })}</Text>}
+            {state.status === "success" &&
+                <Text variant = "caption" color = "text_muted">{t("Články: {{count}}", { count: articles.length })}</Text>
+            }
         </View>
     )
 
     return (
-        <Screen is_scrollable={false} is_padded={false} header={<Header title={t("Blog")} subtitle={t("Návody, techniky a tipy na tréning")} is_large />}>
+        <Screen
+            is_scrollable = {false}
+            is_padded = {false}
+            header = {<Header
+                title = {t("Blog")}
+                subtitle = {t("Návody, techniky a tipy na tréning")}
+                is_large
+            />}
+        >
             <FlatList
-                data={articles}
-                keyExtractor={(article:Article) => String(article.id)}
-                renderItem={renderArticle}
-                ListHeaderComponent={list_header}
-                refreshControl={<ThemedRefreshControl refreshing={is_refreshing} onRefresh={refetch} />}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                contentContainerStyle={styles.list_content}
+                data = {articles}
+                keyExtractor = {(article:Article) => String(article.id)}
+                renderItem = {renderArticle}
+                ListHeaderComponent = {list_header}
+                refreshControl = {<ThemedRefreshControl refreshing = {is_refreshing} onRefresh = {refetch} />}
+                keyboardShouldPersistTaps = "handled"
+                keyboardDismissMode = "on-drag"
+                contentContainerStyle = {styles.list_content}
 
-                ListEmptyComponent={
-                    state.status === "loading" ? <View style={styles.skeletons}>{[0, 1].map((index:number) => <Skeleton key={index} height={300} radius={radii.lg} />)}</View>
-                    : state.status === "error" ? <ErrorState error={state.error} onRetry={refetch} />
-                    : <EmptyState icon="book-open" title={t("Nenašli sa žiadne články.")} message={query ? t("Skúste iné slovo.") : undefined} is_compact />
+                ListEmptyComponent = {
+                    state.status === "loading" ? <View style = {styles.skeletons}>{[0, 1].map((index:number) => (
+                        <Skeleton
+                            key = {index}
+                            height = {300}
+                            radius = {radii.lg}
+                        />
+                    ))}</View>
+                    : state.status === "error" ? <ErrorState error = {state.error} onRetry = {refetch} />
+                    : <EmptyState
+                        icon = "book-open"
+                        title = {t("Nenašli sa žiadne články.")}
+                        message = {query ? t("Skúste iné slovo.") : undefined}
+                        is_compact
+                    />
                 }
             />
         </Screen>

@@ -2,9 +2,9 @@
 
 import type { SubscriptionPlan } from "@/types/models"
 
-export const MAX_MEDIA_COUNT:number = 5
-export const MAX_CAPTION_LENGTH:number = 500
-export const MIN_VIDEO_SECONDS:number = 1
+export const MAX_MEDIA_COUNT:number = 5 // Defines The Max Media Count
+export const MAX_CAPTION_LENGTH:number = 500 // Defines The Max Caption Length
+export const MIN_VIDEO_SECONDS:number = 1 // Defines The Min Video Seconds
 
 export interface MediaLimits {
     max_image_bytes:number,
@@ -12,6 +12,7 @@ export interface MediaLimits {
     max_video_seconds:number
 }
 
+// Function For Get The Media Limits
 export const getMediaLimits = (plan:SubscriptionPlan):MediaLimits => ({
     max_image_bytes: plan === "free" ? 2_000_000 : 10_000_000,
     max_video_bytes: plan === "free" ? 25_000_000 : plan === "basic" ? 50_000_000 : 100_000_000,

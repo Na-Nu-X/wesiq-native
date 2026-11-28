@@ -9,7 +9,7 @@ import type { vtt } from "../activity/CustomVideoControls"
 
 const SCRUBBER_INSET:number = 12.5 // Same As The Scrubber Hitbox In CustomVideoControls
 const EDGE_GAP:number = 6 // Keeps The Preview Inside The Video
-const TRIANGLE_SIZE:number = 10
+const TRIANGLE_SIZE:number = 10 // Defines The Triangle Size
 
 interface VideoScrubberPreviewProps {
     video_scrubber_preview:vtt,
@@ -20,19 +20,19 @@ interface VideoScrubberPreviewProps {
 }
 
 export const VideoScrubberPreview = ({ video_scrubber_preview, video_scrubber_preview_image, scrubber_position, scrubber_width, bottom }:VideoScrubberPreviewProps) => {
-    const { w, h, x, y } = video_scrubber_preview
+    const { w, h, x, y } = video_scrubber_preview // Gets The W, H, X And Y
     const container_width:number = scrubber_width + SCRUBBER_INSET * 2 // Width Of The Video
     const touch_x:number = SCRUBBER_INSET + Math.min(Math.max(0, scrubber_position), scrubber_width) // Touch X Inside The Video
     const left:number = Math.min(Math.max(EDGE_GAP, touch_x - w / 2), container_width - w - EDGE_GAP) // Centers The Preview Over The Finger
     const triangle_left:number = Math.min(Math.max(TRIANGLE_SIZE, touch_x - left), w - TRIANGLE_SIZE) - TRIANGLE_SIZE // Points At The Finger
 
     return (
-        <View pointerEvents="none" style={[styles.root, { left, bottom: bottom + TRIANGLE_SIZE + 4, width: w, height: h + TRIANGLE_SIZE }]}>
-            <View style={[styles.frame, { width: w, height: h }]}>
-                <DynamicImage uri={`${DOMAIN}/${video_scrubber_preview_image}`} style={{ position: "absolute", left: -x, top: -y }} />
+        <View pointerEvents = "none" style = {[styles.root, { left, bottom: bottom + TRIANGLE_SIZE + 4, width: w, height: h + TRIANGLE_SIZE }]}>
+            <View style = {[styles.frame, { width: w, height: h }]}>
+                <DynamicImage uri = {`${DOMAIN}/${video_scrubber_preview_image}`} style = {{ position: "absolute", left: -x, top: -y }} />
             </View>
 
-            <View style={[styles.triangle, { top: h, left: triangle_left }]} />
+            <View style = {[styles.triangle, { top: h, left: triangle_left }]} />
         </View>
     )
 }

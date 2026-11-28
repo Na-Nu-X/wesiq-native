@@ -40,6 +40,6 @@ export const getLinkDomain = (url:string):string => {
 export const getLinkIcon = (url:string):IconName => {
     const host:string = getLinkDomain(url).toLowerCase().replace(/:\d+$/, "") // Gets The Host Without The Port
 
-    const brand = BRAND_ICONS.find(({ domains }) => domains.some((domain:string) => host === domain || host.endsWith(`.${domain}`)))
+    const brand = BRAND_ICONS.find(({ domains }) => domains.some((domain:string) => host === domain || host.endsWith(`.${domain}`))) // Gets The Brand
     return brand?.icon ?? "link"
 }

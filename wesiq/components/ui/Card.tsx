@@ -13,6 +13,7 @@ export interface CardProps {
     style?:StyleProp<ViewStyle>
 }
 
+// Defines The Variant Styles
 const VARIANT_STYLES = {
     default: { backgroundColor: colors.surface, borderColor: colors.border },
     raised: { backgroundColor: colors.surface_raised, borderColor: colors.border },
@@ -21,6 +22,7 @@ const VARIANT_STYLES = {
 } as const
 
 export default function Card({ children, padding = "lg", variant = "default", onPress, accessibility_label, style }:CardProps) {
+    // Gets The Card Style
     const card_style:StyleProp<ViewStyle> = [
         styles.card,
         VARIANT_STYLES[variant],
@@ -29,14 +31,14 @@ export default function Card({ children, padding = "lg", variant = "default", on
         style,
     ]
 
-    if(!onPress) return <View style={card_style}>{children}</View>
+    if(!onPress) return <View style = {card_style}>{children}</View>
 
     return (
         <Pressable
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={accessibility_label}
-            style={({ pressed }:PressableStateCallbackType) => [card_style, pressed ? styles.pressed : null]}
+            onPress = {onPress}
+            accessibilityRole = "button"
+            accessibilityLabel = {accessibility_label}
+            style = {({ pressed }:PressableStateCallbackType) => [card_style, pressed ? styles.pressed : null]}
         >
             {children}
         </Pressable>

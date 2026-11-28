@@ -33,6 +33,7 @@ export default function Screen({
     const insets = useSafeAreaInsets() // Gets The Safe Area Insets
     const has_bottom_edge:boolean = edges.includes("bottom") // Stores The Information If The Bottom Edge Is Handled Here
 
+    // Gets The Content Container Style
     const content_container_style:StyleProp<ViewStyle> = [
         styles.content,
         is_padded ? styles.padded : null,
@@ -41,46 +42,49 @@ export default function Screen({
         content_style,
     ]
 
+    // Gets The Body
     const body:ReactNode = is_scrollable ? (
         <ScrollView
-            style={styles.flex}
-            contentContainerStyle={content_container_style}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-            showsVerticalScrollIndicator={false}
-            contentInsetAdjustmentBehavior="never"
+            style = {styles.flex}
+            contentContainerStyle = {content_container_style}
+            keyboardShouldPersistTaps = "handled"
+            keyboardDismissMode = {Platform.OS === "ios" ? "interactive" : "on-drag"}
+            showsVerticalScrollIndicator = {false}
+            contentInsetAdjustmentBehavior = "never"
 
-            refreshControl={refresh ? (
+            refreshControl = {refresh ? (
                 <ThemedRefreshControl
-                    refreshing={refresh.is_refreshing}
-                    onRefresh={refresh.onRefresh}
+                    refreshing = {refresh.is_refreshing}
+                    onRefresh = {refresh.onRefresh}
                 />
             ) : undefined}
         >
             {children}
         </ScrollView>
     ) : (
-        <View style={[styles.flex, content_container_style]}>{children}</View>
+        <View style = {[styles.flex, content_container_style]}>{children}</View>
     )
 
     return (
-        <View style={styles.root}>
-            {has_glow && <TopGlow />}
+        <View style = {styles.root}>
+            {has_glow &&
+                <TopGlow />
+            }
 
-            <SafeAreaView edges={edges.filter((edge:Edge) => edge !== "bottom" || !footer)} style={styles.flex}>
+            <SafeAreaView edges = {edges.filter((edge:Edge) => edge !== "bottom" || !footer)} style = {styles.flex}>
                 <KeyboardAvoidingView
-                    style={styles.flex}
-                    behavior="padding"
-                    enabled={is_keyboard_aware && Platform.OS !== "web"}
+                    style = {styles.flex}
+                    behavior = "padding"
+                    enabled = {is_keyboard_aware && Platform.OS !== "web"}
                 >
-                    <View style={styles.column}>
+                    <View style = {styles.column}>
                         {header}
                         {body}
                     </View>
 
                     {!!footer && (
-                        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
-                            <View style={styles.footer_inner}>{footer}</View>
+                        <View style = {[styles.footer, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+                            <View style = {styles.footer_inner}>{footer}</View>
                         </View>
                     )}
                 </KeyboardAvoidingView>
@@ -94,15 +98,40 @@ function TopGlow() {
     const gradient_id:string = `screen_glow_${useId().replace(/:/g, "")}` // Gets The Unique Gradient ID
 
     return (
-        <Svg pointerEvents="none" width="100%" height={360} style={styles.glow}>
+        <Svg
+            pointerEvents = "none"
+            width = "100%"
+            height = {360}
+            style = {styles.glow}
+        >
             <Defs>
-                <RadialGradient id={gradient_id} cx="50%" cy="-30%" rx="90%" ry="100%" fx="50%" fy="-30%">
-                    <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.22} />
-                    <Stop offset="100%" stopColor={colors.primary} stopOpacity={0} />
+                <RadialGradient
+                    id = {gradient_id}
+                    cx = "50%"
+                    cy = "-30%"
+                    rx = "90%"
+                    ry = "100%"
+                    fx = "50%"
+                    fy = "-30%"
+                >
+                    <Stop
+                        offset = "0%"
+                        stopColor = {colors.primary}
+                        stopOpacity = {0.22}
+                    />
+                    <Stop
+                        offset = "100%"
+                        stopColor = {colors.primary}
+                        stopOpacity = {0}
+                    />
                 </RadialGradient>
             </Defs>
 
-            <Rect width="100%" height="100%" fill={`url(#${gradient_id})`} />
+            <Rect
+                width = "100%"
+                height = "100%"
+                fill = {`url(#${gradient_id})`}
+            />
         </Svg>
     )
 }

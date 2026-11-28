@@ -12,6 +12,7 @@ export const toSharedPost = (value:unknown):SharedPost|null => {
     return isRecord(value) && isString(value.id) && isRecord(value.user) && isString(value.user.username) ? value as unknown as SharedPost : null
 }
 
+// Function For Check If Message
 const isMessage = (value:unknown):value is ChatMessage => {
     return isRecord(value) && isNumber(value.id) && (isString(value.content) || value.content === null) && typeof value.is_sender === "boolean" && Array.isArray(value.attachments)
 }
@@ -23,6 +24,7 @@ export interface ChatPage extends ApiEnvelope {
     room_id?:number|null // The DM Room (Missing On Older Servers, Then The Socket Connects By Username)
 }
 
+// Function For Get The Chat
 export const getChat = (username:string, page:number, signal?:AbortSignal):Promise<ApiResult<ChatPage>> => {
     return apiGet(`get-chat/${encodeURIComponent(username)}/`, {
         query: { page },
@@ -37,8 +39,10 @@ export const getChat = (username:string, page:number, signal?:AbortSignal):Promi
 
 // ---------- Rooms (DMs And Group Chats) ----------
 
+// Function For Check If Chat Room
 const isChatRoom = (value:unknown):value is ChatRoom => isRecord(value) && isNumber(value.id) && isBoolean(value.is_group) && isNumber(value.members_count) && isArrayOf(value.members, (member:unknown):member is Record<string, unknown> => isRecord(member) && isNumber(member.id) && isString(member.username))
 
+// Function For Check If Chat List Room
 export const isChatListRoom = (value:unknown):value is ChatListRoom => isRecord(value) && isNumber(value.room_id) && isBoolean(value.is_group) && isNumber(value.unread_count) && isString(value.updated_at) && (value.user === null || (isRecord(value.user) && isString(value.user.username)))
 
 export interface ChatRoomPage extends ApiEnvelope {
@@ -47,7 +51,7 @@ export interface ChatRoomPage extends ApiEnvelope {
     has_next:boolean
 }
 
-// Loads One Page Of A Room's Messages (Members Only)
+// Function For Load One Page Of A Room's Messages (Members Only)
 export const getChatRoom = (room_id:number, page:number, signal?:AbortSignal):Promise<ApiResult<ChatRoomPage>> => {
     return apiGet(`get-chat-room/${room_id}/`, {
         query: { page },
@@ -65,26 +69,26 @@ export interface ChangedRoomResponse extends ApiEnvelope {
     system_message:ChatMessage // "Group Created" / "Members Added" Message
 }
 
-const changedRoomGuard = envelopeWith<{ room:ChatRoom, system_message:ChatMessage }>({ room: isChatRoom, system_message: isMessage })
+const changedRoomGuard = envelopeWith<{ room:ChatRoom, system_message:ChatMessage }>({ room: isChatRoom, system_message: isMessage }) // Defines The Changed Room Guard
 
-// Creates A Group Chat (The Logged In User Becomes Its Admin)
+// Function For Create A Group Chat (The Logged In User Becomes Its Admin)
 export const createGroupChat = (name:string, member_ids:number[]):Promise<ApiResult<ChangedRoomResponse>> => {
     return apiPost("create-group-chat/", { name, member_ids }, { guard: changedRoomGuard })
 }
 
-// Adds People To A Group Chat (Any Member Can Add)
+// Function For Add People To A Group Chat (Any Member Can Add)
 export const addChatRoomMembers = (room_id:number, user_ids:number[]):Promise<ApiResult<ChangedRoomResponse>> => {
     return apiPost("add-chat-room-members/", { room_id, user_ids }, { guard: changedRoomGuard })
 }
 
-// Removes A Member From A Group Chat (Admins Only)
+// Function For Remove A Member From A Group Chat (Admins Only)
 export const removeChatRoomMember = (room_id:number, user_id:number):Promise<ApiResult<ChangedRoomResponse>> => {
     return apiPost("remove-chat-room-member/", { room_id, user_id }, { guard: changedRoomGuard })
 }
 
-// Sets The Group Photo, Or Removes It When No Image Is Given (Admins Only; The Server Resizes It)
+// Function For Set The Group Photo, Or Remove It When No Image Is Given (Admins Only; The Server Resizes It)
 export const changeChatRoomAvatar = async (room_id:number, image:UploadableFile|null):Promise<ApiResult<ChangedRoomResponse>> => {
-    const form_data:FormData = new FormData()
+    const form_data:FormData = new FormData() // Gets The Form Data
     form_data.append("room_id", String(room_id))
 
     if(image) form_data.append("avatar", await toFormDataFile(image) as Blob) // React Native Accepts { uri, name, type }
@@ -95,21 +99,24 @@ export const changeChatRoomAvatar = async (room_id:number, image:UploadableFile|
 
 // ---------- Settings ----------
 
+// Function For Get The Chat Settings
 export const getChatSettings = (receiver_id:number):Promise<ApiResult<ApiEnvelope & { chat_settings:{ background_image:string|null }|null }>> => {
     return apiPost("get-chat-settings/", { receiver_id })
 }
 
+// Function For Change The Chat Background
 export const changeChatBackground = async (receiver_id:number, image:UploadableFile):Promise<ApiResult<ApiEnvelope>> => {
-    const form_data:FormData = new FormData()
+    const form_data:FormData = new FormData() // Gets The Form Data
     form_data.append("receiver_id", String(receiver_id))
     form_data.append("selected_chat_background_image", await toFormDataFile(image) as Blob) // React Native Accepts { uri, name, type }
 
     return apiRequest("change-chat-background-image/", { method: "POST", form_data })
 }
 
+// Function For Delete The Chat Background
 export const deleteChatBackground = (receiver_id:number, background_image:string) => apiPost("delete-chat-background-image/", { receiver_id, background_image })
 
-// Toggles Muting (The Server Flips The Current State)
+// Function For Toggle Muting (The Server Flips The Current State)
 export const toggleMuteUser = (receiver_id:number) => apiPost("toggle-mute-user/", { receiver_id })
 
 // ---------- Attachments ----------
@@ -121,9 +128,9 @@ export interface SentAttachment {
     attachment_type:string
 }
 
-// Uploads Files First; Their IDs Are Then Sent Through The Socket ("send_attachment")
+// Function For Upload Files First; Their IDs Are Then Sent Through The Socket ("send_attachment")
 export const uploadChatAttachments = async (files:UploadableFile[]):Promise<ApiResult<ApiEnvelope & { sent_attachments:SentAttachment[] }>> => {
-    const form_data:FormData = new FormData()
+    const form_data:FormData = new FormData() // Gets The Form Data
     for(const file of files) form_data.append("selected_files", await toFormDataFile(file) as Blob)
 
     return apiRequest("send-chat-attachment/", {

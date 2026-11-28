@@ -13,11 +13,11 @@ import uk_translations from "@/locales/uk.json"
 import ru_translations from "@/locales/ru.json"
 import pt_BR_translations from "@/locales/pt_BR.json"
 
-const SUPPORTED_LANGUAGES:string[] = ["en", "sk", "cs", "de", "es", "fr", "uk", "ru", "pt_BR"]
+const SUPPORTED_LANGUAGES:string[] = ["en", "sk", "cs", "de", "es", "fr", "uk", "ru", "pt_BR"] // Defines The Supported Languages
 
 // Function For Get The Device Language (Portuguese Devices Report "pt", The Translations Are "pt_BR")
 const getDeviceLanguage = ():string => {
-    const language_code:string = Localization.getLocales()[0]?.languageCode ?? "en"
+    const language_code:string = Localization.getLocales()[0]?.languageCode ?? "en" // Gets The Language Code
     if(language_code === "pt") return "pt_BR"
     return SUPPORTED_LANGUAGES.includes(language_code) ? language_code : "en"
 }
@@ -45,7 +45,7 @@ i18n.use(initReactI18next).init({
 // Function For Load The Saved Language
 const loadSavedLanguage = async ():Promise<void> => {
     try {
-        const saved_language:string|null = await AsyncStorage.getItem("app_language")
+        const saved_language:string|null = await AsyncStorage.getItem("app_language") // Gets The Saved Language
         if(saved_language) i18n.changeLanguage(saved_language)
     }
     

@@ -29,10 +29,10 @@ interface AuthSheetProps {
 type InputRef = ComponentRef<typeof TextInput>
 
 const MIN_PASSWORD_LENGTH:number = 8 // Same As The Server
-const EMAIL_PATTERN:RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const EMAIL_PATTERN:RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ // Defines The Email Pattern
 
 // Phone Prefixes That Decide The Language Of The Confirmation E-mail (Same Mapping As Before)
-const PHONE_LANGUAGES:[string, string][] = [["+421", "sk"], ["+420", "cs"], ["+44", "en"], ["+1", "en"], ["+34", "es"], ["+33", "fr"], ["+380", "uk"], ["+7", "ru"], ["+55", "pt-br"], ["+86", "zh-hans"]]
+const PHONE_LANGUAGES:[string, string][] = [["+421", "sk"], ["+420", "cs"], ["+44", "en"], ["+1", "en"], ["+34", "es"], ["+33", "fr"], ["+380", "uk"], ["+7", "ru"], ["+55", "pt-br"], ["+86", "zh-hans"]] // Defines The Phone Languages
 
 // Function For Get The Flag Emoji Of A Country Code
 const getFlagEmoji = (country_code:string):string => {
@@ -53,7 +53,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     const { refreshLoggedInUser } = useLoggedInUser() // Gets The Function For Reload The Logged In User
 
     // Keeps The Last Form While The Sheet Animates Closed (Adjusted During Render)
-    const [shown_form, setShownForm] = useState<AuthForm>(active_form ?? "login_form")
+    const [shown_form, setShownForm] = useState<AuthForm>(active_form ?? "login_form") // Stores The Shown Form
     if(active_form !== null && active_form !== shown_form) setShownForm(active_form)
 
     const [is_submitting, setIsSubmitting] = useState<boolean>(false) // Stores The Information If A Request Runs
@@ -66,23 +66,23 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     const password_input = useRef<InputRef>(null) // Moves Focus From The Identifier To The Password
 
     // Registration
-    const [first_name, setFirstName] = useState<string>("")
-    const [last_name, setLastName] = useState<string>("")
-    const [username, setUsername] = useState<string>("")
-    const [email_address, setEmailAddress] = useState<string>("")
-    const [phone_number, setPhoneNumber] = useState<string>("")
-    const [new_password, setNewPassword] = useState<string>("")
-    const [password_check, setPasswordCheck] = useState<string>("")
-    const [generated_password, setGeneratedPassword] = useState<string|null>(null) // Shows The Generated Password So It Can Be Saved
+    const [first_name, setFirstName] = useState<string>("") // Stores The First Name
+    const [last_name, setLastName] = useState<string>("") // Stores The Last Name
+    const [username, setUsername] = useState<string>("") // Stores The Username
+    const [email_address, setEmailAddress] = useState<string>("") // Stores The Email Address
+    const [phone_number, setPhoneNumber] = useState<string>("") // Stores The Phone Number
+    const [new_password, setNewPassword] = useState<string>("") // Stores The New Password
+    const [password_check, setPasswordCheck] = useState<string>("") // Stores The Password Check
+    const [generated_password, setGeneratedPassword] = useState<string|null>(null) // Stores The Generated Password (Shown So It Can Be Saved)
     const [is_age_confirmed, setIsAgeConfirmed] = useState<boolean>(false) // Stores The Confirmation That The User Is At Least 13 Years Old
-    const [registration_errors, setRegistrationErrors] = useState<RegistrationErrors>({})
-    const [registered_email, setRegisteredEmail] = useState<string|null>(null) // Shows The "Confirm Your E-mail" State
+    const [registration_errors, setRegistrationErrors] = useState<RegistrationErrors>({}) // Stores The Registration Errors
+    const [registered_email, setRegisteredEmail] = useState<string|null>(null) // Stores The Registered Email (Shows The "Confirm Your E-mail" State)
 
     const is_login:boolean = shown_form === "login_form" // Stores The Information If The Login Form Is Shown
 
     // Function For Switch Between Login And Registration
     const switchForm = (form:AuthForm):void => {
-        setFormError(null)
+        setFormError(null) // Sets The Form Error
         onActiveFormChange(form)
     }
 
@@ -90,7 +90,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     const close = ():void => {
         if(is_submitting) return
 
-        setFormError(null)
+        setFormError(null) // Sets The Form Error
         onActiveFormChange(null)
     }
 
@@ -99,47 +99,47 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     // Function For Log In
     const handleLogin = async ():Promise<void> => {
         if(!identifier.trim() || !password) {
-            setFormError(t("Vyplnte všetky potrebné údaje pre prihlásenie."))
+            setFormError(t("Vyplnte všetky potrebné údaje pre prihlásenie.")) // Sets The Form Error
             return
         }
 
-        setIsSubmitting(true)
-        setFormError(null)
+        setIsSubmitting(true) // Sets The Submitting State
+        setFormError(null) // Sets The Form Error
 
         const response = await login(identifier.trim(), password) // Sends The Login Request
 
         if(!response.ok) {
-            setIsSubmitting(false)
+            setIsSubmitting(false) // Sets The Submitting State
             haptics.error()
-            setFormError(response.error.message)
+            setFormError(response.error.message) // Sets The Form Error
             return
         }
 
         const user:LoggedInUser|null = await refreshLoggedInUser() // Loads The Logged In User
-        setIsSubmitting(false)
+        setIsSubmitting(false) // Sets The Submitting State
 
         if(!user) {
-            setFormError(t("Pri prihlasovaní došlo k chybe."))
+            setFormError(t("Pri prihlasovaní došlo k chybe.")) // Sets The Form Error
             return
         }
 
         haptics.success()
         onUserLogin?.(user)
-        setPassword("")
+        setPassword("") // Sets The Password
         onActiveFormChange(null)
     }
 
     // Function For Finish A Google / Apple Login (SocialAuthButtons Already Saved The Session Tokens)
     const handleSocialLogin = async ():Promise<void> => {
-        setIsSubmitting(true)
-        setFormError(null)
+        setIsSubmitting(true) // Sets The Submitting State
+        setFormError(null) // Sets The Form Error
 
         const user:LoggedInUser|null = await refreshLoggedInUser() // Loads The Logged In User
-        setIsSubmitting(false)
+        setIsSubmitting(false) // Sets The Submitting State
 
         if(!user) {
             haptics.error()
-            setFormError(t("Pri prihlasovaní došlo k chybe."))
+            setFormError(t("Pri prihlasovaní došlo k chybe.")) // Sets The Form Error
             return
         }
 
@@ -151,18 +151,18 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     // Function For Send The Password Reset Code And Open The Reset Screen
     const handleForgotPassword = async ():Promise<void> => {
         if(!identifier.trim()) {
-            setFormError(t("Zadajte používateľské meno alebo e-mail."))
+            setFormError(t("Zadajte používateľské meno alebo e-mail.")) // Sets The Form Error
             return
         }
 
-        setIsSendingResetCode(true)
-        setFormError(null)
+        setIsSendingResetCode(true) // Sets The Sending Reset Code State
+        setFormError(null) // Sets The Form Error
 
         const response = await requestPasswordResetCode(identifier.trim()) // Sends The Request
-        setIsSendingResetCode(false)
+        setIsSendingResetCode(false) // Sets The Sending Reset Code State
 
         if(!response.ok) {
-            setFormError(response.error.message)
+            setFormError(response.error.message) // Sets The Form Error
             return
         }
 
@@ -179,7 +179,7 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
     // Function For Validate The Registration Form
     const validateRegistration = ():RegistrationErrors => {
-        const errors:RegistrationErrors = {}
+        const errors:RegistrationErrors = {} // Gets The Errors
 
         if(!username.trim()) errors.username = t("Zadajte používateľské meno.")
         if(!EMAIL_PATTERN.test(email_address.trim())) errors.email_address = t("Zadajte platný e-mail.")
@@ -194,8 +194,8 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     // Function For Register
     const handleRegistration = async ():Promise<void> => {
         const errors:RegistrationErrors = validateRegistration() // Validates The Form
-        setRegistrationErrors(errors)
-        setFormError(null)
+        setRegistrationErrors(errors) // Sets The Registration Errors
+        setFormError(null) // Sets The Form Error
 
         if(Object.keys(errors).length > 0) {
             haptics.error()
@@ -204,8 +204,9 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
         const phone_language:string|undefined = PHONE_LANGUAGES.find(([prefix]) => phone_number.startsWith(prefix))?.[1] // Gets The Language By The Phone Prefix
 
-        setIsSubmitting(true)
+        setIsSubmitting(true) // Sets The Submitting State
 
+        // Gets The Response
         const response = await register({
             first_name: first_name.trim(),
             last_name: last_name.trim(),
@@ -218,59 +219,74 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
             age_confirmation: is_age_confirmed,
         })
 
-        setIsSubmitting(false)
+        setIsSubmitting(false) // Sets The Submitting State
 
         // The Form Keeps Everything The User Typed When Registration Fails
         if(!response.ok) {
             haptics.error()
-            setFormError(response.error.message)
+            setFormError(response.error.message) // Sets The Form Error
             return
         }
 
         haptics.success()
-        setRegisteredEmail(email_address.trim())
-        setIdentifier(username.trim())
-        setNewPassword("")
-        setPasswordCheck("")
-        setIsAgeConfirmed(false)
-        setGeneratedPassword(null)
+        setRegisteredEmail(email_address.trim()) // Sets The Registered Email
+        setIdentifier(username.trim()) // Sets The Identifier
+        setNewPassword("") // Sets The New Password
+        setPasswordCheck("") // Sets The Password Check
+        setIsAgeConfirmed(false) // Sets The Age Confirmed State
+        setGeneratedPassword(null) // Sets The Generated Password
     }
 
     // Function For Generate A Strong Password (Fills Both Fields And Shows It So It Can Be Saved)
     const generatePassword = ():void => {
         const generated:string = generateKey(16) // Generates The Password
-        setNewPassword(generated)
-        setPasswordCheck(generated)
-        setGeneratedPassword(generated)
-        setRegistrationErrors((previous:RegistrationErrors) => ({ ...previous, password: undefined, password_check: undefined }))
+        setNewPassword(generated) // Sets The New Password
+        setPasswordCheck(generated) // Sets The Password Check
+        setGeneratedPassword(generated) // Sets The Generated Password
+        setRegistrationErrors((previous:RegistrationErrors) => ({ ...previous, password: undefined, password_check: undefined })) // Sets The Registration Errors
         haptics.selection()
     }
 
     // Function For Go From The Confirmation State To Login
     const goToLogin = ():void => {
-        setRegisteredEmail(null)
+        setRegisteredEmail(null) // Sets The Registered Email
         switchForm("login_form")
     }
 
     // ---------- Rendering ----------
 
-    const title:string = registered_email && !is_login ? t("Potvrďte svoj e-mail") : is_login ? t("Vitajte späť") : t("Vytvoriť účet")
-    const subtitle:string|undefined = registered_email && !is_login ? undefined : is_login ? t("Prihláste sa do svojho účtu Wesiq") : t("Pridajte sa ku komunite Wesiq")
+    const title:string = registered_email && !is_login ? t("Potvrďte svoj e-mail") : is_login ? t("Vitajte späť") : t("Vytvoriť účet") // Gets The Title
+    const subtitle:string|undefined = registered_email && !is_login ? undefined : is_login ? t("Prihláste sa do svojho účtu Wesiq") : t("Pridajte sa ku komunite Wesiq") // Gets The Subtitle
 
     return (
         <Sheet
-            visible={active_form !== null}
-            onClose={close}
-            title={title}
-            subtitle={subtitle}
-            is_dismissable={!is_submitting}
-            footer={renderFooter()}
+            visible = {active_form !== null}
+            onClose = {close}
+            title = {title}
+            subtitle = {subtitle}
+            is_dismissable = {!is_submitting}
+            footer = {renderFooter()}
         >
             {!!form_error && (
-                <Card variant="outlined" padding="md" style={styles.error_card}>
-                    <View style={styles.row}>
-                        <Icon name="circle-exclamation" size={14} color="danger" />
-                        <Text variant="callout" color="danger" style={styles.flex} accessibilityLiveRegion="assertive">{form_error}</Text>
+                <Card
+                    variant = "outlined"
+                    padding = "md"
+                    style = {styles.error_card}
+                >
+                    <View style = {styles.row}>
+                        <Icon
+                            name = "circle-exclamation"
+                            size = {14}
+                            color = "danger"
+                        />
+                        <Text
+                            variant = "callout"
+                            color = "danger"
+                            style = {styles.flex}
+                            accessibilityLiveRegion = "assertive"
+                        >
+                            {form_error}
+                        </Text>
                     </View>
                 </Card>
             )}
@@ -284,47 +300,47 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
         return (
             <>
                 <TextField
-                    label={t("Používateľské meno alebo e-mail")}
-                    placeholder={t("Vaše používateľské meno alebo e-mail")}
-                    icon="user"
-                    value={identifier}
-                    onChangeText={setIdentifier}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="username"
-                    textContentType="username"
-                    keyboardType="email-address"
-                    returnKeyType="next"
-                    onSubmitEditing={() => password_input.current?.focus()}
-                    maxLength={254}
+                    label = {t("Používateľské meno alebo e-mail")}
+                    placeholder = {t("Vaše používateľské meno alebo e-mail")}
+                    icon = "user"
+                    value = {identifier}
+                    onChangeText = {setIdentifier}
+                    autoCapitalize = "none"
+                    autoCorrect = {false}
+                    autoComplete = "username"
+                    textContentType = "username"
+                    keyboardType = "email-address"
+                    returnKeyType = "next"
+                    onSubmitEditing = {() => password_input.current?.focus()}
+                    maxLength = {254}
                 />
 
-                <View style={styles.password_block}>
+                <View style = {styles.password_block}>
                     <TextField
-                        ref={password_input}
-                        label={t("Heslo")}
-                        placeholder={t("Vaše heslo")}
-                        icon="lock"
-                        value={password}
-                        onChangeText={setPassword}
+                        ref = {password_input}
+                        label = {t("Heslo")}
+                        placeholder = {t("Vaše heslo")}
+                        icon = "lock"
+                        value = {password}
+                        onChangeText = {setPassword}
                         is_password
-                        autoCapitalize="none"
-                        autoComplete="current-password"
-                        textContentType="password"
-                        returnKeyType="go"
-                        onSubmitEditing={handleLogin}
-                        maxLength={128}
+                        autoCapitalize = "none"
+                        autoComplete = "current-password"
+                        textContentType = "password"
+                        returnKeyType = "go"
+                        onSubmitEditing = {handleLogin}
+                        maxLength = {128}
                     />
 
                     <Pressable
-                        onPress={handleForgotPassword}
-                        disabled={is_sending_reset_code}
-                        accessibilityRole="button"
-                        accessibilityHint={t("Pošle kód na obnovenie hesla na váš e-mail")}
-                        hitSlop={8}
-                        style={styles.link}
+                        onPress = {handleForgotPassword}
+                        disabled = {is_sending_reset_code}
+                        accessibilityRole = "button"
+                        accessibilityHint = {t("Pošle kód na obnovenie hesla na váš e-mail")}
+                        hitSlop = {8}
+                        style = {styles.link}
                     >
-                        <Text variant="label" color="primary_text">{is_sending_reset_code ? t("Odosiela sa...") : t("Zabudli ste heslo?")}</Text>
+                        <Text variant = "label" color = "primary_text">{is_sending_reset_code ? t("Odosiela sa...") : t("Zabudli ste heslo?")}</Text>
                     </Pressable>
                 </View>
             </>
@@ -335,102 +351,135 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     function renderRegistration() {
         return (
             <>
-                <View style={styles.name_row}>
-                    <TextField label={t("Meno")} placeholder={t("Vaše meno")} value={first_name} onChangeText={setFirstName} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
-                    <TextField label={t("Priezvisko")} placeholder={t("Vaše priezvisko")} value={last_name} onChangeText={setLastName} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
+                <View style = {styles.name_row}>
+                    <TextField
+                        label = {t("Meno")}
+                        placeholder = {t("Vaše meno")}
+                        value = {first_name}
+                        onChangeText = {setFirstName}
+                        autoComplete = "given-name"
+                        textContentType = "givenName"
+                        maxLength = {50}
+                        container_style = {styles.flex}
+                    />
+                    <TextField
+                        label = {t("Priezvisko")}
+                        placeholder = {t("Vaše priezvisko")}
+                        value = {last_name}
+                        onChangeText = {setLastName}
+                        autoComplete = "family-name"
+                        textContentType = "familyName"
+                        maxLength = {50}
+                        container_style = {styles.flex}
+                    />
                 </View>
 
                 <TextField
-                    label={t("Používateľské meno")}
-                    placeholder={t("napr. jan_novak")}
-                    icon="at"
-                    value={username}
-                    onChangeText={(text:string) => setUsername(text.replace(/\s/g, ""))}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="username-new"
-                    textContentType="username"
-                    maxLength={30}
-                    error={registration_errors.username}
+                    label = {t("Používateľské meno")}
+                    placeholder = {t("napr. jan_novak")}
+                    icon = "at"
+                    value = {username}
+                    onChangeText = {(text:string) => setUsername(text.replace(/\s/g, ""))}
+                    autoCapitalize = "none"
+                    autoCorrect = {false}
+                    autoComplete = "username-new"
+                    textContentType = "username"
+                    maxLength = {30}
+                    error = {registration_errors.username}
                 />
 
                 <TextField
-                    label={t("E-mail")}
-                    placeholder={t("vas@priklad.sk")}
-                    icon="envelope"
-                    value={email_address}
-                    onChangeText={setEmailAddress}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    autoComplete="email"
-                    textContentType="emailAddress"
-                    keyboardType="email-address"
-                    maxLength={254}
-                    error={registration_errors.email_address}
-                    helper={t("Pošleme vám odkaz na potvrdenie účtu.")}
+                    label = {t("E-mail")}
+                    placeholder = {t("vas@priklad.sk")}
+                    icon = "envelope"
+                    value = {email_address}
+                    onChangeText = {setEmailAddress}
+                    autoCapitalize = "none"
+                    autoCorrect = {false}
+                    autoComplete = "email"
+                    textContentType = "emailAddress"
+                    keyboardType = "email-address"
+                    maxLength = {254}
+                    error = {registration_errors.email_address}
+                    helper = {t("Pošleme vám odkaz na potvrdenie účtu.")}
                 />
 
                 <TextField
-                    label={`${t("Telefónne číslo")} (${t("nepovinné")})`}
-                    icon="phone"
-                    placeholder="+421 900 123 456"
-                    value={phone_number}
-                    onChangeText={(text:string) => setPhoneNumber(new AsYouType().input(text))}
-                    autoComplete="tel"
-                    textContentType="telephoneNumber"
-                    keyboardType="phone-pad"
-                    maxLength={20}
-                    error={registration_errors.phone_number}
-                    helper={phone_country ? `${getFlagEmoji(phone_country)} ${phone_country}` : undefined}
+                    label = {`${t("Telefónne číslo")} (${t("nepovinné")})`}
+                    icon = "phone"
+                    placeholder = "+421 900 123 456"
+                    value = {phone_number}
+                    onChangeText = {(text:string) => setPhoneNumber(new AsYouType().input(text))}
+                    autoComplete = "tel"
+                    textContentType = "telephoneNumber"
+                    keyboardType = "phone-pad"
+                    maxLength = {20}
+                    error = {registration_errors.phone_number}
+                    helper = {phone_country ? `${getFlagEmoji(phone_country)} ${phone_country}` : undefined}
                 />
 
                 <TextField
-                    label={t("Heslo")}
-                    placeholder={t("Aspoň {{count}} znakov", { count: MIN_PASSWORD_LENGTH })}
-                    icon="lock"
-                    value={new_password}
-                    onChangeText={(text:string) => {
-                        setNewPassword(text)
-                        setGeneratedPassword(null)
+                    label = {t("Heslo")}
+                    placeholder = {t("Aspoň {{count}} znakov", { count: MIN_PASSWORD_LENGTH })}
+                    icon = "lock"
+                    value = {new_password}
+                    onChangeText = {(text:string) => {
+                        setNewPassword(text) // Sets The New Password
+                        setGeneratedPassword(null) // Sets The Generated Password
                     }}
                     is_password
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    textContentType="newPassword"
-                    passwordRules={`minlength: ${MIN_PASSWORD_LENGTH};`}
-                    maxLength={128}
-                    error={registration_errors.password}
-                    helper={new_password.length > 0 && new_password.length < MIN_PASSWORD_LENGTH ? t("Heslo musí mať aspoň {{count}} znakov.", { count: MIN_PASSWORD_LENGTH }) : undefined}
+                    autoCapitalize = "none"
+                    autoComplete = "new-password"
+                    textContentType = "newPassword"
+                    passwordRules = {`minlength: ${MIN_PASSWORD_LENGTH};`}
+                    maxLength = {128}
+                    error = {registration_errors.password}
+                    helper = {new_password.length > 0 && new_password.length < MIN_PASSWORD_LENGTH ? t("Heslo musí mať aspoň {{count}} znakov.", { count: MIN_PASSWORD_LENGTH }) : undefined}
                 />
 
                 <TextField
-                    label={t("Zopakujte heslo")}
-                    placeholder={t("Zadajte heslo znova")}
-                    icon="lock"
-                    value={password_check}
-                    onChangeText={setPasswordCheck}
+                    label = {t("Zopakujte heslo")}
+                    placeholder = {t("Zadajte heslo znova")}
+                    icon = "lock"
+                    value = {password_check}
+                    onChangeText = {setPasswordCheck}
                     is_password
-                    autoCapitalize="none"
-                    autoComplete="new-password"
-                    textContentType="newPassword"
-                    maxLength={128}
-                    error={registration_errors.password_check}
-                    helper={password_check.length > 0 && password_check === new_password ? t("Heslá sa zhodujú") : undefined}
+                    autoCapitalize = "none"
+                    autoComplete = "new-password"
+                    textContentType = "newPassword"
+                    maxLength = {128}
+                    error = {registration_errors.password_check}
+                    helper = {password_check.length > 0 && password_check === new_password ? t("Heslá sa zhodujú") : undefined}
                 />
 
                 {generated_password ? (
-                    <Card variant="highlighted" padding="md">
-                        <View style={styles.row}>
-                            <View style={styles.flex}>
-                                <Text variant="caption" color="text_secondary">{t("Vygenerované heslo - uložte si ho")}</Text>
-                                <Text variant="body_strong" selectable style={styles.mono}>{generated_password}</Text>
+                    <Card variant = "highlighted" padding = "md">
+                        <View style = {styles.row}>
+                            <View style = {styles.flex}>
+                                <Text variant = "caption" color = "text_secondary">{t("Vygenerované heslo - uložte si ho")}</Text>
+                                <Text
+                                    variant = "body_strong"
+                                    selectable
+                                    style = {styles.mono}
+                                >
+                                    {generated_password}
+                                </Text>
                             </View>
 
-                            <Chip label={t("Kopírovať")} icon="copy" onPress={() => Clipboard.setStringAsync(generated_password).then(() => haptics.success())} />
+                            <Chip
+                                label = {t("Kopírovať")}
+                                icon = "copy"
+                                onPress = {() => Clipboard.setStringAsync(generated_password).then(() => haptics.success())}
+                            />
                         </View>
                     </Card>
                 ) : (
-                    <Chip label={t("Vygenerovať silné heslo")} icon="wand-magic-sparkles" onPress={generatePassword} style={styles.align_start} />
+                    <Chip
+                        label = {t("Vygenerovať silné heslo")}
+                        icon = "wand-magic-sparkles"
+                        onPress = {generatePassword}
+                        style = {styles.align_start}
+                    />
                 )}
 
                 {renderAgeConfirmation()}
@@ -440,33 +489,55 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
     // Function For Render The Required Minimum Age Confirmation (The Privacy Policy Sets The Minimum Age To 13)
     function renderAgeConfirmation() {
-        const label:string = t("Potvrdzujem, že mám aspoň 13 rokov.")
+        const label:string = t("Potvrdzujem, že mám aspoň 13 rokov.") // Gets The Label
 
+        // Function For Toggle
         const toggle = ():void => {
             haptics.selection()
-            setIsAgeConfirmed(!is_age_confirmed)
-            setRegistrationErrors((previous:RegistrationErrors) => ({ ...previous, age_confirmation: undefined }))
+            setIsAgeConfirmed(!is_age_confirmed) // Sets The Age Confirmed State
+            setRegistrationErrors((previous:RegistrationErrors) => ({ ...previous, age_confirmation: undefined })) // Sets The Registration Errors
         }
 
         return (
-            <View style={styles.age_confirmation}>
+            <View style = {styles.age_confirmation}>
                 <Pressable
-                    onPress={toggle}
-                    disabled={is_submitting}
-                    accessibilityRole="checkbox"
-                    accessibilityLabel={label}
-                    accessibilityState={{ checked: is_age_confirmed, disabled: is_submitting }}
-                    hitSlop={6}
-                    style={styles.row}
+                    onPress = {toggle}
+                    disabled = {is_submitting}
+                    accessibilityRole = "checkbox"
+                    accessibilityLabel = {label}
+                    accessibilityState = {{ checked: is_age_confirmed, disabled: is_submitting }}
+                    hitSlop = {6}
+                    style = {styles.row}
                 >
-                    <Icon name={is_age_confirmed ? "square-check" : "square"} is_solid={is_age_confirmed} size={20} color={registration_errors.age_confirmation ? "danger" : is_age_confirmed ? "primary" : "text_muted"} />
-                    <Text variant="callout" color="text_secondary" style={styles.flex}>{label}</Text>
+                    <Icon
+                        name = {is_age_confirmed ? "square-check" : "square"}
+                        is_solid = {is_age_confirmed}
+                        size = {20}
+                        color = {registration_errors.age_confirmation ? "danger" : is_age_confirmed ? "primary" : "text_muted"}
+                    />
+                    <Text
+                        variant = "callout"
+                        color = "text_secondary"
+                        style = {styles.flex}
+                    >
+                        {label}
+                    </Text>
                 </Pressable>
 
                 {!!registration_errors.age_confirmation && (
-                    <View style={styles.row}>
-                        <Icon name="circle-exclamation" size={12} color="danger" />
-                        <Text variant="caption" color="danger" style={styles.flex}>{registration_errors.age_confirmation}</Text>
+                    <View style = {styles.row}>
+                        <Icon
+                            name = "circle-exclamation"
+                            size = {12}
+                            color = "danger"
+                        />
+                        <Text
+                            variant = "caption"
+                            color = "danger"
+                            style = {styles.flex}
+                        >
+                            {registration_errors.age_confirmation}
+                        </Text>
                     </View>
                 )}
             </View>
@@ -476,27 +547,55 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
     // Function For Render The "Confirm Your E-mail" State
     function renderRegistered() {
         return (
-            <View style={styles.registered}>
-                <View style={styles.registered_icon}>
-                    <Icon name="envelope-circle-check" size={30} color="success" />
+            <View style = {styles.registered}>
+                <View style = {styles.registered_icon}>
+                    <Icon
+                        name = "envelope-circle-check"
+                        size = {30}
+                        color = "success"
+                    />
                 </View>
 
-                <Text variant="callout" color="text_secondary" align="center">{t("Poslali sme odkaz na potvrdenie na adresu")}</Text>
-                <Text variant="body_strong" align="center">{registered_email}</Text>
-                <Text variant="caption" color="text_muted" align="center">{t("Odkaz je platný 24 hodín. Skontrolujte aj priečinok so spamom.")}</Text>
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    align = "center"
+                >
+                    {t("Poslali sme odkaz na potvrdenie na adresu")}
+                </Text>
+                <Text variant = "body_strong" align = "center">{registered_email}</Text>
+                <Text
+                    variant = "caption"
+                    color = "text_muted"
+                    align = "center"
+                >
+                    {t("Odkaz je platný 24 hodín. Skontrolujte aj priečinok so spamom.")}
+                </Text>
             </View>
         )
     }
 
     // Function For Render The Privacy Policy Notice (The Part Wrapped In <link></link> Opens The Privacy Policy)
     function renderPrivacyNotice() {
-        const notice:string = is_login ? t("Prihlásením súhlasíte so <link>zásadami ochrany osobných údajov</link>.") : t("Vytvorením účtu súhlasíte so <link>zásadami ochrany osobných údajov</link>.")
+        const notice:string = is_login ? t("Prihlásením súhlasíte so <link>zásadami ochrany osobných údajov</link>.") : t("Vytvorením účtu súhlasíte so <link>zásadami ochrany osobných údajov</link>.") // Gets The Notice
         const [before = "", link = "", after = ""] = notice.split(/<link>|<\/link>/) // Splits The Sentence Around The Link
 
         return (
-            <Text variant="caption" color="text_muted" align="center">
+            <Text
+                variant = "caption"
+                color = "text_muted"
+                align = "center"
+            >
                 {before}
-                <Text variant="caption" color="primary_text" accessibilityRole="link" onPress={() => openLegalPage("privacy")} style={styles.legal_link}>{link}</Text>
+                <Text
+                    variant = "caption"
+                    color = "primary_text"
+                    accessibilityRole = "link"
+                    onPress = {() => openLegalPage("privacy")}
+                    style = {styles.legal_link}
+                >
+                    {link}
+                </Text>
                 {after}
             </Text>
         )
@@ -504,26 +603,39 @@ export default function AuthSheet({ active_form, onActiveFormChange, onUserLogin
 
     // Function For Render The Footer
     function renderFooter() {
-        if(!is_login && registered_email) return <Button label={t("Prejsť na prihlásenie")} onPress={goToLogin} is_full_width />
+        if(!is_login && registered_email) {
+            return (
+                <Button
+                    label = {t("Prejsť na prihlásenie")}
+                    onPress = {goToLogin}
+                    is_full_width
+                />
+            )
+        }
 
         return (
             <>
                 <Button
-                    label={is_login ? t("Prihlásiť sa") : t("Vytvoriť účet")}
-                    onPress={is_login ? handleLogin : handleRegistration}
-                    is_loading={is_submitting}
+                    label = {is_login ? t("Prihlásiť sa") : t("Vytvoriť účet")}
+                    onPress = {is_login ? handleLogin : handleRegistration}
+                    is_loading = {is_submitting}
                     is_full_width
                 />
 
-                {is_login && (<SocialAuthButtons onLoginSuccess={handleSocialLogin} />)}
+                {is_login && (<SocialAuthButtons onLoginSuccess = {handleSocialLogin} />)}
                     
                 {renderPrivacyNotice()}
 
-                <View style={styles.switch_row}>
-                    <Text variant="callout" color="text_secondary">{is_login ? t("Ešte nemáte účet?") : t("Už máte účet?")}</Text>
+                <View style = {styles.switch_row}>
+                    <Text variant = "callout" color = "text_secondary">{is_login ? t("Ešte nemáte účet?") : t("Už máte účet?")}</Text>
 
-                    <Pressable onPress={() => switchForm(is_login ? "registration_form" : "login_form")} disabled={is_submitting} accessibilityRole="button" hitSlop={8}>
-                        <Text variant="body_strong" color="primary_text">{is_login ? t("Vytvoriť účet") : t("Prihlásiť sa")}</Text>
+                    <Pressable
+                        onPress = {() => switchForm(is_login ? "registration_form" : "login_form")}
+                        disabled = {is_submitting}
+                        accessibilityRole = "button"
+                        hitSlop = {8}
+                    >
+                        <Text variant = "body_strong" color = "primary_text">{is_login ? t("Vytvoriť účet") : t("Prihlásiť sa")}</Text>
                     </Pressable>
                 </View>
             </>

@@ -9,8 +9,8 @@ type Resetter = ComponentType<{ children:ReactNode }>
 // The Package Ships No Types For The Resetter, So The Shape Is Declared Here
 // It Is Exposed Only On The Default Export (A Getter), Not As A Named Export
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const lists = require("@react-native/virtualized-lists") as { default?:{ VirtualizedListContextResetter:Resetter }, VirtualizedListContextResetter?:Resetter }
-const VirtualizedListContextResetter:Resetter = (lists.default ?? lists).VirtualizedListContextResetter as Resetter
+const lists = require("@react-native/virtualized-lists") as { default?:{ VirtualizedListContextResetter:Resetter }, VirtualizedListContextResetter?:Resetter } // Defines The Lists
+const VirtualizedListContextResetter:Resetter = (lists.default ?? lists).VirtualizedListContextResetter as Resetter // Defines The Virtualized List Context Resetter
 
 export default function ListContextReset({ children }:{ children:ReactNode }) {
     return <VirtualizedListContextResetter>{children}</VirtualizedListContextResetter>

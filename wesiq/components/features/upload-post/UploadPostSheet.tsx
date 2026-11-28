@@ -76,6 +76,7 @@ type DraftAction =
     | { type:"upload_finished" }
     | { type:"reset" }
 
+// Defines The Initial State
 const INITIAL_STATE:DraftState = {
     step: "media",
     media: [],
@@ -100,8 +101,8 @@ function draftReducer(state:DraftState, action:DraftAction):DraftState {
             const target:number = index + action.direction // Gets The Target Index
             if(index === -1 || target < 0 || target >= state.media.length) return state
 
-            const media:DraftMedia[] = [...state.media]
-            const [moved] = media.splice(index, 1)
+            const media:DraftMedia[] = [...state.media] // Gets The Media
+            const [moved] = media.splice(index, 1) // Gets The Moved
             if(moved) media.splice(target, 0, moved)
             return { ...state, media }
         }
@@ -122,6 +123,7 @@ function draftReducer(state:DraftState, action:DraftAction):DraftState {
 
 // ---------- Helpers ----------
 
+// Function For Check If Compress Task
 const isCompressTask = (value:unknown):value is CompressTask => {
     return isRecord(value) && typeof value.task_id === "string" && typeof value.post_media_id === "number" && typeof value.post_id === "string"
 }
@@ -134,13 +136,13 @@ const makeUniqueName = (name:string, used_names:Set<string>):string => {
     }
 
     const dot:number = name.lastIndexOf(".") // Gets The Extension Position
-    const base:string = dot > 0 ? name.slice(0, dot) : name
-    const extension:string = dot > 0 ? name.slice(dot) : ""
-    let counter:number = 2
+    const base:string = dot > 0 ? name.slice(0, dot) : name // Gets The Base
+    const extension:string = dot > 0 ? name.slice(dot) : "" // Gets The Extension
+    let counter:number = 2 // Gets The Counter
 
     while(used_names.has(`${base}_${counter}${extension}`)) counter++
 
-    const unique_name:string = `${base}_${counter}${extension}`
+    const unique_name:string = `${base}_${counter}${extension}` // Gets The Unique Name
     used_names.add(unique_name)
     return unique_name
 }
@@ -192,6 +194,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         if(remaining <= 0) return
 
         try {
+            // Gets The Result
             const result:ImagePicker.ImagePickerResult = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ["images", "videos"],
                 allowsMultipleSelection: true,
@@ -202,8 +205,8 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
             if(result.canceled) return
 
-            const used_names:Set<string> = new Set(state.media.flatMap((item:DraftMedia) => [item.file_name, item.cover?.file_name ?? ""]))
-            const supported:ImagePicker.ImagePickerAsset[] = result.assets.filter((asset) => !asset.mimeType || asset.mimeType.startsWith("image/") || asset.mimeType.startsWith("video/"))
+            const used_names:Set<string> = new Set(state.media.flatMap((item:DraftMedia) => [item.file_name, item.cover?.file_name ?? ""])) // Gets The Used Names
+            const supported:ImagePicker.ImagePickerAsset[] = result.assets.filter((asset) => !asset.mimeType || asset.mimeType.startsWith("image/") || asset.mimeType.startsWith("video/")) // Gets The Supported
 
             if(supported.length < result.assets.length) showAlert(t("Nepodporovaný formát"), t("Niektoré súbory boli vynechané, pretože nie sú fotkou ani videom."))
             if(supported.length > 0) dispatch({ type: "add_media", media: supported.slice(0, remaining).map((asset, index:number) => toDraftMedia(asset, index, used_names)) })
@@ -217,11 +220,11 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
     // Function For Pick A Video Cover
     const pickCover = async (media:DraftMedia):Promise<void> => {
         try {
-            const result:ImagePicker.ImagePickerResult = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9 })
+            const result:ImagePicker.ImagePickerResult = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.9 }) // Gets The Result
             const asset = result.canceled ? null : result.assets[0] // Gets The Picked Image
             if(!asset) return
 
-            const used_names:Set<string> = new Set(state.media.flatMap((item:DraftMedia) => [item.file_name, item.cover?.file_name ?? ""]))
+            const used_names:Set<string> = new Set(state.media.flatMap((item:DraftMedia) => [item.file_name, item.cover?.file_name ?? ""])) // Gets The Used Names
 
             dispatch({
                 type: "update_media",
@@ -253,10 +256,10 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
         dispatch({ type: "upload_started" })
 
-        const controller:AbortController = new AbortController()
+        const controller:AbortController = new AbortController() // Gets The Controller
         upload_controller.current = controller
 
-        const form_data:FormData = new FormData()
+        const form_data:FormData = new FormData() // Gets The Form Data
         form_data.append("description", state.caption.trim())
         form_data.append("tagged_users", JSON.stringify([]))
         form_data.append("added_hashtags", JSON.stringify([]))
@@ -294,6 +297,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
             return
         }
 
+        // Gets The Response
         const response:ApiResult<UploadPostResponse> = await uploadWithProgress<UploadPostResponse>("upload-post/", form_data, {
             signal: controller.signal,
             onProgress: (progress:number) => dispatch({ type: "upload_progress", progress }),
@@ -332,6 +336,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         }
 
         if(is_dirty) {
+            // Checks If It Is Confirmed
             const is_confirmed:boolean = await confirmAction({
                 title: t("Zahodiť príspevok?"),
                 message: t("Vybrané fotky a text sa neuložia."),
@@ -351,6 +356,7 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
     const step_index:number = state.step === "media" ? 0 : state.step === "details" ? 1 : 2 // Gets The Step Index
 
+    // Gets The Titles
     const titles:Record<Step, string> = {
         media: t("Vyberte fotky a videá"),
         details: t("Popis a miesto"),
@@ -361,15 +367,17 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
 
     return (
         <Sheet
-            visible={visible}
-            onClose={requestClose}
-            title={titles[state.step]}
-            subtitle={state.step === "uploading" || state.step === "done" ? undefined : t("Krok {{step}} z {{count}}", { step: step_index + 1, count: 3 })}
-            size="large"
-            is_dismissable={state.step !== "uploading"}
-            footer={renderFooter()}
+            visible = {visible}
+            onClose = {requestClose}
+            title = {titles[state.step]}
+            subtitle = {state.step === "uploading" || state.step === "done" ? undefined : t("Krok {{step}} z {{count}}", { step: step_index + 1, count: 3 })}
+            size = "large"
+            is_dismissable = {state.step !== "uploading"}
+            footer = {renderFooter()}
         >
-            {state.step !== "uploading" && state.step !== "done" && <StepIndicator active_index={step_index} />}
+            {state.step !== "uploading" && state.step !== "done" &&
+                <StepIndicator active_index = {step_index} />
+            }
 
             {state.step === "media" && renderMediaStep()}
             {state.step === "details" && renderDetailsStep()}
@@ -384,45 +392,84 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         return (
             <>
                 {state.media.length === 0 ? (
-                    <Card variant="outlined" padding="xxl" onPress={pickMedia} accessibility_label={t("Vybrať fotky alebo videá")} style={styles.picker_card}>
-                        <View style={styles.picker_icon}>
-                            <Icon name="images" size={26} color="primary" />
+                    <Card
+                        variant = "outlined"
+                        padding = "xxl"
+                        onPress = {pickMedia}
+                        accessibility_label = {t("Vybrať fotky alebo videá")}
+                        style = {styles.picker_card}
+                    >
+                        <View style = {styles.picker_icon}>
+                            <Icon
+                                name = "images"
+                                size = {26}
+                                color = "primary"
+                            />
                         </View>
 
-                        <Text variant="heading" align="center">{t("Vybrať fotky alebo videá")}</Text>
-                        <Text variant="callout" color="text_secondary" align="center">{t("Až {{count}} súborov v jednom príspevku", { count: MAX_MEDIA_COUNT })}</Text>
+                        <Text variant = "heading" align = "center">{t("Vybrať fotky alebo videá")}</Text>
+                        <Text
+                            variant = "callout"
+                            color = "text_secondary"
+                            align = "center"
+                        >
+                            {t("Až {{count}} súborov v jednom príspevku", { count: MAX_MEDIA_COUNT })}
+                        </Text>
                     </Card>
                 ) : (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tiles} style={styles.tiles_scroll}>
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator = {false}
+                        contentContainerStyle = {styles.tiles}
+                        style = {styles.tiles_scroll}
+                    >
                         {state.media.map((item:DraftMedia, index:number) => (
                             <MediaTile
-                                key={item.key}
-                                media={item}
-                                index={index}
-                                count={state.media.length}
-                                issue={getMediaIssue(item, limits)}
-                                onRemove={() => dispatch({ type: "remove_media", key: item.key })}
-                                onMove={(direction:-1|1) => dispatch({ type: "move_media", key: item.key, direction })}
-                                onToggleMute={() => dispatch({ type: "update_media", key: item.key, changes: { is_muted: !item.is_muted } })}
-                                onPickCover={() => pickCover(item)}
+                                key = {item.key}
+                                media = {item}
+                                index = {index}
+                                count = {state.media.length}
+                                issue = {getMediaIssue(item, limits)}
+                                onRemove = {() => dispatch({ type: "remove_media", key: item.key })}
+                                onMove = {(direction:-1|1) => dispatch({ type: "move_media", key: item.key, direction })}
+                                onToggleMute = {() => dispatch({ type: "update_media", key: item.key, changes: { is_muted: !item.is_muted } })}
+                                onPickCover = {() => pickCover(item)}
                             />
                         ))}
 
                         {state.media.length < MAX_MEDIA_COUNT && (
-                            <Card variant="outlined" padding="none" onPress={pickMedia} accessibility_label={t("Pridať ďalšie")} style={styles.add_tile}>
-                                <Icon name="plus" size={22} color="primary" />
-                                <Text variant="label" color="primary_text">{t("Pridať")}</Text>
-                                <Text variant="caption" color="text_muted">{state.media.length}/{MAX_MEDIA_COUNT}</Text>
+                            <Card
+                                variant = "outlined"
+                                padding = "none"
+                                onPress = {pickMedia}
+                                accessibility_label = {t("Pridať ďalšie")}
+                                style = {styles.add_tile}
+                            >
+                                <Icon
+                                    name = "plus"
+                                    size = {22}
+                                    color = "primary"
+                                />
+                                <Text variant = "label" color = "primary_text">{t("Pridať")}</Text>
+                                <Text variant = "caption" color = "text_muted">{state.media.length}/{MAX_MEDIA_COUNT}</Text>
                             </Card>
                         )}
                     </ScrollView>
                 )}
 
-                <Card variant="raised" padding="md">
-                    <View style={styles.limits_row}>
-                        <Icon name="circle-info" size={14} color="text_secondary" />
+                <Card variant = "raised" padding = "md">
+                    <View style = {styles.limits_row}>
+                        <Icon
+                            name = "circle-info"
+                            size = {14}
+                            color = "text_secondary"
+                        />
 
-                        <Text variant="caption" color="text_secondary" style={styles.flex}>
+                        <Text
+                            variant = "caption"
+                            color = "text_secondary"
+                            style = {styles.flex}
+                        >
                             {t("Fotky do {{image_size}}, videá do {{video_size}} a {{duration}} min.", {
                                 image_size: formatMegabytes(limits.max_image_bytes),
                                 video_size: formatMegabytes(limits.max_video_bytes),
@@ -442,29 +489,29 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         return (
             <>
                 <TextField
-                    label={t("Popis príspevku")}
-                    placeholder={t("Napíšte niečo o tréningu...")}
-                    value={state.caption}
-                    onChangeText={(caption:string) => dispatch({ type: "set_caption", caption })}
+                    label = {t("Popis príspevku")}
+                    placeholder = {t("Napíšte niečo o tréningu...")}
+                    value = {state.caption}
+                    onChangeText = {(caption:string) => dispatch({ type: "set_caption", caption })}
                     multiline
-                    maxLength={MAX_CAPTION_LENGTH}
+                    maxLength = {MAX_CAPTION_LENGTH}
                     is_counter_visible
-                    autoCapitalize="sentences"
-                    autoFocus={state.caption.length === 0}
+                    autoCapitalize = "sentences"
+                    autoFocus = {state.caption.length === 0}
                 />
 
-                <View style={styles.chips}>
+                <View style = {styles.chips}>
                     <Chip
-                        label={t("Hashtag")}
-                        icon="hashtag"
-                        onPress={() => {
+                        label = {t("Hashtag")}
+                        icon = "hashtag"
+                        onPress = {() => {
                             const needs_space:boolean = state.caption.length > 0 && !/\s$/.test(state.caption) // Stores The Information If A Space Is Needed
                             dispatch({ type: "set_caption", caption: `${state.caption}${needs_space ? " " : ""}#` })
                         }}
                     />
                 </View>
 
-                <LocationField value={state.location} onChange={(location:PostLocation) => dispatch({ type: "set_location", location })} />
+                <LocationField value = {state.location} onChange = {(location:PostLocation) => dispatch({ type: "set_location", location })} />
             </>
         )
     }
@@ -476,57 +523,83 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         return (
             <>
                 {!!state.error && (
-                    <Card variant="outlined" padding="md" style={styles.error_card}>
-                        <View style={styles.limits_row}>
-                            <Icon name="triangle-exclamation" size={14} color="danger" />
-                            <Text variant="callout" color="danger" style={styles.flex}>{state.error.message}</Text>
+                    <Card
+                        variant = "outlined"
+                        padding = "md"
+                        style = {styles.error_card}
+                    >
+                        <View style = {styles.limits_row}>
+                            <Icon
+                                name = "triangle-exclamation"
+                                size = {14}
+                                color = "danger"
+                            />
+                            <Text
+                                variant = "callout"
+                                color = "danger"
+                                style = {styles.flex}
+                            >
+                                {state.error.message}
+                            </Text>
                         </View>
                     </Card>
                 )}
 
                 <SegmentedControl<Audience>
-                    value={state.audience}
-                    onChange={(audience:Audience) => dispatch({ type: "set_audience", audience })}
-                    accessibility_label={t("Kto uvidí príspevok")}
-                    options={[
+                    value = {state.audience}
+                    onChange = {(audience:Audience) => dispatch({ type: "set_audience", audience })}
+                    accessibility_label = {t("Kto uvidí príspevok")}
+                    options = {[
                         { value: "everyone", label: t("Všetci"), icon: "earth-europe" },
                         { value: "followers", label: t("Sledovatelia"), icon: "user-group" },
                     ]}
                 />
 
-                <Text variant="caption" color="text_secondary" style={styles.audience_hint}>
+                <Text
+                    variant = "caption"
+                    color = "text_secondary"
+                    style = {styles.audience_hint}
+                >
                     {state.audience === "everyone" ? t("Príspevok sa zobrazí všetkým v komunite.") : t("Príspevok uvidia len vaši sledovatelia.")}
                 </Text>
 
-                <Card padding="xs">
+                <Card padding = "xs">
                     <ToggleRow
-                        icon="comment"
-                        label={t("Povoliť komentáre")}
-                        value={state.allow_comments}
-                        onChange={(value:boolean) => dispatch({ type: "set_allow_comments", value })}
+                        icon = "comment"
+                        label = {t("Povoliť komentáre")}
+                        value = {state.allow_comments}
+                        onChange = {(value:boolean) => dispatch({ type: "set_allow_comments", value })}
                     />
 
                     <ToggleRow
-                        icon="heart"
-                        label={t("Skryť počet označení páči sa mi to")}
-                        description={t("Počet uvidíte len vy.")}
-                        value={state.hide_likes}
-                        onChange={(value:boolean) => dispatch({ type: "set_hide_likes", value })}
+                        icon = "heart"
+                        label = {t("Skryť počet označení páči sa mi to")}
+                        description = {t("Počet uvidíte len vy.")}
+                        value = {state.hide_likes}
+                        onChange = {(value:boolean) => dispatch({ type: "set_hide_likes", value })}
                     />
                 </Card>
 
                 {!!first_media && (
-                    <Card variant="raised" padding="md">
-                        <View style={styles.summary}>
-                            <Image source={{ uri: first_media.cover?.uri ?? first_media.uri }} style={styles.summary_image} contentFit="cover" />
+                    <Card variant = "raised" padding = "md">
+                        <View style = {styles.summary}>
+                            <Image
+                                source = {{ uri: first_media.cover?.uri ?? first_media.uri }}
+                                style = {styles.summary_image}
+                                contentFit = "cover"
+                            />
 
-                            <View style={styles.flex}>
-                                <Text variant="label" color="text_secondary">
+                            <View style = {styles.flex}>
+                                <Text variant = "label" color = "text_secondary">
                                     {t("Súbory: {{count}}", { count: state.media.length })}
                                     {state.location.name ? ` · ${state.location.name}` : ""}
                                 </Text>
 
-                                <Text variant="callout" numberOfLines={3} color={state.caption ? "text" : "text_muted"}>
+                                <Text
+                                    variant = "callout"
+                                    numberOfLines = {3}
+                                    color = {state.caption ? "text" : "text_muted"}
+                                >
                                     {state.caption.trim() || t("Bez popisu")}
                                 </Text>
                             </View>
@@ -540,14 +613,28 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
     // Function For Render The Uploading Step
     function renderUploadingStep() {
         return (
-            <View style={styles.status} accessibilityLiveRegion="polite">
-                <Text variant="display" color="primary" is_tabular>{state.progress}%</Text>
+            <View style = {styles.status} accessibilityLiveRegion = "polite">
+                <Text
+                    variant = "display"
+                    color = "primary"
+                    is_tabular
+                >
+                    {state.progress}%
+                </Text>
 
-                <View style={styles.progress_track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: state.progress }}>
-                    <View style={[styles.progress_fill, { width: `${state.progress}%` }]} />
+                <View
+                    style = {styles.progress_track}
+                    accessibilityRole = "progressbar"
+                    accessibilityValue = {{ min: 0, max: 100, now: state.progress }}
+                >
+                    <View style = {[styles.progress_fill, { width: `${state.progress}%` }]} />
                 </View>
 
-                <Text variant="callout" color="text_secondary" align="center">
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    align = "center"
+                >
                     {state.progress < 100 ? t("Nechajte aplikáciu otvorenú, kým sa súbory nahrajú.") : t("Dokončuje sa...")}
                 </Text>
             </View>
@@ -557,13 +644,23 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
     // Function For Render The Done Step
     function renderDoneStep() {
         return (
-            <View style={styles.status}>
-                <View style={styles.done_icon}>
-                    <Icon name="check" size={30} color="success" />
+            <View style = {styles.status}>
+                <View style = {styles.done_icon}>
+                    <Icon
+                        name = "check"
+                        size = {30}
+                        color = "success"
+                    />
                 </View>
 
-                <Text variant="heading" align="center">{t("Hotovo!")}</Text>
-                <Text variant="callout" color="text_secondary" align="center">{t("Príspevok sa spracováva a o chvíľu sa zobrazí v komunite.")}</Text>
+                <Text variant = "heading" align = "center">{t("Hotovo!")}</Text>
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    align = "center"
+                >
+                    {t("Príspevok sa spracováva a o chvíľu sa zobrazí v komunite.")}
+                </Text>
             </View>
         )
     }
@@ -573,9 +670,9 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
         if(state.step === "media") {
             return (
                 <Button
-                    label={has_invalid_media ? t("Odstráňte označené súbory") : t("Pokračovať")}
-                    onPress={() => dispatch({ type: "set_step", step: "details" })}
-                    is_disabled={state.media.length === 0 || has_invalid_media}
+                    label = {has_invalid_media ? t("Odstráňte označené súbory") : t("Pokračovať")}
+                    onPress = {() => dispatch({ type: "set_step", step: "details" })}
+                    is_disabled = {state.media.length === 0 || has_invalid_media}
                     is_full_width
                 />
             )
@@ -585,32 +682,53 @@ export default function UploadPostSheet({ visible, onClose, onUploaded }:UploadP
             const is_last:boolean = state.step === "audience" // Stores The Information If This Is The Last Step
 
             return (
-                <View style={styles.footer_row}>
-                    <Button label={t("Späť")} variant="secondary" onPress={() => dispatch({ type: "set_step", step: is_last ? "details" : "media" })} />
+                <View style = {styles.footer_row}>
+                    <Button
+                        label = {t("Späť")}
+                        variant = "secondary"
+                        onPress = {() => dispatch({ type: "set_step", step: is_last ? "details" : "media" })}
+                    />
 
                     <Button
-                        label={is_last ? (state.error ? t("Skúsiť znova") : t("Zdieľať príspevok")) : t("Pokračovať")}
-                        onPress={() => is_last ? uploadPost() : dispatch({ type: "set_step", step: "audience" })}
-                        style={styles.flex}
+                        label = {is_last ? (state.error ? t("Skúsiť znova") : t("Zdieľať príspevok")) : t("Pokračovať")}
+                        onPress = {() => is_last ? uploadPost() : dispatch({ type: "set_step", step: "audience" })}
+                        style = {styles.flex}
                     />
                 </View>
             )
         }
 
         if(state.step === "uploading") {
-            return <Button label={t("Zrušiť nahrávanie")} variant="danger" onPress={() => upload_controller.current?.abort()} is_full_width />
+            return (
+                <Button
+                    label = {t("Zrušiť nahrávanie")}
+                    variant = "danger"
+                    onPress = {() => upload_controller.current?.abort()}
+                    is_full_width
+                />
+            )
         }
 
-        return <Button label={t("Hotovo")} onPress={requestClose} is_full_width />
+        return (
+            <Button
+                label = {t("Hotovo")}
+                onPress = {requestClose}
+                is_full_width
+            />
+        )
     }
 }
 
 // Function For Render The Step Indicator
 function StepIndicator({ active_index }:{ active_index:number }) {
     return (
-        <View style={styles.step_indicator} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View
+            style = {styles.step_indicator}
+            accessibilityElementsHidden
+            importantForAccessibility = "no-hide-descendants"
+        >
             {[0, 1, 2].map((index:number) => (
-                <View key={index} style={[styles.step_bar, index <= active_index ? styles.step_bar_active : null]} />
+                <View key = {index} style = {[styles.step_bar, index <= active_index ? styles.step_bar_active : null]} />
             ))}
         </View>
     )

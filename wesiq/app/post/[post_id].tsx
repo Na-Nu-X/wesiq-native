@@ -20,15 +20,20 @@ export default function PostScreen() {
     const { post_id } = useLocalSearchParams<{ post_id:string }>() // Gets The Post ID
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
 
+    // Gets The State, Refetch, Is Refreshing And Set Data
     const { state, refetch, is_refreshing, setData } = useApiQuery(`post:${post_id ?? ""}`, async (signal:AbortSignal) => {
         const response = await getPost(post_id ?? "", signal) // Loads The Post
         return response.ok ? { ...response, data: response.data.post } : response
     }, { is_enabled: Boolean(post_id) })
 
+    // Function For Update The Post
     const updatePost = useCallback((post:Post) => setData(() => post), [setData])
+    // Function For Update The Author
     const updateAuthor = useCallback((_user_id:number, changes:Partial<PostAuthor>) => setData((previous) => previous ? { ...previous, user: { ...previous.user, ...changes } } : previous), [setData])
+    // Function For Require Login
     const requireLogin = useCallback(() => auth_sheet.open("login_form"), [auth_sheet])
 
+    // Gets The Sheets
     const sheets = usePostSheets({
         updatePost,
         updateAuthor,
@@ -45,38 +50,45 @@ export default function PostScreen() {
     return (
         <PlayingVideoProvider>
             <Screen
-                header={<Header title={post ? post.user.username : t("Príspevok")} has_back_button />}
-                refresh={{ is_refreshing, onRefresh: refetch }}
-                edges={["top", "left", "right", "bottom"]}
+                header = {<Header title = {post ? post.user.username : t("Príspevok")} has_back_button />}
+                refresh = {{ is_refreshing, onRefresh: refetch }}
+                edges = {["top", "left", "right", "bottom"]}
             >
-                {state.status === "loading" && <Skeleton height={520} radius={radii.lg} />}
+                {state.status === "loading" &&
+                    <Skeleton height = {520} radius = {radii.lg} />
+                }
 
                 {state.status === "error" && (
                     state.error.status === 404
-                        ? <EmptyState icon="image" title={t("Príspevok sa nenašiel")} message={t("Mohol byť odstránený alebo je dostupný len pre sledovateľov.")} action={{ label: t("Späť na domov"), onPress: () => router.replace("/") }} />
-                        : <ErrorState error={state.error} onRetry={refetch} />
+                        ? <EmptyState
+                            icon = "image"
+                            title = {t("Príspevok sa nenašiel")}
+                            message = {t("Mohol byť odstránený alebo je dostupný len pre sledovateľov.")}
+                            action = {{ label: t("Späť na domov"), onPress: () => router.replace("/") }}
+                        />
+                        : <ErrorState error = {state.error} onRetry = {refetch} />
                 )}
 
                 {!!post && (
-                    <View style={styles.content}>
+                    <View style = {styles.content}>
                         <PostCard
-                            post={post}
-                            onPostChange={sheets.handlePostChange}
-                            onAuthorChange={updateAuthor}
-                            onOpenComments={sheets.openComments}
-                            onOpenMenu={sheets.openMenu}
-                            onShare={sheets.openShare}
-                            onShowLikes={sheets.openUsersWhoLikedPost}
-                            onRequireLogin={requireLogin}
+                            post = {post}
+                            onPostChange = {sheets.handlePostChange}
+                            onAuthorChange = {updateAuthor}
+                            onOpenComments = {sheets.openComments}
+                            onOpenMenu = {sheets.openMenu}
+                            onShare = {sheets.openShare}
+                            onShowLikes = {sheets.openUsersWhoLikedPost}
+                            onRequireLogin = {requireLogin}
                             is_detail
                         />
 
                         {post.allow_comments && (
                             <Button
-                                label={post.comments_amount > 0 ? t("Zobraziť komentáre ({{count}})", { count: post.comments_amount }) : t("Pridať komentár...")}
-                                icon="comment"
-                                variant="secondary"
-                                onPress={() => sheets.openComments(post)}
+                                label = {post.comments_amount > 0 ? t("Zobraziť komentáre ({{count}})", { count: post.comments_amount }) : t("Pridať komentár...")}
+                                icon = "comment"
+                                variant = "secondary"
+                                onPress = {() => sheets.openComments(post)}
                                 is_full_width
                             />
                         )}

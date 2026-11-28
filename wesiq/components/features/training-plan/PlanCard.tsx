@@ -28,35 +28,62 @@ export default function PlanCard({ plan, action_label, action_icon, onPress, is_
 
     return (
         <Card
-            onPress={onPress}
-            accessibility_label={`${title}${is_subscriber_plan ? `, ${t("Prémiový plán")}` : ""}${plan.day !== null ? `, ${getDayName(plan.day)}` : ""}, ${t("Cviky")}: ${plan.exercise_count}. ${details_label ? `${details_label}. ` : ""}${action_label}`}
-            style={styles.card}
+            onPress = {onPress}
+            accessibility_label = {`${title}${is_subscriber_plan ? `, ${t("Prémiový plán")}` : ""}${plan.day !== null ? `, ${getDayName(plan.day)}` : ""}, ${t("Cviky")}: ${plan.exercise_count}. ${details_label ? `${details_label}. ` : ""}${action_label}`}
+            style = {styles.card}
         >
-            <View style={styles.header}>
-                <View style={styles.flex}>
-                    <Text variant="heading" numberOfLines={2}>{title}</Text>
+            <View style = {styles.header}>
+                <View style = {styles.flex}>
+                    <Text variant = "heading" numberOfLines = {2}>{title}</Text>
 
-                    <Text variant="caption" color="text_secondary">
+                    <Text variant = "caption" color = "text_secondary">
                         {t("Cviky")}: {plan.exercise_count} · {t("Série")}: {plan.set_count}
                         {warm_up_seconds !== undefined ? ` · ${t("Rozcvička")} ${formatDuration(warm_up_seconds)}` : ""}
                     </Text>
                 </View>
 
-                {is_subscriber_plan && <Chip label={t("Prémiový plán")} icon="crown" tone="premium" is_selected />}
-                {plan.day !== null && <Chip label={getShortDayName(plan.day)} icon="calendar-day" is_selected />}
+                {is_subscriber_plan &&
+                    <Chip
+                        label = {t("Prémiový plán")}
+                        icon = "crown"
+                        tone = "premium"
+                        is_selected
+                    />
+                }
+                {plan.day !== null &&
+                    <Chip
+                        label = {getShortDayName(plan.day)}
+                        icon = "calendar-day"
+                        is_selected
+                    />
+                }
             </View>
 
             {details}
 
             {exercise_names.length > 0 && (
-                <Text variant="callout" color="text_secondary" numberOfLines={2}>{exercise_names.join(" · ")}</Text>
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    numberOfLines = {2}
+                >
+                    {exercise_names.join(" · ")}
+                </Text>
             )}
 
-            <View style={styles.action}>
-                <Icon name={action_icon} size={12} color="primary_text" />
-                <Text variant="label" color="primary_text">{action_label}</Text>
-                <View style={styles.flex} />
-                <Icon name="chevron-right" size={12} color="text_muted" />
+            <View style = {styles.action}>
+                <Icon
+                    name = {action_icon}
+                    size = {12}
+                    color = "primary_text"
+                />
+                <Text variant = "label" color = "primary_text">{action_label}</Text>
+                <View style = {styles.flex} />
+                <Icon
+                    name = "chevron-right"
+                    size = {12}
+                    color = "text_muted"
+                />
             </View>
         </Card>
     )

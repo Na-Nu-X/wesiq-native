@@ -93,8 +93,8 @@ export const DynamicVideo = ({
 
     const normal_video:RefObject<VideoPlayer|null> = useRef<VideoPlayer|null>(null) // Stores The Normal Video Reference
     const insets = useSafeAreaInsets() // Keeps The Fullscreen Controls Away From The Notch And Home Indicator
-    const { width: window_width, height: window_height } = useWindowDimensions()
-    const is_landscape:boolean = window_width > window_height
+    const { width: window_width, height: window_height } = useWindowDimensions() // Gets The Window Width And Window Height
+    const is_landscape:boolean = window_width > window_height // Checks If It Is Landscape
     const getCurrentVideo = ():VideoPlayer|null => normal_video.current // One Player Serves Both The Post And The Fullscreen View
 
     const [is_muted, setIsMuted] = useState<boolean>(false) // Stores The Information If The Video Is Muted
@@ -108,7 +108,7 @@ export const DynamicVideo = ({
     const [video_settings_sheet, setVideoSettingsSheet] = useState<"main"|"quality"|"speed">("main") // Stores The Active Video Settings Sheet
 
     const [is_fullscreen, setIsFullscreen] = useState<boolean>(false) // Stores The Information If The Video Is In Fullscreen Mode
-    const [are_fullscreen_controls_visible, setAreFullscreenControlsVisible] = useState<boolean>(true) // Own Visibility, So Taps On The Post Behind Can't Hide Them
+    const [are_fullscreen_controls_visible, setAreFullscreenControlsVisible] = useState<boolean>(true) // Stores If The Fullscreen Controls Are Visible (Own Visibility, So Taps On The Post Behind Can't Hide Them)
 
     const start_time = useRef<number>(0) // Stores The Start Time Of The Video
     const total_watch_time = useRef<number>(0) // Stores The Total Watch Time Of The Video
@@ -126,13 +126,13 @@ export const DynamicVideo = ({
     }
 
     const [has_load_error, setHasLoadError] = useState<boolean>(false) // Stores The Information If The Stream Failed To Load
-    const [retry_count, setRetryCount] = useState<number>(0) // A New URL On Retry Makes Every Player Load The Stream Again
+    const [retry_count, setRetryCount] = useState<number>(0) // Stores The Retry Count (A New URL On Retry Makes Every Player Load The Stream Again)
 
-    const [user_token, setUserToken] = useState<string|null|undefined>(undefined) // Undefined While Loading (The Stream Waits For It)
+    const [user_token, setUserToken] = useState<string|null|undefined>(undefined) // Stores The User Token (Undefined While Loading, The Stream Waits For It)
 
     // Initializes The Token For The Stream Requests (Changes With The Logged In User)
     useEffect(() => {
-        let is_active:boolean = true
+        let is_active:boolean = true // Checks If It Is Active
         getAccessToken().then((token:string|null) => { if(is_active) setUserToken(token) })
         return () => { is_active = false }
     }, [logged_in_user?.id])
@@ -203,23 +203,31 @@ export const DynamicVideo = ({
     
     // Initializes The Error State (Missing Stream, Network Failure, Unsupported Format)
     useEventListener(video_player, "statusChange", ({ status }:{ status:string }) => {
-        setHasLoadError(status === "error")
+        setHasLoadError(status === "error") // Sets The Load Error State
     })
 
     // Function For Load The Stream Again After An Error
     const retryVideo = ():void => {
-        setHasLoadError(false)
-        setRetryCount((previous:number) => previous + 1)
+        setHasLoadError(false) // Sets The Load Error State
+        setRetryCount((previous:number) => previous + 1) // Sets The Retry Count
     }
 
     // Error Overlay (Shown Over The Post Video And In Fullscreen)
     const error_overlay = has_load_error ? (
-        <View style={styles.load_error}>
-            <FontAwesome6 name="triangle-exclamation" size={26} color={LIGHT_BLUE_COLOR} />
-            <Text style={styles.load_error_text}>{t("Video sa nepodarilo načítať.")}</Text>
+        <View style = {styles.load_error}>
+            <FontAwesome6
+                name = "triangle-exclamation"
+                size = {26}
+                color = {LIGHT_BLUE_COLOR}
+            />
+            <Text style = {styles.load_error_text}>{t("Video sa nepodarilo načítať.")}</Text>
 
-            <Pressable onPress={retryVideo} accessibilityRole="button" style={({ pressed }) => [styles.load_error_button, pressed ? { opacity: 0.7 } : null]}>
-                <Text style={styles.load_error_button_text}>{t("Skúsiť znova")}</Text>
+            <Pressable
+                onPress = {retryVideo}
+                accessibilityRole = "button"
+                style = {({ pressed }) => [styles.load_error_button, pressed ? { opacity: 0.7 } : null]}
+            >
+                <Text style = {styles.load_error_button_text}>{t("Skúsiť znova")}</Text>
             </Pressable>
         </View>
     ) : null
@@ -233,6 +241,7 @@ export const DynamicVideo = ({
         }
     })
 
+    // Initializes The Load Of The Thumbnail Aspect Ratio
     useEffect(() => {
         if(thumbnail_url) {
             Image.getSize(
@@ -253,14 +262,14 @@ export const DynamicVideo = ({
 
     // Updates The Quality When The Data Saving Mode Changes
     if(synced_data_saving_mode !== data_saving_mode) {
-        setSyncedDataSavingMode(data_saving_mode)
-        setActiveQuality(data_saving_mode ? 480 : -1)
+        setSyncedDataSavingMode(data_saving_mode) // Sets The Synced Data Saving Mode
+        setActiveQuality(data_saving_mode ? 480 : -1) // Sets The Active Quality
     }
 
     // Initializes The Auto Hide Of The Fullscreen Controls (Not While The Scrubber Is Dragged)
     useEffect(() => {
         if(!is_fullscreen || !are_fullscreen_controls_visible || is_scrubber_dragged || is_settings_open) return
-        const timeout:ReturnType<typeof setTimeout> = setTimeout(() => setAreFullscreenControlsVisible(false), 4000)
+        const timeout:ReturnType<typeof setTimeout> = setTimeout(() => setAreFullscreenControlsVisible(false), 4000) // Gets The Timeout
         return () => clearTimeout(timeout)
     }, [is_fullscreen, are_fullscreen_controls_visible, is_scrubber_dragged, is_settings_open])
 
@@ -372,7 +381,7 @@ export const DynamicVideo = ({
 
     // Function For Show The Video Settings
     const showVideoSettings = ():void => {
-        setVideoSettingsSheet("main")
+        setVideoSettingsSheet("main") // Sets The Video Settings Sheet
         setIsSettingsOpen(true) // Shows The Video Settings (Inside The Fullscreen View When It Is Open)
     }
 
@@ -414,8 +423,8 @@ export const DynamicVideo = ({
 
     // Function For Toggle The Video Fullscreen
     const toggleVideoFullscreen = ():void => {
-        const next_is_fullscreen:boolean = !is_fullscreen
-        setIsFullscreen(next_is_fullscreen)
+        const next_is_fullscreen:boolean = !is_fullscreen // Gets The Next Is Fullscreen
+        setIsFullscreen(next_is_fullscreen) // Sets The Fullscreen State
         setAreFullscreenControlsVisible(true) // Fullscreen Always Opens With The Controls Shown
         setIsSettingsOpen(false) // The Same Player Moves Between The Post And The Fullscreen View, So The Position Stays
         lockOrientation(next_is_fullscreen && aspect_ratio > 1) // Landscape Videos Rotate The Screen
@@ -436,6 +445,7 @@ export const DynamicVideo = ({
 
     const startControlsTimer = onStartControlsTimer // Hides The Controls After 5 Seconds
 
+    // Initializes The Cleanup Of The Controls Timer On Unmount
     useEffect(() => {
         return () => {
             onStopControlsTimer() // Stops The Controls Timer
@@ -515,6 +525,7 @@ export const DynamicVideo = ({
 
     // Initializes The Reset Of Record Of Video Watch Time
     useEffect(() => {
+        // Gets The App State Subscription
         const app_state_subscription:NativeEventSubscription = AppState.addEventListener("change", (nextAppState:AppStateStatus) => {
             // When App Is On Background
             if(nextAppState.match(/inactive|background/)) {
@@ -532,6 +543,7 @@ export const DynamicVideo = ({
         }
     }, [playing_video])
 
+    // Gets The Qualities
     const QUALITIES:{ value:number, label:string }[] = [
         { value: -1, label: "auto" },
         { value: 1080, label: "1080p" },
@@ -539,6 +551,7 @@ export const DynamicVideo = ({
         { value: 480, label: `480p (${t("šetrenie dát")})` },
     ]
 
+    // Gets The Speeds
     const SPEEDS:{ value:number, label:string }[] = [
         { value: 2, label: "2×" },
         { value: 1.5, label: "1,5×" },
@@ -546,44 +559,60 @@ export const DynamicVideo = ({
         { value: 0.5, label: "0,5×" },
     ]
 
-    const active_quality_label:string = active_quality === 480 ? "480p" : QUALITIES.find((quality) => quality.value === active_quality)?.label ?? "auto"
-    const video_speed_label:string = SPEEDS.find((speed) => speed.value === video_speed)?.label ?? `${String(video_speed).replace(".", ",")}×`
+    const active_quality_label:string = active_quality === 480 ? "480p" : QUALITIES.find((quality) => quality.value === active_quality)?.label ?? "auto" // Gets The Active Quality Label
+    const video_speed_label:string = SPEEDS.find((speed) => speed.value === video_speed)?.label ?? `${String(video_speed).replace(".", ",")}×` // Gets The Video Speed Label
 
     // Video Settings Sheet (Rendered Inside The Fullscreen View While It Is Open, The Sheet Would Open Behind It Otherwise)
     const settings_sheet = (
         <Sheet
-            visible={is_settings_open}
-            onClose={() => {
+            visible = {is_settings_open}
+            onClose = {() => {
                 if(video_settings_sheet !== "main") setVideoSettingsSheet("main") // Back Goes To The Main View First
                 else hideVideoSettings()
             }}
-            title={video_settings_sheet === "quality" ? t("Kvalita") : video_settings_sheet === "speed" ? t("Rýchlosť") : t("Nastavenia videa")}
-            supported_orientations={["portrait", "landscape-left", "landscape-right"]}
+            title = {video_settings_sheet === "quality" ? t("Kvalita") : video_settings_sheet === "speed" ? t("Rýchlosť") : t("Nastavenia videa")}
+            supported_orientations = {["portrait", "landscape-left", "landscape-right"]}
         >
             {video_settings_sheet === "main" ? (
-                <Card padding="xs">
-                    <MenuRow icon="sliders" label={t("Kvalita")} value={active_quality_label} onPress={() => setVideoSettingsSheet("quality")} />
-                    <Divider inset={spacing.md} />
-                    <MenuRow icon="gauge-high" label={t("Rýchlosť")} value={video_speed_label} onPress={() => setVideoSettingsSheet("speed")} />
+                <Card padding = "xs">
+                    <MenuRow
+                        icon = "sliders"
+                        label = {t("Kvalita")}
+                        value = {active_quality_label}
+                        onPress = {() => setVideoSettingsSheet("quality")}
+                    />
+                    <Divider inset = {spacing.md} />
+                    <MenuRow
+                        icon = "gauge-high"
+                        label = {t("Rýchlosť")}
+                        value = {video_speed_label}
+                        onPress = {() => setVideoSettingsSheet("speed")}
+                    />
                 </Card>
             ) : (
                 <>
-                    <Card padding="xs">
+                    <Card padding = "xs">
                         {(video_settings_sheet === "quality" ? QUALITIES : SPEEDS).map((option, index:number) => (
-                            <View key={option.value}>
-                                {index > 0 && <Divider inset={spacing.md} />}
+                            <View key = {option.value}>
+                                {index > 0 &&
+                                    <Divider inset = {spacing.md} />
+                                }
 
                                 <ChoiceRow
-                                    label={option.label}
-                                    is_selected={video_settings_sheet === "quality" ? active_quality === option.value : video_speed === option.value}
-                                    onPress={() => video_settings_sheet === "quality" ? changeVideoQuality(option.value) : changeVideoSpeed(option.value)}
+                                    label = {option.label}
+                                    is_selected = {video_settings_sheet === "quality" ? active_quality === option.value : video_speed === option.value}
+                                    onPress = {() => video_settings_sheet === "quality" ? changeVideoQuality(option.value) : changeVideoSpeed(option.value)}
                                 />
                             </View>
                         ))}
                     </Card>
 
-                    <Card padding="xs">
-                        <MenuRow icon="chevron-left" label={t("Späť")} onPress={() => setVideoSettingsSheet("main")} />
+                    <Card padding = "xs">
+                        <MenuRow
+                            icon = "chevron-left"
+                            label = {t("Späť")}
+                            onPress = {() => setVideoSettingsSheet("main")}
+                        />
                     </Card>
                 </>
             )}
@@ -593,37 +622,37 @@ export const DynamicVideo = ({
     return (
         <>
         <Pressable 
-            className="video_container" 
-            onPress={handleTapVideo}
-            style={styles.video_container}
+            className = "video_container" 
+            onPress = {handleTapVideo}
+            style = {styles.video_container}
         >
             {show_controls && is_video_initialized && (
                 <>
-                    <View className="play_pause_indicator hidden" style={styles.play_pause_indicator}>
+                    <View className = "play_pause_indicator hidden" style = {styles.play_pause_indicator}>
                         <Icon
-                            icon_name={playing_video !== one_post_media.id ? "pause" : "play"}
-                            accessibility_label={playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
-                            onPress={() => playPauseVideo(one_post_media.id)}
-                            size={40}
-                            style={playing_video === one_post_media.id ? { marginLeft: 8 } : { marginLeft: 0 }}
-                            pressed_color={LIGHT_BLUE_COLOR}
-                            color={LIGHT_BLUE_COLOR}
+                            icon_name = {playing_video !== one_post_media.id ? "pause" : "play"}
+                            accessibility_label = {playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
+                            onPress = {() => playPauseVideo(one_post_media.id)}
+                            size = {40}
+                            style = {playing_video === one_post_media.id ? { marginLeft: 8 } : { marginLeft: 0 }}
+                            pressed_color = {LIGHT_BLUE_COLOR}
+                            color = {LIGHT_BLUE_COLOR}
                         />
                     </View>
 
-                    <View className="step_back_indicator hidden" style={styles.step_back_indicator}>
+                    <View className = "step_back_indicator hidden" style = {styles.step_back_indicator}>
                         <Icon
-                            icon_name="angle-left"
-                            accessibility_label={t("Späť o 5 sekúnd")}
-                            onPress={() => stepBack(5)}
-                            size={40}
-                            pressed_color={LIGHT_BLUE_COLOR}
-                            color={LIGHT_BLUE_COLOR}
+                            icon_name = "angle-left"
+                            accessibility_label = {t("Späť o 5 sekúnd")}
+                            onPress = {() => stepBack(5)}
+                            size = {40}
+                            pressed_color = {LIGHT_BLUE_COLOR}
+                            color = {LIGHT_BLUE_COLOR}
                             // style={{ transition: opacity 0.5s ease, transform 0.2s ease-out; }}
                         />
 
                         <Text 
-                            style={{ 
+                            style = {{ 
                                 color: SECONDARY_COLOR, 
                                 fontSize: 25,
                             }}
@@ -634,9 +663,9 @@ export const DynamicVideo = ({
                         </Text>
                     </View>
 
-                    <View className="step_further_indicator hidden" style={styles.step_further_indicator}>
+                    <View className = "step_further_indicator hidden" style = {styles.step_further_indicator}>
                         <Text 
-                            style={{ 
+                            style = {{ 
                                 color: SECONDARY_COLOR, 
                                 fontSize: 25,
                             }}
@@ -647,12 +676,12 @@ export const DynamicVideo = ({
                         </Text>
 
                         <Icon
-                            icon_name="angle-right"
-                            accessibility_label={t("Dopredu o 5 sekúnd")}
-                            onPress={() => stepFurther(5)}
-                            size={40}
-                            pressed_color={LIGHT_BLUE_COLOR}
-                            color={LIGHT_BLUE_COLOR}
+                            icon_name = "angle-right"
+                            accessibility_label = {t("Dopredu o 5 sekúnd")}
+                            onPress = {() => stepFurther(5)}
+                            size = {40}
+                            pressed_color = {LIGHT_BLUE_COLOR}
+                            color = {LIGHT_BLUE_COLOR}
                             // style={{ transition: opacity 0.5s ease, transform 0.2s ease-out; }}
                         />
                     </View>
@@ -660,28 +689,28 @@ export const DynamicVideo = ({
             )}
 
             <View 
-                style={{ 
+                style = {{ 
                     width: "100%", 
                     aspectRatio: aspect_ratio, 
                     backgroundColor: MAIN_COLOR, 
                 }}
             >
                 {!is_video_initialized ? (
-                    <View style={StyleSheet.absoluteFill}>
+                    <View style = {StyleSheet.absoluteFill}>
                         <Image 
-                            source={{ uri: thumbnail_url }} 
-                            style={StyleSheet.absoluteFill} 
-                            resizeMode="cover"
+                            source = {{ uri: thumbnail_url }} 
+                            style = {StyleSheet.absoluteFill} 
+                            resizeMode = "cover"
                         />
 
-                        <View style={styles.play_pause_indicator}>
+                        <View style = {styles.play_pause_indicator}>
                             <Icon
-                                icon_name="download"
-                                accessibility_label={t("Načítať video")}
-                                onPress={initializeVideo}
-                                size={30}
-                                pressed_color={LIGHT_BLUE_COLOR}
-                                color={LIGHT_BLUE_COLOR}
+                                icon_name = "download"
+                                accessibility_label = {t("Načítať video")}
+                                onPress = {initializeVideo}
+                                size = {30}
+                                pressed_color = {LIGHT_BLUE_COLOR}
+                                color = {LIGHT_BLUE_COLOR}
                             />
                         </View>
                     </View>
@@ -739,9 +768,9 @@ export const DynamicVideo = ({
 
                         <>
                             <VideoView
-                                player={video_player}
-                                nativeControls={false}
-                                style={{ width: "100%", height: "100%" }}
+                                player = {video_player}
+                                nativeControls = {false}
+                                style = {{ width: "100%", height: "100%" }}
                             />
 
                             {error_overlay}
@@ -750,72 +779,76 @@ export const DynamicVideo = ({
                 )}
 
                 <Modal
-                    visible={is_fullscreen}
-                    animationType="fade"
-                    supportedOrientations={["portrait", "landscape-left", "landscape-right"]}
+                    visible = {is_fullscreen}
+                    animationType = "fade"
+                    supportedOrientations = {["portrait", "landscape-left", "landscape-right"]}
                     statusBarTranslucent
                     navigationBarTranslucent
-                    onRequestClose={toggleVideoFullscreen} // Android Back Button Leaves Fullscreen
+                    onRequestClose = {toggleVideoFullscreen} // Android Back Button Leaves Fullscreen
                 >
-                    <View style={styles.fullscreen}>
+                    <View style = {styles.fullscreen}>
                         {is_fullscreen && (
                             <VideoView
-                                player={video_player}
-                                nativeControls={false}
-                                contentFit="contain"
-                                style={StyleSheet.absoluteFill}
+                                player = {video_player}
+                                nativeControls = {false}
+                                contentFit = "contain"
+                                style = {StyleSheet.absoluteFill}
                             />
                         )}
 
-                        <Pressable style={StyleSheet.absoluteFill} onPress={() => setAreFullscreenControlsVisible((previous:boolean) => !previous)} accessibilityLabel={are_fullscreen_controls_visible ? t("Skryť ovládanie") : t("Zobraziť ovládanie")} />
+                        <Pressable
+                            style = {StyleSheet.absoluteFill}
+                            onPress = {() => setAreFullscreenControlsVisible((previous:boolean) => !previous)}
+                            accessibilityLabel = {are_fullscreen_controls_visible ? t("Skryť ovládanie") : t("Zobraziť ovládanie")}
+                        />
 
                         {error_overlay}
 
                         {are_fullscreen_controls_visible && (
                             <View
-                                pointerEvents="box-none"
-                                style={[styles.fullscreen_controls, {
+                                pointerEvents = "box-none"
+                                style = {[styles.fullscreen_controls, {
                                     left: Math.max(insets.left, is_landscape ? 16 : 0),
                                     right: Math.max(insets.right, is_landscape ? 16 : 0),
                                     bottom: Math.max(insets.bottom, 12),
                                 }]}
                             >
 <CustomVideoControls 
-                                    one_post_media={one_post_media}
-                                    onPlayPauseVideo={() => playPauseVideo(one_post_media.id)}
-                                    playing_video={playing_video}
-                                    onStepBack={(step:number) => stepBack(step)}
-                                    onStepFurther={(step:number) => stepFurther(step)}
-                                    is_muted={is_muted}
-                                    volume={volume}
-                                    elapsed_time={elapsed_time}
-                                    duration={duration}
-                                    buffered_time={buffered_time}
-                                    onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                                    onMuteUnmuteVideo={muteUnmuteVideo}
-                                    onShowVideoSettings={showVideoSettings}
-                                    is_fullscreen={is_fullscreen}
-                                    onToggleVideoFullscreen={toggleVideoFullscreen}
-                                    onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                                    getCurrentVideo={getCurrentVideo}
-                                    onStartControlsTimer={startControlsTimer}
-                                    onStopControlsTimer={onStopControlsTimer}
-                                    onIsScrubberDragged={onIsScrubberDragged}
-                                    is_scrubber_dragged={is_scrubber_dragged}
-                                    onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
-                                    onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
-                                    onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
-                                    scrubber_position={scrubber_position}
-                                    onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
+                                    one_post_media = {one_post_media}
+                                    onPlayPauseVideo = {() => playPauseVideo(one_post_media.id)}
+                                    playing_video = {playing_video}
+                                    onStepBack = {(step:number) => stepBack(step)}
+                                    onStepFurther = {(step:number) => stepFurther(step)}
+                                    is_muted = {is_muted}
+                                    volume = {volume}
+                                    elapsed_time = {elapsed_time}
+                                    duration = {duration}
+                                    buffered_time = {buffered_time}
+                                    onChangeVideoVolume = {(value:number) => changeVideoVolume(value)}
+                                    onMuteUnmuteVideo = {muteUnmuteVideo}
+                                    onShowVideoSettings = {showVideoSettings}
+                                    is_fullscreen = {is_fullscreen}
+                                    onToggleVideoFullscreen = {toggleVideoFullscreen}
+                                    onSetScrubberWidth = {(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
+                                    getCurrentVideo = {getCurrentVideo}
+                                    onStartControlsTimer = {startControlsTimer}
+                                    onStopControlsTimer = {onStopControlsTimer}
+                                    onIsScrubberDragged = {onIsScrubberDragged}
+                                    is_scrubber_dragged = {is_scrubber_dragged}
+                                    onVttVideoScrubberPreviewUpdate = {onVttVideoScrubberPreviewUpdate}
+                                    onVttVideoScrubberPreviewImageUpdate = {onVttVideoScrubberPreviewImageUpdate}
+                                    onScrubberPositionUpdate = {(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
+                                    scrubber_position = {scrubber_position}
+                                    onElapsedTimeUpdate = {(elapsed_time:number) => setElapsedTime(elapsed_time)}
                                 />
 
                                 {!!video_scrubber_preview && is_scrubber_dragged && (
                                     <VideoScrubberPreview
-                                        video_scrubber_preview={video_scrubber_preview}
-                                        video_scrubber_preview_image={video_scrubber_preview_image}
-                                        scrubber_position={scrubber_position}
-                                        scrubber_width={scrubber_width}
-                                        bottom={BIG_BORDER_RADIUS / 2 + 5}
+                                        video_scrubber_preview = {video_scrubber_preview}
+                                        video_scrubber_preview_image = {video_scrubber_preview_image}
+                                        scrubber_position = {scrubber_position}
+                                        scrubber_width = {scrubber_width}
+                                        bottom = {BIG_BORDER_RADIUS / 2 + 5}
                                     />
                                 )}
                             </View>
@@ -828,43 +861,43 @@ export const DynamicVideo = ({
 
             {show_controls && (
                 <CustomVideoControls 
-                    one_post_media={one_post_media}
-                    onPlayPauseVideo={is_video_initialized ? () => playPauseVideo(one_post_media.id) : initializeVideo}
-                    playing_video={playing_video}
-                    onStepBack={(step:number) => stepBack(step)}
-                    onStepFurther={(step:number) => stepFurther(step)}
-                    is_muted={is_muted}
-                    volume={volume}
-                    elapsed_time={elapsed_time}
-                    duration={duration}
-                    buffered_time={buffered_time}
-                    onChangeVideoVolume={(value:number) => changeVideoVolume(value)}
-                    onMuteUnmuteVideo={muteUnmuteVideo}
-                    onShowVideoSettings={showVideoSettings}
-                    is_fullscreen={is_fullscreen}
-                    onToggleVideoFullscreen={toggleVideoFullscreen}
-                    onSetScrubberWidth={(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
-                    getCurrentVideo={getCurrentVideo}
-                    onStartControlsTimer={startControlsTimer}
-                    onStopControlsTimer={onStopControlsTimer}
-                    onIsScrubberDragged={onIsScrubberDragged}
-                    is_scrubber_dragged={is_scrubber_dragged}
-                    onVttVideoScrubberPreviewUpdate={onVttVideoScrubberPreviewUpdate}
-                    onVttVideoScrubberPreviewImageUpdate={onVttVideoScrubberPreviewImageUpdate}
-                    onScrubberPositionUpdate={(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
-                    scrubber_position={scrubber_position}
-                    onElapsedTimeUpdate={(elapsed_time:number) => setElapsedTime(elapsed_time)}
+                    one_post_media = {one_post_media}
+                    onPlayPauseVideo = {is_video_initialized ? () => playPauseVideo(one_post_media.id) : initializeVideo}
+                    playing_video = {playing_video}
+                    onStepBack = {(step:number) => stepBack(step)}
+                    onStepFurther = {(step:number) => stepFurther(step)}
+                    is_muted = {is_muted}
+                    volume = {volume}
+                    elapsed_time = {elapsed_time}
+                    duration = {duration}
+                    buffered_time = {buffered_time}
+                    onChangeVideoVolume = {(value:number) => changeVideoVolume(value)}
+                    onMuteUnmuteVideo = {muteUnmuteVideo}
+                    onShowVideoSettings = {showVideoSettings}
+                    is_fullscreen = {is_fullscreen}
+                    onToggleVideoFullscreen = {toggleVideoFullscreen}
+                    onSetScrubberWidth = {(scrubber_width:number) => onSetScrubberWidth(scrubber_width)}
+                    getCurrentVideo = {getCurrentVideo}
+                    onStartControlsTimer = {startControlsTimer}
+                    onStopControlsTimer = {onStopControlsTimer}
+                    onIsScrubberDragged = {onIsScrubberDragged}
+                    is_scrubber_dragged = {is_scrubber_dragged}
+                    onVttVideoScrubberPreviewUpdate = {onVttVideoScrubberPreviewUpdate}
+                    onVttVideoScrubberPreviewImageUpdate = {onVttVideoScrubberPreviewImageUpdate}
+                    onScrubberPositionUpdate = {(scrubber_position:number) => onScrubberPositionUpdate(scrubber_position)}
+                    scrubber_position = {scrubber_position}
+                    onElapsedTimeUpdate = {(elapsed_time:number) => setElapsedTime(elapsed_time)}
                 />
             )}
 
             {/* Frame Preview While Dragging The Scrubber (The Fullscreen Player Draws Its Own) */}
             {show_controls && !is_fullscreen && !!video_scrubber_preview && is_scrubber_dragged && (
                 <VideoScrubberPreview
-                    video_scrubber_preview={video_scrubber_preview}
-                    video_scrubber_preview_image={video_scrubber_preview_image}
-                    scrubber_position={scrubber_position}
-                    scrubber_width={scrubber_width}
-                    bottom={BIG_BORDER_RADIUS / 2 + 5}
+                    video_scrubber_preview = {video_scrubber_preview}
+                    video_scrubber_preview_image = {video_scrubber_preview_image}
+                    scrubber_position = {scrubber_position}
+                    scrubber_width = {scrubber_width}
+                    bottom = {BIG_BORDER_RADIUS / 2 + 5}
                 />
             )}
 
@@ -879,13 +912,25 @@ export const DynamicVideo = ({
 function ChoiceRow({ label, is_selected, onPress }:{ label:string, is_selected:boolean, onPress:() => void }) {
     return (
         <Pressable
-            onPress={onPress}
-            accessibilityRole="radio"
-            accessibilityState={{ selected: is_selected, checked: is_selected }}
-            style={({ pressed }) => [styles.choice_row, is_selected ? styles.choice_row_selected : null, pressed ? styles.choice_row_pressed : null]}
+            onPress = {onPress}
+            accessibilityRole = "radio"
+            accessibilityState = {{ selected: is_selected, checked: is_selected }}
+            style = {({ pressed }) => [styles.choice_row, is_selected ? styles.choice_row_selected : null, pressed ? styles.choice_row_pressed : null]}
         >
-            <UIText variant="body_strong" color={is_selected ? "primary_text" : "text"} style={styles.choice_label}>{label}</UIText>
-            {is_selected && <UIIcon name="check" size={14} color="primary" />}
+            <UIText
+                variant = "body_strong"
+                color = {is_selected ? "primary_text" : "text"}
+                style = {styles.choice_label}
+            >
+                {label}
+            </UIText>
+            {is_selected &&
+                <UIIcon
+                    name = "check"
+                    size = {14}
+                    color = "primary"
+                />
+            }
         </Pressable>
     )
 }

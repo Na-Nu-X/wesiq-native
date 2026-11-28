@@ -10,11 +10,11 @@ import { haptics } from "@/lib/haptics"
 import { formatDuration } from "@/lib/format"
 import { cancelBreakAlarm, scheduleBreakAlarm } from "@/lib/breakAlarm"
 
-const SIZE:number = 168
-const STROKE:number = 8
-const RADIUS:number = (SIZE - STROKE) / 2
-const CIRCUMFERENCE:number = 2 * Math.PI * RADIUS
-const ADDED_SECONDS:number = 30
+const SIZE:number = 168 // Defines The Size
+const STROKE:number = 8 // Defines The Stroke
+const RADIUS:number = (SIZE - STROKE) / 2 // Defines The Radius
+const CIRCUMFERENCE:number = 2 * Math.PI * RADIUS // Defines The Circumference
+const ADDED_SECONDS:number = 30 // Defines The Added Seconds
 
 interface CountdownProps {
     seconds:number,
@@ -27,18 +27,18 @@ interface CountdownProps {
 
 export default function Countdown({ seconds, title, skip_label, onSkip, can_add_time = false, has_alarm = false }:CountdownProps) {
     const { t } = useTranslation() // Initializes The Translations
-    const [ends_at, setEndsAt] = useState<number>(() => Date.now() + seconds * 1000)
-    const [total_ms, setTotalMs] = useState<number>(seconds * 1000)
-    const [now, setNow] = useState<number>(() => Date.now())
-    const alarm_id = useRef<string|null>(null)
-    const has_finished = useRef<boolean>(false)
+    const [ends_at, setEndsAt] = useState<number>(() => Date.now() + seconds * 1000) // Stores The Ends At
+    const [total_ms, setTotalMs] = useState<number>(seconds * 1000) // Stores The Total MS
+    const [now, setNow] = useState<number>(() => Date.now()) // Stores The Current Time
+    const alarm_id = useRef<string|null>(null) // Stores The Alarm ID
+    const has_finished = useRef<boolean>(false) // Stores The Has Finished
 
-    const remaining_ms:number = Math.max(0, ends_at - now)
-    const remaining_seconds:number = Math.ceil(remaining_ms / 1000)
+    const remaining_ms:number = Math.max(0, ends_at - now) // Gets The Remaining MS
+    const remaining_seconds:number = Math.ceil(remaining_ms / 1000) // Gets The Remaining Seconds
 
     // Initializes The Tick
     useEffect(() => {
-        const interval:ReturnType<typeof setInterval> = setInterval(() => setNow(Date.now()), 250)
+        const interval:ReturnType<typeof setInterval> = setInterval(() => setNow(Date.now()), 250) // Gets The Interval
         return () => clearInterval(interval)
     }, [])
 
@@ -46,7 +46,7 @@ export default function Countdown({ seconds, title, skip_label, onSkip, can_add_
     useEffect(() => {
         if(!has_alarm) return
 
-        let is_active:boolean = true
+        let is_active:boolean = true // Checks If It Is Active
         scheduleBreakAlarm((ends_at - Date.now()) / 1000).then((id) => {
             if(is_active) alarm_id.current = id
             else cancelBreakAlarm(id)
@@ -71,42 +71,70 @@ export default function Countdown({ seconds, title, skip_label, onSkip, can_add_
     const addTime = ():void => {
         haptics.light()
         has_finished.current = false
-        const next_end:number = Math.max(ends_at, Date.now()) + ADDED_SECONDS * 1000
-        setEndsAt(next_end)
-        setTotalMs((previous:number) => Math.max(previous, next_end - Date.now()))
+        const next_end:number = Math.max(ends_at, Date.now()) + ADDED_SECONDS * 1000 // Gets The Next End
+        setEndsAt(next_end) // Sets The Ends At
+        setTotalMs((previous:number) => Math.max(previous, next_end - Date.now())) // Sets The Total MS
     }
 
-    const progress:number = total_ms > 0 ? remaining_ms / total_ms : 0
-    const is_done:boolean = remaining_ms === 0
-    const ring_color:string = is_done ? colors.success : remaining_seconds <= 10 ? colors.warning : colors.primary
+    const progress:number = total_ms > 0 ? remaining_ms / total_ms : 0 // Gets The Progress
+    const is_done:boolean = remaining_ms === 0 // Checks If It Is Done
+    const ring_color:string = is_done ? colors.success : remaining_seconds <= 10 ? colors.warning : colors.primary // Gets The Ring Color
 
     return (
-        <View style={styles.root}>
-            <Text variant="overline" color="text_muted">{title}</Text>
+        <View style = {styles.root}>
+            <Text variant = "overline" color = "text_muted">{title}</Text>
 
-            <View style={styles.ring} accessible accessibilityRole="timer" accessibilityLabel={is_done ? t("Hotovo") : t("Zostáva {{time}}", { time: formatDuration(remaining_seconds) })}>
-                <Svg width={SIZE} height={SIZE} style={StyleSheet.absoluteFill}>
-                    <Circle cx={SIZE / 2} cy={SIZE / 2} r={RADIUS} stroke={colors.surface_strong} strokeWidth={STROKE} fill="none" />
+            <View
+                style = {styles.ring}
+                accessible
+                accessibilityRole = "timer"
+                accessibilityLabel = {is_done ? t("Hotovo") : t("Zostáva {{time}}", { time: formatDuration(remaining_seconds) })}
+            >
+                <Svg
+                    width = {SIZE}
+                    height = {SIZE}
+                    style = {StyleSheet.absoluteFill}
+                >
                     <Circle
-                        cx={SIZE / 2}
-                        cy={SIZE / 2}
-                        r={RADIUS}
-                        stroke={ring_color}
-                        strokeWidth={STROKE}
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeDasharray={CIRCUMFERENCE}
-                        strokeDashoffset={CIRCUMFERENCE * (1 - progress)}
-                        transform={`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
+                        cx = {SIZE / 2}
+                        cy = {SIZE / 2}
+                        r = {RADIUS}
+                        stroke = {colors.surface_strong}
+                        strokeWidth = {STROKE}
+                        fill = "none"
+                    />
+                    <Circle
+                        cx = {SIZE / 2}
+                        cy = {SIZE / 2}
+                        r = {RADIUS}
+                        stroke = {ring_color}
+                        strokeWidth = {STROKE}
+                        fill = "none"
+                        strokeLinecap = "round"
+                        strokeDasharray = {CIRCUMFERENCE}
+                        strokeDashoffset = {CIRCUMFERENCE * (1 - progress)}
+                        transform = {`rotate(-90 ${SIZE / 2} ${SIZE / 2})`}
                     />
                 </Svg>
 
-                <Text variant="timer" color={is_done ? "success" : "text"}>{formatDuration(remaining_seconds)}</Text>
+                <Text variant = "timer" color = {is_done ? "success" : "text"}>{formatDuration(remaining_seconds)}</Text>
             </View>
 
-            <View style={styles.actions}>
-                {can_add_time && <Button label={`+${ADDED_SECONDS} s`} icon="plus" variant="secondary" onPress={addTime} />}
-                <Button label={skip_label} icon="forward" variant={is_done ? "primary" : "secondary"} onPress={onSkip} />
+            <View style = {styles.actions}>
+                {can_add_time &&
+                    <Button
+                        label = {`+${ADDED_SECONDS} s`}
+                        icon = "plus"
+                        variant = "secondary"
+                        onPress = {addTime}
+                    />
+                }
+                <Button
+                    label = {skip_label}
+                    icon = "forward"
+                    variant = {is_done ? "primary" : "secondary"}
+                    onPress = {onSkip}
+                />
             </View>
         </View>
     )

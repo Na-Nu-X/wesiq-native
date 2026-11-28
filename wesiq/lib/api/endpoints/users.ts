@@ -13,41 +13,45 @@ export interface SearchedUser extends UserListItem {
     followers?:number // Followers Count
 }
 
+// Function For Check If Searched User
 const isSearchedUser = (value:unknown):value is SearchedUser => isRecord(value) && isNumber(value.id) && isString(value.username)
-const usersGuard = envelopeWith({ users: (value:unknown):value is SearchedUser[] => isArrayOf(value, isSearchedUser) })
+const usersGuard = envelopeWith({ users: (value:unknown):value is SearchedUser[] => isArrayOf(value, isSearchedUser) }) // Defines The Users Guard
 
-// Loads The Recently Opened Users (By Username, In Order) Filled Up With The Newest Users To 3
+// Function For Load The Recently Opened Users (By Username, In Order) Filled Up With The Newest Users To 3
 export const loadFirstUsers = (history:string[], signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:SearchedUser[] }>> => {
     return apiPost("load-first-users/", history, { signal, guard: usersGuard })
 }
 
-// Searches By Name, Username Or Friend Code
+// Function For Search By Name, Username Or Friend Code
 export const searchUsers = (searched_text:string, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:SearchedUser[] }>> => {
     return apiPost("search-users/", { searched_text }, { signal, guard: usersGuard })
 }
 
-// Follows / Unfollows / Sends Or Cancels A Follow Request (The Server Decides Which By The Current Relation)
+// Function For Follow / Unfollow / Send Or Cancel A Follow Request (The Server Decides Which By The Current Relation)
 export const toggleFollow = (user_to_follow_id:number):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("toggle-follow/", { user_to_follow_id })
 }
 
-// Removes A Follower From The Logged In User's Followers
+// Function For Remove A Follower From The Logged In User's Followers
 export const removeFollower = (removed_follower_id:number):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("remove-follower/", { removed_follower_id })
 }
 
+// Function For Approve Follow Request
 export const approveFollowRequest = (follow_request_id:number):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("approve-follow-request/", { follow_request_id })
 }
 
+// Function For Reject The Follow Request
 export const rejectFollowRequest = (follow_request_id:number):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("reject-follow-request/", { follow_request_id })
 }
 
-// Loads The Users Who Liked A Post (With The Follow Flags Of The Logged In User)
+// Function For Load The Users Who Liked A Post (With The Follow Flags Of The Logged In User)
 const isLikingUser = (value:unknown):value is UserListItem => isRecord(value) && isNumber(value.id) && isString(value.username)
-const likingUsersGuard = envelopeWith({ users: (value:unknown):value is UserListItem[] => isArrayOf(value, isLikingUser) })
+const likingUsersGuard = envelopeWith({ users: (value:unknown):value is UserListItem[] => isArrayOf(value, isLikingUser) }) // Defines The Liking Users Guard
 
+// Function For Get The Users Who Liked Post
 export const getUsersWhoLikedPost = (post_id:PostId, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { users:UserListItem[] }>> => {
     return apiPost("get-users-who-liked-post/", { post_id }, { signal, guard: likingUsersGuard })
 }

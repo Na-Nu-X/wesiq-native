@@ -42,51 +42,60 @@ export default function Stepper({ value, onChange, min = 0, max = 999, step = 1,
 
         const parsed:number = parseInt(draft.replace(/[^0-9]/g, ""), 10) // Parses The Number
         onChange(clamp(Number.isNaN(parsed) ? value : parsed, min, max))
-        setDraft(null)
+        setDraft(null) // Sets The Draft
     }
 
     return (
         <View
-            style={styles.container}
-            accessible={false}
+            style = {styles.container}
+            accessible = {false}
         >
             <IconButton
-                icon="minus"
-                accessibility_label={`${t("Znížiť")}: ${accessibility_label}`}
-                onPress={() => changeBy(-step)}
-                is_disabled={value <= min}
-                variant="soft"
-                size={is_compact ? 32 : 36}
+                icon = "minus"
+                accessibility_label = {`${t("Znížiť")}: ${accessibility_label}`}
+                onPress = {() => changeBy(-step)}
+                is_disabled = {value <= min}
+                variant = "soft"
+                size = {is_compact ? 32 : 36}
             />
 
-            <View style={[styles.value_container, is_compact ? styles.value_container_compact : null]}>
+            <View style = {[styles.value_container, is_compact ? styles.value_container_compact : null]}>
                 <TextInput
-                    value={draft ?? (formatValue ? formatValue(value) : String(value))}
-                    onFocus={() => setDraft(String(value))}
-                    onChangeText={(text:string) => setDraft(text.replace(/[^0-9]/g, "").slice(0, String(max).length))}
-                    onBlur={commitDraft}
-                    onSubmitEditing={commitDraft}
-                    keyboardType="number-pad"
-                    returnKeyType="done"
+                    value = {draft ?? (formatValue ? formatValue(value) : String(value))}
+                    onFocus = {() => setDraft(String(value))}
+                    onChangeText = {(text:string) => setDraft(text.replace(/[^0-9]/g, "").slice(0, String(max).length))}
+                    onBlur = {commitDraft}
+                    onSubmitEditing = {commitDraft}
+                    keyboardType = "number-pad"
+                    returnKeyType = "done"
                     selectTextOnFocus
-                    keyboardAppearance="dark"
-                    selectionColor={colors.primary}
-                    accessibilityLabel={accessibility_label}
-                    accessibilityValue={{ min, max, now: value }}
-                    maxFontSizeMultiplier={1.3}
-                    style={styles.input}
+                    keyboardAppearance = "dark"
+                    selectionColor = {colors.primary}
+                    accessibilityLabel = {accessibility_label}
+                    accessibilityValue = {{ min, max, now: value }}
+                    maxFontSizeMultiplier = {1.3}
+                    style = {styles.input}
                 />
 
-                {!!label && <Text variant="caption" color="text_muted" align="center" numberOfLines={1}>{label}</Text>}
+                {!!label &&
+                    <Text
+                        variant = "caption"
+                        color = "text_muted"
+                        align = "center"
+                        numberOfLines = {1}
+                    >
+                        {label}
+                    </Text>
+                }
             </View>
 
             <IconButton
-                icon="plus"
-                accessibility_label={`${t("Zvýšiť")}: ${accessibility_label}`}
-                onPress={() => changeBy(step)}
-                is_disabled={value >= max}
-                variant="soft"
-                size={is_compact ? 32 : 36}
+                icon = "plus"
+                accessibility_label = {`${t("Zvýšiť")}: ${accessibility_label}`}
+                onPress = {() => changeBy(step)}
+                is_disabled = {value >= max}
+                variant = "soft"
+                size = {is_compact ? 32 : 36}
             />
         </View>
     )

@@ -51,11 +51,11 @@ export default function Sheet({
     const is_wide:boolean = width >= WIDE_BREAKPOINT // Stores The Information If The Dialog Layout Is Used (Tablets, Desktop Web)
 
     // Keeps The Modal Mounted Until The Close Animation Finishes (State Is Adjusted During Render, Not In An Effect)
-    const [is_mounted, setIsMounted] = useState<boolean>(visible)
-    const [previous_visible, setPreviousVisible] = useState<boolean>(visible)
+    const [is_mounted, setIsMounted] = useState<boolean>(visible) // Stores If It Is Mounted
+    const [previous_visible, setPreviousVisible] = useState<boolean>(visible) // Stores The Previous Visible
 
     if(visible !== previous_visible) {
-        setPreviousVisible(visible)
+        setPreviousVisible(visible) // Sets The Previous Visible
         if(visible) setIsMounted(true)
     }
 
@@ -79,13 +79,13 @@ export default function Sheet({
 
             // Measures The Input Inside The Scroll Content (Fails For Inputs Outside Of It, E.g. In The Footer)
             input.measureLayout(content, (_x:number, y:number, _width:number, input_height:number) => {
-                const visible_top:number = scroll_offset.current
-                const visible_bottom:number = visible_top + viewport_height.current
-                const margin:number = spacing.lg
+                const visible_top:number = scroll_offset.current // Gets The Visible Top
+                const visible_bottom:number = visible_top + viewport_height.current // Gets The Visible Bottom
+                const margin:number = spacing.lg // Gets The Margin
 
                 const is_too_tall:boolean = input_height + margin * 2 > viewport_height.current // Stores The Information If The View Doesn't Fit Above The Keyboard
 
-                let scroll_target:number|null = null
+                let scroll_target:number|null = null // Gets The Scroll Target
 
                 if(target && is_too_tall) scroll_target = y - margin // A Tall Target (Input With Suggestions) Is Aligned To Its Top So The Input Stays Visible
                 else if(y + input_height + margin > visible_bottom) scroll_target = y + input_height + margin - viewport_height.current // Below The Visible Area (Shows The Bottom, Where The Caret Is While Typing)
@@ -107,13 +107,14 @@ export default function Sheet({
     useEffect(() => {
         if(!is_mounted) return
 
-        const show_event = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow"
-        const hide_event = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide"
+        const show_event = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow" // Gets The Show Event
+        const hide_event = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide" // Gets The Hide Event
+        // Gets The Show Subscription
         const show_subscription = Keyboard.addListener(show_event, () => {
-            setIsKeyboardOpen(true)
+            setIsKeyboardOpen(true) // Sets The Keyboard Open State
             revealFocusedInput()
         })
-        const hide_subscription = Keyboard.addListener(hide_event, () => setIsKeyboardOpen(false))
+        const hide_subscription = Keyboard.addListener(hide_event, () => setIsKeyboardOpen(false)) // Gets The Hide Subscription
 
         return () => {
             show_subscription.remove()
@@ -161,10 +162,12 @@ export default function Sheet({
         },
     })
 
+    // Gets The Backdrop Style
     const backdrop_style = useAnimatedStyle(() => ({
         opacity: progress.get(),
     }))
 
+    // Gets The Panel Style
     const panel_style = useAnimatedStyle(() => {
         if(is_wide) {
             return {
@@ -182,60 +185,65 @@ export default function Sheet({
 
     const max_height:number = is_wide ? Math.min(height * 0.85, 760) : height * 0.9 // Gets The Max Height
 
+    // Gets The Content
     const content:ReactNode = is_scrollable ? (
         <ScrollView
-            ref={scroll_ref}
-            style={size === "large" ? styles.flex : styles.scroll} // Large Sheets Keep The Footer Pinned To The Bottom
-            scrollEventThrottle={32}
+            ref = {scroll_ref}
+            style = {size === "large" ? styles.flex : styles.scroll} // Large Sheets Keep The Footer Pinned To The Bottom
+            scrollEventThrottle = {32}
 
-            onScroll={(event:NativeSyntheticEvent<NativeScrollEvent>) => {
+            onScroll = {(event:NativeSyntheticEvent<NativeScrollEvent>) => {
                 scroll_offset.current = event.nativeEvent.contentOffset.y
             }}
 
-            onLayout={(event:LayoutChangeEvent) => {
+            onLayout = {(event:LayoutChangeEvent) => {
                 viewport_height.current = event.nativeEvent.layout.height
                 if(is_keyboard_open) revealFocusedInput() // The Sheet Shrank Above The Keyboard
             }}
 
-            contentContainerStyle={[styles.scroll_content, size === "large" ? styles.scroll_content_large : null,!footer ? { paddingBottom: spacing.xl + (is_wide ? 0 : insets.bottom) } : null]}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            bounces={false}
+            contentContainerStyle = {[styles.scroll_content, size === "large" ? styles.scroll_content_large : null,!footer ? { paddingBottom: spacing.xl + (is_wide ? 0 : insets.bottom) } : null]}
+            keyboardShouldPersistTaps = "handled"
+            showsVerticalScrollIndicator = {false}
+            bounces = {false}
         >
-            <SheetScrollContext.Provider value={revealFocusedInput}>
+            <SheetScrollContext.Provider value = {revealFocusedInput}>
                 {children}
             </SheetScrollContext.Provider>
         </ScrollView>
     ) : (
-        <View style={[styles.static_content, !footer && !is_wide ? { paddingBottom: insets.bottom } : null]}>{children}</View>
+        <View style = {[styles.static_content, !footer && !is_wide ? { paddingBottom: insets.bottom } : null]}>{children}</View>
     )
 
     return (
         <Modal
             visible
             transparent
-            animationType="none"
+            animationType = "none"
             statusBarTranslucent
             navigationBarTranslucent
-            supportedOrientations={supported_orientations}
-            onRequestClose={requestClose} // Android Back Button
+            supportedOrientations = {supported_orientations}
+            onRequestClose = {requestClose} // Android Back Button
         >
-            <GestureHandlerRootView style={styles.flex}>
+            <GestureHandlerRootView style = {styles.flex}>
                 <ListContextReset>
-                <KeyboardAvoidingView style={styles.flex} behavior="padding" enabled={Platform.OS !== "web"}>
-                    <View style={[styles.flex, is_wide ? styles.center : [styles.bottom, { paddingTop: insets.top + spacing.sm }]]}>
-                        <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdrop_style]}>
+                <KeyboardAvoidingView
+                    style = {styles.flex}
+                    behavior = "padding"
+                    enabled = {Platform.OS !== "web"}
+                >
+                    <View style = {[styles.flex, is_wide ? styles.center : [styles.bottom, { paddingTop: insets.top + spacing.sm }]]}>
+                        <Animated.View style = {[StyleSheet.absoluteFill, styles.backdrop, backdrop_style]}>
                             <Pressable
-                                style={StyleSheet.absoluteFill}
-                                onPress={requestClose}
-                                accessibilityRole="button"
-                                accessibilityLabel={t("Zavrieť")}
+                                style = {StyleSheet.absoluteFill}
+                                onPress = {requestClose}
+                                accessibilityRole = "button"
+                                accessibilityLabel = {t("Zavrieť")}
                             />
                         </Animated.View>
 
                         <Animated.View
                             accessibilityViewIsModal
-                            style={[
+                            style = {[
                                 styles.panel,
                                 is_wide ? styles.panel_wide : styles.panel_sheet,
                                 { maxHeight: max_height },
@@ -243,25 +251,41 @@ export default function Sheet({
                                 panel_style,
                             ]}
                         >
-                            <GestureDetector gesture={pan_gesture}>
-                                <View style={styles.header_area}>
-                                    {!is_wide && <View style={styles.handle} />}
+                            <GestureDetector gesture = {pan_gesture}>
+                                <View style = {styles.header_area}>
+                                    {!is_wide &&
+                                        <View style = {styles.handle} />
+                                    }
 
-                                    <View style={styles.header}>
-                                        <View style={styles.header_text}>
-                                            <Text variant="heading" accessibilityRole="header" numberOfLines={2}>{title}</Text>
-                                            {!!subtitle && <Text variant="callout" color="text_secondary" numberOfLines={2}>{subtitle}</Text>}
+                                    <View style = {styles.header}>
+                                        <View style = {styles.header_text}>
+                                            <Text
+                                                variant = "heading"
+                                                accessibilityRole = "header"
+                                                numberOfLines = {2}
+                                            >
+                                                {title}
+                                            </Text>
+                                            {!!subtitle &&
+                                                <Text
+                                                    variant = "callout"
+                                                    color = "text_secondary"
+                                                    numberOfLines = {2}
+                                                >
+                                                    {subtitle}
+                                                </Text>
+                                            }
                                         </View>
 
                                         {header_right}
 
                                         <IconButton
-                                            icon="xmark"
-                                            accessibility_label={t("Zavrieť")}
-                                            onPress={requestClose}
-                                            is_disabled={!is_dismissable}
-                                            variant="soft"
-                                            size={34}
+                                            icon = "xmark"
+                                            accessibility_label = {t("Zavrieť")}
+                                            onPress = {requestClose}
+                                            is_disabled = {!is_dismissable}
+                                            variant = "soft"
+                                            size = {34}
                                         />
                                     </View>
                                 </View>
@@ -270,7 +294,7 @@ export default function Sheet({
                             {content}
 
                             {!!footer && (
-                                <View style={[styles.footer, { paddingBottom: is_wide || is_keyboard_open ? spacing.md : Math.max(insets.bottom, spacing.lg) }]}>
+                                <View style = {[styles.footer, { paddingBottom: is_wide || is_keyboard_open ? spacing.md : Math.max(insets.bottom, spacing.lg) }]}>
                                     {footer}
                                 </View>
                             )}

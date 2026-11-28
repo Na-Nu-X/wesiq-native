@@ -21,6 +21,7 @@ export interface IconButtonProps {
     style?:StyleProp<ViewStyle>
 }
 
+// Defines The Backgrounds
 const BACKGROUNDS:Record<IconButtonVariant, { idle:string, pressed:string, icon:ColorToken }> = {
     plain: { idle: colors.transparent, pressed: colors.primary_soft, icon: "text" },
     soft: { idle: colors.surface_raised, pressed: colors.surface_pressed, icon: "text" },
@@ -45,18 +46,18 @@ export default function IconButton({
 
     return (
         <Pressable
-            onPress={() => {
+            onPress = {() => {
                 haptics.light() // Plays The Haptic Feedback
                 onPress()
             }}
 
-            disabled={is_disabled}
-            hitSlop={touch_slop}
-            accessibilityRole="button"
-            accessibilityLabel={badge_count ? `${accessibility_label} (${badge_count})` : accessibility_label}
-            accessibilityState={{ disabled: is_disabled }}
+            disabled = {is_disabled}
+            hitSlop = {touch_slop}
+            accessibilityRole = "button"
+            accessibilityLabel = {badge_count ? `${accessibility_label} (${badge_count})` : accessibility_label}
+            accessibilityState = {{ disabled: is_disabled }}
 
-            style={({ pressed }:PressableStateCallbackType) => [
+            style = {({ pressed }:PressableStateCallbackType) => [
                 styles.button,
                 {
                     width: size,
@@ -67,11 +68,20 @@ export default function IconButton({
                 style,
             ]}
         >
-            <Icon name={icon} size={Math.round(size * 0.45)} color={icon_color ?? background.icon} is_solid={is_solid_icon} />
+            <Icon
+                name = {icon}
+                size = {Math.round(size * 0.45)}
+                color = {icon_color ?? background.icon}
+                is_solid = {is_solid_icon}
+            />
 
             {badge_count !== undefined && badge_count > 0 && (
-                <View style={styles.badge}>
-                    <Text variant="overline" color="white" style={styles.badge_text}>
+                <View style = {styles.badge}>
+                    <Text
+                        variant = "overline"
+                        color = "white"
+                        style = {styles.badge_text}
+                    >
                         {badge_count > 99 ? "99+" : String(badge_count)}
                     </Text>
                 </View>

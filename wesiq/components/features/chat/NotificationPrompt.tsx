@@ -16,7 +16,7 @@ export default function NotificationPrompt() {
     // Initializes The Check (Shown Only While The Permission Can Still Be Asked And The Prompt Wasn't Dismissed)
     useEffect(() => {
         if(!are_notifications_supported) return
-        let is_active:boolean = true
+        let is_active:boolean = true // Checks If It Is Active
 
         Promise.all([getNotificationPermission(), getStoredString("notifications_prompt_dismissed")]).then(([permission, dismissed]) => {
             if(is_active) setIsVisible(permission === "undetermined" && dismissed === null)
@@ -27,13 +27,13 @@ export default function NotificationPrompt() {
 
     // Function For Hide The Prompt For Good
     const dismiss = ():void => {
-        setIsVisible(false)
-        setStoredString("notifications_prompt_dismissed", "1")
+        setIsVisible(false) // Sets The Visible State
+        setStoredString("notifications_prompt_dismissed", "1") // Sets The Stored String
     }
 
     // Function For Ask For The Permission
     const enable = async ():Promise<void> => {
-        const is_granted:boolean = await requestNotificationPermission("messages")
+        const is_granted:boolean = await requestNotificationPermission("messages") // Checks If It Is Granted
         if(is_granted) haptics.success()
         dismiss() // The System Dialog Can't Be Shown Twice, So The Prompt Goes Away Either Way
     }
@@ -41,19 +41,32 @@ export default function NotificationPrompt() {
     if(!is_visible) return null
 
     return (
-        <Card style={styles.card}>
-            <View style={styles.row}>
-                <View style={styles.icon}><Icon name="bell" size={18} color="primary" /></View>
+        <Card style = {styles.card}>
+            <View style = {styles.row}>
+                <View style = {styles.icon}><Icon
+                    name = "bell"
+                    size = {18}
+                    color = "primary"
+                /></View>
 
-                <View style={styles.text}>
-                    <Text variant="body_strong">{t("Nezmeškajte žiadnu správu")}</Text>
-                    <Text variant="callout" color="text_secondary">{t("Zapnite si upozornenia a dáme vám vedieť, keď vám niekto napíše.")}</Text>
+                <View style = {styles.text}>
+                    <Text variant = "body_strong">{t("Nezmeškajte žiadnu správu")}</Text>
+                    <Text variant = "callout" color = "text_secondary">{t("Zapnite si upozornenia a dáme vám vedieť, keď vám niekto napíše.")}</Text>
                 </View>
 
-                <IconButton icon="xmark" accessibility_label={t("Zavrieť")} onPress={dismiss} size={32} />
+                <IconButton
+                    icon = "xmark"
+                    accessibility_label = {t("Zavrieť")}
+                    onPress = {dismiss}
+                    size = {32}
+                />
             </View>
 
-            <Button label={t("Zapnúť upozornenia")} icon="bell" onPress={enable} />
+            <Button
+                label = {t("Zapnúť upozornenia")}
+                icon = "bell"
+                onPress = {enable}
+            />
         </Card>
     )
 }

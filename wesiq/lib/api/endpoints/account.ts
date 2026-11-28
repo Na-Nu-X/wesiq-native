@@ -19,11 +19,12 @@ export interface AccountChanges {
     delete_profile_picture:boolean
 }
 
+// Function For Convert To Flag
 const toFlag = (value:boolean):string => value ? "True" : "False"
 
 // Function For Save Account Changes (The Server Applies Profile Details At Most Once Every 7 Days)
 export const saveAccount = async (changes:AccountChanges):Promise<ApiResult<ApiEnvelope>> => {
-    const form_data:FormData = new FormData()
+    const form_data:FormData = new FormData() // Gets The Form Data
 
     form_data.append("delete_account", toFlag(false))
     form_data.append("delete_profile_picture", toFlag(changes.delete_profile_picture))
@@ -44,7 +45,7 @@ export const saveAccount = async (changes:AccountChanges):Promise<ApiResult<ApiE
 
 // Function For Request Account Deletion (The Server Suspends The Account, Logging In Within 30 Days Restores It)
 export const requestAccountDeletion = ():Promise<ApiResult<ApiEnvelope>> => {
-    const form_data:FormData = new FormData()
+    const form_data:FormData = new FormData() // Gets The Form Data
     form_data.append("delete_account", toFlag(true))
 
     return apiRequest("edit-account/", { method: "POST", form_data })

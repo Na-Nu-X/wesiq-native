@@ -8,7 +8,11 @@ export default function SignInRequired() {
 
     return (
         <Screen>
-            <EmptyState icon="lock" title={t("Prihláste sa")} message={t("Tréningové plány sú dostupné po prihlásení.")} />
+            <EmptyState
+                icon = "lock"
+                title = {t("Prihláste sa")}
+                message = {t("Tréningové plány sú dostupné po prihlásení.")}
+            />
         </Screen>
     )
 }

@@ -29,16 +29,20 @@ function HighlightedText({ text }:{ text:string }) {
     const parts:string[] = text.split(HANDLE_PATTERN) // Odd Indexes Are The Handles
 
     return (
-        <Text variant="caption" color="text_secondary" style={styles.centered}>
+        <Text
+            variant = "caption"
+            color = "text_secondary"
+            style = {styles.centered}
+        >
             {parts.map((part:string, index:number) => index % 2 === 1 ? (
                 <Text
-                    key={index}
-                    variant="caption"
-                    color="text"
-                    onPress={() => openProfile(part)}
-                    accessibilityRole="link"
-                    accessibilityHint={t("Zobraziť profil")}
-                    style={styles.handle}
+                    key = {index}
+                    variant = "caption"
+                    color = "text"
+                    onPress = {() => openProfile(part)}
+                    accessibilityRole = "link"
+                    accessibilityHint = {t("Zobraziť profil")}
+                    style = {styles.handle}
                 >
                     {part}
                 </Text>
@@ -49,15 +53,23 @@ function HighlightedText({ text }:{ text:string }) {
 
 function SystemMessage({ text, formatted_time }:SystemMessageProps) {
     return (
-        <View style={styles.row}>
-            <View style={styles.line} />
+        <View style = {styles.row}>
+            <View style = {styles.line} />
 
-            <View style={styles.pill}>
-                <HighlightedText text={text} />
-                {!!formatted_time && <Text variant="caption" color="text_muted" style={styles.time}>{formatted_time}</Text>}
+            <View style = {styles.pill}>
+                <HighlightedText text = {text} />
+                {!!formatted_time &&
+                    <Text
+                        variant = "caption"
+                        color = "text_muted"
+                        style = {styles.time}
+                    >
+                        {formatted_time}
+                    </Text>
+                }
             </View>
 
-            <View style={styles.line} />
+            <View style = {styles.line} />
         </View>
     )
 }
@@ -73,14 +85,28 @@ export const GroupIntro = memo(function GroupIntro({ room, text, formatted_time 
     const { t } = useTranslation() // Initializes The Translations
 
     return (
-        <View style={styles.intro}>
-            <GroupAvatar avatar={room.avatar} name={room.name} size={76} />
+        <View style = {styles.intro}>
+            <GroupAvatar
+                avatar = {room.avatar}
+                name = {room.name}
+                size = {76}
+            />
 
-            <View style={styles.intro_text}>
-                <Text variant="heading" numberOfLines={2} style={styles.centered}>{room.name ?? t("Skupina")}</Text>
-                <HighlightedText text={text} />
+            <View style = {styles.intro_text}>
+                <Text
+                    variant = "heading"
+                    numberOfLines = {2}
+                    style = {styles.centered}
+                >
+                    {room.name ?? t("Skupina")}
+                </Text>
+                <HighlightedText text = {text} />
 
-                <Text variant="caption" color="text_muted" style={styles.centered}>
+                <Text
+                    variant = "caption"
+                    color = "text_muted"
+                    style = {styles.centered}
+                >
                     {formatted_time ? `${t("Členovia: {{count}}", { count: room.members_count })} · ${formatted_time}` : t("Členovia: {{count}}", { count: room.members_count })}
                 </Text>
             </View>

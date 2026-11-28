@@ -33,46 +33,46 @@ export default function ActivityScreen() {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
-    const is_logged_in:boolean = Boolean(logged_in_user)
+    const is_logged_in:boolean = Boolean(logged_in_user) // Checks If It Is Logged In
 
-    const timer = useActivityTimer()
-    const xp_toast = useXpToast()
-    const [is_saving, setIsSaving] = useState<boolean>(false)
-    const [now, setNow] = useState<number>(() => Date.now())
+    const timer = useActivityTimer() // Gets The Timer
+    const xp_toast = useXpToast() // Gets The XP Toast
+    const [is_saving, setIsSaving] = useState<boolean>(false) // Stores If It Is Saving
+    const [now, setNow] = useState<number>(() => Date.now()) // Stores The Current Time
 
     // ---------- Data ----------
 
-    const plans_query = useMyPlans(is_logged_in)
-    const stats_query = useApiQuery("activity_stats", (signal:AbortSignal) => getActivityStats(signal), { is_enabled: is_logged_in })
-    const history_query = useApiQuery("activity_history", (signal:AbortSignal) => getActivityHistory(signal), { is_enabled: is_logged_in })
-    const boost_query = useApiQuery("xp_boost", (signal:AbortSignal) => getXpBoost(signal), { is_enabled: is_logged_in })
-    const challenges_query = useApiQuery("official_tasks", (signal:AbortSignal) => getOfficialTasks(signal), { is_enabled: is_logged_in })
+    const plans_query = useMyPlans(is_logged_in) // Gets The Plans Query
+    const stats_query = useApiQuery("activity_stats", (signal:AbortSignal) => getActivityStats(signal), { is_enabled: is_logged_in }) // Gets The Stats Query
+    const history_query = useApiQuery("activity_history", (signal:AbortSignal) => getActivityHistory(signal), { is_enabled: is_logged_in }) // Gets The History Query
+    const boost_query = useApiQuery("xp_boost", (signal:AbortSignal) => getXpBoost(signal), { is_enabled: is_logged_in }) // Gets The Boost Query
+    const challenges_query = useApiQuery("official_tasks", (signal:AbortSignal) => getOfficialTasks(signal), { is_enabled: is_logged_in }) // Gets The Challenges Query
 
-    const plans:PlanSummary<TrainingPlanExercise>[] = plans_query.plans
-    const [selected_key, setSelectedKey] = useState<string|null>(null)
+    const plans:PlanSummary<TrainingPlanExercise>[] = plans_query.plans // Gets The Plans
+    const [selected_key, setSelectedKey] = useState<string|null>(null) // Stores The Selected Key
     const today:number = new Date().getDay() // 0 = Sunday, Like The Server
-    const selected_plan:PlanSummary<TrainingPlanExercise>|undefined = plans.find((plan) => plan.key === selected_key) ?? plans.find((plan) => plan.day === today) ?? plans[0]
-    const session = useWorkoutSession(selected_plan?.rows ?? [])
+    const selected_plan:PlanSummary<TrainingPlanExercise>|undefined = plans.find((plan) => plan.key === selected_key) ?? plans.find((plan) => plan.day === today) ?? plans[0] // Gets The Selected Plan
+    const session = useWorkoutSession(selected_plan?.rows ?? []) // Gets The Session
 
-    const boost_expiration:string|null = boost_query.state.data?.xp_boost_expiration_time ?? null
-    const boost_expires_at:number|null = boost_expiration ? new Date(boost_expiration).getTime() : null
-    const gained_xp:number = calculateGainedXp(timer.elapsed_ms, boost_expiration)
-    const tasks:OfficialTask[] = challenges_query.state.data?.official_tasks ?? []
+    const boost_expiration:string|null = boost_query.state.data?.xp_boost_expiration_time ?? null // Gets The Boost Expiration
+    const boost_expires_at:number|null = boost_expiration ? new Date(boost_expiration).getTime() : null // Gets The Boost Expires At
+    const gained_xp:number = calculateGainedXp(timer.elapsed_ms, boost_expiration) // Gets The Gained XP
+    const tasks:OfficialTask[] = challenges_query.state.data?.official_tasks ?? [] // Gets The Tasks
 
-    const live_input:LiveProgressInput|null = timer.is_started ? { elapsed_seconds: timer.elapsed_ms / 1000, gained_xp, average_seconds: stats_query.state.data?.activity.average_activity_time ?? 0 } : null
+    const live_input:LiveProgressInput|null = timer.is_started ? { elapsed_seconds: timer.elapsed_ms / 1000, gained_xp, average_seconds: stats_query.state.data?.activity.average_activity_time ?? 0 } : null // Gets The Live Input
 
     // Initializes The Clock For The Boost Countdown
     useEffect(() => {
         if(boost_expires_at === null || boost_expires_at <= Date.now()) return
 
-        const interval:ReturnType<typeof setInterval> = setInterval(() => setNow(Date.now()), 1000)
+        const interval:ReturnType<typeof setInterval> = setInterval(() => setNow(Date.now()), 1000) // Gets The Interval
         return () => clearInterval(interval)
     }, [boost_expires_at])
 
     // ---------- Daily Challenges ----------
 
     const requested_challenges = useRef<Set<string>>(new Set()) // Prevents Completing One Challenge Twice
-    const tasks_reference = useRef<OfficialTask[]>(tasks)
+    const tasks_reference = useRef<OfficialTask[]>(tasks) // Stores The Tasks Reference
 
     // Initializes The Latest Tasks Reference
     useEffect(() => {
@@ -81,7 +81,7 @@ export default function ActivityScreen() {
 
     // Function For Complete A Challenge On The Server
     const completeChallenge = async (data:string):Promise<void> => {
-        const task:OfficialTask|undefined = tasks_reference.current.find((one_task:OfficialTask) => one_task.data === data)
+        const task:OfficialTask|undefined = tasks_reference.current.find((one_task:OfficialTask) => one_task.data === data) // Gets The Task
         if(!task || task.is_completed || requested_challenges.current.has(data)) return
 
         requested_challenges.current.add(data)
@@ -95,7 +95,7 @@ export default function ActivityScreen() {
         const result = response.data.task // Gets The Result
         if(!result.is_completed) requested_challenges.current.delete(data) // Partial Progress (E.g. 1 Of 2 Activities)
 
-        const updated:OfficialTask[] = tasks_reference.current.map((one_task:OfficialTask) => one_task.data === data ? { ...one_task, progress_percentage: result.progress_percentage, is_completed: result.is_completed } : one_task)
+        const updated:OfficialTask[] = tasks_reference.current.map((one_task:OfficialTask) => one_task.data === data ? { ...one_task, progress_percentage: result.progress_percentage, is_completed: result.is_completed } : one_task) // Gets The Updated
         tasks_reference.current = updated
         challenges_query.setData((previous) => previous ? { ...previous, official_tasks: updated } : previous)
 
@@ -104,7 +104,7 @@ export default function ActivityScreen() {
         xp_toast.show(result.gained_xp, getChallengeRule(data).label)
 
         // Completes "All Challenges" When Every Other One Is Done
-        const others:OfficialTask[] = updated.filter((one_task:OfficialTask) => one_task.data !== "complete_all_official_tasks")
+        const others:OfficialTask[] = updated.filter((one_task:OfficialTask) => one_task.data !== "complete_all_official_tasks") // Gets The Others
         if(others.length > 0 && others.every((one_task:OfficialTask) => one_task.is_completed)) completeChallenge("complete_all_official_tasks")
     }
 
@@ -113,7 +113,7 @@ export default function ActivityScreen() {
         if(!live_input || !is_logged_in) return
 
         tasks_reference.current.forEach((task:OfficialTask) => {
-            const live_progress = getChallengeRule(task.data).live_progress
+            const live_progress = getChallengeRule(task.data).live_progress // Gets The Live Progress
             if(!task.is_completed && live_progress && live_progress(live_input) >= 100) completeChallenge(task.data)
         })
     })
@@ -135,12 +135,13 @@ export default function ActivityScreen() {
                     return
                 }
 
-                setNow(Date.now())
+                setNow(Date.now()) // Sets The Now
                 boost_query.setData((previous) => previous ? { ...previous, xp_boost_expiration_time: response.data.xp_boost_expiration_time, is_xp_boost_active: true, is_xp_boost_available: false } : previous)
             })
         }
     }
 
+    // Function For Toggle The Timer
     const toggleTimer = ():void => {
         haptics.light()
         if(timer.is_running) timer.pause()
@@ -149,12 +150,13 @@ export default function ActivityScreen() {
 
     // Function For Stop And Save The Activity
     const finishActivity = async ():Promise<void> => {
-        const was_running:boolean = timer.is_running
+        const was_running:boolean = timer.is_running // Checks If It Was Running
         timer.pause() // Keeps The Time If Saving Fails
 
-        const elapsed_ms:number = timer.elapsed_ms > 0 ? timer.elapsed_ms : 0
-        const final_xp:number = calculateGainedXp(elapsed_ms, boost_expiration)
+        const elapsed_ms:number = timer.elapsed_ms > 0 ? timer.elapsed_ms : 0 // Gets The Elapsed MS
+        const final_xp:number = calculateGainedXp(elapsed_ms, boost_expiration) // Gets The Final XP
 
+        // Checks If It Is Confirmed
         const is_confirmed:boolean = await confirmAction({
             title: t("Ukončiť aktivitu?"),
             message: is_logged_in ? t("Čas: {{time}} · {{xp}} XP", { time: getMinimalistFormattedTime(Math.round(elapsed_ms / 1000)), xp: final_xp }) : t("Bez prihlásenia sa aktivita neuloží."),
@@ -166,9 +168,10 @@ export default function ActivityScreen() {
             return
         }
 
-        const is_plan_session:boolean = session.state.step !== "start"
-        const is_plan_finished:boolean = session.state.step === "finish"
+        const is_plan_session:boolean = session.state.step !== "start" // Checks If It Is Plan Session
+        const is_plan_finished:boolean = session.state.step === "finish" // Checks If It Is Plan Finished
 
+        // Function For Reset
         const reset = ():void => {
             timer.reset()
             session.reset()
@@ -186,8 +189,9 @@ export default function ActivityScreen() {
             return
         }
 
-        setIsSaving(true)
+        setIsSaving(true) // Sets The Saving State
 
+        // Gets The Response
         const response = await recordActivity({
             elapsed_time: Math.round(elapsed_ms),
             gained_xp: final_xp,
@@ -196,7 +200,7 @@ export default function ActivityScreen() {
             training_plan_summary: is_plan_session && selected_plan ? buildSessionSummary(session.state.durations, selected_plan.rows, boost_expiration) : null,
         })
 
-        setIsSaving(false)
+        setIsSaving(false) // Sets The Saving State
 
         if(!response.ok) {
             showAlert(t("Aktivita sa neuložila"), `${response.error.message}\n${t("Čas zostal zachovaný, skúste to znova.")}`)
@@ -220,6 +224,7 @@ export default function ActivityScreen() {
         action()
     }
 
+    // Function For Refresh
     const refresh = ():void => {
         plans_query.refetch()
         stats_query.refetch()
@@ -228,79 +233,150 @@ export default function ActivityScreen() {
         challenges_query.refetch()
     }
 
-    const is_refreshing:boolean = stats_query.is_refreshing || history_query.is_refreshing || challenges_query.is_refreshing
+    const is_refreshing:boolean = stats_query.is_refreshing || history_query.is_refreshing || challenges_query.is_refreshing // Checks If It Is Refreshing
 
     return (
-        <Screen is_scrollable={false} is_padded={false} header={<Header title={t("Aktivita")} subtitle={t("Trénujte, plňte výzvy a zbierajte XP")} is_large />}>
+        <Screen
+            is_scrollable = {false}
+            is_padded = {false}
+            header = {<Header
+                title = {t("Aktivita")}
+                subtitle = {t("Trénujte, plňte výzvy a zbierajte XP")}
+                is_large
+            />}
+        >
             <ActivityScroll
-                contentContainerStyle={styles.content}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={false}
-                refreshControl={is_logged_in ? <ThemedRefreshControl refreshing={is_refreshing} onRefresh={refresh} /> : undefined}
+                contentContainerStyle = {styles.content}
+                keyboardShouldPersistTaps = "handled"
+                showsVerticalScrollIndicator = {false}
+                refreshControl = {is_logged_in ? <ThemedRefreshControl refreshing = {is_refreshing} onRefresh = {refresh} /> : undefined}
             >
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-                    <Chip label={t("Nový plán")} icon="plus" onPress={() => router.push("/activity/new")} />
-                    <Chip label={t("Moje plány")} icon="pen" onPress={() => router.push("/activity/edit")} />
-                    <Chip label={t("Hotové plány")} icon="copy" onPress={() => router.push("/activity/copy")} />
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator = {false}
+                    contentContainerStyle = {styles.chips}
+                >
+                    <Chip
+                        label = {t("Nový plán")}
+                        icon = "plus"
+                        onPress = {() => router.push("/activity/new")}
+                    />
+                    <Chip
+                        label = {t("Moje plány")}
+                        icon = "pen"
+                        onPress = {() => router.push("/activity/edit")}
+                    />
+                    <Chip
+                        label = {t("Hotové plány")}
+                        icon = "copy"
+                        onPress = {() => router.push("/activity/copy")}
+                    />
                 </ScrollView>
 
                 {!is_logged_in && (
-                    <Card variant="highlighted" padding="md" style={styles.sign_in}>
-                        <Icon name="circle-info" size={18} color="primary" />
-                        <Text variant="callout" style={styles.flex}>{t("Prihláste sa, aby sa vaše aktivity ukladali a mohli ste plniť výzvy.")}</Text>
-                        <Button label={t("Prihlásiť sa")} size="sm" onPress={() => auth_sheet.open("login_form")} />
+                    <Card
+                        variant = "highlighted"
+                        padding = "md"
+                        style = {styles.sign_in}
+                    >
+                        <Icon
+                            name = "circle-info"
+                            size = {18}
+                            color = "primary"
+                        />
+                        <Text variant = "callout" style = {styles.flex}>{t("Prihláste sa, aby sa vaše aktivity ukladali a mohli ste plniť výzvy.")}</Text>
+                        <Button
+                            label = {t("Prihlásiť sa")}
+                            size = "sm"
+                            onPress = {() => auth_sheet.open("login_form")}
+                        />
                     </Card>
                 )}
 
                 <TimerCard
-                    elapsed_ms={timer.elapsed_ms}
-                    gained_xp={gained_xp}
-                    is_running={timer.is_running}
-                    is_started={timer.is_started}
-                    is_saving={is_saving}
-                    boost={{ is_available: Boolean(boost_query.state.data?.is_xp_boost_available), expires_at: boost_expires_at }}
-                    now={now}
-                    onToggle={toggleTimer}
-                    onStop={finishActivity}
+                    elapsed_ms = {timer.elapsed_ms}
+                    gained_xp = {gained_xp}
+                    is_running = {timer.is_running}
+                    is_started = {timer.is_started}
+                    is_saving = {is_saving}
+                    boost = {{ is_available: Boolean(boost_query.state.data?.is_xp_boost_available), expires_at: boost_expires_at }}
+                    now = {now}
+                    onToggle = {toggleTimer}
+                    onStop = {finishActivity}
                 />
 
                 {/* ---------- Training Plan ---------- */}
                 {is_logged_in && (plans_query.state.status === "loading" && plans.length === 0 ? (
-                    <Skeleton height={220} radius={radii.lg} />
+                    <Skeleton height = {220} radius = {radii.lg} />
                 ) : selected_plan ? (
                     <WorkoutPlanCard
-                        plans={plans}
-                        selected_key={selected_plan.key}
-                        onSelect={setSelectedKey}
-                        session={session.state}
-                        onStart={withRunningTimer(session.start)}
-                        onNextSet={withRunningTimer(session.nextSet)}
-                        onSkipExercise={withRunningTimer(session.finishExercise)}
-                        onEndBreak={withRunningTimer(session.endBreak)}
-                        onFinish={finishActivity}
-                        is_saving={is_saving}
+                        plans = {plans}
+                        selected_key = {selected_plan.key}
+                        onSelect = {setSelectedKey}
+                        session = {session.state}
+                        onStart = {withRunningTimer(session.start)}
+                        onNextSet = {withRunningTimer(session.nextSet)}
+                        onSkipExercise = {withRunningTimer(session.finishExercise)}
+                        onEndBreak = {withRunningTimer(session.endBreak)}
+                        onFinish = {finishActivity}
+                        is_saving = {is_saving}
                     />
                 ) : (
-                    <Card padding="lg" style={styles.no_plan}>
-                        <View style={styles.no_plan_icon}><Icon name="dumbbell" size={20} color="primary" /></View>
-                        <Text variant="heading" align="center">{t("Zatiaľ nemáte tréningový plán")}</Text>
-                        <Text variant="callout" color="text_secondary" align="center">{t("Vytvorte si vlastný alebo začnite s hotovým plánom. Aplikácia vás prevedie sériami aj prestávkami.")}</Text>
+                    <Card padding = "lg" style = {styles.no_plan}>
+                        <View style = {styles.no_plan_icon}><Icon
+                            name = "dumbbell"
+                            size = {20}
+                            color = "primary"
+                        /></View>
+                        <Text variant = "heading" align = "center">{t("Zatiaľ nemáte tréningový plán")}</Text>
+                        <Text
+                            variant = "callout"
+                            color = "text_secondary"
+                            align = "center"
+                        >
+                            {t("Vytvorte si vlastný alebo začnite s hotovým plánom. Aplikácia vás prevedie sériami aj prestávkami.")}
+                        </Text>
 
-                        <View style={styles.no_plan_actions}>
-                            <Button label={t("Vytvoriť plán")} icon="plus" onPress={() => router.push("/activity/new")} />
-                            <Button label={t("Hotové plány")} icon="copy" variant="secondary" onPress={() => router.push("/activity/copy")} />
+                        <View style = {styles.no_plan_actions}>
+                            <Button
+                                label = {t("Vytvoriť plán")}
+                                icon = "plus"
+                                onPress = {() => router.push("/activity/new")}
+                            />
+                            <Button
+                                label = {t("Hotové plány")}
+                                icon = "copy"
+                                variant = "secondary"
+                                onPress = {() => router.push("/activity/copy")}
+                            />
                         </View>
                     </Card>
                 ))}
 
                 {is_logged_in && (
                     <>
-                        <Text variant="overline" color="text_muted" style={styles.section_title}>{t("Posledných 7 dní")}</Text>
-                        <StatsGrid stats={stats_query.state.data?.activity ?? null} is_loading={stats_query.state.status === "loading"} />
+                        <Text
+                            variant = "overline"
+                            color = "text_muted"
+                            style = {styles.section_title}
+                        >
+                            {t("Posledných 7 dní")}
+                        </Text>
+                        <StatsGrid stats = {stats_query.state.data?.activity ?? null} is_loading = {stats_query.state.status === "loading"} />
 
-                        <ChallengesCard tasks={tasks} remaining_hours={challenges_query.state.data?.official_tasks_remaining_hours ?? null} live_input={live_input} is_loading={challenges_query.state.status === "loading"} />
-                        <CustomTasksCard onTaskAdded={() => completeChallenge("add_custom_task")} />
-                        <HistoryCard activities={history_query.state.data?.activity_history ?? []} is_loading={history_query.state.status === "loading"} error={history_query.state.error} onRetry={history_query.refetch} />
+                        <ChallengesCard
+                            tasks = {tasks}
+                            remaining_hours = {challenges_query.state.data?.official_tasks_remaining_hours ?? null}
+                            live_input = {live_input}
+                            is_loading = {challenges_query.state.status === "loading"}
+                        />
+                        <CustomTasksCard onTaskAdded = {() => completeChallenge("add_custom_task")} />
+                        <HistoryCard
+                            activities = {history_query.state.data?.activity_history ?? []}
+                            is_loading = {history_query.state.status === "loading"}
+                            error = {history_query.state.error}
+                            onRetry = {history_query.refetch}
+                        />
                     </>
                 )}
             </ActivityScroll>

@@ -10,7 +10,7 @@ import { formatDuration, formatMegabytes } from "./mediaRules"
 
 import type { DraftMedia, MediaIssue } from "./mediaRules"
 
-export const TILE_WIDTH:number = 132
+export const TILE_WIDTH:number = 132 // Defines The Tile Width
 export const TILE_HEIGHT:number = 165 // 4:5 Like The Feed
 
 interface MediaTileProps {
@@ -37,55 +37,113 @@ export default function MediaTile({ media, index, count, issue, onRemove, onMove
     }
 
     return (
-        <View style={styles.container} accessibilityLabel={`${position_label}, ${media.type === "video" ? t("Video") : t("Fotka")}`}>
-            <View style={[styles.preview, issue ? styles.preview_invalid : null]}>
+        <View style = {styles.container} accessibilityLabel = {`${position_label}, ${media.type === "video" ? t("Video") : t("Fotka")}`}>
+            <View style = {[styles.preview, issue ? styles.preview_invalid : null]}>
                 {media.type === "video" && !media.cover ? (
-                    <VideoPreview uri={media.uri} />
+                    <VideoPreview uri = {media.uri} />
                 ) : (
-                    <Image source={{ uri: media.cover?.uri ?? media.uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} />
+                    <Image
+                        source = {{ uri: media.cover?.uri ?? media.uri }}
+                        style = {StyleSheet.absoluteFill}
+                        contentFit = "cover"
+                        transition = {120}
+                    />
                 )}
 
-                <View style={styles.order_badge}>
-                    <Text variant="caption" color="white" is_tabular style={styles.order_text}>{index + 1}</Text>
+                <View style = {styles.order_badge}>
+                    <Text
+                        variant = "caption"
+                        color = "white"
+                        is_tabular
+                        style = {styles.order_text}
+                    >
+                        {index + 1}
+                    </Text>
                 </View>
 
-                <View style={styles.remove}>
-                    <IconButton icon="xmark" accessibility_label={`${t("Odstrániť")}: ${position_label}`} onPress={onRemove} variant="soft" size={28} />
+                <View style = {styles.remove}>
+                    <IconButton
+                        icon = "xmark"
+                        accessibility_label = {`${t("Odstrániť")}: ${position_label}`}
+                        onPress = {onRemove}
+                        variant = "soft"
+                        size = {28}
+                    />
                 </View>
 
                 {media.type === "video" && (
-                    <View style={[styles.video_bar, issue ? styles.video_bar_raised : null]}>
-                        <View style={styles.duration}>
-                            <Icon name="play" size={9} color="white" />
-                            {media.duration_seconds !== null && <Text variant="caption" color="white" is_tabular>{formatDuration(media.duration_seconds)}</Text>}
+                    <View style = {[styles.video_bar, issue ? styles.video_bar_raised : null]}>
+                        <View style = {styles.duration}>
+                            <Icon
+                                name = "play"
+                                size = {9}
+                                color = "white"
+                            />
+                            {media.duration_seconds !== null &&
+                                <Text
+                                    variant = "caption"
+                                    color = "white"
+                                    is_tabular
+                                >
+                                    {formatDuration(media.duration_seconds)}
+                                </Text>
+                            }
                         </View>
 
                         <IconButton
-                            icon={media.is_muted ? "volume-xmark" : "volume-high"}
-                            accessibility_label={media.is_muted ? t("Zapnúť zvuk") : t("Stlmiť zvuk")}
-                            onPress={onToggleMute}
-                            variant="soft"
-                            size={28}
+                            icon = {media.is_muted ? "volume-xmark" : "volume-high"}
+                            accessibility_label = {media.is_muted ? t("Zapnúť zvuk") : t("Stlmiť zvuk")}
+                            onPress = {onToggleMute}
+                            variant = "soft"
+                            size = {28}
                         />
                     </View>
                 )}
 
                 {!!issue && (
-                    <View style={styles.issue} accessibilityLiveRegion="polite">
-                        <Icon name="triangle-exclamation" size={12} color="white" />
-                        <Text variant="caption" color="white" numberOfLines={1}>{getIssueText(issue)}</Text>
+                    <View style = {styles.issue} accessibilityLiveRegion = "polite">
+                        <Icon
+                            name = "triangle-exclamation"
+                            size = {12}
+                            color = "white"
+                        />
+                        <Text
+                            variant = "caption"
+                            color = "white"
+                            numberOfLines = {1}
+                        >
+                            {getIssueText(issue)}
+                        </Text>
                     </View>
                 )}
             </View>
 
-            <View style={styles.actions}>
-                <IconButton icon="chevron-left" accessibility_label={`${t("Posunúť dopredu")}: ${position_label}`} onPress={() => onMove(-1)} is_disabled={index === 0} size={30} />
+            <View style = {styles.actions}>
+                <IconButton
+                    icon = "chevron-left"
+                    accessibility_label = {`${t("Posunúť dopredu")}: ${position_label}`}
+                    onPress = {() => onMove(-1)}
+                    is_disabled = {index === 0}
+                    size = {30}
+                />
 
                 {media.type === "video" ? (
-                    <IconButton icon="image" accessibility_label={media.cover ? t("Zmeniť náhľad videa") : t("Vybrať náhľad videa")} onPress={onPickCover} size={30} icon_color={media.cover ? "primary" : "text_secondary"} />
-                ) : <View style={styles.spacer} />}
+                    <IconButton
+                        icon = "image"
+                        accessibility_label = {media.cover ? t("Zmeniť náhľad videa") : t("Vybrať náhľad videa")}
+                        onPress = {onPickCover}
+                        size = {30}
+                        icon_color = {media.cover ? "primary" : "text_secondary"}
+                    />
+                ) : <View style = {styles.spacer} />}
 
-                <IconButton icon="chevron-right" accessibility_label={`${t("Posunúť dozadu")}: ${position_label}`} onPress={() => onMove(1)} is_disabled={index === count - 1} size={30} />
+                <IconButton
+                    icon = "chevron-right"
+                    accessibility_label = {`${t("Posunúť dozadu")}: ${position_label}`}
+                    onPress = {() => onMove(1)}
+                    is_disabled = {index === count - 1}
+                    size = {30}
+                />
             </View>
         </View>
     )
@@ -93,12 +151,21 @@ export default function MediaTile({ media, index, count, issue, onRemove, onMove
 
 // Function For Render The First Frame Of A Video
 function VideoPreview({ uri }:{ uri:string }) {
+    // Gets The Player
     const player = useVideoPlayer(uri, (video_player) => {
         video_player.muted = true
         video_player.loop = false
     })
 
-    return <VideoView player={player} nativeControls={false} contentFit="cover" style={StyleSheet.absoluteFill} pointerEvents="none" />
+    return (
+        <VideoView
+            player = {player}
+            nativeControls = {false}
+            contentFit = "cover"
+            style = {StyleSheet.absoluteFill}
+            pointerEvents = "none"
+        />
+    )
 }
 
 const styles = StyleSheet.create({

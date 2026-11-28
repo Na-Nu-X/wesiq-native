@@ -46,28 +46,38 @@ export default function ChatBackgroundMenu({ onPickFromDevice, onSelectBackgroun
 
     return (
         <>
-            <Card padding="xs">
-                <MenuRow icon="images" label={t("Vybrať zo zariadenia")} onPress={onPickFromDevice} is_disabled={is_busy} />
+            <Card padding = "xs">
+                <MenuRow
+                    icon = "images"
+                    label = {t("Vybrať zo zariadenia")}
+                    onPress = {onPickFromDevice}
+                    is_disabled = {is_busy}
+                />
             </Card>
 
-            <View style={styles.section}>
-                <Text variant="overline" color="text_secondary">{t("Predvolené pozadia")}</Text>
+            <View style = {styles.section}>
+                <Text variant = "overline" color = "text_secondary">{t("Predvolené pozadia")}</Text>
 
-                <View style={styles.grid} onLayout={(event:LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width)}>
+                <View style = {styles.grid} onLayout = {(event:LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width)}>
                     {CHAT_BACKGROUNDS.map((source:number, index:number) => (
                         <Pressable
-                            key={index}
-                            onPress={() => onSelectBackground(index)}
-                            disabled={is_busy}
-                            accessibilityRole="button"
-                            accessibilityLabel={t("Pozadie {{number}}", { number: index + 1 })}
-                            style={({ pressed }) => [styles.tile, { width: tile_width }, pressed ? styles.tile_pressed : null, is_busy && selected_index !== index ? styles.tile_disabled : null]}
+                            key = {index}
+                            onPress = {() => onSelectBackground(index)}
+                            disabled = {is_busy}
+                            accessibilityRole = "button"
+                            accessibilityLabel = {t("Pozadie {{number}}", { number: index + 1 })}
+                            style = {({ pressed }) => [styles.tile, { width: tile_width }, pressed ? styles.tile_pressed : null, is_busy && selected_index !== index ? styles.tile_disabled : null]}
                         >
-                            <Image source={source} style={styles.image} contentFit="cover" transition={150} />
+                            <Image
+                                source = {source}
+                                style = {styles.image}
+                                contentFit = "cover"
+                                transition = {150}
+                            />
 
                             {selected_index === index && (
-                                <View style={styles.tile_overlay}>
-                                    <ActivityIndicator color={colors.spinner} />
+                                <View style = {styles.tile_overlay}>
+                                    <ActivityIndicator color = {colors.spinner} />
                                 </View>
                             )}
                         </Pressable>

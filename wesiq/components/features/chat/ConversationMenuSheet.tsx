@@ -31,13 +31,13 @@ interface ConversationMenuSheetProps {
 export default function ConversationMenuSheet({ visible, onClose, receiver, onReceiverChange, background_image, onBackgroundChanged }:ConversationMenuSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
-    const [view, setView] = useState<"main"|"report"|"background">("main")
-    const [is_busy, setIsBusy] = useState<boolean>(false)
-    const [selected_background_index, setSelectedBackgroundIndex] = useState<number|null>(null) // The Built-In Background Being Uploaded
+    const [view, setView] = useState<"main"|"report"|"background">("main") // Stores The View
+    const [is_busy, setIsBusy] = useState<boolean>(false) // Stores If It Is Busy
+    const [selected_background_index, setSelectedBackgroundIndex] = useState<number|null>(null) // Stores The Selected Background Index (The Built-In Background Being Uploaded)
 
     // Function For Close And Reset
     const close = ():void => {
-        setView("main")
+        setView("main") // Sets The View
         onClose()
     }
 
@@ -54,10 +54,10 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
 
     // Function For Upload The New Background
     const applyBackground = async (image:UploadableFile):Promise<void> => {
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await changeChatBackground(receiver.id, image) // Sends The Request
-        setIsBusy(false)
-        setSelectedBackgroundIndex(null)
+        setIsBusy(false) // Sets The Busy State
+        setSelectedBackgroundIndex(null) // Sets The Selected Background Index
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -71,7 +71,7 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
 
     // Function For Pick A New Background From The Device
     const pickBackground = async ():Promise<void> => {
-        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 })
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.8 }) // Gets The Result
         const asset = result.canceled ? null : result.assets[0] // Gets The Image
         if(!asset) return
 
@@ -80,7 +80,7 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
 
     // Function For Set One Of The Built-In Backgrounds
     const selectBuiltInBackground = async (index:number):Promise<void> => {
-        setSelectedBackgroundIndex(index)
+        setSelectedBackgroundIndex(index) // Sets The Selected Background Index
         setIsBusy(true) // Blocks Other Taps While The Image Is Read
 
         try {
@@ -89,8 +89,8 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
         }
 
         catch {
-            setIsBusy(false)
-            setSelectedBackgroundIndex(null)
+            setIsBusy(false) // Sets The Busy State
+            setSelectedBackgroundIndex(null) // Sets The Selected Background Index
             showAlert(t("Chyba"), t("Pozadie sa nepodarilo načítať. Skúste to znova."))
         }
     }
@@ -99,12 +99,12 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
     const removeBackground = async ():Promise<void> => {
         if(!background_image) return
 
-        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť pozadie chatu?"), confirm_label: t("Odstrániť"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť pozadie chatu?"), confirm_label: t("Odstrániť"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await deleteChatBackground(receiver.id, background_image) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) showAlert(t("Chyba"), response.error.message)
         else {
@@ -115,9 +115,9 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
 
     // Function For Report The User
     const report = async (reason:ReportReason):Promise<void> => {
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await reportUser(receiver.id, reason) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) showAlert(t("Chyba"), response.error.message)
         else {
@@ -128,46 +128,83 @@ export default function ConversationMenuSheet({ visible, onClose, receiver, onRe
 
     return (
         <Sheet
-            visible={visible}
-            onClose={() => view !== "main" ? setView("main") : close()}
-            title={view === "report" ? t("Nahlásiť účet") : view === "background" ? t("Pozadie chatu") : formatUsername(receiver.username)}
-            is_dismissable={!is_busy}
+            visible = {visible}
+            onClose = {() => view !== "main" ? setView("main") : close()}
+            title = {view === "report" ? t("Nahlásiť účet") : view === "background" ? t("Pozadie chatu") : formatUsername(receiver.username)}
+            is_dismissable = {!is_busy}
         >
             {view === "report" ? (
-                <Card padding="xs">
+                <Card padding = "xs">
                     {REPORT_REASONS.map((reason:ReportReason, index:number) => (
-                        <View key={reason}>
-                            {index > 0 && <Divider inset={spacing.md} />}
-                            <MenuRow icon="flag" label={getReasonLabel(reason)} onPress={() => report(reason)} is_disabled={is_busy} />
+                        <View key = {reason}>
+                            {index > 0 &&
+                                <Divider inset = {spacing.md} />
+                            }
+                            <MenuRow
+                                icon = "flag"
+                                label = {getReasonLabel(reason)}
+                                onPress = {() => report(reason)}
+                                is_disabled = {is_busy}
+                            />
                         </View>
                     ))}
                 </Card>
             ) : view === "background" ? (
-                <ChatBackgroundMenu onPickFromDevice={pickBackground} onSelectBackground={selectBuiltInBackground} is_busy={is_busy} selected_index={selected_background_index} />
+                <ChatBackgroundMenu
+                    onPickFromDevice = {pickBackground}
+                    onSelectBackground = {selectBuiltInBackground}
+                    is_busy = {is_busy}
+                    selected_index = {selected_background_index}
+                />
             ) : (
                 <>
-                    <Card padding="xs">
-                        <ToggleRow icon="bell-slash" label={t("Stlmiť upozornenia")} description={t("Nebudete dostávať upozornenia na nové správy.")} value={receiver.is_muted} onChange={toggleMute} />
+                    <Card padding = "xs">
+                        <ToggleRow
+                            icon = "bell-slash"
+                            label = {t("Stlmiť upozornenia")}
+                            description = {t("Nebudete dostávať upozornenia na nové správy.")}
+                            value = {receiver.is_muted}
+                            onChange = {toggleMute}
+                        />
                     </Card>
 
-                    <Card padding="xs">
-                        <MenuRow icon="user" label={t("Zobraziť profil")} onPress={() => {
-                            close()
-                            router.push({ pathname: "/profile/[username]", params: { username: receiver.username } })
-                        }} />
+                    <Card padding = "xs">
+                        <MenuRow
+                            icon = "user"
+                            label = {t("Zobraziť profil")}
+                            onPress = {() => {
+                                close()
+                                router.push({ pathname: "/profile/[username]", params: { username: receiver.username } })
+                            }}
+                        />
 
-                        <Divider inset={spacing.md} />
-                        <MenuRow icon="image" label={background_image ? t("Zmeniť pozadie chatu") : t("Nastaviť pozadie chatu")} onPress={() => setView("background")} is_disabled={is_busy} />
+                        <Divider inset = {spacing.md} />
+                        <MenuRow
+                            icon = "image"
+                            label = {background_image ? t("Zmeniť pozadie chatu") : t("Nastaviť pozadie chatu")}
+                            onPress = {() => setView("background")}
+                            is_disabled = {is_busy}
+                        />
 
                         {!!background_image && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="eraser" label={t("Odstrániť pozadie chatu")} onPress={removeBackground} is_disabled={is_busy} />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "eraser"
+                                    label = {t("Odstrániť pozadie chatu")}
+                                    onPress = {removeBackground}
+                                    is_disabled = {is_busy}
+                                />
                             </>
                         )}
 
-                        <Divider inset={spacing.md} />
-                        <MenuRow icon="flag" label={t("Nahlásiť")} onPress={() => setView("report")} is_danger />
+                        <Divider inset = {spacing.md} />
+                        <MenuRow
+                            icon = "flag"
+                            label = {t("Nahlásiť")}
+                            onPress = {() => setView("report")}
+                            is_danger
+                        />
                     </Card>
                 </>
             )}

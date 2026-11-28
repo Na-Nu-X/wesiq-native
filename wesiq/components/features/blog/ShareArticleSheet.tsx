@@ -30,6 +30,7 @@ interface ShareArticleSheetProps {
 
 type SendState = "sending"|"sent"|"failed"
 
+// Checks If It Is Friends Response
 const isFriendsResponse = envelopeWith<{ following:UserSummary[] }>({
     following: (value:unknown):value is UserSummary[] => isArrayOf(value, isUserSummaryLike),
 })
@@ -37,7 +38,7 @@ const isFriendsResponse = envelopeWith<{ following:UserSummary[] }>({
 // Function For Get The Public Link Of A Article
 export const getArticleLink = (article_link:string):string => `${DOMAIN}/blog/${encodeURIComponent(article_link)}`
 
-const SEARCH_THRESHOLD:number = 8
+const SEARCH_THRESHOLD:number = 8 // Defines The Search Threshold
 
 export default function ShareArticleSheet({ article, onClose }:ShareArticleSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
@@ -47,20 +48,20 @@ export default function ShareArticleSheet({ article, onClose }:ShareArticleSheet
     const [is_link_copied, setIsLinkCopied] = useState<boolean>(false) // Stores The Information If The Link Was Copied
 
     // Keeps The Last Article While The Sheet Animates Closed (Adjusted During Render) And Resets State For A New Article
-    const [shown_article, setShownArticle] = useState<SharedArticleInfo|null>(article)
+    const [shown_article, setShownArticle] = useState<SharedArticleInfo|null>(article) // Stores The Shown Article
 
     if(article && article.id !== shown_article?.id) {
-        setShownArticle(article)
-        setSendStates({})
-        setSearchQuery("")
-        setIsLinkCopied(false)
+        setShownArticle(article) // Sets The Shown Article
+        setSendStates({}) // Sets The Send States
+        setSearchQuery("") // Sets The Search Query
+        setIsLinkCopied(false) // Sets The Link Copied State
     }
 
     // Loads The People The User Follows (Only While The Sheet Is Open)
     const { state: friends_state, refetch } = useApiQuery(
         "share_article_friends",
         async (signal:AbortSignal) => {
-            const response = await apiGet("get-friends/", { signal, guard: isFriendsResponse })
+            const response = await apiGet("get-friends/", { signal, guard: isFriendsResponse }) // Gets The Response
             return response.ok ? { ...response, data: response.data.following } : response
         },
         { is_enabled: article !== null && logged_in_user !== null }
@@ -76,10 +77,10 @@ export default function ShareArticleSheet({ article, onClose }:ShareArticleSheet
     const sendTo = async (friend:UserSummary):Promise<void> => {
         if(!logged_in_user || send_states[friend.id] === "sending" || send_states[friend.id] === "sent") return
 
-        setSendStates((previous) => ({ ...previous, [friend.id]: "sending" }))
+        setSendStates((previous) => ({ ...previous, [friend.id]: "sending" })) // Sets The Send States
         const result:ShareResult = await shareArticleToChat(shown_article.id, friend.username, logged_in_user.id) // Sends The Article
 
-        setSendStates((previous) => ({ ...previous, [friend.id]: result.ok ? "sent" : "failed" }))
+        setSendStates((previous) => ({ ...previous, [friend.id]: result.ok ? "sent" : "failed" })) // Sets The Send States
 
         if(result.ok) haptics.success()
 
@@ -94,7 +95,7 @@ export default function ShareArticleSheet({ article, onClose }:ShareArticleSheet
         try {
             await Clipboard.setStringAsync(link)
             haptics.success()
-            setIsLinkCopied(true)
+            setIsLinkCopied(true) // Sets The Link Copied State
         }
 
         catch {
@@ -119,76 +120,151 @@ export default function ShareArticleSheet({ article, onClose }:ShareArticleSheet
     const renderSendButton = (friend:UserSummary) => {
         const state:SendState|undefined = send_states[friend.id] // Gets The State
 
-        if(state === "sent") return <Button label={t("Odoslané")} icon="check" size="sm" variant="secondary" onPress={() => {}} is_disabled />
-        if(state === "failed") return <Button label={t("Skúsiť znova")} size="sm" variant="danger" onPress={() => sendTo(friend)} />
-        return <Button label={t("Odoslať")} size="sm" onPress={() => sendTo(friend)} is_loading={state === "sending"} />
+        if(state === "sent") {
+            return (
+                <Button
+                    label = {t("Odoslané")}
+                    icon = "check"
+                    size = "sm"
+                    variant = "secondary"
+                    onPress = {() => {}}
+                    is_disabled
+                />
+            )
+        }
+        if(state === "failed") {
+            return (
+                <Button
+                    label = {t("Skúsiť znova")}
+                    size = "sm"
+                    variant = "danger"
+                    onPress = {() => sendTo(friend)}
+                />
+            )
+        }
+        return (
+            <Button
+                label = {t("Odoslať")}
+                size = "sm"
+                onPress = {() => sendTo(friend)}
+                is_loading = {state === "sending"}
+            />
+        )
     }
 
     // Function For Render The People List Content When It Has No Rows
     const renderEmpty = () => {
-        if(friends_state.status === "loading") return <View>{[0, 1, 2].map((index:number) => <UserRowSkeleton key={index} />)}</View>
-        if(friends_state.status === "error") return <ErrorState error={friends_state.error} onRetry={refetch} is_compact />
-        if(normalized_query) return <EmptyState icon="magnifying-glass" title={t("Nikto sa nenašiel")} is_compact />
-        return <EmptyState icon="user-plus" title={t("Zatiaľ nikoho nesledujete")} message={t("Článok môžete poslať ľuďom, ktorých sledujete.")} is_compact />
+        if(friends_state.status === "loading") return <View>{[0, 1, 2].map((index:number) => <UserRowSkeleton key = {index} />)}</View>
+        if(friends_state.status === "error") {
+            return (
+                <ErrorState
+                    error = {friends_state.error}
+                    onRetry = {refetch}
+                    is_compact
+                />
+            )
+        }
+        if(normalized_query) {
+            return (
+                <EmptyState
+                    icon = "magnifying-glass"
+                    title = {t("Nikto sa nenašiel")}
+                    is_compact
+                />
+            )
+        }
+        return (
+            <EmptyState
+                icon = "user-plus"
+                title = {t("Zatiaľ nikoho nesledujete")}
+                message = {t("Článok môžete poslať ľuďom, ktorých sledujete.")}
+                is_compact
+            />
+        )
     }
 
     return (
         <Sheet
-            visible={article !== null}
-            onClose={onClose}
-            title={t("Zdieľať článok")}
-            subtitle={shown_article.article_title}
-            size="large"
-            is_scrollable={false}
+            visible = {article !== null}
+            onClose = {onClose}
+            title = {t("Zdieľať článok")}
+            subtitle = {shown_article.article_title}
+            size = "large"
+            is_scrollable = {false}
         >
-            <View style={styles.top}>
-                <View style={styles.quick_actions}>
-                    <Card padding="md" onPress={copyLink} accessibility_label={is_link_copied ? t("Odkaz skopírovaný") : t("Kopírovať odkaz")} style={styles.quick_action}>
-                        <View style={[styles.quick_icon, is_link_copied ? styles.quick_icon_done : null]}>
-                            <Icon name={is_link_copied ? "check" : "link"} size={16} color={is_link_copied ? "success" : "primary"} />
+            <View style = {styles.top}>
+                <View style = {styles.quick_actions}>
+                    <Card
+                        padding = "md"
+                        onPress = {copyLink}
+                        accessibility_label = {is_link_copied ? t("Odkaz skopírovaný") : t("Kopírovať odkaz")}
+                        style = {styles.quick_action}
+                    >
+                        <View style = {[styles.quick_icon, is_link_copied ? styles.quick_icon_done : null]}>
+                            <Icon
+                                name = {is_link_copied ? "check" : "link"}
+                                size = {16}
+                                color = {is_link_copied ? "success" : "primary"}
+                            />
                         </View>
 
-                        <Text variant="label" align="center">{is_link_copied ? t("Odkaz skopírovaný") : t("Kopírovať odkaz")}</Text>
+                        <Text variant = "label" align = "center">{is_link_copied ? t("Odkaz skopírovaný") : t("Kopírovať odkaz")}</Text>
                     </Card>
 
-                    <Card padding="md" onPress={shareElsewhere} accessibility_label={t("Zdielať inde")} style={styles.quick_action}>
-                        <View style={styles.quick_icon}>
-                            <Icon name="share-nodes" size={16} color="primary" />
+                    <Card
+                        padding = "md"
+                        onPress = {shareElsewhere}
+                        accessibility_label = {t("Zdielať inde")}
+                        style = {styles.quick_action}
+                    >
+                        <View style = {styles.quick_icon}>
+                            <Icon
+                                name = "share-nodes"
+                                size = {16}
+                                color = "primary"
+                            />
                         </View>
 
-                        <Text variant="label" align="center">{t("Zdielať inde")}</Text>
+                        <Text variant = "label" align = "center">{t("Zdielať inde")}</Text>
                     </Card>
                 </View>
 
-                {!!logged_in_user && <Text variant="overline" color="text_muted">{t("Poslať v správe")}</Text>}
+                {!!logged_in_user &&
+                    <Text variant = "overline" color = "text_muted">{t("Poslať v správe")}</Text>
+                }
 
                 {!!logged_in_user && (friends_state.data?.length ?? 0) >= SEARCH_THRESHOLD && (
                     <TextField
-                        icon="magnifying-glass"
-                        placeholder={t("Hľadať")}
-                        accessibilityLabel={t("Hľadať")}
-                        value={search_query}
-                        onChangeText={setSearchQuery}
-                        autoCapitalize="none"
-                        autoCorrect={false}
+                        icon = "magnifying-glass"
+                        placeholder = {t("Hľadať")}
+                        accessibilityLabel = {t("Hľadať")}
+                        value = {search_query}
+                        onChangeText = {setSearchQuery}
+                        autoCapitalize = "none"
+                        autoCorrect = {false}
                     />
                 )}
             </View>
 
             {logged_in_user ? (
                 <FlatList
-                    data={friends}
-                    keyExtractor={(friend:UserSummary) => String(friend.id)}
-                    style={styles.list}
-                    contentContainerStyle={styles.list_content}
-                    keyboardShouldPersistTaps="handled"
-                    ItemSeparatorComponent={() => <Divider inset={56} />}
-                    ListEmptyComponent={renderEmpty}
-                    renderItem={({ item }:ListRenderItemInfo<UserSummary>) => <UserRow user={item} trailing={renderSendButton(item)} />}
+                    data = {friends}
+                    keyExtractor = {(friend:UserSummary) => String(friend.id)}
+                    style = {styles.list}
+                    contentContainerStyle = {styles.list_content}
+                    keyboardShouldPersistTaps = "handled"
+                    ItemSeparatorComponent = {() => <Divider inset = {56} />}
+                    ListEmptyComponent = {renderEmpty}
+                    renderItem = {({ item }:ListRenderItemInfo<UserSummary>) => <UserRow user = {item} trailing = {renderSendButton(item)} />}
                 />
             ) : (
-                <View style={styles.list_content}>
-                    <EmptyState icon="paper-plane" title={t("Prihláste sa")} message={t("Po prihlásení môžete články posielať v správach.")} is_compact />
+                <View style = {styles.list_content}>
+                    <EmptyState
+                        icon = "paper-plane"
+                        title = {t("Prihláste sa")}
+                        message = {t("Po prihlásení môžete články posielať v správach.")}
+                        is_compact
+                    />
                 </View>
             )}
         </Sheet>

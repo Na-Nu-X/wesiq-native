@@ -24,41 +24,61 @@ export default function LockedPlanCard({ plan, onPress, details, details_label }
 
     return (
         <Card
-            onPress={onPress}
-            accessibility_label={`${t("Prémiový plán: {{title}}", { title })}. ${t("Dostupné s aktívnym predplatným")}${details_label ? `. ${details_label}` : ""}`}
-            style={styles.card}
+            onPress = {onPress}
+            accessibility_label = {`${t("Prémiový plán: {{title}}", { title })}. ${t("Dostupné s aktívnym predplatným")}${details_label ? `. ${details_label}` : ""}`}
+            style = {styles.card}
         >
-            <View style={styles.header}>
-                <View style={styles.flex}>
-                    <Text variant="heading" numberOfLines={2}>{title}</Text>
-                    <Text variant="caption" color="text_secondary">{t("Dostupné s aktívnym predplatným")}</Text>
+            <View style = {styles.header}>
+                <View style = {styles.flex}>
+                    <Text variant = "heading" numberOfLines = {2}>{title}</Text>
+                    <Text variant = "caption" color = "text_secondary">{t("Dostupné s aktívnym predplatným")}</Text>
                 </View>
 
-                <View style={styles.badge}>
-                    <Icon name="crown" size={11} color="premium" />
-                    <Text variant="label" color="premium">{t("Prémiový plán")}</Text>
+                <View style = {styles.badge}>
+                    <Icon
+                        name = "crown"
+                        size = {11}
+                        color = "premium"
+                    />
+                    <Text variant = "label" color = "premium">{t("Prémiový plán")}</Text>
                 </View>
             </View>
 
             {details}
 
-            <View style={styles.preview} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-                <View style={styles.lines}>
+            <View
+                style = {styles.preview}
+                importantForAccessibility = "no-hide-descendants"
+                accessibilityElementsHidden
+            >
+                <View style = {styles.lines}>
                     {PLACEHOLDER_WIDTHS.slice(0, placeholder_count).map((width) => (
-                        <View key={width} style={[styles.line, { width }]} />
+                        <View key = {width} style = {[styles.line, { width }]} />
                     ))}
                 </View>
 
-                <View style={styles.lock}>
-                    <Icon name="lock" size={16} color="premium" />
+                <View style = {styles.lock}>
+                    <Icon
+                        name = "lock"
+                        size = {16}
+                        color = "premium"
+                    />
                 </View>
             </View>
 
-            <View style={styles.action}>
-                <Icon name="unlock" size={12} color="premium" />
-                <Text variant="label" color="premium">{t("Odomknúť s predplatným")}</Text>
-                <View style={styles.flex} />
-                <Icon name="chevron-right" size={12} color="text_muted" />
+            <View style = {styles.action}>
+                <Icon
+                    name = "unlock"
+                    size = {12}
+                    color = "premium"
+                />
+                <Text variant = "label" color = "premium">{t("Odomknúť s predplatným")}</Text>
+                <View style = {styles.flex} />
+                <Icon
+                    name = "chevron-right"
+                    size = {12}
+                    color = "text_muted"
+                />
             </View>
         </Card>
     )

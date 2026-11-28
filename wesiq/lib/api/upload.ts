@@ -43,10 +43,11 @@ export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, for
     const user_token:string|null = await getAccessToken() // Gets The User Token (Refreshed When It's About To Expire)
 
     return new Promise<ApiResult<T>>((resolve) => {
-        const xhr:XMLHttpRequest = new XMLHttpRequest()
+        const xhr:XMLHttpRequest = new XMLHttpRequest() // Gets The XHR
 
+        // Function For Fail
         const fail = (kind:"network"|"aborted"|"server"|"invalid_response"|"unauthorized", status:number|null, message?:string):void => {
-            const fallback:string = kind === "aborted" ? i18n.t("Požiadavka bola zrušená.") : kind === "network" ? i18n.t("Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.") : i18n.t("Na serveri došlo k chybe. Skúste to znova.")
+            const fallback:string = kind === "aborted" ? i18n.t("Požiadavka bola zrušená.") : kind === "network" ? i18n.t("Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu.") : i18n.t("Na serveri došlo k chybe. Skúste to znova.") // Gets The Fallback
             resolve({ ok: false, error: { kind, status, message: message || fallback } })
         }
 
@@ -55,7 +56,7 @@ export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, for
         }
 
         xhr.onload = () => {
-            let body:unknown = null
+            let body:unknown = null // Gets The Body
 
             try {
                 body = JSON.parse(xhr.responseText)
@@ -113,8 +114,9 @@ export const uploadWithProgress = async <T extends ApiEnvelope>(path:string, for
 // Function For Simulate An Upload In Mock Mode (Development Only)
 const simulateUpload = <T extends ApiEnvelope>(onProgress:(progress:number) => void, signal?:AbortSignal):Promise<ApiResult<T>> => {
     return new Promise((resolve) => {
-        let progress:number = 0
+        let progress:number = 0 // Gets The Progress
 
+        // Gets The Interval
         const interval:ReturnType<typeof setInterval> = setInterval(() => {
             if(signal?.aborted) {
                 clearInterval(interval)

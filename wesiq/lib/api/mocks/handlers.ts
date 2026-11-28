@@ -39,11 +39,13 @@ interface MockRequest {
 
 type MockHandler = (request:MockRequest) => MockResponse
 
+// Function For Ok
 const ok = (fields:Record<string, unknown> = {}, status:number = 200):MockResponse => ({
     status,
     body: { success: true, message: "OK (mock)", ...fields },
 })
 
+// Function For Not Found
 const notFound = (message:string):MockResponse => ({ status: 404, body: { success: false, message } })
 
 // Routes (":param" Matches One Path Segment)
@@ -65,8 +67,8 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         pattern: "load-first-users/",
         handler: ({ raw_body }) => {
             const history:string[] = Array.isArray(raw_body) ? raw_body.filter((item):item is string => typeof item === "string") : [] // Gets The History
-            const from_history:UserListItem[] = history.map((username:string) => MOCK_USERS.find((user:UserListItem) => user.username === username)).filter((user):user is UserListItem => Boolean(user))
-            const newest:UserListItem[] = [...MOCK_USERS].reverse().filter((user:UserListItem) => !from_history.includes(user)).slice(0, Math.max(0, 3 - from_history.length))
+            const from_history:UserListItem[] = history.map((username:string) => MOCK_USERS.find((user:UserListItem) => user.username === username)).filter((user):user is UserListItem => Boolean(user)) // Gets The From History
+            const newest:UserListItem[] = [...MOCK_USERS].reverse().filter((user:UserListItem) => !from_history.includes(user)).slice(0, Math.max(0, 3 - from_history.length)) // Gets The Newest
             return ok({ users: [...from_history, ...newest].map(withFollowers) })
         }
     },
@@ -106,7 +108,7 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
             if(!post) return notFound("Post not found (mock)")
 
             const { id, first_name, last_name, username, profile_picture_name, subscription } = MOCK_LOGGED_IN_USER // The Logged In User Can Be Among The Likers
-            const people:UserListItem[] = [{ id, first_name, last_name, username, profile_picture_name, subscription }, ...MOCK_USERS]
+            const people:UserListItem[] = [{ id, first_name, last_name, username, profile_picture_name, subscription }, ...MOCK_USERS] // Gets The People
 
             return ok({ users: people.filter((user:UserListItem) => post.likes_from_users.includes(user.id)) })
         }
@@ -152,9 +154,9 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         const task:OfficialTask|undefined = MOCK_OFFICIAL_TASKS.find((one_task:OfficialTask) => one_task.data === body.task_data) // Gets The Task
         if(!task) return notFound("Úloha neexistuje. (mock)")
 
-        const progress_percentage:number = body.task_data === "2_activities" ? Math.min(100, task.progress_percentage + 50) : 100
-        const is_completed:boolean = progress_percentage >= 100
-        const first_completion:boolean = is_completed && !task.is_completed
+        const progress_percentage:number = body.task_data === "2_activities" ? Math.min(100, task.progress_percentage + 50) : 100 // Gets The Progress Percentage
+        const is_completed:boolean = progress_percentage >= 100 // Checks If It Is Completed
+        const first_completion:boolean = is_completed && !task.is_completed // Gets The First Completion
         Object.assign(task, { progress_percentage, is_completed })
         return ok({ task: { progress_percentage, is_completed, first_completion, gained_xp: first_completion ? task.xp : 0 } })
     } },
@@ -212,8 +214,8 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         method: "POST",
         pattern: "remove-chat-room-member/",
         handler: ({ body }) => {
-            const removed = MOCK_GROUP_ROOM.members.find((member) => member.id === body.user_id)
-            const members = MOCK_GROUP_ROOM.members.filter((member) => member.id !== body.user_id)
+            const removed = MOCK_GROUP_ROOM.members.find((member) => member.id === body.user_id) // Gets The Removed
+            const members = MOCK_GROUP_ROOM.members.filter((member) => member.id !== body.user_id) // Gets The Members
 
             return ok({
                 room: { ...MOCK_GROUP_ROOM, members, members_count: members.length },
@@ -229,9 +231,9 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
         method: "POST",
         pattern: "add-chat-room-members/",
         handler: ({ body }) => {
-            const user_ids:number[] = Array.isArray(body.user_ids) ? body.user_ids.filter((id:unknown):id is number => typeof id === "number") : []
-            const added:UserListItem[] = MOCK_USERS.filter((user:UserListItem) => user_ids.includes(user.id))
-            const members = [...MOCK_GROUP_ROOM.members, ...added.map((user:UserListItem) => ({ ...user, first_name: user.first_name, last_name: user.last_name, role: "member" as const }))]
+            const user_ids:number[] = Array.isArray(body.user_ids) ? body.user_ids.filter((id:unknown):id is number => typeof id === "number") : [] // Gets The User IDs
+            const added:UserListItem[] = MOCK_USERS.filter((user:UserListItem) => user_ids.includes(user.id)) // Gets The Added
+            const members = [...MOCK_GROUP_ROOM.members, ...added.map((user:UserListItem) => ({ ...user, first_name: user.first_name, last_name: user.last_name, role: "member" as const }))] // Gets The Members
 
             return ok({
                 room: { ...MOCK_GROUP_ROOM, members, members_count: members.length },
@@ -258,17 +260,17 @@ const routes:{ method:string, pattern:string, handler:MockHandler }[] = [
 ]
 
 // In-Memory Training Plans (Saving And Deleting Change What get-training-plans Returns Until Reload)
-let training_plans_state:TrainingPlanExercise[] = [...MOCK_TRAINING_PLANS]
+let training_plans_state:TrainingPlanExercise[] = [...MOCK_TRAINING_PLANS] // Defines The Training Plans State
 
 // Function For Apply A manage-training-plan Request (Same Rules As The Server)
 function manageTrainingPlans(raw_body:unknown):MockResponse {
     if(!Array.isArray(raw_body) || raw_body.length === 0) return { status: 400, body: { success: false, message: "Missing data (mock)" } }
 
-    const rows = raw_body as Record<string, unknown>[]
-    const deleted_keys:Set<string> = new Set()
+    const rows = raw_body as Record<string, unknown>[] // Gets The Rows
+    const deleted_keys:Set<string> = new Set() // Gets The Deleted Keys
 
     rows.forEach((row) => {
-        const key = row.action === "edited_training_plan" ? row.previous_training_plan_key : row.action === "delete_training_plan" ? row.training_plan_key : null
+        const key = row.action === "edited_training_plan" ? row.previous_training_plan_key : row.action === "delete_training_plan" ? row.training_plan_key : null // Gets The Key
         if(typeof key === "string") deleted_keys.add(key)
     })
 
@@ -281,7 +283,7 @@ function manageTrainingPlans(raw_body:unknown):MockResponse {
     return ok({}, 201)
 }
 
-// Adds The Followers Count Used By The Users List
+// Function For Add The Followers Count Used By The Users List
 function withFollowers(user:UserListItem) {
     return { ...user, friend_code: `WSQ-${1000 + user.id}`, followers: 10 + user.id * 7 }
 }
@@ -293,11 +295,11 @@ const matchPattern = (pattern:string, path:string):string[]|null => {
 
     if(pattern_parts.length !== path_parts.length) return null
 
-    const params:string[] = []
+    const params:string[] = [] // Gets The Params
 
     for(let index:number = 0; index < pattern_parts.length; index++) {
-        const pattern_part:string = pattern_parts[index] ?? ""
-        const path_part:string = path_parts[index] ?? ""
+        const pattern_part:string = pattern_parts[index] ?? "" // Gets The Pattern Part
+        const path_part:string = path_parts[index] ?? "" // Gets The Path Part
 
         if(pattern_part.startsWith(":")) params.push(decodeURIComponent(path_part))
         else if(pattern_part !== path_part) return null
@@ -317,7 +319,7 @@ const parseQuery = (query_string:string):Record<string, string> => {
 
 // Function For Resolve A Request (Unknown GETs Return 404 So Missing Mocks Are Visible, Unknown POSTs Succeed)
 export const resolveMockRequest = (method:string, path_with_query:string, raw_body:unknown = {}):MockResponse => {
-    const body:Record<string, unknown> = typeof raw_body === "object" && raw_body !== null && !Array.isArray(raw_body) ? raw_body as Record<string, unknown> : {}
+    const body:Record<string, unknown> = typeof raw_body === "object" && raw_body !== null && !Array.isArray(raw_body) ? raw_body as Record<string, unknown> : {} // Gets The Body
     const [path = "", query_string = ""] = path_with_query.split("?") // Splits The Path And Query
     const upper_method:string = method.toUpperCase() // Gets The Method
 

@@ -5,5 +5,5 @@ import Conversation from "@/components/features/chat/Conversation"
 
 export default function DirectConversationScreen() {
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
-    return <Conversation username={username ?? ""} />
+    return <Conversation username = {username ?? ""} />
 }

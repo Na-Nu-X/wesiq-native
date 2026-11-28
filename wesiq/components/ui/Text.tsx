@@ -21,9 +21,9 @@ export default function Text({
 }:TextProps) {
     return (
         <NativeText
-            maxFontSizeMultiplier={maxFontSizeMultiplier}
+            maxFontSizeMultiplier = {maxFontSizeMultiplier}
 
-            style={[
+            style = {[
                 styles.base,
                 typography[variant],
                 { color: colors[color] },

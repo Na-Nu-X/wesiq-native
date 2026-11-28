@@ -30,36 +30,71 @@ export default function Header({ title, subtitle, is_large = false, has_back_but
         else router.replace("/") // Goes Home When Opened From A Deep Link
     }
 
+    // Gets The Left Element
     const left_element:ReactNode = left ?? (has_back_button ? (
-        <IconButton icon="chevron-left" accessibility_label={t("Späť")} onPress={goBack} variant="soft" size={38} />
+        <IconButton
+            icon = "chevron-left"
+            accessibility_label = {t("Späť")}
+            onPress = {goBack}
+            variant = "soft"
+            size = {38}
+        />
     ) : null)
 
     if(is_large) {
         return (
-            <View style={styles.large_header}>
+            <View style = {styles.large_header}>
                 {(left_element || right) && (
-                    <View style={styles.row}>
-                        <View style={styles.side}>{left_element}</View>
-                        <View style={[styles.side, styles.side_right]}>{right}</View>
+                    <View style = {styles.row}>
+                        <View style = {styles.side}>{left_element}</View>
+                        <View style = {[styles.side, styles.side_right]}>{right}</View>
                     </View>
                 )}
 
-                {!!title && <Text variant="title" accessibilityRole="header" numberOfLines={2}>{title}</Text>}
-                {!!subtitle && <Text variant="callout" color="text_secondary">{subtitle}</Text>}
+                {!!title &&
+                    <Text
+                        variant = "title"
+                        accessibilityRole = "header"
+                        numberOfLines = {2}
+                    >
+                        {title}
+                    </Text>
+                }
+                {!!subtitle &&
+                    <Text variant = "callout" color = "text_secondary">{subtitle}</Text>
+                }
             </View>
         )
     }
 
     return (
-        <View style={styles.header}>
-            <View style={styles.side}>{left_element}</View>
+        <View style = {styles.header}>
+            <View style = {styles.side}>{left_element}</View>
 
-            <View style={styles.center}>
-                {!!title && <Text variant="subheading" align="center" numberOfLines={1} accessibilityRole="header">{title}</Text>}
-                {!!subtitle && <Text variant="caption" color="text_secondary" align="center" numberOfLines={1}>{subtitle}</Text>}
+            <View style = {styles.center}>
+                {!!title &&
+                    <Text
+                        variant = "subheading"
+                        align = "center"
+                        numberOfLines = {1}
+                        accessibilityRole = "header"
+                    >
+                        {title}
+                    </Text>
+                }
+                {!!subtitle &&
+                    <Text
+                        variant = "caption"
+                        color = "text_secondary"
+                        align = "center"
+                        numberOfLines = {1}
+                    >
+                        {subtitle}
+                    </Text>
+                }
             </View>
 
-            <View style={[styles.side, styles.side_right]}>{right}</View>
+            <View style = {[styles.side, styles.side_right]}>{right}</View>
         </View>
     )
 }

@@ -31,8 +31,8 @@ const MAX_NETWORK_RETRIES:number = 2 // A Missing Stream (404) Would Otherwise B
 
 // Function For Attach To Every <video> Of The Player (hls.js When A Stream Is Given, Position Handover Always; Returns The Cleanup)
 const attachPlayer = (player:VideoPlayer, hls_uri:string|null, user_token:string|null):(() => void) => {
-    const web_player = player as unknown as WebVideoPlayer
-    const instances:Map<HTMLVideoElement, HlsJs|null> = new Map()
+    const web_player = player as unknown as WebVideoPlayer // Gets The Web Player
+    const instances:Map<HTMLVideoElement, HlsJs|null> = new Map() // Gets The Instances
 
     // Function For Attach To One <video>
     const attach = (video:HTMLVideoElement):void => {
@@ -59,7 +59,7 @@ const attachPlayer = (player:VideoPlayer, hls_uri:string|null, user_token:string
                 if(user_token) xhr.setRequestHeader("Authorization", `Bearer ${user_token}`)
             },
         })
-        let network_retries:number = 0
+        let network_retries:number = 0 // Gets The Network Retries
         if(web_player.status === "error") web_player.status = "loading" // A Retry Starts Clean, So A New Failure Is Reported Again
 
         // Recovers From Network / Media Hiccups Like The Website Player, Then Reports The Error Through The Player Status
@@ -100,14 +100,14 @@ const attachPlayer = (player:VideoPlayer, hls_uri:string|null, user_token:string
 
     // expo-video Calls video.play() Without Handling The Rejection (No Source, Interrupted By pause()), Which Shows Up As
     // An Uncaught Error; The Failure Itself Reaches The UI Through The Player Status
-    const play = web_player.play.bind(web_player)
+    const play = web_player.play.bind(web_player) // Gets The Play
     web_player.play = ():void => {
         web_player._mountedVideos?.forEach((video:HTMLVideoElement) => { video.play().catch(() => {}) })
     }
 
     // Videos Mounted Later (The Fullscreen View) Are Handled Too
-    const mountVideoView = web_player.mountVideoView.bind(web_player)
-    const unmountVideoView = web_player.unmountVideoView.bind(web_player)
+    const mountVideoView = web_player.mountVideoView.bind(web_player) // Gets The Mount Video View
+    const unmountVideoView = web_player.unmountVideoView.bind(web_player) // Gets The Unmount Video View
 
     web_player.mountVideoView = (video:HTMLVideoElement):void => {
         mountVideoView(video)
@@ -127,7 +127,8 @@ const attachPlayer = (player:VideoPlayer, hls_uri:string|null, user_token:string
     }
 }
 
-// Initializes hls.js (When Needed) And The Position Handover For The Player
+// Function For Initialize hls.js (When Needed) And The Position Handover For The Player
 export const useHlsSource = (player:VideoPlayer, hls_uri:string|null, user_token:string|null):void => {
+    // Initializes The Attachment Of The HLS Source To The Player
     useEffect(() => attachPlayer(player, needs_hls_library ? hls_uri : null, user_token), [player, hls_uri, user_token])
 }

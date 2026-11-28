@@ -15,21 +15,22 @@ interface FeedState {
     error:ApiError|null
 }
 
+// Function For The Posts Feed Hook
 export function usePostsFeed(search_query:string) {
-    const [state, setState] = useState<FeedState|null>(null) // Null Until The First Page Loads
-    const [is_refreshing, setIsRefreshing] = useState<boolean>(false)
-    const [is_loading_more, setIsLoadingMore] = useState<boolean>(false)
-    const [load_more_error, setLoadMoreError] = useState<ApiError|null>(null) // Stops Automatic Loading Until The User Retries
+    const [state, setState] = useState<FeedState|null>(null) // Stores The State (Null Until The First Page Loads)
+    const [is_refreshing, setIsRefreshing] = useState<boolean>(false) // Stores If It Is Refreshing
+    const [is_loading_more, setIsLoadingMore] = useState<boolean>(false) // Stores If It Is Loading More
+    const [load_more_error, setLoadMoreError] = useState<ApiError|null>(null) // Stores The Load More Error (Stops Automatic Loading Until The User Retries)
     const request_id = useRef<number>(0) // Ignores Responses Of Outdated Requests
     const is_loading_more_reference = useRef<boolean>(false) // Blocks A Second Request Before The State Updates (onEndReached Fires Several Times)
 
     // Function For Load The First Page
     const loadFirstPage = useCallback(async (query:string):Promise<void> => {
-        const id:number = ++request_id.current
+        const id:number = ++request_id.current // Gets The ID
         const response = await getPosts(1, query) // Sends The Request
         if(id !== request_id.current) return
 
-        setLoadMoreError(null)
+        setLoadMoreError(null) // Sets The Load More Error
         setState(response.ok
             ? { query, posts: response.data.posts, page: 1, has_next: response.data.has_next, error: null }
             : { query, posts: [], page: 1, has_next: false, error: response.error })
@@ -42,9 +43,9 @@ export function usePostsFeed(search_query:string) {
 
     // Function For Pull To Refresh
     const refresh = useCallback(async ():Promise<void> => {
-        setIsRefreshing(true)
+        setIsRefreshing(true) // Sets The Refreshing State
         await loadFirstPage(search_query)
-        setIsRefreshing(false)
+        setIsRefreshing(false) // Sets The Refreshing State
     }, [search_query, loadFirstPage])
 
     // Initializes The Refresh When A Post Is Uploaded, Processed Or Deleted
@@ -56,40 +57,40 @@ export function usePostsFeed(search_query:string) {
         if(load_more_error && is_retry !== true) return // A Failed Page Would Otherwise Be Requested Again On Every Scroll Event
 
         is_loading_more_reference.current = true
-        setIsLoadingMore(true)
-        setLoadMoreError(null)
-        const id:number = request_id.current
+        setIsLoadingMore(true) // Sets The Loading More State
+        setLoadMoreError(null) // Sets The Load More Error
+        const id:number = request_id.current // Gets The ID
         const response = await getPosts(state.page + 1, search_query) // Sends The Request
         is_loading_more_reference.current = false
-        setIsLoadingMore(false)
+        setIsLoadingMore(false) // Sets The Loading More State
 
         if(id !== request_id.current) return
 
         if(!response.ok) {
-            setLoadMoreError(response.error)
+            setLoadMoreError(response.error) // Sets The Load More Error
             return
         }
 
         setState((previous:FeedState|null) => {
             if(!previous) return previous
-            const known:Set<string> = new Set(previous.posts.map((post:Post) => post.id))
+            const known:Set<string> = new Set(previous.posts.map((post:Post) => post.id)) // Gets The Known
             return { ...previous, posts: [...previous.posts, ...response.data.posts.filter((post:Post) => !known.has(post.id))], page: previous.page + 1, has_next: response.data.has_next }
         })
     }, [state, load_more_error, search_query])
 
     // Function For Replace One Post
     const updatePost = useCallback((post:Post):void => {
-        setState((previous) => previous ? { ...previous, posts: previous.posts.map((other:Post) => other.id === post.id ? post : other) } : previous)
+        setState((previous) => previous ? { ...previous, posts: previous.posts.map((other:Post) => other.id === post.id ? post : other) } : previous) // Sets The State
     }, [])
 
     // Function For Update The Author On All Their Posts (Follow State)
     const updateAuthor = useCallback((user_id:number, changes:Partial<PostAuthor>):void => {
-        setState((previous) => previous ? { ...previous, posts: previous.posts.map((post:Post) => post.user.id === user_id ? { ...post, user: { ...post.user, ...changes } } : post) } : previous)
+        setState((previous) => previous ? { ...previous, posts: previous.posts.map((post:Post) => post.user.id === user_id ? { ...post, user: { ...post.user, ...changes } } : post) } : previous) // Sets The State
     }, [])
 
     // Function For Remove A Post
     const removePost = useCallback((post_id:string):void => {
-        setState((previous) => previous ? { ...previous, posts: previous.posts.filter((post:Post) => post.id !== post_id) } : previous)
+        setState((previous) => previous ? { ...previous, posts: previous.posts.filter((post:Post) => post.id !== post_id) } : previous) // Sets The State
     }, [])
 
     const is_loading:boolean = state === null || state.query !== search_query // Stores The Information If The First Page Is Loading

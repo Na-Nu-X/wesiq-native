@@ -5,5 +5,5 @@ import ProfileScreen from "@/components/features/profile/ProfileScreen"
 
 export default function UserProfileRoute() {
     const { username } = useLocalSearchParams<{ username:string }>() // Gets The Username
-    return <ProfileScreen username={username} />
+    return <ProfileScreen username = {username} />
 }

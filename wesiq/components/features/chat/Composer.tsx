@@ -31,7 +31,7 @@ export interface PendingAttachment extends UploadableFile {
 }
 
 export const MAX_MESSAGE_LENGTH:number = 250 // Same As Before
-const MAX_ATTACHMENTS:number = 5
+const MAX_ATTACHMENTS:number = 5 // Defines The Max Attachments
 
 export const WAVEFORM_BARS:number = 35 // Defines The Waveform Bars
 const MAX_LIVE_BARS:number = 120 // Most Bars The Live Waveform Can Show (Wide Screens)
@@ -54,10 +54,10 @@ interface ComposerProps {
     is_disabled:boolean // Not Connected Yet
 }
 
-// Converts Decibels (From -60 dB - 0 dB To 0.05 - 1.0)
+// Function For Convert Decibels (From -60 dB - 0 dB To 0.05 - 1.0)
 const dbToNormalized = (db?:number):number => {
     if(typeof db !== "number" || Number.isNaN(db)) return 0.1
-    const clamped:number = Math.max(-60, Math.min(0, db))
+    const clamped:number = Math.max(-60, Math.min(0, db)) // Gets The Clamped
     return Number((0.05 + ((clamped + 60) / 60) * 0.95).toFixed(3))
 }
 
@@ -70,10 +70,10 @@ const normalizeWaveform = (samples:number[], targetBars:number = WAVEFORM_BARS):
     const result:number[] = [] // Stores The Result
 
     for(let i:number = 0; i < targetBars; i++) {
-        const start:number = Math.floor(i * step)
-        const end:number = Math.floor((i + 1) * step)
-        const slice:number[] = samples.slice(start, Math.max(start + 1, end))
-        const average:number = slice.reduce((sum, val) => sum + val, 0) / slice.length
+        const start:number = Math.floor(i * step) // Gets The Start
+        const end:number = Math.floor((i + 1) * step) // Gets The End
+        const slice:number[] = samples.slice(start, Math.max(start + 1, end)) // Gets The Slice
+        const average:number = slice.reduce((sum, val) => sum + val, 0) / slice.length // Gets The Average
 
         result.push(Number(average.toFixed(3)))
     }
@@ -90,9 +90,9 @@ function RecordingDot() {
         opacity.set(withRepeat(withTiming(0.25, { duration: 700 }), -1, true))
     }, [opacity])
 
-    const dot_style = useAnimatedStyle(() => ({ opacity: opacity.get() }))
+    const dot_style = useAnimatedStyle(() => ({ opacity: opacity.get() })) // Gets The Dot Style
 
-    return <Animated.View style={[styles.recording_dot, dot_style]} />
+    return <Animated.View style = {[styles.recording_dot, dot_style]} />
 }
 
 export default function Composer({ 
@@ -115,11 +115,11 @@ export default function Composer({
     const plan = getActiveSubscriptionPlan(logged_in_user) // Gets The Plan
     const limits = getMediaLimits(plan) // Same Limits As The Server
     const max_file_bytes:number = plan === "free" ? 5_000_000 : 10_000_000 // Documents (Same As The Server)
-    const remaining:number = MAX_ATTACHMENTS - attachments.length
+    const remaining:number = MAX_ATTACHMENTS - attachments.length // Gets The Remaining
     const input_reference = useRef<ComponentRef<typeof TextInput>>(null) // Focuses The Input When Editing Starts
 
-    const editing_id:number|null = editing?.id ?? null
-    const reply_on_id:number|null = reply_on?.id ?? null
+    const editing_id:number|null = editing?.id ?? null // Gets The Editing ID
+    const reply_on_id:number|null = reply_on?.id ?? null // Gets The Reply On ID
 
     const raw_samples_reference = useRef<number[]>([]) // Stores The Raw Samples Reference
     const [live_waveform, setLiveWaveform] = useState<number[]>([]) // Stores The Live Waveform
@@ -149,9 +149,9 @@ export default function Composer({
     useEffect(() => {
         if(!audio_recorder_state.isRecording) return
 
-        const sample = dbToNormalized(audio_recorder_state.metering)
+        const sample = dbToNormalized(audio_recorder_state.metering) // Gets The Sample
         raw_samples_reference.current.push(sample)
-        setLiveWaveform(raw_samples_reference.current.slice(-MAX_LIVE_BARS))
+        setLiveWaveform(raw_samples_reference.current.slice(-MAX_LIVE_BARS)) // Sets The Live Waveform
     }, [audio_recorder_state.isRecording, audio_recorder_state.durationMillis, audio_recorder_state.metering])
 
     const is_recording:boolean = audio_recorder_state.isRecording // Stores The Information If A Voice Message Is Being Recorded
@@ -162,15 +162,16 @@ export default function Composer({
     const live_samples:number[] = live_waveform.slice(-bar_capacity) // Newest Samples That Fit
     const live_bars:(number|null)[] = [...Array<null>(bar_capacity - live_samples.length).fill(null), ...live_samples] // Dots Fill The Rest Until The Recording Is Long Enough
 
-    const can_send:boolean = !is_disabled && !is_sending && (value.trim().length > 0 || attachments.length > 0 || !!voice_message)
+    const can_send:boolean = !is_disabled && !is_sending && (value.trim().length > 0 || attachments.length > 0 || !!voice_message) // Checks If It Can Send
 
     // Function For Add Picked Files (Skips Files Over The Server Limits And Says Which)
     const addFiles = (picked:PendingAttachment[], durations:Map<string, number|null> = new Map()):void => {
-        const rejected:string[] = []
+        const rejected:string[] = [] // Gets The Rejected
 
+        // Gets The Accepted
         const accepted:PendingAttachment[] = picked.filter((file:PendingAttachment) => {
-            const limit:number = file.kind === "image" ? limits.max_image_bytes : file.kind === "video" ? limits.max_video_bytes : max_file_bytes
-            const duration:number|null = durations.get(file.key) ?? null
+            const limit:number = file.kind === "image" ? limits.max_image_bytes : file.kind === "video" ? limits.max_video_bytes : max_file_bytes // Gets The Limit
+            const duration:number|null = durations.get(file.key) ?? null // Gets The Duration
 
             if(file.size !== null && file.size > limit) {
                 rejected.push(`${file.name} (max. ${formatMegabytes(limit)})`)
@@ -191,14 +192,14 @@ export default function Composer({
 
     // Function For Pick Photos And Videos
     const pickMedia = async ():Promise<void> => {
-        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images", "videos"], allowsMultipleSelection: true, selectionLimit: remaining, quality: 0.9 })
+        const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images", "videos"], allowsMultipleSelection: true, selectionLimit: remaining, quality: 0.9 }) // Gets The Result
         if(result.canceled) return
 
-        const durations:Map<string, number|null> = new Map()
+        const durations:Map<string, number|null> = new Map() // Gets The Durations
 
         addFiles(result.assets.map((asset, index:number) => {
-            const is_video:boolean = asset.type === "video"
-            const key:string = `${asset.uri}_${Date.now()}_${index}`
+            const is_video:boolean = asset.type === "video" // Checks If It Is Video
+            const key:string = `${asset.uri}_${Date.now()}_${index}` // Gets The Key
             durations.set(key, typeof asset.duration === "number" ? asset.duration / 1000 : null)
 
             return {
@@ -215,7 +216,7 @@ export default function Composer({
 
     // Function For Pick Documents
     const pickDocuments = async ():Promise<void> => {
-        const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: true, copyToCacheDirectory: true })
+        const result = await DocumentPicker.getDocumentAsync({ type: "*/*", multiple: true, copyToCacheDirectory: true }) // Gets The Result
         if(result.canceled) return
 
         addFiles(result.assets.slice(0, remaining).map((asset, index:number) => ({
@@ -326,98 +327,210 @@ export default function Composer({
     }
 
     return (
-        <View style={styles.container}>
+        <View style = {styles.container}>
             {!!editing && (
-                <View style={styles.banner}>
-                    <Icon name="pen" size={12} color="primary" />
+                <View style = {styles.banner}>
+                    <Icon
+                        name = "pen"
+                        size = {12}
+                        color = "primary"
+                    />
 
-                    <View style={styles.flex}>
-                        <Text variant="label" color="primary_text">{t("Úprava správy")}</Text>
-                        <Text variant="caption" color="text_secondary" numberOfLines={1}>{editing.content}</Text>
+                    <View style = {styles.flex}>
+                        <Text variant = "label" color = "primary_text">{t("Úprava správy")}</Text>
+                        <Text
+                            variant = "caption"
+                            color = "text_secondary"
+                            numberOfLines = {1}
+                        >
+                            {editing.content}
+                        </Text>
                     </View>
 
-                    <IconButton icon="xmark" accessibility_label={t("Zrušiť úpravu")} onPress={onCancelEdit} size={28} icon_color="text_muted" />
+                    <IconButton
+                        icon = "xmark"
+                        accessibility_label = {t("Zrušiť úpravu")}
+                        onPress = {onCancelEdit}
+                        size = {28}
+                        icon_color = "text_muted"
+                    />
                 </View>
             )}
 
             {!!reply_on && !editing && (
-                <View style={[styles.banner, styles.reply_banner]}>
-                    <Icon name="reply" size={12} color="primary" />
-                    <ReplyQuote reply={reply_on} current_user_id={logged_in_user?.id ?? null} variant="composer" />
-                    <IconButton icon="xmark" accessibility_label={t("Zrušiť odpovedanie")} onPress={onCancelReply} size={28} icon_color="text_muted" />
+                <View style = {[styles.banner, styles.reply_banner]}>
+                    <Icon
+                        name = "reply"
+                        size = {12}
+                        color = "primary"
+                    />
+                    <ReplyQuote
+                        reply = {reply_on}
+                        current_user_id = {logged_in_user?.id ?? null}
+                        variant = "composer"
+                    />
+                    <IconButton
+                        icon = "xmark"
+                        accessibility_label = {t("Zrušiť odpovedanie")}
+                        onPress = {onCancelReply}
+                        size = {28}
+                        icon_color = "text_muted"
+                    />
                 </View>
             )}
 
             {attachments.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.previews}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator = {false}
+                    contentContainerStyle = {styles.previews}
+                >
                     {attachments.map((attachment:PendingAttachment) => (
-                        <View key={attachment.key} style={styles.preview}>
+                        <View key = {attachment.key} style = {styles.preview}>
                             {attachment.kind === "image" ? (
-                                <Image source={{ uri: attachment.uri }} style={StyleSheet.absoluteFill} contentFit="cover" />
+                                <Image
+                                    source = {{ uri: attachment.uri }}
+                                    style = {StyleSheet.absoluteFill}
+                                    contentFit = "cover"
+                                />
                             ) : (
-                                <View style={styles.preview_file}>
-                                    <Icon name={attachment.kind === "video" ? "film" : "file"} size={16} color="primary" />
-                                    <Text variant="caption" numberOfLines={2} align="center">{attachment.name}</Text>
+                                <View style = {styles.preview_file}>
+                                    <Icon
+                                        name = {attachment.kind === "video" ? "film" : "file"}
+                                        size = {16}
+                                        color = "primary"
+                                    />
+                                    <Text
+                                        variant = "caption"
+                                        numberOfLines = {2}
+                                        align = "center"
+                                    >
+                                        {attachment.name}
+                                    </Text>
                                 </View>
                             )}
 
-                            <View style={styles.preview_remove}>
-                                <IconButton icon="xmark" accessibility_label={`${t("Odstrániť")}: ${attachment.name}`} onPress={() => onAttachmentsChange(attachments.filter((other) => other.key !== attachment.key))} variant="soft" size={24} />
+                            <View style = {styles.preview_remove}>
+                                <IconButton
+                                    icon = "xmark"
+                                    accessibility_label = {`${t("Odstrániť")}: ${attachment.name}`}
+                                    onPress = {() => onAttachmentsChange(attachments.filter((other) => other.key !== attachment.key))}
+                                    variant = "soft"
+                                    size = {24}
+                                />
                             </View>
                         </View>
                     ))}
                 </ScrollView>
             )}
 
-            <View style={styles.row}>
+            <View style = {styles.row}>
                 {!editing && !is_voice_mode && (
                     <>
-                        <IconButton icon="image" accessibility_label={t("Pridať fotky alebo videá")} onPress={pickMedia} is_disabled={remaining <= 0} size={40} icon_color="primary" is_solid_icon={false} />
-                        <IconButton icon="paperclip" accessibility_label={t("Pridať súbor")} onPress={pickDocuments} is_disabled={remaining <= 0} size={40} icon_color="primary" />
+                        <IconButton
+                            icon = "image"
+                            accessibility_label = {t("Pridať fotky alebo videá")}
+                            onPress = {pickMedia}
+                            is_disabled = {remaining <= 0}
+                            size = {40}
+                            icon_color = "primary"
+                            is_solid_icon = {false}
+                        />
+                        <IconButton
+                            icon = "paperclip"
+                            accessibility_label = {t("Pridať súbor")}
+                            onPress = {pickDocuments}
+                            is_disabled = {remaining <= 0}
+                            size = {40}
+                            icon_color = "primary"
+                        />
                     </>
                 )}
 
                 {is_voice_mode ? (
                     <>
-                        <IconButton icon="trash" accessibility_label={t("Vymazať nahrávku")} onPress={discardVoiceMessage} is_disabled={is_sending} size={40} icon_color="danger" />
+                        <IconButton
+                            icon = "trash"
+                            accessibility_label = {t("Vymazať nahrávku")}
+                            onPress = {discardVoiceMessage}
+                            is_disabled = {is_sending}
+                            size = {40}
+                            icon_color = "danger"
+                        />
 
-                        <View style={styles.voice_pill} accessibilityLiveRegion="polite" accessibilityLabel={is_recording ? t("Nahrávanie") : t("Hlasová správa")}>
-                            {is_recording ? <RecordingDot /> : <Icon name="microphone" size={14} color="primary" />}
+                        <View
+                            style = {styles.voice_pill}
+                            accessibilityLiveRegion = "polite"
+                            accessibilityLabel = {is_recording ? t("Nahrávanie") : t("Hlasová správa")}
+                        >
+                            {is_recording ? <RecordingDot /> : <Icon
+                                name = "microphone"
+                                size = {14}
+                                color = "primary"
+                            />}
 
-                            <Text variant="label" color={is_recording ? "text" : "text_secondary"} is_tabular style={styles.voice_time}>
+                            <Text
+                                variant = "label"
+                                color = {is_recording ? "text" : "text_secondary"}
+                                is_tabular
+                                style = {styles.voice_time}
+                            >
                                 {getFormattedTime("minutes", voice_seconds)}:{getFormattedTime("seconds", voice_seconds, true)}
                             </Text>
 
-                            <View style={styles.waveform_container} onLayout={(event) => setWaveformWidth(event.nativeEvent.layout.width)}>
+                            <View style = {styles.waveform_container} onLayout = {(event) => setWaveformWidth(event.nativeEvent.layout.width)}>
                                 {(is_recording ? live_bars : fitWaveformToBars(voice_message?.waveform ?? [], bar_capacity)).map((value:number|null, index:number) => (
-                                    <View key={index} style={styles.waveform_slot}>
-                                        <View style={[styles.waveform_bar, value === null ? styles.waveform_bar_empty : is_recording ? null : styles.waveform_bar_ready, { height: value === null ? BAR_WIDTH : Math.max(4, Math.min(22, value * 22)) }]} />
+                                    <View key = {index} style = {styles.waveform_slot}>
+                                        <View style = {[styles.waveform_bar, value === null ? styles.waveform_bar_empty : is_recording ? null : styles.waveform_bar_ready, { height: value === null ? BAR_WIDTH : Math.max(4, Math.min(22, value * 22)) }]} />
                                     </View>
                                 ))}
                             </View>
                         </View>
 
-                        {is_recording && <IconButton icon="stop" accessibility_label={t("Ukončiť nahrávanie")} onPress={stopRecording} variant="danger" size={40} />}
+                        {is_recording &&
+                            <IconButton
+                                icon = "stop"
+                                accessibility_label = {t("Ukončiť nahrávanie")}
+                                onPress = {stopRecording}
+                                variant = "danger"
+                                size = {40}
+                            />
+                        }
                     </>
                 ) : (
                     <>
-                        {!editing && <IconButton icon="microphone" accessibility_label={t("Spustiť nahrávanie")} onPress={startRecording} size={40} icon_color="primary" />}
+                        {!editing &&
+                            <IconButton
+                                icon = "microphone"
+                                accessibility_label = {t("Spustiť nahrávanie")}
+                                onPress = {startRecording}
+                                size = {40}
+                                icon_color = "primary"
+                            />
+                        }
 
                         <TextField
-                            ref={input_reference}
-                            placeholder={t("Napíšte správu")}
-                            accessibilityLabel={t("Napíšte správu")}
-                            value={value}
-                            onChangeText={onChange}
+                            ref = {input_reference}
+                            placeholder = {t("Napíšte správu")}
+                            accessibilityLabel = {t("Napíšte správu")}
+                            value = {value}
+                            onChangeText = {onChange}
                             multiline
-                            multiline_min_height={24}
-                            maxLength={MAX_MESSAGE_LENGTH}
-                            container_style={styles.flex}
+                            multiline_min_height = {24}
+                            maxLength = {MAX_MESSAGE_LENGTH}
+                            container_style = {styles.flex}
                         />
                     </>
                 )}
 
-                <IconButton icon="paper-plane" accessibility_label={editing ? t("Uložiť zmeny") : t("Odoslať")} onPress={onSend} is_disabled={!can_send} variant="solid" size={44} />
+                <IconButton
+                    icon = "paper-plane"
+                    accessibility_label = {editing ? t("Uložiť zmeny") : t("Odoslať")}
+                    onPress = {onSend}
+                    is_disabled = {!can_send}
+                    variant = "solid"
+                    size = {44}
+                />
             </View>
         </View>
     )

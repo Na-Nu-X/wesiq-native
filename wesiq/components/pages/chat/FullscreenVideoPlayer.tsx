@@ -18,16 +18,16 @@ export const FullscreenVideoPlayer = ({ url, onClose }:FullscreenVideoPlayerProp
     })
 
     return (
-        <View style={{ flex: 1, backgroundColor: "black", justifyContent: "center" }}>
+        <View style = {{ flex: 1, backgroundColor: "black", justifyContent: "center" }}>
             <VideoView 
-                player={video_player} 
-                style={{ width: "100%", height: "100%" }} 
+                player = {video_player} 
+                style = {{ width: "100%", height: "100%" }} 
             />
 
             <Pressable 
-                onPress={onClose}
+                onPress = {onClose}
 
-                style={{ 
+                style = {{ 
                     position: "absolute", 
                     top: 50,
                     right: 20, 
@@ -36,7 +36,7 @@ export const FullscreenVideoPlayer = ({ url, onClose }:FullscreenVideoPlayerProp
                     borderRadius: BIG_BORDER_RADIUS,
                 }}
             >
-                <Text style={{ color: SECONDARY_COLOR, fontWeight: "bold" }}>{t("Zavrieť")}</Text>
+                <Text style = {{ color: SECONDARY_COLOR, fontWeight: "bold" }}>{t("Zavrieť")}</Text>
             </Pressable>
         </View>
     )

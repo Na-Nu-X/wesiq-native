@@ -18,12 +18,12 @@ export interface IconProps {
 export default function Icon({ name, size = 18, color = "text", is_solid = true }:IconProps) {
     return (
         <FontAwesome6
-            name={name}
-            size={size}
-            color={colors[color]}
-            solid={is_solid}
+            name = {name}
+            size = {size}
+            color = {colors[color]}
+            solid = {is_solid}
             accessibilityElementsHidden // Icons Are Decorative, The Parent Carries The Label
-            importantForAccessibility="no-hide-descendants"
+            importantForAccessibility = "no-hide-descendants"
         />
     )
 }

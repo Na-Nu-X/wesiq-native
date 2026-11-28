@@ -37,6 +37,7 @@ export const buildApiUrl = (path:string, query?:Record<string, QueryValue>):stri
 
     if(!query) return url
 
+    // Gets The Query String
     const query_string:string = Object.entries(query)
         .filter((entry):entry is [string, string|number|boolean] => entry[1] !== null && entry[1] !== undefined)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
@@ -47,6 +48,7 @@ export const buildApiUrl = (path:string, query?:Record<string, QueryValue>):stri
 
 // Function For Create The Error Result
 const createError = <T,>(kind:ApiErrorKind, status:number|null, message?:string):ApiResult<T> => {
+    // Gets The Fallback Messages
     const fallback_messages:Record<ApiErrorKind, string> = {
         network: i18n.t("Nepodarilo sa pripojiť k serveru. Skontrolujte pripojenie k internetu."),
         timeout: i18n.t("Server neodpovedal včas. Skúste to znova."),
@@ -56,6 +58,7 @@ const createError = <T,>(kind:ApiErrorKind, status:number|null, message?:string)
         invalid_response: i18n.t("Server vrátil neočakávanú odpoveď."),
     }
 
+    // Gets The Error
     const error:ApiError = {
         kind,
         status,
@@ -80,17 +83,19 @@ interface HttpResponse {
 // Function For Send FormData Through React Native's Networking (XMLHttpRequest)
 // Expo Replaces The Global fetch With expo/fetch, Which Rejects React Native File Parts ({ uri, name, type }) With "Unsupported FormDataPart implementation".
 // XMLHttpRequest Still Uses React Native's Networking, Which Reads The File From Disk (Also Fine For Large Videos)
+// Function For Send The Form Data With XHR
 const sendFormDataWithXhr = (url:string, method:HttpMethod, headers:Record<string, string>, form_data:FormData, signal:AbortSignal):Promise<HttpResponse> => {
     return new Promise<HttpResponse>((resolve, reject) => {
-        const xhr:XMLHttpRequest = new XMLHttpRequest()
+        const xhr:XMLHttpRequest = new XMLHttpRequest() // Gets The XHR
         xhr.open(method, url)
         Object.entries(headers).forEach(([name, value]) => xhr.setRequestHeader(name, value)) // No Content-Type: The Boundary Is Added Automatically
 
+        // Function For Abort
         const abort = ():void => xhr.abort()
 
         xhr.onload = () => {
             signal.removeEventListener("abort", abort)
-            const response_text:string = xhr.responseText
+            const response_text:string = xhr.responseText // Gets The Response Text
 
             resolve({
                 status: xhr.status,
@@ -123,6 +128,7 @@ const sendFormDataWithXhr = (url:string, method:HttpMethod, headers:Record<strin
 
 // Function For Send The Request To The API
 export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:string, options:ApiRequestOptions<T> = {}, is_retry:boolean = false):Promise<ApiResult<T>> {
+    // Gets The Method, Query, Body, Form Data, Signal, Timeout MS, Is Authenticated, Extra Headers And Guard
     const {
         method = "GET",
         query,
@@ -143,21 +149,23 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
     if(user_token) headers["Authorization"] = `Bearer ${user_token}`
 
     // Combines The Caller Signal With The Timeout
-    const controller:AbortController = new AbortController()
-    let is_timed_out:boolean = false
+    const controller:AbortController = new AbortController() // Gets The Controller
+    let is_timed_out:boolean = false // Checks If It Is Timed Out
 
+    // Gets The Timeout
     const timeout:ReturnType<typeof setTimeout> = setTimeout(() => {
         is_timed_out = true
         controller.abort()
     }, timeout_ms)
 
+    // Function For Abort From Caller
     const abortFromCaller = ():void => controller.abort()
     if(signal) {
         if(signal.aborted) controller.abort()
         else signal.addEventListener("abort", abortFromCaller)
     }
 
-    let response:HttpResponse
+    let response:HttpResponse // Gets The Response
     const url:string = buildApiUrl(path, query) // Gets The URL
     const is_native_upload:boolean = form_data !== undefined && Platform.OS !== "web" && !IS_MOCK_MODE // The Mock API Patches fetch, So Mock Uploads Stay On fetch
 
@@ -185,7 +193,7 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
     }
 
     // Parses The Body (Some Error Responses Aren't JSON)
-    let json:unknown = null
+    let json:unknown = null // Gets The JSON
 
     try {
         json = await response.json()
@@ -231,10 +239,12 @@ export async function apiRequest<T extends ApiEnvelope = ApiEnvelope>(path:strin
 }
 
 // Shorthands
+// Function For API Get
 export const apiGet = <T extends ApiEnvelope = ApiEnvelope>(path:string, options:Omit<ApiRequestOptions<T>, "method"|"body"|"form_data"> = {}) => {
     return apiRequest<T>(path, { ...options, method: "GET" })
 }
 
+// Function For API Post
 export const apiPost = <T extends ApiEnvelope = ApiEnvelope>(path:string, body?:unknown, options:Omit<ApiRequestOptions<T>, "method"|"body"> = {}) => {
     return apiRequest<T>(path, { ...options, method: "POST", body })
 }

@@ -28,6 +28,7 @@ export interface UseApiQueryResult<T> {
 }
 
 // "key" Must Change Whenever The Request Changes (E.g. `profile:${username}`)
+// Function For The API Query Hook
 export function useApiQuery<T>(
     key:string,
     fetcher:(signal:AbortSignal) => Promise<ApiResult<T>>,
@@ -60,7 +61,7 @@ export function useApiQuery<T>(
     useEffect(() => {
         if(!is_enabled) return
 
-        const controller:AbortController = new AbortController()
+        const controller:AbortController = new AbortController() // Gets The Controller
         run(key, controller.signal)
 
         return () => controller.abort()
@@ -70,14 +71,14 @@ export function useApiQuery<T>(
     const refetch = useCallback(async ():Promise<void> => {
         if(!is_enabled) return
 
-        setIsRefreshing(true)
+        setIsRefreshing(true) // Sets The Refreshing State
 
         try {
             await run(key, new AbortController().signal)
         }
 
         finally {
-            setIsRefreshing(false)
+            setIsRefreshing(false) // Sets The Refreshing State
         }
     }, [key, is_enabled, run])
 
@@ -97,8 +98,8 @@ export function useApiQuery<T>(
     }, [key])
 
     // Derives The State (A Result Of An Older Key Means The New One Is Still Loading)
-    const is_current:boolean = result !== null && result.key === key
-    let state:QueryState<T>
+    const is_current:boolean = result !== null && result.key === key // Checks If It Is Current
+    let state:QueryState<T> // Gets The State
 
     if(!is_current || !result) state = { status: "loading", data: null, error: null }
     else if(result.error) state = { status: "error", data: result.data, error: result.error }

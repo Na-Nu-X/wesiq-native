@@ -8,13 +8,15 @@ import { Icon, Text } from "@/components/ui"
 import { colors, radii, shadows, spacing } from "@/theme"
 import { haptics } from "@/lib/haptics"
 
+// Function For The XP Toast Hook
 export function useXpToast():{ show:(xp:number, label?:string) => void, element:ReactNode } {
-    const [content, setContent] = useState<{ xp:number, label?:string }|null>(null)
+    const [content, setContent] = useState<{ xp:number, label?:string }|null>(null) // Stores The Content
     const progress = useSharedValue<number>(0) // 0 Hidden, 1 Shown
-    const player = useAudioPlayer(require("@/assets/sounds/success.mp3"))
+    const player = useAudioPlayer(require("@/assets/sounds/success.mp3")) // Gets The Player
 
+    // Function For Show
     const show = (xp:number, label?:string):void => {
-        setContent({ xp, label })
+        setContent({ xp, label }) // Sets The Content
         haptics.success()
 
         try {
@@ -29,17 +31,30 @@ export function useXpToast():{ show:(xp:number, label?:string) => void, element:
         progress.set(withSequence(withTiming(1, { duration: 260 }), withDelay(2200, withTiming(0, { duration: 400 }))))
     }
 
+    // Gets The Animated Style
     const animated_style = useAnimatedStyle(() => ({
         opacity: progress.get(),
         transform: [{ translateY: (1 - progress.get()) * -24 }, { scale: 0.9 + progress.get() * 0.1 }],
     }))
 
+    // Gets The Element
     const element = (
-        <View pointerEvents="none" style={styles.layer}>
-            <Animated.View style={[styles.toast, animated_style]} accessibilityLiveRegion="polite">
-                <Icon name="bolt" size={14} color="premium" />
-                <Text variant="body_strong">+{content?.xp ?? 0} XP</Text>
-                {content?.label ? <Text variant="callout" color="text_secondary" numberOfLines={1} style={styles.label}>{content.label}</Text> : null}
+        <View pointerEvents = "none" style = {styles.layer}>
+            <Animated.View style = {[styles.toast, animated_style]} accessibilityLiveRegion = "polite">
+                <Icon
+                    name = "bolt"
+                    size = {14}
+                    color = "premium"
+                />
+                <Text variant = "body_strong">+{content?.xp ?? 0} XP</Text>
+                {content?.label ? <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    numberOfLines = {1}
+                    style = {styles.label}
+                >
+                    {content.label}
+                </Text> : null}
             </Animated.View>
         </View>
     )

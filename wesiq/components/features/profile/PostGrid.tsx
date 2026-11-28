@@ -6,17 +6,22 @@ import EnlargingPost from "./EnlargingPost"
 
 import type { ProfilePostPreview } from "@/types/models"
 
-const COLUMNS:number = 3
-const GAP:number = 3
+const COLUMNS:number = 3 // Defines The Columns
+const GAP:number = 3 // Defines The Gap
 
 export default function PostGrid({ posts, author_username }:{ posts:ProfilePostPreview[], author_username:string }) {
     const [width, setWidth] = useState<number>(0) // Stores The Grid Width
     const tile:number = width > 0 ? (width - GAP * (COLUMNS - 1)) / COLUMNS : 0 // Gets The Tile Size
 
     return (
-        <View style={styles.grid} onLayout={(event:LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
+        <View style = {styles.grid} onLayout = {(event:LayoutChangeEvent) => setWidth(event.nativeEvent.layout.width)}>
             {tile > 0 && posts.map((post:ProfilePostPreview) => (
-                <EnlargingPost key={post.id} post={post} size={tile} author_username={author_username} />
+                <EnlargingPost
+                    key = {post.id}
+                    post = {post}
+                    size = {tile}
+                    author_username = {author_username}
+                />
             ))}
         </View>
     )

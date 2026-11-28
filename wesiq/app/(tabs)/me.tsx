@@ -13,10 +13,14 @@ export default function MyProfileTab() {
     if(!logged_in_user) {
         return (
             <Screen>
-                <EmptyState icon="user" title={t("Prihláste sa")} message={t("Po prihlásení tu nájdete svoj profil.")} />
+                <EmptyState
+                    icon = "user"
+                    title = {t("Prihláste sa")}
+                    message = {t("Po prihlásení tu nájdete svoj profil.")}
+                />
             </Screen>
         )
     }
 
-    return <ProfileScreen username={logged_in_user.username} is_tab />
+    return <ProfileScreen username = {logged_in_user.username} is_tab />
 }

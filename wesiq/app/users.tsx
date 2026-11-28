@@ -18,18 +18,19 @@ import { formatUsername } from "@/lib/format"
 
 const HISTORY_LIMIT:number = 10 // Maximum Remembered Users
 
+// Function For Check If String Array
 const isStringArray = (value:unknown):value is string[] => Array.isArray(value) && value.every((item:unknown) => typeof item === "string")
 
 export default function UsersScreen() {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
-    const [search, setSearch] = useState<string>("")
-    const [history, setHistory] = useState<string[]|null>(null) // Null Until Loaded From Storage
-    const [busy_user_id, setBusyUserId] = useState<number|null>(null)
+    const [search, setSearch] = useState<string>("") // Stores The Search
+    const [history, setHistory] = useState<string[]|null>(null) // Stores The History (Null Until Loaded From Storage)
+    const [busy_user_id, setBusyUserId] = useState<number|null>(null) // Stores The Busy User ID
 
     const query:string = useDebouncedValue(search.trim(), 350) // Gets The Debounced Query
-    const is_searching:boolean = query.length > 0
+    const is_searching:boolean = query.length > 0 // Checks If It Is Searching
 
     // Initializes The Load Of The History
     useEffect(() => {
@@ -37,27 +38,27 @@ export default function UsersScreen() {
     }, [])
 
     // Suggestions Load Once After The History (Later History Changes Don't Reorder The List Under The Finger)
-    const suggestions = useApiQuery("users:first", (signal:AbortSignal) => loadFirstUsers(history ?? [], signal), { is_enabled: history !== null })
-    const results = useApiQuery(`users:search:${query}`, (signal:AbortSignal) => searchUsers(query, signal), { is_enabled: is_searching })
-    const active = is_searching ? results : suggestions
+    const suggestions = useApiQuery("users:first", (signal:AbortSignal) => loadFirstUsers(history ?? [], signal), { is_enabled: history !== null }) // Gets The Suggestions
+    const results = useApiQuery(`users:search:${query}`, (signal:AbortSignal) => searchUsers(query, signal), { is_enabled: is_searching }) // Gets The Results
+    const active = is_searching ? results : suggestions // Gets The Active
 
-    const users:SearchedUser[] = (active.state.data?.users ?? []).filter((user:SearchedUser) => user.id !== logged_in_user?.id)
+    const users:SearchedUser[] = (active.state.data?.users ?? []).filter((user:SearchedUser) => user.id !== logged_in_user?.id) // Gets The Users
     const is_waiting:boolean = search.trim() !== query // Typing, Debounce Not Finished Yet
 
     // Function For Open A Profile (And Remember It)
     const openUser = (user:SearchedUser):void => {
-        const next_history:string[] = [user.username, ...(history ?? []).filter((username:string) => username !== user.username)].slice(0, HISTORY_LIMIT)
-        setHistory(next_history)
-        setStoredJson("searched_users_history", next_history)
+        const next_history:string[] = [user.username, ...(history ?? []).filter((username:string) => username !== user.username)].slice(0, HISTORY_LIMIT) // Gets The Next History
+        setHistory(next_history) // Sets The History
+        setStoredJson("searched_users_history", next_history) // Sets The Stored JSON
         router.push({ pathname: "/profile/[username]", params: { username: user.username } })
     }
 
     // Function For Clear The History
     const clearHistory = async ():Promise<void> => {
-        const is_confirmed:boolean = await confirmAction({ title: t("Vymazať históriu vyhľadávania?"), confirm_label: t("Vymazať"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Vymazať históriu vyhľadávania?"), confirm_label: t("Vymazať"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
-        setHistory([])
+        setHistory([]) // Sets The History
         await removeStoredValue("searched_users_history")
         haptics.light()
     }
@@ -70,6 +71,7 @@ export default function UsersScreen() {
         }
 
         if(getFollowState(user) === "following") {
+            // Checks If It Is Confirmed
             const is_confirmed:boolean = await confirmAction({
                 title: t("Prestať sledovať {{username}}?", { username: user.username }),
                 message: user.private_account ? t("Ak je účet súkromný, budete musieť znova požiadať o sledovanie.") : undefined,
@@ -80,9 +82,9 @@ export default function UsersScreen() {
             if(!is_confirmed) return
         }
 
-        setBusyUserId(user.id)
+        setBusyUserId(user.id) // Sets The Busy User ID
         const response = await toggleFollow(user.id) // Sends The Request
-        setBusyUserId(null)
+        setBusyUserId(null) // Sets The Busy User ID
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -91,7 +93,7 @@ export default function UsersScreen() {
 
         haptics.light()
         const next_flags = getToggledFollowFlags(user) // Gets The Next Flags
-        const followers_delta:number = next_flags.has_follow ? 1 : user.has_follow ? -1 : 0
+        const followers_delta:number = next_flags.has_follow ? 1 : user.has_follow ? -1 : 0 // Gets The Followers Delta
 
         active.setData((previous) => previous ? {
             ...previous,
@@ -102,62 +104,123 @@ export default function UsersScreen() {
     // Function For Render The Follow Button
     const renderFollowButton = (user:SearchedUser) => {
         const state:FollowState = getFollowState(user) // Gets The Follow State
-        const is_busy:boolean = busy_user_id === user.id
+        const is_busy:boolean = busy_user_id === user.id // Checks If It Is Busy
 
-        if(state === "following") return <Button label={t("Sledujete")} size="sm" variant="secondary" icon="check" onPress={() => handleToggleFollow(user)} is_loading={is_busy} />
-        if(state === "requested") return <Button label={t("Požiadané")} size="sm" variant="secondary" icon="clock" onPress={() => handleToggleFollow(user)} is_loading={is_busy} accessibility_hint={t("Zrušiť žiadosť")} />
-        return <Button label={t("Sledovať")} size="sm" onPress={() => handleToggleFollow(user)} is_loading={is_busy} />
+        if(state === "following") {
+            return (
+                <Button
+                    label = {t("Sledujete")}
+                    size = "sm"
+                    variant = "secondary"
+                    icon = "check"
+                    onPress = {() => handleToggleFollow(user)}
+                    is_loading = {is_busy}
+                />
+            )
+        }
+        if(state === "requested") {
+            return (
+                <Button
+                    label = {t("Požiadané")}
+                    size = "sm"
+                    variant = "secondary"
+                    icon = "clock"
+                    onPress = {() => handleToggleFollow(user)}
+                    is_loading = {is_busy}
+                    accessibility_hint = {t("Zrušiť žiadosť")}
+                />
+            )
+        }
+        return (
+            <Button
+                label = {t("Sledovať")}
+                size = "sm"
+                onPress = {() => handleToggleFollow(user)}
+                is_loading = {is_busy}
+            />
+        )
     }
 
     // Function For Render One User
     const renderUser = ({ item }:ListRenderItemInfo<SearchedUser>) => {
-        const parts:string[] = [formatUsername(item.username)]
+        const parts:string[] = [formatUsername(item.username)] // Gets The Parts
         if(item.followers !== undefined) parts.push(t("Sledovatelia: {{count}}", { count: item.followers }))
 
-        return <UserRow user={item} subtitle={parts.join(" · ")} onPress={() => openUser(item)} trailing={renderFollowButton(item)} accessibility_hint={t("Otvorí profil")} />
+        return (
+            <UserRow
+                user = {item}
+                subtitle = {parts.join(" · ")}
+                onPress = {() => openUser(item)}
+                trailing = {renderFollowButton(item)}
+                accessibility_hint = {t("Otvorí profil")}
+            />
+        )
     }
 
-    const has_history:boolean = (history?.length ?? 0) > 0
+    const has_history:boolean = (history?.length ?? 0) > 0 // Checks If It Has History
 
+    // Gets The List Header
     const list_header = (
-        <View style={styles.list_header}>
+        <View style = {styles.list_header}>
             <TextField
-                icon="magnifying-glass"
-                placeholder={t("Meno, užívateľské meno alebo kód priateľa")}
-                accessibilityLabel={t("Hľadať ľudí")}
-                value={search}
-                onChangeText={setSearch}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="search"
+                icon = "magnifying-glass"
+                placeholder = {t("Meno, užívateľské meno alebo kód priateľa")}
+                accessibilityLabel = {t("Hľadať ľudí")}
+                value = {search}
+                onChangeText = {setSearch}
+                autoCapitalize = "none"
+                autoCorrect = {false}
+                returnKeyType = "search"
                 autoFocus
             />
 
-            <View style={styles.section_row}>
-                <Text variant="label" color="text_secondary">{is_searching ? t("Výsledky") : has_history ? t("Nedávno a navrhované") : t("Navrhovaní ľudia")}</Text>
-                {!is_searching && has_history && <Button label={t("Vymazať históriu")} size="sm" variant="ghost" onPress={clearHistory} />}
+            <View style = {styles.section_row}>
+                <Text variant = "label" color = "text_secondary">{is_searching ? t("Výsledky") : has_history ? t("Nedávno a navrhované") : t("Navrhovaní ľudia")}</Text>
+                {!is_searching && has_history &&
+                    <Button
+                        label = {t("Vymazať históriu")}
+                        size = "sm"
+                        variant = "ghost"
+                        onPress = {clearHistory}
+                    />
+                }
             </View>
         </View>
     )
 
-    const is_loading:boolean = active.state.status === "loading" || (is_waiting && search.trim().length > 0) || (!is_searching && history === null)
+    const is_loading:boolean = active.state.status === "loading" || (is_waiting && search.trim().length > 0) || (!is_searching && history === null) // Checks If It Is Loading
 
     return (
-        <Screen is_scrollable={false} is_padded={false} header={<Header title={t("Hľadať ľudí")} has_back_button />}>
+        <Screen
+            is_scrollable = {false}
+            is_padded = {false}
+            header = {<Header title = {t("Hľadať ľudí")} has_back_button />}
+        >
             <FlatList
-                data={is_loading ? [] : users}
-                keyExtractor={(user:SearchedUser) => String(user.id)}
-                renderItem={renderUser}
-                ListHeaderComponent={list_header}
-                refreshControl={<ThemedRefreshControl refreshing={active.is_refreshing} onRefresh={active.refetch} />}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                contentContainerStyle={styles.list_content}
+                data = {is_loading ? [] : users}
+                keyExtractor = {(user:SearchedUser) => String(user.id)}
+                renderItem = {renderUser}
+                ListHeaderComponent = {list_header}
+                refreshControl = {<ThemedRefreshControl refreshing = {active.is_refreshing} onRefresh = {active.refetch} />}
+                keyboardShouldPersistTaps = "handled"
+                keyboardDismissMode = "on-drag"
+                contentContainerStyle = {styles.list_content}
 
-                ListEmptyComponent={
-                    is_loading ? <View style={styles.skeletons}>{[0, 1, 2].map((index:number) => <Skeleton key={index} height={52} radius={radii.md} />)}</View>
-                    : active.state.status === "error" ? <ErrorState error={active.state.error} onRetry={active.refetch} />
-                    : <EmptyState icon="user-slash" title={is_searching ? t("Nikto sa nenašiel") : t("Zatiaľ tu nikto nie je")} message={is_searching ? t("Skúste iné meno alebo kód priateľa.") : undefined} is_compact />
+                ListEmptyComponent = {
+                    is_loading ? <View style = {styles.skeletons}>{[0, 1, 2].map((index:number) => (
+                        <Skeleton
+                            key = {index}
+                            height = {52}
+                            radius = {radii.md}
+                        />
+                    ))}</View>
+                    : active.state.status === "error" ? <ErrorState error = {active.state.error} onRetry = {active.refetch} />
+                    : <EmptyState
+                        icon = "user-slash"
+                        title = {is_searching ? t("Nikto sa nenašiel") : t("Zatiaľ tu nikto nie je")}
+                        message = {is_searching ? t("Skúste iné meno alebo kód priateľa.") : undefined}
+                        is_compact
+                    />
                 }
             />
         </Screen>

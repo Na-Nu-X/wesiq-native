@@ -20,7 +20,8 @@ export interface HeartRateProvider {
     onConnectionLost?(callback:() => void):void
 }
 
-const CONNECTED:HeartRateConnectResult = { ok: true }
+const CONNECTED:HeartRateConnectResult = { ok: true } // Defines The Connected
+// Function For Fail
 const fail = (error:HeartRateConnectError):HeartRateConnectResult => ({ ok: false, error })
 
 const HEALTH_POLL_MS:number = 5000 // How Often Apple Health / Health Connect Are Read
@@ -38,7 +39,7 @@ export class HeartRateManager {
     ):Promise<HeartRateConnectResult> {
         this.stopMonitoring() // Disconnects (And Cancels) The Previous Provider
 
-        let provider:HeartRateProvider
+        let provider:HeartRateProvider // Gets The Provider
 
         if(source_type === "TEST") provider = new TestHeartRateProvider()
         else if(source_type === "BLE") provider = new BleHeartRateProvider()
@@ -117,9 +118,10 @@ const getBleManager = ():BleManager => {
 // Function For Wait Until Bluetooth Reports A Settled State (Unknown / Resetting Right After Start)
 const waitForBluetoothState = (manager:BleManager):Promise<State> => {
     return new Promise((resolve) => {
-        let is_done:boolean = false
-        let subscription:Subscription|null = null
+        let is_done:boolean = false // Checks If It Is Done
+        let subscription:Subscription|null = null // Gets The Subscription
 
+        // Function For Finish
         const finish = (state:State):void => {
             if(is_done) return
             is_done = true
@@ -128,7 +130,7 @@ const waitForBluetoothState = (manager:BleManager):Promise<State> => {
             resolve(state)
         }
 
-        const timer:ReturnType<typeof setTimeout> = setTimeout(() => finish(State.Unknown), BLUETOOTH_STATE_TIMEOUT_MS)
+        const timer:ReturnType<typeof setTimeout> = setTimeout(() => finish(State.Unknown), BLUETOOTH_STATE_TIMEOUT_MS) // Gets The Timer
 
         subscription = manager.onStateChange((state:State) => {
             if(state !== State.Unknown && state !== State.Resetting) finish(state)
@@ -151,6 +153,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
         if(Platform.OS !== "android") return true
 
         if(Platform.Version >= 31) {
+            // Gets The Granted
             const granted = await PermissionsAndroid.requestMultiple([
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
                 PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT
@@ -169,10 +172,11 @@ export class BleHeartRateProvider implements HeartRateProvider {
     // Function For Scan For The Closest Heart Rate Sensor (Null = None Found Or Cancelled)
     private scan(manager:BleManager):Promise<Device|null> {
         return new Promise((resolve) => {
-            let best_device:Device|null = null
-            let settle_timer:ReturnType<typeof setTimeout>|null = null
-            let is_done:boolean = false
+            let best_device:Device|null = null // Gets The Best Device
+            let settle_timer:ReturnType<typeof setTimeout>|null = null // Gets The Settle Timer
+            let is_done:boolean = false // Checks If It Is Done
 
+            // Function For Finish
             const finish = (device:Device|null):void => {
                 if(is_done) return
                 is_done = true
@@ -183,7 +187,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
                 resolve(device)
             }
 
-            const timeout_timer:ReturnType<typeof setTimeout> = setTimeout(() => finish(best_device), SCAN_TIMEOUT_MS)
+            const timeout_timer:ReturnType<typeof setTimeout> = setTimeout(() => finish(best_device), SCAN_TIMEOUT_MS) // Gets The Timeout Timer
             this.stop_scan = () => finish(null)
 
             manager.startDeviceScan([HEART_RATE_SERVICE_UUID], null, (error, device) => {
@@ -206,7 +210,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
         const has_permissions:boolean = await this.requestAndroidPermissions() // Stores The Information If The Permissions For Connection Are Allowed
         if(!has_permissions) return fail("permission")
 
-        const manager:BleManager = getBleManager()
+        const manager:BleManager = getBleManager() // Gets The Manager
         const state:State = await waitForBluetoothState(manager) // Scanning Before Bluetooth Is Ready Fails
 
         if(this.is_cancelled) return fail("cancelled")
@@ -219,7 +223,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
             if(this.is_cancelled) return fail("cancelled")
             if(!device) return fail("not_found")
 
-            const connected_device:Device = device_id ? device : await device.connect()
+            const connected_device:Device = device_id ? device : await device.connect() // Gets The Connected Device
             this.active_device = await connected_device.discoverAllServicesAndCharacteristics()
 
             if(this.is_cancelled) {
@@ -256,7 +260,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
     // Function For Disconnect From The Device
     disconnect():void {
         this.is_cancelled = true
-        const device_id:string|undefined = this.active_device?.id
+        const device_id:string|undefined = this.active_device?.id // Gets The Device ID
         this.cleanUp()
 
         if(device_id) getBleManager().cancelDeviceConnection(device_id).catch(() => {}) // Already Disconnected
@@ -288,7 +292,7 @@ export class BleHeartRateProvider implements HeartRateProvider {
 
     // Function For Decode The Heart Rate From The Base64 Format
     private decodeHeartRateBase64(base64_value:string):number {
-        const buffer:Buffer = Buffer.from(base64_value, "base64")
+        const buffer:Buffer = Buffer.from(base64_value, "base64") // Gets The Buffer
         if(buffer.length < 2) return 0
 
         const is_16_bit:boolean = (buffer[0] & 0x01) !== 0 // Checks If The Data Are In The 8-bit Or 16-bit Format
@@ -306,9 +310,10 @@ export class HealthKitHeartRateProvider implements HeartRateProvider {
     async connect():Promise<HeartRateConnectResult> {
         if(Platform.OS !== "ios") return fail("unavailable")
 
-        const is_available:boolean = await new Promise((resolve) => AppleHealthKit.isAvailable((error, available:boolean) => resolve(!error && available)))
+        const is_available:boolean = await new Promise((resolve) => AppleHealthKit.isAvailable((error, available:boolean) => resolve(!error && available))) // Checks If It Is Available
         if(!is_available) return fail("unavailable")
 
+        // Gets The Permissions
         const permissions:HealthKitPermissions = {
             permissions: {
                 read: [AppleHealthKit.Constants.Permissions.HeartRate],
@@ -338,7 +343,7 @@ export class HealthKitHeartRateProvider implements HeartRateProvider {
 
     // Function For Read The Latest Heart Rate Sample
     private readLatest(callback:(bpm:number|null) => void):void {
-        const now:Date = new Date()
+        const now:Date = new Date() // Gets The Current Time
 
         AppleHealthKit.getHeartRateSamples({
             startDate: new Date(now.getTime() - MAX_SAMPLE_AGE_MS).toISOString(),
@@ -349,7 +354,7 @@ export class HealthKitHeartRateProvider implements HeartRateProvider {
             if(!this.timer_id) return // Disconnected Meanwhile
             if(error) return
 
-            const bpm:number|undefined = results[0]?.value
+            const bpm:number|undefined = results[0]?.value // Gets The Bpm
             callback(bpm ? Math.round(bpm) : null)
         })
     }
@@ -398,8 +403,9 @@ export class HealthConnectHeartRateProvider implements HeartRateProvider {
     // Function For Read The Latest Heart Rate Sample
     private async readLatest(callback:(bpm:number|null) => void):Promise<void> {
         try {
-            const now:Date = new Date()
+            const now:Date = new Date() // Gets The Current Time
 
+            // Gets The Result
             const result = await readRecords("HeartRate", {
                 timeRangeFilter: {
                     operator: "between",
@@ -411,8 +417,8 @@ export class HealthConnectHeartRateProvider implements HeartRateProvider {
             if(!this.timer_id) return // Disconnected Meanwhile
 
             // Each Record Holds Several Samples, So The Newest One Is Searched Across All Of Them
-            const samples:{ time:string, beatsPerMinute:number }[] = result.records.flatMap((record) => record.samples)
-            const latest_sample = samples.reduce<{ time:string, beatsPerMinute:number }|null>((latest, sample) => !latest || Date.parse(sample.time) > Date.parse(latest.time) ? sample : latest, null)
+            const samples:{ time:string, beatsPerMinute:number }[] = result.records.flatMap((record) => record.samples) // Gets The Samples
+            const latest_sample = samples.reduce<{ time:string, beatsPerMinute:number }|null>((latest, sample) => !latest || Date.parse(sample.time) > Date.parse(latest.time) ? sample : latest, null) // Gets The Latest Sample
 
             callback(latest_sample ? Math.round(latest_sample.beatsPerMinute) : null)
         }

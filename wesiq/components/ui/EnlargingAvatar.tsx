@@ -10,7 +10,7 @@ export interface EnlargingAvatarProps extends AvatarProps {
     onPress?:() => void
 }
 
-const DEFAULT_ENLARGED_SIZE:number = Math.min(Math.round(Dimensions.get("window").width * 0.72), 280)
+const DEFAULT_ENLARGED_SIZE:number = Math.min(Math.round(Dimensions.get("window").width * 0.72), 280) // Defines The Default Enlarged Size
 
 export default function EnlargingAvatar({
     user,
@@ -51,6 +51,7 @@ export default function EnlargingAvatar({
         })
     }
 
+    // Gets The Scale
     const scale:Animated.AnimatedInterpolation<number> = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [0.65, 1]
@@ -59,34 +60,42 @@ export default function EnlargingAvatar({
     return (
         <>
             <Pressable
-                onPress={onPress}
-                onLongPress={has_picture ? openPreview : undefined}
-                delayLongPress={delay_long_press}
-                disabled={!onPress && !has_picture}
-                accessibilityRole={onPress || has_picture ? "button" : "image"}
-                accessibilityLabel={user.username}
+                onPress = {onPress}
+                onLongPress = {has_picture ? openPreview : undefined}
+                delayLongPress = {delay_long_press}
+                disabled = {!onPress && !has_picture}
+                accessibilityRole = {onPress || has_picture ? "button" : "image"}
+                accessibilityLabel = {user.username}
 
-                style={({ pressed }) => [
+                style = {({ pressed }) => [
                     styles.trigger,
                     { borderRadius: size / 2 },
                     pressed && has_picture ? styles.pressed : null,
                 ]}
             >
-                <Avatar user={user} size={size} is_ring_hidden={is_ring_hidden} />
+                <Avatar
+                    user = {user}
+                    size = {size}
+                    is_ring_hidden = {is_ring_hidden}
+                />
             </Pressable>
 
             {is_visible ? (
                 <Modal
-                    visible={is_visible}
+                    visible = {is_visible}
                     transparent
-                    animationType="none"
+                    animationType = "none"
                     statusBarTranslucent
-                    onRequestClose={closePreview}
+                    onRequestClose = {closePreview}
                 >
-                    <Animated.View style={[styles.backdrop, { opacity: progress }]}>
-                        <Pressable style={styles.backdrop_pressable} onPress={closePreview}>
-                            <Animated.View style={{ transform: [{ scale }] }}>
-                                <Avatar user={user} size={enlarged_size} is_ring_hidden={is_ring_hidden} />
+                    <Animated.View style = {[styles.backdrop, { opacity: progress }]}>
+                        <Pressable style = {styles.backdrop_pressable} onPress = {closePreview}>
+                            <Animated.View style = {{ transform: [{ scale }] }}>
+                                <Avatar
+                                    user = {user}
+                                    size = {enlarged_size}
+                                    is_ring_hidden = {is_ring_hidden}
+                                />
                             </Animated.View>
                         </Pressable>
                     </Animated.View>

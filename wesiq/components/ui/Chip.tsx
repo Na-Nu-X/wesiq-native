@@ -14,6 +14,7 @@ export interface ChipProps {
     style?:StyleProp<ViewStyle>
 }
 
+// Defines The Tones
 const TONES = {
     primary: { background: colors.primary_soft, border: colors.border_strong, text: "primary_text" },
     success: { background: colors.success_soft, border: "rgba(61, 214, 140, 0.32)", text: "success" },
@@ -27,18 +28,18 @@ export default function Chip({ label, is_selected = false, onPress, icon, is_dis
 
     return (
         <Pressable
-            onPress={onPress ? () => {
+            onPress = {onPress ? () => {
                 haptics.selection() // Plays The Haptic Feedback
                 onPress()
             } : undefined}
 
-            disabled={is_disabled || !onPress}
-            hitSlop={6}
-            accessibilityRole={onPress ? "button" : "text"}
-            accessibilityState={{ selected: is_selected, disabled: is_disabled }}
-            accessibilityLabel={label}
+            disabled = {is_disabled || !onPress}
+            hitSlop = {6}
+            accessibilityRole = {onPress ? "button" : "text"}
+            accessibilityState = {{ selected: is_selected, disabled: is_disabled }}
+            accessibilityLabel = {label}
 
-            style={({ pressed }:PressableStateCallbackType) => [
+            style = {({ pressed }:PressableStateCallbackType) => [
                 styles.chip,
                 is_selected
                     ? { backgroundColor: tone_style.background, borderColor: tone_style.border }
@@ -47,8 +48,20 @@ export default function Chip({ label, is_selected = false, onPress, icon, is_dis
                 style,
             ]}
         >
-            {!!icon && <Icon name={icon} size={12} color={is_selected ? tone_style.text : "text_secondary"} />}
-            <Text variant="label" color={is_selected ? tone_style.text : "text_secondary"} numberOfLines={1}>{label}</Text>
+            {!!icon &&
+                <Icon
+                    name = {icon}
+                    size = {12}
+                    color = {is_selected ? tone_style.text : "text_secondary"}
+                />
+            }
+            <Text
+                variant = "label"
+                color = {is_selected ? tone_style.text : "text_secondary"}
+                numberOfLines = {1}
+            >
+                {label}
+            </Text>
         </Pressable>
     )
 }

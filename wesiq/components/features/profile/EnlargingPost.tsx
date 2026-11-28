@@ -75,6 +75,7 @@ export default function EnlargingPost({
         openPost()
     }
 
+    // Gets The Scale
     const scale:Animated.AnimatedInterpolation<number> = progress.interpolate({
         inputRange: [0, 1],
         outputRange: [0.65, 1]
@@ -83,39 +84,71 @@ export default function EnlargingPost({
     return (
         <>
             <Pressable
-                onPress={openPost}
-                onLongPress={uri ? openPreview : undefined}
-                delayLongPress={delay_long_press}
-                accessibilityRole="button"
-                accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: author_username })}
-                style={({ pressed }) => [styles.tile, { width: size, height: size }, pressed ? styles.pressed : null]}
+                onPress = {openPost}
+                onLongPress = {uri ? openPreview : undefined}
+                delayLongPress = {delay_long_press}
+                accessibilityRole = "button"
+                accessibilityLabel = {t("Príspevok užívateľa {{username}}", { username: author_username })}
+                style = {({ pressed }) => [styles.tile, { width: size, height: size }, pressed ? styles.pressed : null]}
             >
-                {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} recyclingKey={post.id} /> : <Icon name="image" size={18} color="text_muted" />}
+                {uri ? <Image
+                    source = {{ uri }}
+                    style = {StyleSheet.absoluteFill}
+                    contentFit = "cover"
+                    transition = {150}
+                    recyclingKey = {post.id}
+                /> : <Icon
+                    name = "image"
+                    size = {18}
+                    color = "text_muted"
+                />}
 
                 {has_marker && (
-                    <View style={styles.marker}>
-                        <Icon name={cover?.is_video ? "play" : "clone"} size={11} color="white" />
+                    <View style = {styles.marker}>
+                        <Icon
+                            name = {cover?.is_video ? "play" : "clone"}
+                            size = {11}
+                            color = "white"
+                        />
                     </View>
                 )}
             </Pressable>
 
             {is_visible && uri ? (
                 <Modal
-                    visible={is_visible}
+                    visible = {is_visible}
                     transparent
-                    animationType="none"
+                    animationType = "none"
                     statusBarTranslucent
-                    onRequestClose={closePreview}
+                    onRequestClose = {closePreview}
                 >
-                    <Animated.View style={[styles.backdrop, { opacity: progress }]}>
-                        <Pressable style={styles.backdrop_pressable} onPress={closePreview} accessibilityRole="button" accessibilityLabel={t("Zavrieť")}>
-                            <Animated.View style={{ transform: [{ scale }] }}>
-                                <Pressable onPress={openPostFromPreview} accessibilityRole="button" accessibilityLabel={t("Príspevok užívateľa {{username}}", { username: author_username })}>
-                                    <Image source={{ uri }} style={[styles.preview, { width: enlarged_size, height: enlarged_size }]} contentFit="cover" recyclingKey={post.id} />
+                    <Animated.View style = {[styles.backdrop, { opacity: progress }]}>
+                        <Pressable
+                            style = {styles.backdrop_pressable}
+                            onPress = {closePreview}
+                            accessibilityRole = "button"
+                            accessibilityLabel = {t("Zavrieť")}
+                        >
+                            <Animated.View style = {{ transform: [{ scale }] }}>
+                                <Pressable
+                                    onPress = {openPostFromPreview}
+                                    accessibilityRole = "button"
+                                    accessibilityLabel = {t("Príspevok užívateľa {{username}}", { username: author_username })}
+                                >
+                                    <Image
+                                        source = {{ uri }}
+                                        style = {[styles.preview, { width: enlarged_size, height: enlarged_size }]}
+                                        contentFit = "cover"
+                                        recyclingKey = {post.id}
+                                    />
 
                                     {has_marker && (
-                                        <View style={[styles.marker, styles.marker_large]}>
-                                            <Icon name={cover?.is_video ? "play" : "clone"} size={16} color="white" />
+                                        <View style = {[styles.marker, styles.marker_large]}>
+                                            <Icon
+                                                name = {cover?.is_video ? "play" : "clone"}
+                                                size = {16}
+                                                color = "white"
+                                            />
                                         </View>
                                     )}
                                 </Pressable>

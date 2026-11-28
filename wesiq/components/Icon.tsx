@@ -33,7 +33,7 @@ export default function Icon({
 
     // Function For Handle Press In
     const handlePressIn = () => {
-        setIsPressed(true)
+        setIsPressed(true) // Sets The Pressed State
 
         Animated.timing(animation_value, {
             toValue: 1,
@@ -44,7 +44,7 @@ export default function Icon({
 
     // Function For Handle Press Out
     const handlePressOut = () => {
-        setIsPressed(false)
+        setIsPressed(false) // Sets The Pressed State
 
         Animated.timing(animation_value, {
             toValue: 0,
@@ -61,19 +61,19 @@ export default function Icon({
 
     return (
         <Pressable
-            onPress={onPress ? (event:GestureResponderEvent) => { event.stopPropagation() /* Keeps The Tap From Reaching The Video Behind (Web Bubbles Nested Presses) */; onPress() } : undefined}
-            onPressIn={handlePressIn}
-            onPressOut={handlePressOut}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole={onPress ? "button" : undefined}
-            accessibilityLabel={accessibility_label}
-            style={[style, is_pressed && pressed_style]}
+            onPress = {onPress ? (event:GestureResponderEvent) => { event.stopPropagation() /* Keeps The Tap From Reaching The Video Behind (Web Bubbles Nested Presses) */; onPress() } : undefined}
+            onPressIn = {handlePressIn}
+            onPressOut = {handlePressOut}
+            hitSlop = {{ top: 10, bottom: 10, left: 10, right: 10 }}
+            accessibilityRole = {onPress ? "button" : undefined}
+            accessibilityLabel = {accessibility_label}
+            style = {[style, is_pressed && pressed_style]}
         >
             <AnimatedIcon
-                name={icon_name}
-                size={size}
-                solid={!is_regular}
-                color={animated_color}
+                name = {icon_name}
+                size = {size}
+                solid = {!is_regular}
+                color = {animated_color}
             />
         </Pressable>
     )

@@ -10,7 +10,7 @@ import { getFormattedDate, getMinimalistFormattedTime } from "@/utils/time"
 import type { ApiError } from "@/types/api"
 import type { Activity, ActivitySummaryExercise } from "@/types/models"
 
-const COLLAPSED_COUNT:number = 5
+const COLLAPSED_COUNT:number = 5 // Defines The Collapsed Count
 
 interface HistoryCardProps {
     activities:Activity[],
@@ -21,66 +21,112 @@ interface HistoryCardProps {
 
 export default function HistoryCard({ activities, is_loading, error, onRetry }:HistoryCardProps) {
     const { t } = useTranslation() // Initializes The Translations
-    const [expanded_key, setExpandedKey] = useState<string|null>(null)
-    const [is_showing_all, setIsShowingAll] = useState<boolean>(false)
+    const [expanded_key, setExpandedKey] = useState<string|null>(null) // Stores The Expanded Key
+    const [is_showing_all, setIsShowingAll] = useState<boolean>(false) // Stores If It Is Showing All
 
-    const shown:Activity[] = is_showing_all ? activities : activities.slice(0, COLLAPSED_COUNT)
+    const shown:Activity[] = is_showing_all ? activities : activities.slice(0, COLLAPSED_COUNT) // Gets The Shown
 
     return (
-        <Card padding="lg" style={styles.card}>
-            <Text variant="heading" accessibilityRole="header">{t("História")}</Text>
+        <Card padding = "lg" style = {styles.card}>
+            <Text variant = "heading" accessibilityRole = "header">{t("História")}</Text>
 
             {is_loading && activities.length === 0 ? (
-                <View style={styles.list}>{[0, 1, 2].map((index:number) => <Skeleton key={index} height={52} radius={radii.md} />)}</View>
+                <View style = {styles.list}>{[0, 1, 2].map((index:number) => (
+                    <Skeleton
+                        key = {index}
+                        height = {52}
+                        radius = {radii.md}
+                    />
+                ))}</View>
             ) : error && activities.length === 0 ? (
-                <ErrorState error={error} onRetry={onRetry} />
+                <ErrorState error = {error} onRetry = {onRetry} />
             ) : activities.length === 0 ? (
-                <EmptyState icon="person-running" title={t("Zatiaľ žiadne aktivity")} message={t("Spustite stopky a vaša prvá aktivita sa objaví tu.")} is_compact />
+                <EmptyState
+                    icon = "person-running"
+                    title = {t("Zatiaľ žiadne aktivity")}
+                    message = {t("Spustite stopky a vaša prvá aktivita sa objaví tu.")}
+                    is_compact
+                />
             ) : (
-                <View style={styles.list}>
+                <View style = {styles.list}>
                     {shown.map((activity:Activity) => {
-                        const key:string = `${activity.end_time}:${activity.elapsed_time}`
-                        const summary:ActivitySummaryExercise[] = activity.training_plan_summary ?? []
-                        const total:number = summary.reduce((sum:number, item:ActivitySummaryExercise) => sum + item.elapsed_time, 0)
-                        const is_expanded:boolean = expanded_key === key
+                        const key:string = `${activity.end_time}:${activity.elapsed_time}` // Gets The Key
+                        const summary:ActivitySummaryExercise[] = activity.training_plan_summary ?? [] // Gets The Summary
+                        const total:number = summary.reduce((sum:number, item:ActivitySummaryExercise) => sum + item.elapsed_time, 0) // Gets The Total
+                        const is_expanded:boolean = expanded_key === key // Checks If It Is Expanded
 
                         return (
-                            <View key={key} style={styles.item}>
+                            <View key = {key} style = {styles.item}>
                                 <Pressable
-                                    onPress={summary.length > 0 ? () => setExpandedKey(is_expanded ? null : key) : undefined}
-                                    disabled={summary.length === 0}
-                                    accessibilityRole={summary.length > 0 ? "button" : undefined}
-                                    accessibilityState={summary.length > 0 ? { expanded: is_expanded } : undefined}
-                                    accessibilityLabel={`${activity.type || t("Aktivita")}, ${getMinimalistFormattedTime(activity.elapsed_time)}, ${activity.gained_xp} XP, ${getFormattedDate(activity.end_time, false)}`}
-                                    style={({ pressed }:PressableStateCallbackType) => [styles.row, pressed ? styles.pressed : null]}
+                                    onPress = {summary.length > 0 ? () => setExpandedKey(is_expanded ? null : key) : undefined}
+                                    disabled = {summary.length === 0}
+                                    accessibilityRole = {summary.length > 0 ? "button" : undefined}
+                                    accessibilityState = {summary.length > 0 ? { expanded: is_expanded } : undefined}
+                                    accessibilityLabel = {`${activity.type || t("Aktivita")}, ${getMinimalistFormattedTime(activity.elapsed_time)}, ${activity.gained_xp} XP, ${getFormattedDate(activity.end_time, false)}`}
+                                    style = {({ pressed }:PressableStateCallbackType) => [styles.row, pressed ? styles.pressed : null]}
                                 >
-                                    <View style={styles.icon}><Icon name={summary.length > 0 ? "dumbbell" : "stopwatch"} size={13} color="primary" /></View>
+                                    <View style = {styles.icon}><Icon
+                                        name = {summary.length > 0 ? "dumbbell" : "stopwatch"}
+                                        size = {13}
+                                        color = "primary"
+                                    /></View>
 
-                                    <View style={styles.flex}>
-                                        <Text variant="body_strong" numberOfLines={1}>{activity.type || t("Aktivita")}</Text>
-                                        <Text variant="caption" color="text_muted">{getFormattedDate(activity.end_time, false)}</Text>
+                                    <View style = {styles.flex}>
+                                        <Text variant = "body_strong" numberOfLines = {1}>{activity.type || t("Aktivita")}</Text>
+                                        <Text variant = "caption" color = "text_muted">{getFormattedDate(activity.end_time, false)}</Text>
                                     </View>
 
-                                    <View style={styles.values}>
-                                        <Text variant="label" is_tabular>{getMinimalistFormattedTime(activity.elapsed_time)}</Text>
-                                        <Text variant="caption" color="premium" is_tabular>{activity.gained_xp} XP</Text>
+                                    <View style = {styles.values}>
+                                        <Text variant = "label" is_tabular>{getMinimalistFormattedTime(activity.elapsed_time)}</Text>
+                                        <Text
+                                            variant = "caption"
+                                            color = "premium"
+                                            is_tabular
+                                        >
+                                            {activity.gained_xp} XP
+                                        </Text>
                                     </View>
 
-                                    {summary.length > 0 && <Icon name={is_expanded ? "chevron-up" : "chevron-down"} size={11} color="text_muted" />}
+                                    {summary.length > 0 &&
+                                        <Icon
+                                            name = {is_expanded ? "chevron-up" : "chevron-down"}
+                                            size = {11}
+                                            color = "text_muted"
+                                        />
+                                    }
                                 </Pressable>
 
                                 {is_expanded && (
-                                    <View style={styles.summary}>
-                                        <View style={styles.bar}>
-                                            {summary.map((item:ActivitySummaryExercise, index:number) => <View key={`${item.exercise}:${index}`} style={{ flex: Math.max(item.elapsed_time, 1) / Math.max(total, 1), backgroundColor: item.color }} />)}
+                                    <View style = {styles.summary}>
+                                        <View style = {styles.bar}>
+                                            {summary.map((item:ActivitySummaryExercise, index:number) => <View key = {`${item.exercise}:${index}`} style = {{ flex: Math.max(item.elapsed_time, 1) / Math.max(total, 1), backgroundColor: item.color }} />)}
                                         </View>
 
                                         {summary.map((item:ActivitySummaryExercise, index:number) => (
-                                            <View key={`${item.exercise}:${index}`} style={styles.summary_row}>
-                                                <View style={[styles.swatch, { backgroundColor: item.color }]} />
-                                                <Text variant="callout" numberOfLines={1} style={styles.flex}>{item.exercise}</Text>
-                                                <Text variant="caption" color="text_secondary" is_tabular>{getMinimalistFormattedTime(item.elapsed_time)}</Text>
-                                                <Text variant="caption" color="premium" is_tabular style={styles.summary_xp}>{item.gained_xp} XP</Text>
+                                            <View key = {`${item.exercise}:${index}`} style = {styles.summary_row}>
+                                                <View style = {[styles.swatch, { backgroundColor: item.color }]} />
+                                                <Text
+                                                    variant = "callout"
+                                                    numberOfLines = {1}
+                                                    style = {styles.flex}
+                                                >
+                                                    {item.exercise}
+                                                </Text>
+                                                <Text
+                                                    variant = "caption"
+                                                    color = "text_secondary"
+                                                    is_tabular
+                                                >
+                                                    {getMinimalistFormattedTime(item.elapsed_time)}
+                                                </Text>
+                                                <Text
+                                                    variant = "caption"
+                                                    color = "premium"
+                                                    is_tabular
+                                                    style = {styles.summary_xp}
+                                                >
+                                                    {item.gained_xp} XP
+                                                </Text>
                                             </View>
                                         ))}
                                     </View>
@@ -90,7 +136,12 @@ export default function HistoryCard({ activities, is_loading, error, onRetry }:H
                     })}
 
                     {activities.length > COLLAPSED_COUNT && (
-                        <Button label={is_showing_all ? t("Zobraziť menej") : t("Zobraziť všetko ({{count}})", { count: activities.length })} variant="ghost" size="sm" onPress={() => setIsShowingAll((previous:boolean) => !previous)} />
+                        <Button
+                            label = {is_showing_all ? t("Zobraziť menej") : t("Zobraziť všetko ({{count}})", { count: activities.length })}
+                            variant = "ghost"
+                            size = "sm"
+                            onPress = {() => setIsShowingAll((previous:boolean) => !previous)}
+                        />
                     )}
                 </View>
             )}

@@ -10,4 +10,5 @@ export const scheduleBreakAlarm = async (seconds:number):Promise<string|null> =>
     return await scheduleLocalNotification("break-alarm", { title: i18n.t("Čas prestávky vypršal!"), body: i18n.t("Je čas pokračovať v tréningu. Poďme na to!") }, seconds)
 }
 
+// Function For Cancel The Break Alarm
 export const cancelBreakAlarm = (id:string|null):void => cancelLocalNotification(id)

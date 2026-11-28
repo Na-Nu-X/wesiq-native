@@ -70,14 +70,14 @@ const prependMessage = (messages:ChatMessage[], message:ChatMessage):ChatMessage
 
 // Function For Take People Out Of The Group Members
 const removeMembers = (room:ChatRoom, user_ids:number[]):ChatRoom => {
-    const members:ChatRoomMember[] = room.members.filter((member:ChatRoomMember) => !user_ids.includes(member.id))
+    const members:ChatRoomMember[] = room.members.filter((member:ChatRoomMember) => !user_ids.includes(member.id)) // Gets The Members
     return members.length === room.members.length ? room : { ...room, members, members_count: members.length }
 }
 
 // Function For Add People To The Group Members (Skips Those Already In It)
 const addMembers = (room:ChatRoom, users:UserSummary[]):ChatRoom => {
-    const known:Set<number> = new Set(room.members.map((member:ChatRoomMember) => member.id))
-    const new_members:ChatRoomMember[] = users.filter((user:UserSummary) => !known.has(user.id)).map((user:UserSummary) => ({ ...user, first_name: null, last_name: null, role: "member" }))
+    const known:Set<number> = new Set(room.members.map((member:ChatRoomMember) => member.id)) // Gets The Known
+    const new_members:ChatRoomMember[] = users.filter((user:UserSummary) => !known.has(user.id)).map((user:UserSummary) => ({ ...user, first_name: null, last_name: null, role: "member" })) // Gets The New Members
 
     if(new_members.length === 0) return room
     return { ...room, members: [...room.members, ...new_members], members_count: room.members_count + new_members.length }
@@ -88,23 +88,23 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
 
-    const conversation_key:string = room_id !== undefined ? `room:${room_id}` : `user:${username}`
+    const conversation_key:string = room_id !== undefined ? `room:${room_id}` : `user:${username}` // Gets The Conversation Key
 
-    const [state, setState] = useState<ConversationState|null>(null)
-    const [is_loading_more, setIsLoadingMore] = useState<boolean>(false)
-    const [background, setBackground] = useState<string|null>(null)
-    const [draft, setDraft] = useState<string>("")
-    const [attachments, setAttachments] = useState<PendingAttachment[]>([])
+    const [state, setState] = useState<ConversationState|null>(null) // Stores The State
+    const [is_loading_more, setIsLoadingMore] = useState<boolean>(false) // Stores If It Is Loading More
+    const [background, setBackground] = useState<string|null>(null) // Stores The Background
+    const [draft, setDraft] = useState<string>("") // Stores The Draft
+    const [attachments, setAttachments] = useState<PendingAttachment[]>([]) // Stores The Attachments
     const [voice_message, setVoiceMessage] = useState<RecordedVoiceMessage|null>(null) // Stores The Voice Message
-    const [editing, setEditing] = useState<ChatMessage|null>(null)
-    const [is_sending, setIsSending] = useState<boolean>(false)
-    const [selected, setSelected] = useState<ChatMessage|null>(null)
-    const [is_menu_open, setIsMenuOpen] = useState<boolean>(false)
-    const [is_group_info_open, setIsGroupInfoOpen] = useState<boolean>(false)
-    const [viewed_images, setViewedImages] = useState<{ urls:string[], index:number }|null>(null)
-    const [viewed_video, setViewedVideo] = useState<string|null>(null)
-    const [reply_on, setReplyOn] = useState<ChatMessage|null>(null) // Message Being Replied To
-    const [highlighted_id, setHighlightedId] = useState<number|null>(null) // Message Briefly Highlighted After Jumping To It From A Reply
+    const [editing, setEditing] = useState<ChatMessage|null>(null) // Stores The Editing
+    const [is_sending, setIsSending] = useState<boolean>(false) // Stores If It Is Sending
+    const [selected, setSelected] = useState<ChatMessage|null>(null) // Stores The Selected
+    const [is_menu_open, setIsMenuOpen] = useState<boolean>(false) // Stores If It Is Menu Open
+    const [is_group_info_open, setIsGroupInfoOpen] = useState<boolean>(false) // Stores If It Is Group Info Open
+    const [viewed_images, setViewedImages] = useState<{ urls:string[], index:number }|null>(null) // Stores The Viewed Images
+    const [viewed_video, setViewedVideo] = useState<string|null>(null) // Stores The Viewed Video
+    const [reply_on, setReplyOn] = useState<ChatMessage|null>(null) // Stores The Reply On (Message Being Replied To)
+    const [highlighted_id, setHighlightedId] = useState<number|null>(null) // Stores The Highlighted ID (Message Briefly Highlighted After Jumping To It From A Reply)
     const list_reference = useRef<FlatList<ChatMessage>>(null) // Scrolls To The Original Message Of A Reply
     const highlight_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Removes The Highlight
 
@@ -114,16 +114,16 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     }, [])
 
     const current:ConversationState|null = state && state.key === conversation_key ? state : null // The Loaded Chat If It Belongs To The Route
-    const receiver:ChatReceiver|null = current?.receiver ?? null
-    const room:ChatRoom|null = current?.room ?? null
-    const is_group:boolean = room?.is_group === true
-    const is_loaded:boolean = receiver !== null || room !== null
+    const receiver:ChatReceiver|null = current?.receiver ?? null // Gets The Receiver
+    const room:ChatRoom|null = current?.room ?? null // Gets The Room
+    const is_group:boolean = room?.is_group === true // Checks If It Is Group
+    const is_loaded:boolean = receiver !== null || room !== null // Checks If It Is Loaded
 
     // Initializes The Load Of The First Page (State Is Set Only After The Response)
     useEffect(() => {
         if(!logged_in_user || (room_id === undefined && !username)) return
 
-        const controller:AbortController = new AbortController()
+        const controller:AbortController = new AbortController() // Gets The Controller
 
         if(room_id !== undefined) {
             getChatRoom(room_id, 1, controller.signal).then((response) => {
@@ -151,17 +151,17 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     // Function For Load The Chat Background (DMs Only)
     const loadBackground = useCallback(async (receiver_id:number):Promise<void> => {
         const response = await getChatSettings(receiver_id) // Sends The Request
-        setBackground(response.ok ? response.data.chat_settings?.background_image ?? null : null)
+        setBackground(response.ok ? response.data.chat_settings?.background_image ?? null : null) // Sets The Background
     }, [])
 
-    const receiver_id:number|null = receiver?.id ?? null
+    const receiver_id:number|null = receiver?.id ?? null // Gets The Receiver ID
 
     // Initializes The Load Of The Background When The Receiver Is Known
     useEffect(() => {
         if(receiver_id === null) return
 
         getChatSettings(receiver_id).then((response) => {
-            setBackground(response.ok ? response.data.chat_settings?.background_image ?? null : null)
+            setBackground(response.ok ? response.data.chat_settings?.background_image ?? null : null) // Sets The Background
         })
     }, [receiver_id])
 
@@ -174,6 +174,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
         setState((previous:ConversationState|null) => {
             if(!previous || !logged_in_user) return previous
 
+            // Function For Update The Message
             const updateMessage = (chat_id:number, update:(message:ChatMessage) => ChatMessage):ConversationState => ({
                 ...previous,
                 messages: previous.messages.map((message:ChatMessage) => message.id === chat_id ? update(message) : message),
@@ -183,9 +184,10 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 case "new": {
                     if(previous.messages.some((message:ChatMessage) => message.id === event.chat_id)) return previous
 
-                    const is_sender:boolean = event.sender_id === logged_in_user.id
-                    const member:ChatRoomMember|undefined = previous.room?.members.find((room_member:ChatRoomMember) => room_member.id === event.sender_id)
+                    const is_sender:boolean = event.sender_id === logged_in_user.id // Checks If It Is Sender
+                    const member:ChatRoomMember|undefined = previous.room?.members.find((room_member:ChatRoomMember) => room_member.id === event.sender_id) // Gets The Member
 
+                    // Gets The Sender
                     const sender:UserSummary = is_sender
                         ? { id: logged_in_user.id, username: logged_in_user.username, profile_picture_name: logged_in_user.profile_picture_name, subscription: logged_in_user.subscription }
                         : {
@@ -195,6 +197,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                             subscription: member?.subscription ?? previous.receiver?.subscription ?? null,
                         }
 
+                    // Gets The Message
                     const message:ChatMessage = {
                         id: event.chat_id,
                         room_id: event.room_id ?? previous.room_id,
@@ -220,8 +223,9 @@ export default function Conversation({ username, room_id }:ConversationProps) {
 
                 // Members Added / Removed Or The Photo Changed: Shown As A Caption, The Room Updates
                 case "system": {
-                    const message_id:number = event.message_id ?? event.chat_id
+                    const message_id:number = event.message_id ?? event.chat_id // Gets The Message ID
 
+                    // Gets The Message
                     const message:ChatMessage = {
                         id: message_id,
                         room_id: event.room_id ?? previous.room_id,
@@ -241,8 +245,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                         is_older_than_1_day: true
                     }
 
-                    const removed_user_ids:number[] = event.removed_user_ids ?? []
-                    let next_room:ChatRoom|null = previous.room ? removeMembers(addMembers(previous.room, event.added_users ?? []), removed_user_ids) : previous.room
+                    const removed_user_ids:number[] = event.removed_user_ids ?? [] // Gets The Removed User IDs
+                    let next_room:ChatRoom|null = previous.room ? removeMembers(addMembers(previous.room, event.added_users ?? []), removed_user_ids) : previous.room // Gets The Next Room
 
                     if(next_room && event.avatar_changed) next_room = { ...next_room, avatar: event.avatar ?? null }
 
@@ -273,12 +277,12 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 }
 
                 case "add_reaction": return updateMessage(event.chat_id, (message) => {
-                    const emoji:string = event.emoji ?? ""
-                    const reaction_username:string = event.emoji_sender_username ?? ""
-                    const exists:boolean = message.message_reactions.some((reaction:MessageReaction) => reaction.emoji === emoji && reaction.user.username === reaction_username)
+                    const emoji:string = event.emoji ?? "" // Gets The Emoji
+                    const reaction_username:string = event.emoji_sender_username ?? "" // Gets The Reaction Username
+                    const exists:boolean = message.message_reactions.some((reaction:MessageReaction) => reaction.emoji === emoji && reaction.user.username === reaction_username) // Gets The Exists
                     if(exists) return message
 
-                    const next:MessageReaction[] = [...message.message_reactions, { emoji, user: { username: reaction_username } }]
+                    const next:MessageReaction[] = [...message.message_reactions, { emoji, user: { username: reaction_username } }] // Gets The Next
                     return { ...message, message_reactions: next.slice(-MAX_REACTIONS) }
                 })
 
@@ -294,8 +298,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     }, [logged_in_user])
 
     // Connects To The Room When Its ID Is Known (DMs And Groups), Otherwise To The DM By Username (Servers Without Rooms)
-    const socket_target:ChatSocketTarget|null = current?.room_id ? { room_id: current.room_id } : username ? { username } : null
-    const is_removed:boolean = current?.is_removed === true
+    const socket_target:ChatSocketTarget|null = current?.room_id ? { room_id: current.room_id } : username ? { username } : null // Gets The Socket Target
+    const is_removed:boolean = current?.is_removed === true // Checks If It Is Removed
     const socket = useChatSocket(socket_target, logged_in_user !== null && is_loaded && !is_removed, handleEvent) // A Removed Member Doesn't Reconnect (The Server Would Refuse)
 
     // Initializes The Update Of The Send Reference (The Event Handler Is Created Before The Socket)
@@ -320,8 +324,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
             if(!text) return
             if(socket.send({ action: "edit", chat_id: editing.id, message: text })) {
                 echoInMockMode({ action: "edit", chat_id: editing.id, message: text })
-                setEditing(null)
-                setDraft("")
+                setEditing(null) // Sets The Editing
+                setDraft("") // Sets The Draft
             }
 
             else showAlert(t("Chyba"), t("Spojenie sa neočakávane prerušilo."))
@@ -329,9 +333,9 @@ export default function Conversation({ username, room_id }:ConversationProps) {
         }
 
         if(attachments.length > 0) {
-            setIsSending(true)
+            setIsSending(true) // Sets The Sending State
             const response = await uploadChatAttachments(attachments) // Uploads The Files
-            setIsSending(false)
+            setIsSending(false) // Sets The Sending State
 
             if(!response.ok) {
                 haptics.error()
@@ -340,15 +344,15 @@ export default function Conversation({ username, room_id }:ConversationProps) {
             }
 
             socket.send({ action: "send_attachment", attachment_ids: response.data.sent_attachments.map((attachment) => attachment.attachment_id), message: text || null, reply_on: reply_on_id })
-            setAttachments([])
-            setDraft("")
-            setReplyOn(null)
+            setAttachments([]) // Sets The Attachments
+            setDraft("") // Sets The Draft
+            setReplyOn(null) // Sets The Reply On
             haptics.light()
             return
         }
 
         if(voice_message) {
-            setIsSending(true)
+            setIsSending(true) // Sets The Sending State
 
             // Sends The Voice Message
             const response = await sendVoiceMessage({
@@ -357,7 +361,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 waveform: voice_message.waveform,
             })
 
-            setIsSending(false)
+            setIsSending(false) // Sets The Sending State
 
             if(!response.ok) {
                 haptics.error()
@@ -372,8 +376,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 reply_on: reply_on_id
             })
 
-            setVoiceMessage(null)
-            setReplyOn(null)
+            setVoiceMessage(null) // Sets The Voice Message
+            setReplyOn(null) // Sets The Reply On
             haptics.light()
             return
         }
@@ -389,8 +393,8 @@ export default function Conversation({ username, room_id }:ConversationProps) {
                 reply_on: reply_on ? toReplyPreview(reply_on) : null // The Server Sends Back The Quoted Preview, Not Just The ID
             })
 
-            setDraft("")
-            setReplyOn(null)
+            setDraft("") // Sets The Draft
+            setReplyOn(null) // Sets The Reply On
             haptics.light()
         }
 
@@ -399,14 +403,14 @@ export default function Conversation({ username, room_id }:ConversationProps) {
 
     // Function For React (Tapping Your Own Reaction Again Removes It)
     const react = (message:ChatMessage, emoji:string):void => {
-        const is_mine:boolean = message.message_reactions.some((reaction:MessageReaction) => reaction.emoji === emoji && reaction.user.username === logged_in_user?.username)
+        const is_mine:boolean = message.message_reactions.some((reaction:MessageReaction) => reaction.emoji === emoji && reaction.user.username === logged_in_user?.username) // Checks If It Is Mine
         socket.send({ action: is_mine ? "remove_reaction" : "add_reaction", chat_id: message.id, emoji })
         echoInMockMode(is_mine ? { action: "remove_reaction", chat_id: message.id, message: "", emoji } : { action: "add_reaction", chat_id: message.id, message: "", emoji, emoji_sender_username: logged_in_user?.username })
     }
 
     // Function For Delete A Message
     const deleteMessage = async (message:ChatMessage):Promise<void> => {
-        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť správu?"), message: is_group ? t("Správa sa odstráni pre všetkých.") : t("Správa sa odstráni pre oboch."), confirm_label: t("Odstrániť"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť správu?"), message: is_group ? t("Správa sa odstráni pre všetkých.") : t("Správa sa odstráni pre oboch."), confirm_label: t("Odstrániť"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
         socket.send({ action: "delete", chat_id: message.id })
@@ -424,7 +428,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
         }
 
         try {
-            const file:ExpoFile = await ExpoFile.downloadFileAsync(url, new ExpoFile(Paths.cache, attachment.original_filename))
+            const file:ExpoFile = await ExpoFile.downloadFileAsync(url, new ExpoFile(Paths.cache, attachment.original_filename)) // Gets The File
             if(await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri, { dialogTitle: t("Uložiť súbor") })
         }
 
@@ -436,23 +440,23 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     // Function For Start Editing A Message (Long-Press Menu Or Swipe Left)
     const startEditing = (message:ChatMessage):void => {
         setReplyOn(null) // Editing And Replying Share The Banner Above The Input
-        setEditing(message)
-        setDraft(message.content ?? "")
+        setEditing(message) // Sets The Editing
+        setDraft(message.content ?? "") // Sets The Draft
     }
 
     // Function For Reply To A Message (Long-Press Menu Or Swipe Right)
     const replyOnMessage = (message:ChatMessage):void => {
         if(editing) {
             setEditing(null) // Leaves Editing, The Edited Text Isn't A Reply
-            setDraft("")
+            setDraft("") // Sets The Draft
         }
 
-        setReplyOn(message)
+        setReplyOn(message) // Sets The Reply On
     }
 
     // Function For Jump To The Original Message Of A Reply And Highlight It
     const jumpToMessage = (message_id:number):void => {
-        const index:number = messages.findIndex((message:ChatMessage) => message.id === message_id)
+        const index:number = messages.findIndex((message:ChatMessage) => message.id === message_id) // Gets The Index
 
         if(index === -1) {
             haptics.error()
@@ -464,7 +468,7 @@ export default function Conversation({ username, room_id }:ConversationProps) {
         haptics.selection()
 
         if(highlight_timeout.current) clearTimeout(highlight_timeout.current)
-        setHighlightedId(message_id)
+        setHighlightedId(message_id) // Sets The Highlighted ID
         highlight_timeout.current = setTimeout(() => setHighlightedId(null), 1600)
     }
 
@@ -472,15 +476,15 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     const loadMore = async ():Promise<void> => {
         if(!current || !current.has_next || is_loading_more) return
 
-        setIsLoadingMore(true)
+        setIsLoadingMore(true) // Sets The Loading More State
         const response = room_id !== undefined ? await getChatRoom(room_id, current.page + 1) : username ? await getChat(username, current.page + 1) : null // Sends The Request
-        setIsLoadingMore(false)
+        setIsLoadingMore(false) // Sets The Loading More State
 
         if(!response?.ok) return
 
         setState((previous) => {
             if(!previous || previous.key !== conversation_key) return previous
-            const known:Set<number> = new Set(previous.messages.map((message:ChatMessage) => message.id))
+            const known:Set<number> = new Set(previous.messages.map((message:ChatMessage) => message.id)) // Gets The Known
             return { ...previous, messages: [...previous.messages, ...response.data.chats.filter((message:ChatMessage) => !known.has(message.id))], page: previous.page + 1, has_next: response.data.has_next }
         })
     }
@@ -495,99 +499,162 @@ export default function Conversation({ username, room_id }:ConversationProps) {
 
     // ---------- Rendering ----------
 
-    const messages:ChatMessage[] = current?.messages ?? []
+    const messages:ChatMessage[] = current?.messages ?? [] // Gets The Messages
 
-    const [active_voice_id, setActiveVoiceId] = useState<number|null>(null)
+    const [active_voice_id, setActiveVoiceId] = useState<number|null>(null) // Stores The Active Voice ID
 
+    // Function For Toggle The Voice Message
     const toggleVoiceMessage = (voice_id:number):void => {
-        setActiveVoiceId((prev_id:number|null) => prev_id === voice_id ? null : voice_id)
+        setActiveVoiceId((prev_id:number|null) => prev_id === voice_id ? null : voice_id) // Sets The Active Voice ID
     }
 
     // The List Is Inverted: The Message Above Is The Next Item, The Message Below Is The Previous One
+    // Function For Render The Message
     const renderMessage = ({ item, index }:ListRenderItemInfo<ChatMessage>) => {
         if(isSystemMessage(item)) {
             const is_group_start:boolean = is_group && !!room && index === messages.length - 1 && !current?.has_next // The Oldest Message Of A Group Is "Group Created"
-            if(is_group_start && room) return <GroupIntro room={room} text={item.content ?? ""} formatted_time={item.formatted_time} />
+            if(is_group_start && room) {
+                return (
+                    <GroupIntro
+                        room = {room}
+                        text = {item.content ?? ""}
+                        formatted_time = {item.formatted_time}
+                    />
+                )
+            }
 
-            return <SystemMessage text={item.content ?? ""} formatted_time={item.formatted_time} />
+            return <SystemMessage text = {item.content ?? ""} formatted_time = {item.formatted_time} />
         }
 
-        const is_grouped_with_previous:boolean = isSameSender(messages[index + 1], item)
+        const is_grouped_with_previous:boolean = isSameSender(messages[index + 1], item) // Checks If It Is Grouped With Previous
 
         return (
             <MessageBubble
-                message={item}
-                is_grouped_with_previous={is_grouped_with_previous}
-                is_voice_active={!!item.voice_message && active_voice_id === item.voice_message.id}
-                onToggleVoice={toggleVoiceMessage}
-                onLongPress={setSelected}
-                onOpenImages={(urls:string[], image_index:number) => setViewedImages({ urls, index: image_index })}
-                onOpenVideo={setViewedVideo}
-                onOpenFile={openFile}
-                onSwipeEdit={startEditing}
-                onSwipeReply={replyOnMessage}
-                onOpenReply={jumpToMessage}
-                current_user_id={logged_in_user?.id ?? null}
-                is_highlighted={highlighted_id === item.id}
-                is_group={is_group}
-                is_sender_name_visible={!is_grouped_with_previous}
-                is_sender_avatar_visible={!isSameSender(item, messages[index - 1])}
+                message = {item}
+                is_grouped_with_previous = {is_grouped_with_previous}
+                is_voice_active = {!!item.voice_message && active_voice_id === item.voice_message.id}
+                onToggleVoice = {toggleVoiceMessage}
+                onLongPress = {setSelected}
+                onOpenImages = {(urls:string[], image_index:number) => setViewedImages({ urls, index: image_index })}
+                onOpenVideo = {setViewedVideo}
+                onOpenFile = {openFile}
+                onSwipeEdit = {startEditing}
+                onSwipeReply = {replyOnMessage}
+                onOpenReply = {jumpToMessage}
+                current_user_id = {logged_in_user?.id ?? null}
+                is_highlighted = {highlighted_id === item.id}
+                is_group = {is_group}
+                is_sender_name_visible = {!is_grouped_with_previous}
+                is_sender_avatar_visible = {!isSameSender(item, messages[index - 1])}
             />
         )
     }
 
+    // Function For Go The Back
     const go_back = ():void => router.canGoBack() ? router.back() : router.replace("/chat")
 
+    // Gets The Header
     const header = is_group || room_id !== undefined ? (
-        <View style={styles.header}>
-            <IconButton icon="chevron-left" accessibility_label={t("Späť")} onPress={go_back} variant="soft" size={38} />
+        <View style = {styles.header}>
+            <IconButton
+                icon = "chevron-left"
+                accessibility_label = {t("Späť")}
+                onPress = {go_back}
+                variant = "soft"
+                size = {38}
+            />
 
             <Pressable
-                onPress={() => room && setIsGroupInfoOpen(true)}
-                disabled={!room || is_removed}
-                accessibilityRole="button"
-                accessibilityLabel={room ? `${room.name ?? t("Skupina")}, ${t("Informácie o skupine")}` : t("Skupina")}
-                style={styles.header_user}
+                onPress = {() => room && setIsGroupInfoOpen(true)}
+                disabled = {!room || is_removed}
+                accessibilityRole = "button"
+                accessibilityLabel = {room ? `${room.name ?? t("Skupina")}, ${t("Informácie o skupine")}` : t("Skupina")}
+                style = {styles.header_user}
             >
-                {!!room && <GroupAvatar avatar={room.avatar} name={room.name} size={36} />}
+                {!!room &&
+                    <GroupAvatar
+                        avatar = {room.avatar}
+                        name = {room.name}
+                        size = {36}
+                    />
+                }
 
-                <View style={styles.flex}>
-                    <Text variant="body_strong" numberOfLines={1}>{room?.name ?? t("Skupina")}</Text>
-                    {room && is_removed && <Text variant="caption" color="text_muted">{t("Už nie ste členom")}</Text>}
-                    {room && !is_removed && socket.status !== "open" && <Text variant="caption" color="warning">{t("Pripája sa...")}</Text>}
-                    {room && !is_removed && socket.status === "open" && <Text variant="caption" color="text_muted">{t("Členovia: {{count}}", { count: room.members_count })}</Text>}
+                <View style = {styles.flex}>
+                    <Text variant = "body_strong" numberOfLines = {1}>{room?.name ?? t("Skupina")}</Text>
+                    {room && is_removed &&
+                        <Text variant = "caption" color = "text_muted">{t("Už nie ste členom")}</Text>
+                    }
+                    {room && !is_removed && socket.status !== "open" &&
+                        <Text variant = "caption" color = "warning">{t("Pripája sa...")}</Text>
+                    }
+                    {room && !is_removed && socket.status === "open" &&
+                        <Text variant = "caption" color = "text_muted">{t("Členovia: {{count}}", { count: room.members_count })}</Text>
+                    }
                 </View>
             </Pressable>
 
-            {!!room && !is_removed && <IconButton icon="circle-info" accessibility_label={t("Informácie o skupine")} onPress={() => setIsGroupInfoOpen(true)} variant="soft" size={38} />}
+            {!!room && !is_removed &&
+                <IconButton
+                    icon = "circle-info"
+                    accessibility_label = {t("Informácie o skupine")}
+                    onPress = {() => setIsGroupInfoOpen(true)}
+                    variant = "soft"
+                    size = {38}
+                />
+            }
         </View>
     ) : (
-        <View style={styles.header}>
-            <IconButton icon="chevron-left" accessibility_label={t("Späť")} onPress={go_back} variant="soft" size={38} />
+        <View style = {styles.header}>
+            <IconButton
+                icon = "chevron-left"
+                accessibility_label = {t("Späť")}
+                onPress = {go_back}
+                variant = "soft"
+                size = {38}
+            />
 
             <Pressable
-                onPress={() => receiver && router.push({ pathname: "/profile/[username]", params: { username: receiver.username } })}
-                accessibilityRole="button"
-                accessibilityLabel={receiver ? `${receiver.username}, ${t("Zobraziť profil")}` : username}
-                style={styles.header_user}
+                onPress = {() => receiver && router.push({ pathname: "/profile/[username]", params: { username: receiver.username } })}
+                accessibilityRole = "button"
+                accessibilityLabel = {receiver ? `${receiver.username}, ${t("Zobraziť profil")}` : username}
+                style = {styles.header_user}
             >
-                {!!receiver && <Avatar user={receiver} size={36} />}
+                {!!receiver &&
+                    <Avatar user = {receiver} size = {36} />
+                }
 
-                <View style={styles.flex}>
-                    <Text variant="body_strong" numberOfLines={1}>{receiver?.username ?? username}</Text>
-                    {socket.status !== "open" && receiver && <Text variant="caption" color="warning">{t("Pripája sa...")}</Text>}
-                    {socket.status === "open" && receiver?.is_muted && <Text variant="caption" color="text_muted">{t("Stlmené")}</Text>}
+                <View style = {styles.flex}>
+                    <Text variant = "body_strong" numberOfLines = {1}>{receiver?.username ?? username}</Text>
+                    {socket.status !== "open" && receiver &&
+                        <Text variant = "caption" color = "warning">{t("Pripája sa...")}</Text>
+                    }
+                    {socket.status === "open" && receiver?.is_muted &&
+                        <Text variant = "caption" color = "text_muted">{t("Stlmené")}</Text>
+                    }
                 </View>
             </Pressable>
 
-            {!!receiver && <IconButton icon="ellipsis" accessibility_label={t("Možnosti")} onPress={() => setIsMenuOpen(true)} variant="soft" size={38} />}
+            {!!receiver &&
+                <IconButton
+                    icon = "ellipsis"
+                    accessibility_label = {t("Možnosti")}
+                    onPress = {() => setIsMenuOpen(true)}
+                    variant = "soft"
+                    size = {38}
+                />
+            }
         </View>
     )
 
     if(!logged_in_user) {
         return (
-            <Screen header={header}>
-                <EmptyState icon="comments" title={t("Prihláste sa")} message={t("Po prihlásení si môžete písať s ľuďmi, ktorých sledujete.")} action={{ label: t("Prihlásiť sa"), onPress: () => auth_sheet.open("login_form") }} />
+            <Screen header = {header}>
+                <EmptyState
+                    icon = "comments"
+                    title = {t("Prihláste sa")}
+                    message = {t("Po prihlásení si môžete písať s ľuďmi, ktorých sledujete.")}
+                    action = {{ label: t("Prihlásiť sa"), onPress: () => auth_sheet.open("login_form") }}
+                />
             </Screen>
         )
     }
@@ -597,110 +664,127 @@ export default function Conversation({ username, room_id }:ConversationProps) {
     return (
         <>
             <Screen
-                header={header}
-                is_scrollable={false}
-                is_padded={false}
+                header = {header}
+                is_scrollable = {false}
+                is_padded = {false}
                 is_keyboard_aware
-                has_glow={!background}
-                edges={["top", "left", "right"]}
+                has_glow = {!background}
+                edges = {["top", "left", "right"]}
 
-                footer={is_removed ? (
-                    <View style={styles.removed}>
-                        <Text variant="callout" color="text_secondary" style={styles.removed_text}>{t("Boli ste odstránení z tejto skupiny. Nové správy už neuvidíte.")}</Text>
+                footer = {is_removed ? (
+                    <View style = {styles.removed}>
+                        <Text
+                            variant = "callout"
+                            color = "text_secondary"
+                            style = {styles.removed_text}
+                        >
+                            {t("Boli ste odstránení z tejto skupiny. Nové správy už neuvidíte.")}
+                        </Text>
                     </View>
                 ) : is_loaded && !is_locked ? (
                     <Composer
-                        value={draft}
-                        onChange={setDraft}
-                        attachments={attachments}
-                        onAttachmentsChange={setAttachments}
-                        onVoiceMessageUpdate={setVoiceMessage}
-                        voice_message={voice_message}
-                        editing={editing}
-                        onCancelEdit={() => {
-                            setEditing(null)
-                            setDraft("")
+                        value = {draft}
+                        onChange = {setDraft}
+                        attachments = {attachments}
+                        onAttachmentsChange = {setAttachments}
+                        onVoiceMessageUpdate = {setVoiceMessage}
+                        voice_message = {voice_message}
+                        editing = {editing}
+                        onCancelEdit = {() => {
+                            setEditing(null) // Sets The Editing
+                            setDraft("") // Sets The Draft
                         }}
-                        reply_on={reply_on ? toReplyPreview(reply_on) : null}
-                        onCancelReply={() => setReplyOn(null)}
-                        onSend={send}
-                        is_sending={is_sending}
-                        is_disabled={socket.status !== "open"}
+                        reply_on = {reply_on ? toReplyPreview(reply_on) : null}
+                        onCancelReply = {() => setReplyOn(null)}
+                        onSend = {send}
+                        is_sending = {is_sending}
+                        is_disabled = {socket.status !== "open"}
                     />
                 ) : undefined}
             >
                 {!!background && !is_group && (
-                    <View style={StyleSheet.absoluteFill} pointerEvents="none">
-                        <Image source={{ uri: getAttachmentUrl(background) ?? undefined }} style={StyleSheet.absoluteFill} contentFit="cover" />
-                        <View style={styles.background_dim} />
+                    <View style = {StyleSheet.absoluteFill} pointerEvents = "none">
+                        <Image
+                            source = {{ uri: getAttachmentUrl(background) ?? undefined }}
+                            style = {StyleSheet.absoluteFill}
+                            contentFit = "cover"
+                        />
+                        <View style = {styles.background_dim} />
                     </View>
                 )}
 
                 {!current ? (
-                    <ActivityIndicator color={colors.spinner} style={styles.loader} />
+                    <ActivityIndicator color = {colors.spinner} style = {styles.loader} />
                 ) : current.error ? (
-                    <ErrorState error={current.error} />
+                    <ErrorState error = {current.error} />
                 ) : is_locked ? (
-                    <EmptyState icon="lock" title={t("Účet používateľa je súkromný.")} />
+                    <EmptyState icon = "lock" title = {t("Účet používateľa je súkromný.")} />
                 ) : (
                     <FlatList
-                        ref={list_reference}
-                        data={messages}
+                        ref = {list_reference}
+                        data = {messages}
                         inverted
-                        keyExtractor={(message:ChatMessage) => String(message.id)}
-                        renderItem={renderMessage}
-                        onEndReached={loadMore}
-                        onEndReachedThreshold={0.3}
-                        onScrollToIndexFailed={(info) => {
+                        keyExtractor = {(message:ChatMessage) => String(message.id)}
+                        renderItem = {renderMessage}
+                        onEndReached = {loadMore}
+                        onEndReachedThreshold = {0.3}
+                        onScrollToIndexFailed = {(info) => {
                             list_reference.current?.scrollToOffset({ offset: info.averageItemLength * info.index, animated: true }) // Item Not Measured Yet: Gets Close First, Then Retries
-                            setTimeout(() => list_reference.current?.scrollToIndex({ index: info.index, viewPosition: 0.5, animated: true }), 250)
+                            setTimeout(() => list_reference.current?.scrollToIndex({ index: info.index, viewPosition: 0.5, animated: true }), 250) // Sets The Timeout
                         }}
-                        keyboardShouldPersistTaps="handled"
-                        keyboardDismissMode="interactive"
-                        contentContainerStyle={styles.list_content}
-                        ListFooterComponent={is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.loader} /> : undefined}
-                        ListEmptyComponent={<View style={styles.empty}><EmptyState icon="hand" title={t("Povedzte ahoj")} message={is_group ? t("Toto je začiatok skupinovej konverzácie.") : t("Toto je začiatok vašej konverzácie.")} is_compact /></View>}
+                        keyboardShouldPersistTaps = "handled"
+                        keyboardDismissMode = "interactive"
+                        contentContainerStyle = {styles.list_content}
+                        ListFooterComponent = {is_loading_more ? <ActivityIndicator color = {colors.spinner} style = {styles.loader} /> : undefined}
+                        ListEmptyComponent = {<View style = {styles.empty}><EmptyState
+                            icon = "hand"
+                            title = {t("Povedzte ahoj")}
+                            message = {is_group ? t("Toto je začiatok skupinovej konverzácie.") : t("Toto je začiatok vašej konverzácie.")}
+                            is_compact
+                        /></View>}
                     />
                 )}
             </Screen>
 
             <MessageActionsSheet
-                message={selected}
-                current_username={logged_in_user.username}
-                onClose={() => setSelected(null)}
-                onReact={react}
-                onEdit={startEditing}
-                onReply={replyOnMessage}
-                onDelete={deleteMessage}
+                message = {selected}
+                current_username = {logged_in_user.username}
+                onClose = {() => setSelected(null)}
+                onReact = {react}
+                onEdit = {startEditing}
+                onReply = {replyOnMessage}
+                onDelete = {deleteMessage}
             />
 
             {!!receiver && (
                 <ConversationMenuSheet
-                    visible={is_menu_open}
-                    onClose={() => setIsMenuOpen(false)}
-                    receiver={receiver}
-                    onReceiverChange={(next:ChatReceiver) => setState((previous) => previous ? { ...previous, receiver: next } : previous)}
-                    background_image={background}
-                    onBackgroundChanged={() => loadBackground(receiver.id)}
+                    visible = {is_menu_open}
+                    onClose = {() => setIsMenuOpen(false)}
+                    receiver = {receiver}
+                    onReceiverChange = {(next:ChatReceiver) => setState((previous) => previous ? { ...previous, receiver: next } : previous)}
+                    background_image = {background}
+                    onBackgroundChanged = {() => loadBackground(receiver.id)}
                 />
             )}
 
             {is_group && (
                 <GroupInfoSheet
-                    room={is_group_info_open && !is_removed ? room : null}
-                    onClose={() => setIsGroupInfoOpen(false)}
-                    onRoomChanged={applyRoomChange}
+                    room = {is_group_info_open && !is_removed ? room : null}
+                    onClose = {() => setIsGroupInfoOpen(false)}
+                    onRoomChanged = {applyRoomChange}
                 />
             )}
 
             <ImageViewer
-                images={(viewed_images?.urls ?? []).map((uri:string) => ({ uri }))}
-                imageIndex={viewed_images?.index ?? 0}
-                visible={viewed_images !== null}
-                onRequestClose={() => setViewedImages(null)}
+                images = {(viewed_images?.urls ?? []).map((uri:string) => ({ uri }))}
+                imageIndex = {viewed_images?.index ?? 0}
+                visible = {viewed_images !== null}
+                onRequestClose = {() => setViewedImages(null)}
             />
 
-            {!!viewed_video && <FullscreenVideoPlayer url={viewed_video} onClose={() => setViewedVideo(null)} />}
+            {!!viewed_video &&
+                <FullscreenVideoPlayer url = {viewed_video} onClose = {() => setViewedVideo(null)} />
+            }
         </>
     )
 }

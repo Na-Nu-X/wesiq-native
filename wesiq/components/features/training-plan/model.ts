@@ -34,10 +34,10 @@ export interface PlanDraft {
 
 // Limits
 export const MAX_TITLE_LENGTH:number = 50 // Same As The Server Column
-export const MAX_EXERCISE_NAME_LENGTH:number = 50
-export const MAX_EXERCISES:number = 30
-export const MAX_SETS_PER_EXERCISE:number = 20
-export const DEFAULT_WARM_UP_SECONDS:number = 300
+export const MAX_EXERCISE_NAME_LENGTH:number = 50 // Defines The Max Exercise Name Length
+export const MAX_EXERCISES:number = 30 // Defines The Max Exercises
+export const MAX_SETS_PER_EXERCISE:number = 20 // Defines The Max Sets Per Exercise
+export const DEFAULT_WARM_UP_SECONDS:number = 300 // Defines The Default Warm Up Seconds
 export const WARM_UP_NAME:string = "Warm Up" // Stored Name Of The Warm Up Row (Kept Identical To Existing Data)
 
 // Value Steps And Ranges Per Unit
@@ -47,7 +47,7 @@ export const UNIT_RULES:Record<ExerciseUnit, { min:number, max:number, step:numb
     steps: { min: 100, max: 50000, step: 100, default_value: 1000, default_sets: 1 },
 }
 
-export const EMPTY_DRAFT:PlanDraft = { key: null, title: "", day: null, warm_up_seconds: null, exercises: [] }
+export const EMPTY_DRAFT:PlanDraft = { key: null, title: "", day: null, warm_up_seconds: null, exercises: [] } // Defines The Empty Draft
 
 // Function For Create A Local ID
 export const createLocalId = ():string => `local_${generateKey(12)}`
@@ -99,6 +99,7 @@ type UnlockedPlanRow = PlanRow & {
     unit:ExerciseUnit,
 }
 
+// Function For Check If Unlocked Row
 const isUnlockedRow = (row:PlanRow):row is UnlockedPlanRow => {
     return row.exercise !== null && row.periods !== null && row.unit !== null
 }
@@ -150,6 +151,7 @@ export const draftToRows = (draft:PlanDraft):ManageTrainingPlanRow[] => {
     const key:string = draft.key ?? generateKey(50) // Gets The Plan Key
     const title:string = draft.title.trim() // Gets The Title
 
+    // Gets The Base
     const base = {
         action: is_edit ? "edited_training_plan" as const : "new_training_plan" as const,
         previous_training_plan_key: is_edit ? key : null,
@@ -158,7 +160,7 @@ export const draftToRows = (draft:PlanDraft):ManageTrainingPlanRow[] => {
         type: title,
     }
 
-    const rows:ManageTrainingPlanRow[] = []
+    const rows:ManageTrainingPlanRow[] = [] // Gets The Rows
 
     if(draft.warm_up_seconds !== null) {
         rows.push({ ...base, exercise: WARM_UP_NAME, periods: [clampValue(draft.warm_up_seconds, "seconds")], unit: "seconds", order: 1, is_warm_up: true, is_custom_exercise: false })
@@ -189,7 +191,7 @@ export type DraftIssue =
 
 // Function For Validate A Draft (Empty List = Ready To Save)
 export const validateDraft = (draft:PlanDraft):DraftIssue[] => {
-    const issues:DraftIssue[] = []
+    const issues:DraftIssue[] = [] // Gets The Issues
 
     if(!draft.title.trim()) issues.push({ kind: "missing_title" })
     if(draft.exercises.length === 0) issues.push({ kind: "no_exercises" })
@@ -215,10 +217,10 @@ export interface PlanSummary<T extends PlanRow = PlanRow> {
 
 // Function For Group Server Rows Into Plans By Key (Plans Sharing A Day Stay Separate)
 export function groupPlans<T extends PlanRow>(rows:readonly T[]):PlanSummary<T>[] {
-    const by_key:Map<string, T[]> = new Map()
+    const by_key:Map<string, T[]> = new Map() // Gets The By Key
 
     rows.forEach((row:T) => {
-        const group:T[] = by_key.get(row.training_plan_key) ?? []
+        const group:T[] = by_key.get(row.training_plan_key) ?? [] // Gets The Group
         group.push(row)
         by_key.set(row.training_plan_key, group)
     })
@@ -239,10 +241,11 @@ export function groupPlans<T extends PlanRow>(rows:readonly T[]):PlanSummary<T>[
 }
 
 // Days In Display Order (Monday First)
-export const WEEK_DAYS:readonly Day[] = [1, 2, 3, 4, 5, 6, 0]
+export const WEEK_DAYS:readonly Day[] = [1, 2, 3, 4, 5, 6, 0] // Defines The Week Days
 
 // Function For Sort Plans (Days Mon → Sun First, Then Plans Without A Day By Title)
 export const sortPlans = <T extends PlanRow>(plans:PlanSummary<T>[]):PlanSummary<T>[] => {
+    // Function For Day Rank
     const day_rank = (day:Day|null):number => day === null ? 99 : WEEK_DAYS.indexOf(day)
     return [...plans].sort((a, b) => day_rank(a.day) - day_rank(b.day) || a.title.localeCompare(b.title))
 }
@@ -280,6 +283,7 @@ export const isOfficialPlanMatchingQuery = (plan:PlanSummary<OfficialTrainingPla
 export const sortOfficialPlans = (plans:readonly PlanSummary<OfficialTrainingPlanExercise>[], sort:OfficialPlanSort):PlanSummary<OfficialTrainingPlanExercise>[] => {
     if(sort === "default") return [...plans]
 
+    // Function For Rank
     const rank = (plan:PlanSummary<OfficialTrainingPlanExercise>):number => {
         const first:OfficialTrainingPlanExercise|undefined = plan.rows[0] // Gets The First Row
 

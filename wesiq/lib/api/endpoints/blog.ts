@@ -29,12 +29,14 @@ export const getArticleWebLink = (article:Pick<Article, "link">):string => `${DO
 // Function For Get The Image URL Of An Article
 export const getArticleImageUrl = (article:Pick<Article, "image_name"|"image_version">):string|null => {
     if(!article.image_name) return null
-    const url:string = `${DOMAIN}/static/images/articles/${encodeURIComponent(article.image_name)}`
+    const url:string = `${DOMAIN}/static/images/articles/${encodeURIComponent(article.image_name)}` // Gets The URL
     return article.image_version ? `${url}?v=${article.image_version}` : url // Version Changes When The Image Is Replaced, So The Cached Copy Isn't Reused
 }
 
+// Function For Check If Article
 const isArticle = (value:unknown):value is Article => isRecord(value) && isNumber(value.id) && isString(value.title) && isString(value.link)
 
+// Function For Get The Articles
 export const getArticles = (sort:ArticleSort, category:string, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { articles:Article[] }>> => {
     return apiGet("get-articles/", { query: { sort, category }, signal, is_authenticated: false, guard: envelopeWith({ articles: (value:unknown):value is Article[] => isArrayOf(value, isArticle) }) })
 }
@@ -49,6 +51,7 @@ const getDeviceId = async ():Promise<string> => {
     return created
 }
 
+// Function For Get The Article
 export const getArticle = async (link:string, signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { article?:ArticleDetail, not_found:boolean }>> => {
     const device_id:string = await getDeviceId() // Gets The Device ID
 
@@ -59,10 +62,12 @@ export const getArticle = async (link:string, signal?:AbortSignal):Promise<ApiRe
     })
 }
 
+// Function For Rate Article
 export const rateArticle = (article_id:number, rating:number) => apiPost("add-article-rating/", { article_id, rating })
 
 // ---------- Comments (Same Shape As Post Comments) ----------
 
+// Function For Get The Article Comments
 export const getArticleComments = (article_id:number, page:number, signal?:AbortSignal):Promise<ApiResult<CommentsPage>> => {
     return apiGet("get-article-comments/", {
         query: { article_id, page },
@@ -71,10 +76,14 @@ export const getArticleComments = (article_id:number, page:number, signal?:Abort
     })
 }
 
+// Function For Add The Article Comment
 export const addArticleComment = (article_id:number, comment:string, parent_id:number|null):Promise<ApiResult<ApiEnvelope & { comment:AddedComment }>> => {
     return apiPost("add-article-comment/", { article_id, comment, parent_id })
 }
 
+// Function For Toggle The Article Comment Like
 export const toggleArticleCommentLike = (comment_id:number) => apiPost("toggle-article-comment-like/", { comment_id })
+// Function For Report The Article Comment
 export const reportArticleComment = (comment_id:number, reason:ReportReason) => apiPost("report-article-comment/", { comment_id, reason })
+// Function For Delete The Article Comment
 export const deleteArticleComment = (comment_id:number) => apiPost("delete-article-comment/", { comment_id })

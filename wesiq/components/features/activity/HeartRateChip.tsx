@@ -14,6 +14,7 @@ import { MenuRow } from "@/components/features/posts/PostMenuSheet"
 import type { HeartRateConnectError, HeartRateConnectResult, HeartRateSourceType } from "@/classes/HeartRate"
 import type { IconName } from "@/components/ui"
 
+// Defines The Source Icons
 const SOURCE_ICONS:Record<HeartRateSourceType, IconName> = {
     APPLE_HEALTH: "apple-whole",
     HEALTH_CONNECT: "heart-pulse",
@@ -23,12 +24,12 @@ const SOURCE_ICONS:Record<HeartRateSourceType, IconName> = {
 
 export default function HeartRateChip() {
     const { t } = useTranslation() // Initializes The Translations
-    const [manager] = useState<HeartRateManager>(() => new HeartRateManager())
-    const [bpm, setBpm] = useState<number|null>(null)
-    const [source, setSource] = useState<HeartRateSourceType|null>(null)
-    const [is_connecting, setIsConnecting] = useState<boolean>(false)
-    const [is_sheet_open, setIsSheetOpen] = useState<boolean>(false)
-    const scale = useSharedValue<number>(1)
+    const [manager] = useState<HeartRateManager>(() => new HeartRateManager()) // Stores The Manager
+    const [bpm, setBpm] = useState<number|null>(null) // Stores The Bpm
+    const [source, setSource] = useState<HeartRateSourceType|null>(null) // Stores The Source
+    const [is_connecting, setIsConnecting] = useState<boolean>(false) // Stores If It Is Connecting
+    const [is_sheet_open, setIsSheetOpen] = useState<boolean>(false) // Stores If It Is Sheet Open
+    const scale = useSharedValue<number>(1) // Stores The Scale
 
     // Initializes The Disconnect On Unmount
     useEffect(() => () => manager.stopMonitoring(), [manager])
@@ -45,8 +46,9 @@ export default function HeartRateChip() {
         scale.set(withRepeat(withSequence(withTiming(1.25, { duration: beat_ms * 0.3 }), withTiming(1, { duration: beat_ms * 0.7 })), -1))
     }, [bpm, scale])
 
-    const heart_style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }))
+    const heart_style = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] })) // Gets The Heart Style
 
+    // Gets The Source Labels
     const source_labels:Record<HeartRateSourceType, string> = {
         APPLE_HEALTH: "Apple Health",
         HEALTH_CONNECT: "Health Connect",
@@ -54,6 +56,7 @@ export default function HeartRateChip() {
         TEST: t("Testovacie dáta"),
     }
 
+    // Gets The Sources
     const sources:HeartRateSourceType[] = [
         ...(Platform.OS === "ios" ? ["APPLE_HEALTH" as const] : []),
         ...(Platform.OS === "android" ? ["HEALTH_CONNECT" as const] : []),
@@ -74,23 +77,23 @@ export default function HeartRateChip() {
     // Function For Reset After The Sensor Disconnected By Itself
     const handleConnectionLost = ():void => {
         manager.stopMonitoring()
-        setSource(null)
-        setBpm(null)
+        setSource(null) // Sets The Source
+        setBpm(null) // Sets The Bpm
         haptics.error()
         showAlert(t("Snímač tepu sa odpojil"))
     }
 
     // Function For Connect A Source
     const connect = async (next_source:HeartRateSourceType):Promise<void> => {
-        setIsSheetOpen(false)
-        setIsConnecting(true)
-        setSource(null)
-        setBpm(null)
+        setIsSheetOpen(false) // Sets The Sheet Open State
+        setIsConnecting(true) // Sets The Connecting State
+        setSource(null) // Sets The Source
+        setBpm(null) // Sets The Bpm
 
         const result:HeartRateConnectResult = await manager.startMonitoring(next_source, setBpm, handleConnectionLost) // Connects
         if(!result.ok && result.error === "cancelled") return // Another Source Was Picked Or The Connection Was Stopped
 
-        setIsConnecting(false)
+        setIsConnecting(false) // Sets The Connecting State
 
         if(!result.ok) {
             haptics.error()
@@ -99,45 +102,75 @@ export default function HeartRateChip() {
         }
 
         haptics.success()
-        setSource(next_source)
+        setSource(next_source) // Sets The Source
     }
 
     // Function For Disconnect (Also Stops A Running Search)
     const disconnect = ():void => {
         manager.stopMonitoring()
-        setIsConnecting(false)
-        setSource(null)
-        setBpm(null)
-        setIsSheetOpen(false)
+        setIsConnecting(false) // Sets The Connecting State
+        setSource(null) // Sets The Source
+        setBpm(null) // Sets The Bpm
+        setIsSheetOpen(false) // Sets The Sheet Open State
     }
 
-    const label:string = is_connecting ? t("Pripájam...") : source ? (bpm ? `${bpm}` : "--") : t("Tep")
+    const label:string = is_connecting ? t("Pripájam...") : source ? (bpm ? `${bpm}` : "--") : t("Tep") // Gets The Label
 
     return (
         <>
             <Pressable
-                onPress={() => setIsSheetOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={source ? t("Srdcový tep: {{bpm}} úderov za minútu", { bpm: bpm ?? "--" }) : t("Pripojiť snímač tepu")}
-                style={({ pressed }:PressableStateCallbackType) => [styles.chip, source ? styles.chip_connected : null, pressed ? styles.pressed : null]}
+                onPress = {() => setIsSheetOpen(true)}
+                accessibilityRole = "button"
+                accessibilityLabel = {source ? t("Srdcový tep: {{bpm}} úderov za minútu", { bpm: bpm ?? "--" }) : t("Pripojiť snímač tepu")}
+                style = {({ pressed }:PressableStateCallbackType) => [styles.chip, source ? styles.chip_connected : null, pressed ? styles.pressed : null]}
             >
-                <Animated.View style={heart_style}>
-                    <Icon name="heart" size={13} color={source ? "danger" : "text_muted"} is_solid={Boolean(source)} />
+                <Animated.View style = {heart_style}>
+                    <Icon
+                        name = "heart"
+                        size = {13}
+                        color = {source ? "danger" : "text_muted"}
+                        is_solid = {Boolean(source)}
+                    />
                 </Animated.View>
 
-                <Text variant="label" color={source ? "text" : "text_secondary"} is_tabular>{label}</Text>
-                {source && bpm ? <Text variant="caption" color="text_muted">bpm</Text> : null}
+                <Text
+                    variant = "label"
+                    color = {source ? "text" : "text_secondary"}
+                    is_tabular
+                >
+                    {label}
+                </Text>
+                {source && bpm ? <Text variant = "caption" color = "text_muted">bpm</Text> : null}
             </Pressable>
 
-            <Sheet visible={is_sheet_open} onClose={() => setIsSheetOpen(false)} title={t("Snímač tepu")} subtitle={t("Zvoľte možnosť pre meranie srdcového tepu.")}>
-                <View style={styles.list}>
-                    {sources.length === 0 && <Text variant="callout" color="text_secondary">{t("Meranie tepu je dostupné v aplikácii pre iOS a Android.")}</Text>}
+            <Sheet
+                visible = {is_sheet_open}
+                onClose = {() => setIsSheetOpen(false)}
+                title = {t("Snímač tepu")}
+                subtitle = {t("Zvoľte možnosť pre meranie srdcového tepu.")}
+            >
+                <View style = {styles.list}>
+                    {sources.length === 0 &&
+                        <Text variant = "callout" color = "text_secondary">{t("Meranie tepu je dostupné v aplikácii pre iOS a Android.")}</Text>
+                    }
 
                     {sources.map((one_source:HeartRateSourceType) => (
-                        <MenuRow key={one_source} icon={SOURCE_ICONS[one_source]} label={one_source === source ? `${source_labels[one_source]} · ${t("pripojené")}` : source_labels[one_source]} onPress={() => connect(one_source)} />
+                        <MenuRow
+                            key = {one_source}
+                            icon = {SOURCE_ICONS[one_source]}
+                            label = {one_source === source ? `${source_labels[one_source]} · ${t("pripojené")}` : source_labels[one_source]}
+                            onPress = {() => connect(one_source)}
+                        />
                     ))}
 
-                    {(!!source || is_connecting) && <MenuRow icon={is_connecting ? "xmark" : "link-slash"} label={is_connecting ? t("Zrušiť") : t("Odpojiť")} onPress={disconnect} is_danger />}
+                    {(!!source || is_connecting) &&
+                        <MenuRow
+                            icon = {is_connecting ? "xmark" : "link-slash"}
+                            label = {is_connecting ? t("Zrušiť") : t("Odpojiť")}
+                            onPress = {disconnect}
+                            is_danger
+                        />
+                    }
                 </View>
             </Sheet>
         </>

@@ -50,13 +50,17 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
     const border_color:string = has_error ? colors.danger : is_focused ? colors.primary : colors.border // Gets The Border Color
 
     return (
-        <View style={[styles.container, container_style]}>
+        <View style = {[styles.container, container_style]}>
             {(label || (is_counter_visible && maxLength)) && (
-                <View style={styles.label_row}>
-                    {label ? <Text variant="label" color="text_secondary">{label}</Text> : <View />}
+                <View style = {styles.label_row}>
+                    {label ? <Text variant = "label" color = "text_secondary">{label}</Text> : <View />}
 
                     {is_counter_visible && maxLength !== undefined && (
-                        <Text variant="caption" color={(value?.length ?? 0) >= maxLength ? "danger" : "text_muted"} is_tabular>
+                        <Text
+                            variant = "caption"
+                            color = {(value?.length ?? 0) >= maxLength ? "danger" : "text_muted"}
+                            is_tabular
+                        >
                             {value?.length ?? 0}/{maxLength}
                         </Text>
                     )}
@@ -64,7 +68,7 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
             )}
 
             <View
-                style={[
+                style = {[
                     styles.field,
                     multiline ? styles.field_multiline : null,
                     { borderColor: border_color },
@@ -73,64 +77,82 @@ const TextField = forwardRef<ComponentRef<typeof TextInput>, TextFieldProps>(fun
                 ]}
             >
                 {!!icon && (
-                    <View style={[styles.icon, multiline ? styles.icon_multiline : null]}>
-                        <Icon name={icon} size={15} color={is_focused ? "primary" : "text_muted"} />
+                    <View style = {[styles.icon, multiline ? styles.icon_multiline : null]}>
+                        <Icon
+                            name = {icon}
+                            size = {15}
+                            color = {is_focused ? "primary" : "text_muted"}
+                        />
                     </View>
                 )}
 
                 <TextInput
-                    ref={ref}
-                    value={value}
-                    editable={!is_disabled}
-                    multiline={multiline}
-                    maxLength={maxLength}
-                    placeholderTextColor={colors.text_muted}
-                    selectionColor={colors.primary}
-                    cursorColor={colors.primary}
-                    keyboardAppearance="dark"
-                    accessibilityLabel={accessibilityLabel ?? label}
-                    accessibilityHint={error ?? helper}
-                    textAlignVertical={multiline ? "top" : "center"}
-                    maxFontSizeMultiplier={1.5}
+                    ref = {ref}
+                    value = {value}
+                    editable = {!is_disabled}
+                    multiline = {multiline}
+                    maxLength = {maxLength}
+                    placeholderTextColor = {colors.text_muted}
+                    selectionColor = {colors.primary}
+                    cursorColor = {colors.primary}
+                    keyboardAppearance = "dark"
+                    accessibilityLabel = {accessibilityLabel ?? label}
+                    accessibilityHint = {error ?? helper}
+                    textAlignVertical = {multiline ? "top" : "center"}
+                    maxFontSizeMultiplier = {1.5}
 
-                    onFocus={(event) => {
-                        setIsFocused(true)
+                    onFocus = {(event) => {
+                        setIsFocused(true) // Sets The Focused State
                         revealFocusedInput?.() // Also Covers Moving Between Fields While The Keyboard Stays Open
                         onFocus?.(event)
                     }}
 
-                    onBlur={(event) => {
-                        setIsFocused(false)
+                    onBlur = {(event) => {
+                        setIsFocused(false) // Sets The Focused State
                         onBlur?.(event)
                     }}
 
-                    onContentSizeChange={(event) => {
+                    onContentSizeChange = {(event) => {
                         if(multiline && is_focused) revealFocusedInput?.() // Keeps The Caret Visible While A Multiline Field Grows
                         onContentSizeChange?.(event)
                     }}
 
-                    style={[styles.input, multiline ? styles.input_multiline : null, multiline && multiline_min_height !== undefined ? { minHeight: multiline_min_height } : null, Platform.OS === "web" ? styles.input_web : null]}
+                    style = {[styles.input, multiline ? styles.input_multiline : null, multiline && multiline_min_height !== undefined ? { minHeight: multiline_min_height } : null, Platform.OS === "web" ? styles.input_web : null]}
                     {...props}
-                    secureTextEntry={is_secure} // After The Props, So A Passed Value Can't Override The Toggle
+                    secureTextEntry = {is_secure} // After The Props, So A Passed Value Can't Override The Toggle
                 />
 
-                {!!trailing && <View style={styles.trailing}>{trailing}</View>}
+                {!!trailing &&
+                    <View style = {styles.trailing}>{trailing}</View>
+                }
 
                 {is_password && (
                     <IconButton
-                        icon={is_secure ? "eye-slash" : "eye"} // Shows The Current State: Crossed Eye While Hidden
-                        accessibility_label={is_secure ? t("Zobraziť heslo") : t("Skryť heslo")}
-                        onPress={() => setIsPasswordVisible((previous:boolean) => !previous)}
-                        size={36}
-                        icon_color="text_muted"
+                        icon = {is_secure ? "eye-slash" : "eye"} // Shows The Current State: Crossed Eye While Hidden
+                        accessibility_label = {is_secure ? t("Zobraziť heslo") : t("Skryť heslo")}
+                        onPress = {() => setIsPasswordVisible((previous:boolean) => !previous)}
+                        size = {36}
+                        icon_color = "text_muted"
                     />
                 )}
             </View>
 
             {(error || helper) && (
-                <View style={styles.message_row}>
-                    {!!error && <Icon name="circle-exclamation" size={12} color="danger" />}
-                    <Text variant="caption" color={error ? "danger" : "text_muted"} style={styles.message}>{error ?? helper}</Text>
+                <View style = {styles.message_row}>
+                    {!!error &&
+                        <Icon
+                            name = "circle-exclamation"
+                            size = {12}
+                            color = "danger"
+                        />
+                    }
+                    <Text
+                        variant = "caption"
+                        color = {error ? "danger" : "text_muted"}
+                        style = {styles.message}
+                    >
+                        {error ?? helper}
+                    </Text>
                 </View>
             )}
         </View>

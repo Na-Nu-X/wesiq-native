@@ -32,8 +32,9 @@ export default function HomeScreen() {
     const feed = usePostsFeed(debounced_search) // Loads The Feed
     const uploads = useUploadTracking(logged_in_user !== null) // Tracks Posts Being Processed
 
+    // Function For Require Login
     const requireLogin = useCallback(() => auth_sheet.open("login_form"), [auth_sheet])
-    const sheets = usePostSheets({ updatePost: feed.updatePost, removePost: feed.removePost, updateAuthor: feed.updateAuthor, onRequireLogin: requireLogin })
+    const sheets = usePostSheets({ updatePost: feed.updatePost, removePost: feed.removePost, updateAuthor: feed.updateAuthor, onRequireLogin: requireLogin }) // Gets The Sheets
 
     // Function For Handle A Finished Upload
     const handleUploaded = async (tasks:CompressTask[]):Promise<void> => {
@@ -44,60 +45,93 @@ export default function HomeScreen() {
     // Function For Render One Post
     const renderPost = useCallback(({ item }:ListRenderItemInfo<Post>) => (
         <PostCard
-            post={item}
-            onPostChange={sheets.handlePostChange}
-            onAuthorChange={feed.updateAuthor}
-            onOpenComments={sheets.openComments}
-            onOpenMenu={sheets.openMenu}
-            onShare={sheets.openShare}
-            onShowLikes={sheets.openUsersWhoLikedPost}
-            onRequireLogin={requireLogin}
+            post = {item}
+            onPostChange = {sheets.handlePostChange}
+            onAuthorChange = {feed.updateAuthor}
+            onOpenComments = {sheets.openComments}
+            onOpenMenu = {sheets.openMenu}
+            onShare = {sheets.openShare}
+            onShowLikes = {sheets.openUsersWhoLikedPost}
+            onRequireLogin = {requireLogin}
         />
     ), [sheets.handlePostChange, feed.updateAuthor, sheets.openComments, sheets.openMenu, sheets.openShare, sheets.openUsersWhoLikedPost, requireLogin])
 
+    // Gets The List Header
     const list_header = (
-        <View style={styles.list_header}>
+        <View style = {styles.list_header}>
             <TextField
-                icon="magnifying-glass"
-                placeholder={t("Hľadať príspevky")}
-                accessibilityLabel={t("Hľadať príspevky")}
-                value={search}
-                onChangeText={setSearch}
-                autoCorrect={false}
-                autoCapitalize="none"
-                returnKeyType="search"
-                clearButtonMode="while-editing"
+                icon = "magnifying-glass"
+                placeholder = {t("Hľadať príspevky")}
+                accessibilityLabel = {t("Hľadať príspevky")}
+                value = {search}
+                onChangeText = {setSearch}
+                autoCorrect = {false}
+                autoCapitalize = "none"
+                returnKeyType = "search"
+                clearButtonMode = "while-editing"
             />
 
-            {uploads.processing_posts.map((post:ProcessingPost) => <ProcessingPostCard key={post.id} post={post} tasks={uploads.tracked} />)}
+            {uploads.processing_posts.map((post:ProcessingPost) => (
+                <ProcessingPostCard
+                    key = {post.id}
+                    post = {post}
+                    tasks = {uploads.tracked}
+                />
+            ))}
         </View>
     )
 
     // Function For Render The Content When There Are No Posts
     const renderEmpty = () => {
-        if(feed.is_loading) return <View style={styles.skeletons}>{[0, 1].map((index:number) => <Skeleton key={index} height={420} radius={radii.lg} />)}</View>
-        if(feed.error) return <ErrorState error={feed.error} onRetry={feed.refresh} />
-        if(debounced_search) return <EmptyState icon="magnifying-glass" title={t("Nenašli sa žiadne príspevky.")} message={t("Skúste iné slovo alebo hashtag.")} />
+        if(feed.is_loading) return <View style = {styles.skeletons}>{[0, 1].map((index:number) => (
+            <Skeleton
+                key = {index}
+                height = {420}
+                radius = {radii.lg}
+            />
+        ))}</View>
+        if(feed.error) return <ErrorState error = {feed.error} onRetry = {feed.refresh} />
+        if(debounced_search) {
+            return (
+                <EmptyState
+                    icon = "magnifying-glass"
+                    title = {t("Nenašli sa žiadne príspevky.")}
+                    message = {t("Skúste iné slovo alebo hashtag.")}
+                />
+            )
+        }
 
         return (
             <EmptyState
-                icon="images"
-                title={t("Zatiaľ tu nič nie je")}
-                message={t("Sledujte ľudí z komunity alebo pridajte svoj prvý príspevok.")}
-                action={logged_in_user ? { label: t("Nový príspevok"), onPress: () => setIsUploadOpen(true) } : { label: t("Prihlásiť sa"), onPress: requireLogin }}
+                icon = "images"
+                title = {t("Zatiaľ tu nič nie je")}
+                message = {t("Sledujte ľudí z komunity alebo pridajte svoj prvý príspevok.")}
+                action = {logged_in_user ? { label: t("Nový príspevok"), onPress: () => setIsUploadOpen(true) } : { label: t("Prihlásiť sa"), onPress: requireLogin }}
             />
         )
     }
 
     // Function For Render The End Of The Feed (Always The Same Height, So Showing The Spinner Doesn't Move The List And Re-Trigger Loading)
     const renderFooter = () => (
-        <View style={styles.footer}>
+        <View style = {styles.footer}>
             {feed.is_loading_more ? (
-                <ActivityIndicator color={colors.spinner} />
+                <ActivityIndicator color = {colors.spinner} />
             ) : feed.load_more_error ? (
-                <Button label={t("Skúsiť znova")} icon="rotate-right" variant="ghost" size="sm" onPress={() => feed.loadMore(true)} />
+                <Button
+                    label = {t("Skúsiť znova")}
+                    icon = "rotate-right"
+                    variant = "ghost"
+                    size = "sm"
+                    onPress = {() => feed.loadMore(true)}
+                />
             ) : !feed.has_next ? (
-                <Text variant="caption" color="text_muted" align="center">{t("Videli ste všetky príspevky.")}</Text>
+                <Text
+                    variant = "caption"
+                    color = "text_muted"
+                    align = "center"
+                >
+                    {t("Videli ste všetky príspevky.")}
+                </Text>
             ) : null}
         </View>
     )
@@ -105,45 +139,61 @@ export default function HomeScreen() {
     return (
         <PlayingVideoProvider>
             <Screen
-                is_scrollable={false}
-                is_padded={false}
+                is_scrollable = {false}
+                is_padded = {false}
 
-                header={
+                header = {
                     <Header
-                        left={<Text style={styles.wordmark} accessibilityRole="header">Wesiq</Text>}
+                        left = {<Text style = {styles.wordmark} accessibilityRole = "header">Wesiq</Text>}
 
-                        right={
+                        right = {
                             <>
-                                <IconButton icon="user-plus" accessibility_label={t("Hľadať ľudí")} onPress={() => router.push("/users")} variant="soft" size={38} />
-                                <IconButton icon="plus" accessibility_label={t("Nový príspevok")} onPress={() => logged_in_user ? setIsUploadOpen(true) : requireLogin()} variant="solid" size={38} />
+                                <IconButton
+                                    icon = "user-plus"
+                                    accessibility_label = {t("Hľadať ľudí")}
+                                    onPress = {() => router.push("/users")}
+                                    variant = "soft"
+                                    size = {38}
+                                />
+                                <IconButton
+                                    icon = "plus"
+                                    accessibility_label = {t("Nový príspevok")}
+                                    onPress = {() => logged_in_user ? setIsUploadOpen(true) : requireLogin()}
+                                    variant = "solid"
+                                    size = {38}
+                                />
                             </>
                         }
                     />
                 }
             >
                 <FlatList
-                    data={feed.posts}
-                    keyExtractor={(post:Post) => post.id}
-                    renderItem={renderPost}
-                    ListHeaderComponent={list_header}
-                    ListEmptyComponent={renderEmpty}
-                    ListFooterComponent={feed.posts.length > 0 ? renderFooter : undefined}
-                    onEndReached={() => { feed.loadMore() }}
-                    onEndReachedThreshold={1.5} // Starts Loading About 1.5 Screens Early, So The Spinner Rarely Shows
-                    refreshControl={<ThemedRefreshControl refreshing={feed.is_refreshing} onRefresh={feed.refresh} />}
-                    keyboardShouldPersistTaps="handled"
-                    keyboardDismissMode="on-drag"
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={styles.list_content}
-                    windowSize={7}
-                    initialNumToRender={3}
-                    maxToRenderPerBatch={3}
+                    data = {feed.posts}
+                    keyExtractor = {(post:Post) => post.id}
+                    renderItem = {renderPost}
+                    ListHeaderComponent = {list_header}
+                    ListEmptyComponent = {renderEmpty}
+                    ListFooterComponent = {feed.posts.length > 0 ? renderFooter : undefined}
+                    onEndReached = {() => { feed.loadMore() }}
+                    onEndReachedThreshold = {1.5} // Starts Loading About 1.5 Screens Early, So The Spinner Rarely Shows
+                    refreshControl = {<ThemedRefreshControl refreshing = {feed.is_refreshing} onRefresh = {feed.refresh} />}
+                    keyboardShouldPersistTaps = "handled"
+                    keyboardDismissMode = "on-drag"
+                    showsVerticalScrollIndicator = {false}
+                    contentContainerStyle = {styles.list_content}
+                    windowSize = {7}
+                    initialNumToRender = {3}
+                    maxToRenderPerBatch = {3}
                 />
             </Screen>
 
             {sheets.sheets}
 
-            <UploadPostSheet visible={is_upload_open} onClose={() => setIsUploadOpen(false)} onUploaded={handleUploaded} />
+            <UploadPostSheet
+                visible = {is_upload_open}
+                onClose = {() => setIsUploadOpen(false)}
+                onUploaded = {handleUploaded}
+            />
         </PlayingVideoProvider>
     )
 }

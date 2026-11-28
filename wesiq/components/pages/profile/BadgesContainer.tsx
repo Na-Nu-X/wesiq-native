@@ -62,83 +62,143 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
     return (
         is_found && profile ? (
-            <View className="badges_container" style={styles.badges_container}>
+            <View className = "badges_container" style = {styles.badges_container}>
                 <BlurView 
-                    intensity={10} 
+                    intensity = {10} 
                     
-                    style={[
+                    style = {[
                         StyleSheet.absoluteFill,
                         { borderRadius: MEDIUM_BORDER_RADIUS },
                     ]} 
                 />
 
-                {tooltip === "developer" && (<Tooltip text={t("Vývojár")} width="50%" top={-40} />)}
-                {tooltip === "subscriber" && (<Tooltip text={profile.subscription && profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")} width="50%" top={-40} />)}
-                {tooltip === "donations" && (<Tooltip text={t("Prispievateľ")} width="50%" top={-40} />)}
-                {tooltip === "level" && (<Tooltip text={t("Level")} width="50%" top={-40} />)}
-                {tooltip === "xp" && (<Tooltip text={t("Získané XP")} width="50%" top={-40} />)}
-                {tooltip === "max_activity_streak" && (<Tooltip text={t("Najdlhšia rada aktivity")} width="50%" top={-40} />)}
-                {tooltip === "years_since_registration" && (<Tooltip text={t("Roky od registrácie")} width="50%" top={-40} />)}
-                {tooltip === "total_activities" && (<Tooltip text={t("Zaznamenané aktivity")} width="50%" top={-40} />)}
-                {tooltip === "followers" && (<Tooltip text={t("Počet sledovateľov")} width="50%" top={-40} />)}
-                {tooltip === "posts" && (<Tooltip text={t("Počet príspevkov")} width="50%" top={-40} />)}
-                {tooltip === "received_likes" && (<Tooltip text={t("Získané lajky")} width="50%" top={-40} />)}
-                {tooltip === "written_comments" && (<Tooltip text={t("Napísané komentáre")} width="50%" top={-40} />)}
-                {tooltip === "no_day_off_week" && (<Tooltip text={t("Týždeň bez oddychu")} width="50%" top={-40} />)}
-                {tooltip === "xmas_activity" && (<Tooltip text={t("Vianočná aktivita")} width="50%" top={-40} />)}
-                {tooltip === "new_year_new_goals" && (<Tooltip text={t("Novoročná aktivita")} width="50%" top={-40} />)}
+                {tooltip === "developer" && (<Tooltip
+                    text = {t("Vývojár")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "subscriber" && (<Tooltip
+                    text = {profile.subscription && profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "donations" && (<Tooltip
+                    text = {t("Prispievateľ")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "level" && (<Tooltip
+                    text = {t("Level")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "xp" && (<Tooltip
+                    text = {t("Získané XP")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "max_activity_streak" && (<Tooltip
+                    text = {t("Najdlhšia rada aktivity")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "years_since_registration" && (<Tooltip
+                    text = {t("Roky od registrácie")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "total_activities" && (<Tooltip
+                    text = {t("Zaznamenané aktivity")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "followers" && (<Tooltip
+                    text = {t("Počet sledovateľov")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "posts" && (<Tooltip
+                    text = {t("Počet príspevkov")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "received_likes" && (<Tooltip
+                    text = {t("Získané lajky")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "written_comments" && (<Tooltip
+                    text = {t("Napísané komentáre")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "no_day_off_week" && (<Tooltip
+                    text = {t("Týždeň bez oddychu")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "xmas_activity" && (<Tooltip
+                    text = {t("Vianočná aktivita")}
+                    width = "50%"
+                    top = {-40}
+                />)}
+                {tooltip === "new_year_new_goals" && (<Tooltip
+                    text = {t("Novoročná aktivita")}
+                    width = "50%"
+                    top = {-40}
+                />)}
 
                 <ScrollView 
-                    className="badges" 
-                    horizontal={true}
-                    showsHorizontalScrollIndicator={false}
-                    indicatorStyle="white"
-                    style={styles.badges}
-                    contentContainerStyle={styles.badges_content}
+                    className = "badges" 
+                    horizontal = {true}
+                    showsHorizontalScrollIndicator = {false}
+                    indicatorStyle = "white"
+                    style = {styles.badges}
+                    contentContainerStyle = {styles.badges_content}
                 >
                     {profile.role === "developer" && (
                         <Pressable 
-                            className="badge developer" 
-                            onPress={() => toggleShowTooltip("developer")}
-                            accessibilityLabel={t("Vývojár")}
+                            className = "badge developer" 
+                            onPress = {() => toggleShowTooltip("developer")}
+                            accessibilityLabel = {t("Vývojár")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 styles.badge_developer,
                             ]}
                         >
                             <FontAwesome6
-                                name="code"
-                                size={20}
-                                color={RED_RARITY}
-                                style={styles.badge_icon}
+                                name = "code"
+                                size = {20}
+                                color = {RED_RARITY}
+                                style = {styles.badge_icon}
                             />
                         </Pressable>
                     )}
 
                     {profile.subscription && profile.subscription.is_active && (
                         <Pressable 
-                            className="badge subscriber" 
-                            onPress={() => toggleShowTooltip("subscriber")}
-                            accessibilityLabel={profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")}
+                            className = "badge subscriber" 
+                            onPress = {() => toggleShowTooltip("subscriber")}
+                            accessibilityLabel = {profile.subscription.plan === "premium" ? t("Prémiový predplatiteľ") : t("Základný predplatiteľ")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 styles.badge_subscriber,
                             ]}
                         >
                             <FontAwesome6
-                                name="crown"
-                                size={20}
-                                color={YELLOW_RARITY}
-                                style={styles.badge_icon}
+                                name = "crown"
+                                size = {20}
+                                color = {YELLOW_RARITY}
+                                style = {styles.badge_icon}
                             />
                         </Pressable>
                     )}
                     
                     {profile.total_transactions_amount !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "donations",
                                 profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 && "blue",
@@ -149,10 +209,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_transactions_amount >= 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("donations")}
-                            accessibilityLabel={t("Prispievateľ")}
+                            onPress = {() => toggleShowTooltip("donations")}
+                            accessibilityLabel = {t("Prispievateľ")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? styles.badge_blue_rarity : {},
                                 profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? styles.badge_green_rarity : {},
@@ -163,10 +223,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="dollar-sign"
-                                size={30}
+                                name = "dollar-sign"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? BLUE_RARITY :
                                     profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? GREEN_RARITY : 
                                     profile.total_transactions_amount >= 5 && profile.total_transactions_amount < 10 ? YELLOW_RARITY : 
@@ -175,11 +235,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.total_transactions_amount >= 1 && profile.total_transactions_amount < 2 ? { color: BLUE_RARITY } : {},
                                     profile.total_transactions_amount >= 2 && profile.total_transactions_amount < 5 ? { color: GREEN_RARITY } : {},
@@ -200,7 +260,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                     )}
 
                     <Pressable 
-                        className={[
+                        className = {[
                             "badge", 
                             "level",
                             profile.level >= 1 && profile.level <= 10 && "blue",
@@ -211,10 +271,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             profile.level > 100 && "purple"
                         ].filter(Boolean).join(" ")}
                         
-                        onPress={() => toggleShowTooltip("level")}
-                        accessibilityLabel={t("Level")}
+                        onPress = {() => toggleShowTooltip("level")}
+                        accessibilityLabel = {t("Level")}
 
-                        style={[
+                        style = {[
                             styles.badge,
                             profile.level >= 1 && profile.level <= 10 ? styles.badge_blue_rarity : {},
                             profile.level > 10 && profile.level <= 25 ? styles.badge_green_rarity : {},
@@ -225,10 +285,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                         ]}
                     >
                         <FontAwesome6
-                            name="arrow-trend-up"
-                            size={30}
+                            name = "arrow-trend-up"
+                            size = {30}
 
-                            color={
+                            color = {
                                 profile.level >= 1 && profile.level <= 10 ? BLUE_RARITY :
                                 profile.level > 10 && profile.level <= 25 ? GREEN_RARITY : 
                                 profile.level > 25 && profile.level <= 50 ? YELLOW_RARITY : 
@@ -237,11 +297,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 PURPLE_RARITY
                             }
 
-                            style={styles.badge_icon}
+                            style = {styles.badge_icon}
                         />
 
                         <Text 
-                            style={[
+                            style = {[
                                 styles.badge_text,
                                 profile.level >= 1 && profile.level <= 10 ? { color: BLUE_RARITY } : {},
                                 profile.level > 10 && profile.level <= 25 ? { color: GREEN_RARITY } : {},
@@ -257,7 +317,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.xp !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "xp",
                                 profile.xp < 1000 && "blue",
@@ -268,10 +328,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.xp > 100000 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("xp")}
-                            accessibilityLabel={t("Získané XP")}
+                            onPress = {() => toggleShowTooltip("xp")}
+                            accessibilityLabel = {t("Získané XP")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.xp < 1000 ? styles.badge_blue_rarity : {},
                                 profile.xp >= 1000 && profile.xp <= 5000 ? styles.badge_green_rarity : {},
@@ -282,10 +342,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="bolt"
-                                size={30}
+                                name = "bolt"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.xp < 1000 ? BLUE_RARITY :
                                     profile.xp >= 1000 && profile.xp <= 5000 ? GREEN_RARITY : 
                                     profile.xp > 5000 && profile.xp <= 10000 ? YELLOW_RARITY : 
@@ -294,11 +354,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <View 
-                                style={[
+                                style = {[
                                     {
                                         position: "absolute",
                                         top: 0, 
@@ -311,7 +371,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 ]}
                             >
                                 <Text 
-                                    style={[
+                                    style = {[
                                         { 
                                             textAlign: "center",
                                             lineHeight: 22,
@@ -336,7 +396,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 </Text>
 
                                 <Text 
-                                    style={[
+                                    style = {[
                                         { textAlign: "center" },
                                         profile.xp < 1000 ? { color: BLUE_RARITY } : {},
                                         profile.xp >= 1000 && profile.xp <= 5000 ? { color: GREEN_RARITY } : {},
@@ -354,24 +414,24 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.max_activity_streak !== 0 && (
                         <Pressable 
-                            className="badge max_activity_streak" 
-                            onPress={() => toggleShowTooltip("max_activity_streak")}
-                            accessibilityLabel={t("Najdlhšia rada aktivity")}
+                            className = "badge max_activity_streak" 
+                            onPress = {() => toggleShowTooltip("max_activity_streak")}
+                            accessibilityLabel = {t("Najdlhšia rada aktivity")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 styles.badge_max_activity_streak,
                             ]}
                         >
                             <FontAwesome6
-                                name="fire"
-                                size={20}
-                                color={YELLOW_RARITY}
-                                style={styles.badge_icon}
+                                name = "fire"
+                                size = {20}
+                                color = {YELLOW_RARITY}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     { color: YELLOW_RARITY }
                                 ]}
@@ -383,7 +443,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.years_since_registration !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "years_since_registration",
                                 profile.years_since_registration === 1 && "blue",
@@ -394,10 +454,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.years_since_registration > 5 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("years_since_registration")}
-                            accessibilityLabel={t("Roky od registrácie")}
+                            onPress = {() => toggleShowTooltip("years_since_registration")}
+                            accessibilityLabel = {t("Roky od registrácie")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.years_since_registration === 1 ? styles.badge_blue_rarity : {},
                                 profile.years_since_registration === 2 ? styles.badge_green_rarity : {},
@@ -408,10 +468,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="cake-candles"
-                                size={30}
+                                name = "cake-candles"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.years_since_registration === 1 ? BLUE_RARITY :
                                     profile.years_since_registration === 2 ? GREEN_RARITY : 
                                     profile.years_since_registration === 3 ? YELLOW_RARITY : 
@@ -420,11 +480,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.years_since_registration === 1 ? { color: BLUE_RARITY } : {},
                                     profile.years_since_registration === 2 ? { color: GREEN_RARITY } : {},
@@ -441,7 +501,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.total_activities !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "total_activities",
                                 profile.total_activities < 10 && "blue",
@@ -452,10 +512,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_activities > 500 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("total_activities")}
-                            accessibilityLabel={t("Zaznamenané aktivity")}
+                            onPress = {() => toggleShowTooltip("total_activities")}
+                            accessibilityLabel = {t("Zaznamenané aktivity")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.total_activities >= 1 && profile.total_activities < 10 ? styles.badge_blue_rarity : {},
                                 profile.total_activities >= 10 && profile.total_activities <= 50 ? styles.badge_green_rarity : {},
@@ -466,10 +526,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="dumbbell"
-                                size={30}
+                                name = "dumbbell"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.total_activities >= 1 && profile.total_activities < 10 ? BLUE_RARITY :
                                     profile.total_activities >= 10 && profile.total_activities <= 50 ? GREEN_RARITY : 
                                     profile.total_activities > 50 && profile.total_activities <= 100 ? YELLOW_RARITY : 
@@ -478,11 +538,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.total_activities >= 1 && profile.total_activities < 10 ? { color: BLUE_RARITY } : {},
                                     profile.total_activities >= 10 && profile.total_activities <= 50 ? { color: GREEN_RARITY } : {},
@@ -504,7 +564,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.followers.length !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "followers",
                                 profile.followers.length >= 1 && profile.followers.length < 5 && "blue",
@@ -515,10 +575,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.followers.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("followers")}
-                            accessibilityLabel={t("Počet sledovateľov")}
+                            onPress = {() => toggleShowTooltip("followers")}
+                            accessibilityLabel = {t("Počet sledovateľov")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.followers.length >= 1 && profile.followers.length < 5 ? styles.badge_blue_rarity : {},
                                 profile.followers.length >= 5 && profile.followers.length <= 10 ? styles.badge_green_rarity : {},
@@ -529,10 +589,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="bluesky"
-                                size={30}
+                                name = "bluesky"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.followers.length >= 1 && profile.followers.length < 5 ? BLUE_RARITY :
                                     profile.followers.length >= 5 && profile.followers.length <= 10 ? GREEN_RARITY : 
                                     profile.followers.length > 10 && profile.followers.length <= 25 ? YELLOW_RARITY : 
@@ -541,11 +601,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.followers.length >= 1 && profile.followers.length < 5 ? { color: BLUE_RARITY } : {},
                                     profile.followers.length >= 5 && profile.followers.length <= 10 ? { color: GREEN_RARITY } : {},
@@ -567,7 +627,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.posts.length !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "posts",
                                 profile.posts.length >= 1 && profile.posts.length < 5 && "blue",
@@ -578,10 +638,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.posts.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("posts")}
-                            accessibilityLabel={t("Počet príspevkov")}
+                            onPress = {() => toggleShowTooltip("posts")}
+                            accessibilityLabel = {t("Počet príspevkov")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.posts.length >= 1 && profile.posts.length < 5 ? styles.badge_blue_rarity : {},
                                 profile.posts.length >= 5 && profile.posts.length <= 10 ? styles.badge_green_rarity : {},
@@ -592,10 +652,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="bluesky"
-                                size={30}
+                                name = "bluesky"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.posts.length >= 1 && profile.posts.length < 5 ? BLUE_RARITY :
                                     profile.posts.length >= 5 && profile.posts.length <= 10 ? GREEN_RARITY : 
                                     profile.posts.length > 10 && profile.posts.length <= 25 ? YELLOW_RARITY : 
@@ -604,11 +664,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.posts.length >= 1 && profile.posts.length < 5 ? { color: BLUE_RARITY } : {},
                                     profile.posts.length >= 5 && profile.posts.length <= 10 ? { color: GREEN_RARITY } : {},
@@ -630,7 +690,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.total_received_likes !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "received_likes",
                                 profile.total_received_likes >= 1 && profile.total_received_likes < 5 && "blue",
@@ -641,10 +701,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.total_received_likes > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("received_likes")}
-                            accessibilityLabel={t("Získané lajky")}
+                            onPress = {() => toggleShowTooltip("received_likes")}
+                            accessibilityLabel = {t("Získané lajky")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? styles.badge_blue_rarity : {},
                                 profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? styles.badge_green_rarity : {},
@@ -655,10 +715,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="heart"
-                                size={30}
+                                name = "heart"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? BLUE_RARITY :
                                     profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? GREEN_RARITY : 
                                     profile.total_received_likes > 10 && profile.total_received_likes <= 25 ? YELLOW_RARITY : 
@@ -667,11 +727,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.total_received_likes >= 1 && profile.total_received_likes < 5 ? { color: BLUE_RARITY } : {},
                                     profile.total_received_likes >= 5 && profile.total_received_likes <= 10 ? { color: GREEN_RARITY } : {},
@@ -693,7 +753,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.post_comments.length !== 0 && (
                         <Pressable 
-                            className={[
+                            className = {[
                                 "badge", 
                                 "written_comments",
                                 profile.post_comments.length >= 1 && profile.post_comments.length < 5 && "blue",
@@ -704,10 +764,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                 profile.post_comments.length > 100 && "purple"
                             ].filter(Boolean).join(" ")}
                             
-                            onPress={() => toggleShowTooltip("written_comments")}
-                            accessibilityLabel={t("Napísané komentáre")}
+                            onPress = {() => toggleShowTooltip("written_comments")}
+                            accessibilityLabel = {t("Napísané komentáre")}
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? styles.badge_blue_rarity : {},
                                 profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? styles.badge_green_rarity : {},
@@ -718,10 +778,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             ]}
                         >
                             <FontAwesome6
-                                name="heart"
-                                size={30}
+                                name = "heart"
+                                size = {30}
 
-                                color={
+                                color = {
                                     profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? BLUE_RARITY :
                                     profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? GREEN_RARITY : 
                                     profile.post_comments.length > 10 && profile.post_comments.length <= 25 ? YELLOW_RARITY : 
@@ -730,11 +790,11 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                     PURPLE_RARITY
                                 }
 
-                                style={styles.badge_icon}
+                                style = {styles.badge_icon}
                             />
 
                             <Text 
-                                style={[
+                                style = {[
                                     styles.badge_text,
                                     profile.post_comments.length >= 1 && profile.post_comments.length < 5 ? { color: BLUE_RARITY } : {},
                                     profile.post_comments.length >= 5 && profile.post_comments.length <= 10 ? { color: GREEN_RARITY } : {},
@@ -756,10 +816,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.badges.map((one_badge:{ title:string, data:string }, index:number) => (
                         <Pressable 
-                            key={index} 
-                            className="badge"
+                            key = {index} 
+                            className = "badge"
 
-                            onPress={() => 
+                            onPress = {() => 
                                 one_badge.data === "no_day_off_week" 
                                     ? toggleShowTooltip("no_day_off_week") 
                                     : one_badge.data === "xmas_activity" 
@@ -767,7 +827,7 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                                         : toggleShowTooltip("new_year_new_goals")
                             }
 
-                            style={[
+                            style = {[
                                 styles.badge,
                                 one_badge.data === "no_day_off_week" ? styles.badge_no_day_off_week : {},
                                 one_badge.data === "xmas_activity" ? styles.badge_xmas_activity : {},
@@ -777,14 +837,14 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             {one_badge.data === "no_day_off_week" && (
                                 <>
                                     <FontAwesome6
-                                        name="calendar-check"
-                                        size={30}
-                                        color={YELLOW_RARITY}
-                                        style={styles.badge_icon}
+                                        name = "calendar-check"
+                                        size = {30}
+                                        color = {YELLOW_RARITY}
+                                        style = {styles.badge_icon}
                                     />
 
                                     <Text 
-                                        style={[
+                                        style = {[
                                             styles.badge_text,
                                             { color: YELLOW_RARITY },
                                         ]}
@@ -797,10 +857,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             {one_badge.data === "xmas_activity" && (
                                 <>
                                     <FontAwesome6
-                                        name="gift"
-                                        size={20}
-                                        color={"#dc2626"}
-                                        style={styles.badge_icon}
+                                        name = "gift"
+                                        size = {20}
+                                        color = {"#dc2626"}
+                                        style = {styles.badge_icon}
                                     />
                                 </>
                             )}
@@ -808,10 +868,10 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
                             {one_badge.data === "new_year_new_goals" && (
                                 <>
                                     <FontAwesome6
-                                        name="champagne-glasses"
-                                        size={20}
-                                        color={"#a57e05"}
-                                        style={styles.badge_icon}
+                                        name = "champagne-glasses"
+                                        size = {20}
+                                        color = {"#a57e05"}
+                                        style = {styles.badge_icon}
                                     />
                                 </>
                             )}
@@ -820,23 +880,27 @@ export default function BadgesContainer({ is_found, profile }:BadgesContainerPro
 
                     {profile.badges.length < MAX_EMPTY_BADGES && (
                         Array.from({ length: remaining_empty_badges }).map((_, index:number) => (
-                            <View key={index} className="badge" style={styles.badge} /> // Creates An Empty Badge
+                            <View
+                                key = {index}
+                                className = "badge"
+                                style = {styles.badge}
+                            /> // Creates An Empty Badge
                         )
                     ))}
                 </ScrollView>
             </View>
         ) : (
-            <View className="badges_container" style={styles.badges_container}>
-                <View className="badges" style={styles.badges}>
+            <View className = "badges_container" style = {styles.badges_container}>
+                <View className = "badges" style = {styles.badges}>
                     <View 
-                        className="badge level blue" 
-                        accessibilityLabel={t("Level")} 
-                        style={styles.badge}
+                        className = "badge level blue" 
+                        accessibilityLabel = {t("Level")} 
+                        style = {styles.badge}
                     >
                         <FontAwesome6
-                            name="arrow-trend-up"
-                            size={20}
-                            color={BLUE_COLOR}
+                            name = "arrow-trend-up"
+                            size = {20}
+                            color = {BLUE_COLOR}
                         />
 
                         <Text>1</Text>

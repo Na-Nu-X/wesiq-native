@@ -49,7 +49,7 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
     const [busy_keys, setBusyKeys] = useState<ReadonlySet<string>>(new Set()) // Stores The Rows With A Running Request
 
     // Keeps The Last Tab While The Sheet Animates Closed (Adjusted During Render)
-    const [shown_tab, setShownTab] = useState<ConnectionsTab>(tab ?? "followers")
+    const [shown_tab, setShownTab] = useState<ConnectionsTab>(tab ?? "followers") // Stores The Shown Tab
     if(tab !== null && tab !== shown_tab) setShownTab(tab)
 
     const is_own_profile:boolean = logged_in_user !== null && logged_in_user.id === profile.id // Stores The Information If The Profile Belongs To The Logged In User
@@ -79,12 +79,12 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
     const runRowAction = async (row_key:string, request:() => Promise<ApiResult<ApiEnvelope>>, onSuccess:() => void):Promise<void> => {
         if(busy_keys.has(row_key)) return
 
-        setBusyKeys((previous:ReadonlySet<string>) => new Set(previous).add(row_key))
+        setBusyKeys((previous:ReadonlySet<string>) => new Set(previous).add(row_key)) // Sets The Busy Keys
 
         const response:ApiResult<ApiEnvelope> = await request() // Sends The Request
 
         setBusyKeys((previous:ReadonlySet<string>) => {
-            const next:Set<string> = new Set(previous)
+            const next:Set<string> = new Set(previous) // Gets The Next
             next.delete(row_key)
             return next
         })
@@ -101,6 +101,7 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
 
     // Function For Remove A Follower (Own Profile Only)
     const handleRemoveFollower = async (row:ConnectionRow):Promise<void> => {
+        // Checks If It Is Confirmed
         const is_confirmed:boolean = await confirmAction({
             title: t("Odstrániť sledovateľa?"),
             message: t("Používateľ {{username}} nebude upozornený, že ste ho odstránili.", { username: row.user.username }),
@@ -120,6 +121,7 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
         const state:FollowState = getFollowState(row.user) // Gets The Current State
 
         if(state === "following") {
+            // Checks If It Is Confirmed
             const is_confirmed:boolean = await confirmAction({
                 title: t("Prestať sledovať {{username}}?", { username: row.user.username }),
                 message: row.user.private_account ? t("Ak je účet súkromný, budete musieť znova požiadať o sledovanie.") : undefined,
@@ -176,93 +178,169 @@ export default function ConnectionsSheet({ tab, onTabChange, profile, logged_in_
             return (
                 <>
                     <IconButton
-                        icon="xmark"
-                        accessibility_label={t("Zamietnuť žiadosť od {{username}}", { username: row.user.username })}
-                        onPress={() => handleFollowRequest(row, false)}
-                        is_disabled={is_busy}
-                        variant="soft"
-                        size={36}
+                        icon = "xmark"
+                        accessibility_label = {t("Zamietnuť žiadosť od {{username}}", { username: row.user.username })}
+                        onPress = {() => handleFollowRequest(row, false)}
+                        is_disabled = {is_busy}
+                        variant = "soft"
+                        size = {36}
                     />
 
-                    <Button label={t("Potvrdiť")} size="sm" onPress={() => handleFollowRequest(row, true)} is_loading={is_busy} />
+                    <Button
+                        label = {t("Potvrdiť")}
+                        size = "sm"
+                        onPress = {() => handleFollowRequest(row, true)}
+                        is_loading = {is_busy}
+                    />
                 </>
             )
         }
 
         if(active_tab === "followers") {
             if(!is_own_profile) return null
-            return <Button label={t("Odstrániť")} size="sm" variant="secondary" onPress={() => handleRemoveFollower(row)} is_loading={is_busy} />
+            return (
+                <Button
+                    label = {t("Odstrániť")}
+                    size = "sm"
+                    variant = "secondary"
+                    onPress = {() => handleRemoveFollower(row)}
+                    is_loading = {is_busy}
+                />
+            )
         }
 
         if(!logged_in_user || row.user.id === logged_in_user.id) return null
 
         const state:FollowState = getFollowState(row.user) // Gets The Follow State
 
-        if(state === "following") return <Button label={t("Sledujete")} size="sm" variant="secondary" icon="check" onPress={() => handleToggleFollow(row)} is_loading={is_busy} />
-        if(state === "requested") return <Button label={t("Požiadané")} size="sm" variant="secondary" icon="clock" onPress={() => handleToggleFollow(row)} is_loading={is_busy} accessibility_hint={t("Zrušiť žiadosť")} />
-        return <Button label={t("Sledovať")} size="sm" onPress={() => handleToggleFollow(row)} is_loading={is_busy} />
+        if(state === "following") {
+            return (
+                <Button
+                    label = {t("Sledujete")}
+                    size = "sm"
+                    variant = "secondary"
+                    icon = "check"
+                    onPress = {() => handleToggleFollow(row)}
+                    is_loading = {is_busy}
+                />
+            )
+        }
+        if(state === "requested") {
+            return (
+                <Button
+                    label = {t("Požiadané")}
+                    size = "sm"
+                    variant = "secondary"
+                    icon = "clock"
+                    onPress = {() => handleToggleFollow(row)}
+                    is_loading = {is_busy}
+                    accessibility_hint = {t("Zrušiť žiadosť")}
+                />
+            )
+        }
+        return (
+            <Button
+                label = {t("Sledovať")}
+                size = "sm"
+                onPress = {() => handleToggleFollow(row)}
+                is_loading = {is_busy}
+            />
+        )
     }
 
     // Function For Render The Empty State
     const renderEmpty = () => {
-        if(normalized_query) return <EmptyState icon="magnifying-glass" title={t("Nikto sa nenašiel")} message={t("Skúste iné meno alebo používateľské meno.")} is_compact />
-        if(active_tab === "requests") return <EmptyState icon="bell" title={t("Žiadne žiadosti")} message={t("Nové žiadosti o sledovanie sa zobrazia tu.")} is_compact />
-        if(active_tab === "followers") return <EmptyState icon="user-group" title={t("Zatiaľ žiadni sledovatelia")} message={is_own_profile ? t("Keď vás niekto začne sledovať, zobrazí sa tu.") : undefined} is_compact />
-        return <EmptyState icon="user-plus" title={is_own_profile ? t("Nikoho nesleduješ.") : t("Nikoho nesleduje.")} is_compact />
+        if(normalized_query) {
+            return (
+                <EmptyState
+                    icon = "magnifying-glass"
+                    title = {t("Nikto sa nenašiel")}
+                    message = {t("Skúste iné meno alebo používateľské meno.")}
+                    is_compact
+                />
+            )
+        }
+        if(active_tab === "requests") {
+            return (
+                <EmptyState
+                    icon = "bell"
+                    title = {t("Žiadne žiadosti")}
+                    message = {t("Nové žiadosti o sledovanie sa zobrazia tu.")}
+                    is_compact
+                />
+            )
+        }
+        if(active_tab === "followers") {
+            return (
+                <EmptyState
+                    icon = "user-group"
+                    title = {t("Zatiaľ žiadni sledovatelia")}
+                    message = {is_own_profile ? t("Keď vás niekto začne sledovať, zobrazí sa tu.") : undefined}
+                    is_compact
+                />
+            )
+        }
+        return (
+            <EmptyState
+                icon = "user-plus"
+                title = {is_own_profile ? t("Nikoho nesleduješ.") : t("Nikoho nesleduje.")}
+                is_compact
+            />
+        )
     }
 
     return (
         <Sheet
-            visible={tab !== null}
-            onClose={() => onTabChange(null)}
-            title={active_tab === "requests" ? t("Žiadosti o sledovanie") : active_tab === "followers" ? t("Sledovatelia") : (is_own_profile ? t("Sleduješ") : t("Sleduje"))}
-            subtitle={formatUsername(profile.username)}
-            size="large"
-            is_scrollable={false}
+            visible = {tab !== null}
+            onClose = {() => onTabChange(null)}
+            title = {active_tab === "requests" ? t("Žiadosti o sledovanie") : active_tab === "followers" ? t("Sledovatelia") : (is_own_profile ? t("Sleduješ") : t("Sleduje"))}
+            subtitle = {formatUsername(profile.username)}
+            size = "large"
+            is_scrollable = {false}
         >
-            <View style={styles.controls}>
+            <View style = {styles.controls}>
                 <SegmentedControl<ConnectionsTab>
-                    options={tab_options}
-                    value={active_tab}
-                    onChange={(next_tab:ConnectionsTab) => {
-                        setSearchQuery("")
+                    options = {tab_options}
+                    value = {active_tab}
+                    onChange = {(next_tab:ConnectionsTab) => {
+                        setSearchQuery("") // Sets The Search Query
                         onTabChange(next_tab)
                     }}
-                    accessibility_label={t("Zoznam ľudí")}
+                    accessibility_label = {t("Zoznam ľudí")}
                 />
 
                 {(all_rows.length >= SEARCH_THRESHOLD || search_query.length > 0) && (
                     <TextField
-                        icon="magnifying-glass"
-                        placeholder={t("Hľadať")}
-                        accessibilityLabel={t("Hľadať")}
-                        value={search_query}
-                        onChangeText={setSearchQuery}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        returnKeyType="search"
-                        clearButtonMode="while-editing"
+                        icon = "magnifying-glass"
+                        placeholder = {t("Hľadať")}
+                        accessibilityLabel = {t("Hľadať")}
+                        value = {search_query}
+                        onChangeText = {setSearchQuery}
+                        autoCapitalize = "none"
+                        autoCorrect = {false}
+                        returnKeyType = "search"
+                        clearButtonMode = "while-editing"
                     />
                 )}
             </View>
 
             <FlatList
-                data={rows}
-                keyExtractor={(row:ConnectionRow) => row.key}
-                style={styles.list}
-                contentContainerStyle={styles.list_content}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                ItemSeparatorComponent={() => <Divider inset={56} />}
-                ListEmptyComponent={renderEmpty}
-                initialNumToRender={14}
+                data = {rows}
+                keyExtractor = {(row:ConnectionRow) => row.key}
+                style = {styles.list}
+                contentContainerStyle = {styles.list_content}
+                keyboardShouldPersistTaps = "handled"
+                keyboardDismissMode = "on-drag"
+                ItemSeparatorComponent = {() => <Divider inset = {56} />}
+                ListEmptyComponent = {renderEmpty}
+                initialNumToRender = {14}
 
-                renderItem={({ item }:ListRenderItemInfo<ConnectionRow>) => (
+                renderItem = {({ item }:ListRenderItemInfo<ConnectionRow>) => (
                     <UserRow
-                        user={item.user}
-                        onPress={() => openProfile(item.user.username)}
-                        accessibility_hint={t("Zobraziť užívateľa")}
-                        trailing={renderActions(item)}
+                        user = {item.user}
+                        onPress = {() => openProfile(item.user.username)}
+                        accessibility_hint = {t("Zobraziť užívateľa")}
+                        trailing = {renderActions(item)}
                     />
                 )}
             />

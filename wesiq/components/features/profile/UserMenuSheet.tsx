@@ -21,22 +21,22 @@ export default function UserMenuSheet({ profile, visible, onClose }:{ profile:Pr
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
-    const [view, setView] = useState<"main"|"report">("main")
-    const [is_busy, setIsBusy] = useState<boolean>(false)
+    const [view, setView] = useState<"main"|"report">("main") // Stores The View
+    const [is_busy, setIsBusy] = useState<boolean>(false) // Stores If It Is Busy
 
     const is_staff:boolean = logged_in_user?.role === "admin" || logged_in_user?.role === "developer" // Stores The Information If The User Can Suspend Accounts
 
     // Function For Close And Reset
     const close = ():void => {
-        setView("main")
+        setView("main") // Sets The View
         onClose()
     }
 
     // Function For Report The User
     const report = async (reason:ReportReason):Promise<void> => {
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await reportUser(profile.id, reason) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -50,12 +50,12 @@ export default function UserMenuSheet({ profile, visible, onClose }:{ profile:Pr
 
     // Function For Suspend The User (Staff)
     const suspend = async ():Promise<void> => {
-        const is_confirmed:boolean = await confirmAction({ title: t("Obmedziť účet {{username}}?", { username: profile.username }), confirm_label: t("Obmedziť"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Obmedziť účet {{username}}?", { username: profile.username }), confirm_label: t("Obmedziť"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await suspendUser(profile.id) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) showAlert(t("Chyba"), response.error.message)
         else {
@@ -66,37 +66,59 @@ export default function UserMenuSheet({ profile, visible, onClose }:{ profile:Pr
 
     return (
         <Sheet
-            visible={visible}
-            onClose={() => view === "report" ? setView("main") : close()}
-            title={view === "report" ? t("Nahlásiť účet") : formatUsername(profile.username)}
-            subtitle={view === "report" ? t("Prečo tento účet nahlasujete?") : undefined}
-            is_dismissable={!is_busy}
+            visible = {visible}
+            onClose = {() => view === "report" ? setView("main") : close()}
+            title = {view === "report" ? t("Nahlásiť účet") : formatUsername(profile.username)}
+            subtitle = {view === "report" ? t("Prečo tento účet nahlasujete?") : undefined}
+            is_dismissable = {!is_busy}
         >
-            <Card padding="xs">
+            <Card padding = "xs">
                 {view === "report" ? REPORT_REASONS.map((reason:ReportReason, index:number) => (
-                    <View key={reason}>
-                        {index > 0 && <Divider inset={spacing.md} />}
-                        <MenuRow icon="flag" label={getReasonLabel(reason)} onPress={() => report(reason)} is_disabled={is_busy} />
+                    <View key = {reason}>
+                        {index > 0 &&
+                            <Divider inset = {spacing.md} />
+                        }
+                        <MenuRow
+                            icon = "flag"
+                            label = {getReasonLabel(reason)}
+                            onPress = {() => report(reason)}
+                            is_disabled = {is_busy}
+                        />
                     </View>
                 )) : (
                     <>
-                        <MenuRow icon="link" label={t("Kopírovať odkaz na profil")} onPress={async () => {
-                            await Clipboard.setStringAsync(`${DOMAIN}/sk/profil/${encodeURIComponent(profile.username)}`)
-                            haptics.success()
-                            close()
-                        }} />
+                        <MenuRow
+                            icon = "link"
+                            label = {t("Kopírovať odkaz na profil")}
+                            onPress = {async () => {
+                                await Clipboard.setStringAsync(`${DOMAIN}/sk/profil/${encodeURIComponent(profile.username)}`)
+                                haptics.success()
+                                close()
+                            }}
+                        />
 
                         {!!logged_in_user && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="flag" label={t("Nahlásiť")} onPress={() => setView("report")} is_danger />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "flag"
+                                    label = {t("Nahlásiť")}
+                                    onPress = {() => setView("report")}
+                                    is_danger
+                                />
                             </>
                         )}
 
                         {is_staff && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="ban" label={t("Obmedziť účet")} onPress={suspend} is_danger is_disabled={is_busy} />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "ban"
+                                    label = {t("Obmedziť účet")}
+                                    onPress = {suspend}
+                                    is_danger
+                                    is_disabled = {is_busy}
+                                />
                             </>
                         )}
                     </>

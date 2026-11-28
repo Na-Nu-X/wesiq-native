@@ -50,7 +50,7 @@ const NAVIGATION_THEME:Theme = {
 function AppContent() {
     const { logged_in_user, is_loading } = useLoggedInUser() // Gets The Logged In User
 
-    const user_id:number|null = logged_in_user?.id ?? null
+    const user_id:number|null = logged_in_user?.id ?? null // Gets The User ID
 
     useNotificationSocket(user_id) // Opens The Notification Socket For The Logged In User And Closes It On Logout
 
@@ -76,27 +76,27 @@ function AppContent() {
     if(!is_ready) return null
 
     return (
-        <GestureHandlerRootView style={styles.root}>
-            <ThemeProvider value={NAVIGATION_THEME}>
+        <GestureHandlerRootView style = {styles.root}>
+            <ThemeProvider value = {NAVIGATION_THEME}>
                 <BottomSheetModalProvider>
                 <AuthSheetProvider>
                 <Stack
-                    screenOptions={{
+                    screenOptions = {{
                         headerShown: false,
                         contentStyle: { backgroundColor: colors.background },
                     }}
                 >
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="(auth)/password-reset" />
-                    <Stack.Screen name="post/[post_id]" />
-                    <Stack.Screen name="profile/[username]" />
-                    <Stack.Screen name="users" />
-                    <Stack.Screen name="subscribe" />
+                    <Stack.Screen name = "(tabs)" />
+                    <Stack.Screen name = "(auth)/password-reset" />
+                    <Stack.Screen name = "post/[post_id]" />
+                    <Stack.Screen name = "profile/[username]" />
+                    <Stack.Screen name = "users" />
+                    <Stack.Screen name = "subscribe" />
                 </Stack>
                 </AuthSheetProvider>
                 </BottomSheetModalProvider>
 
-                <StatusBar style="light" />
+                <StatusBar style = "light" />
             </ThemeProvider>
         </GestureHandlerRootView>
     )
@@ -117,14 +117,14 @@ export function ErrorBoundary({ error, retry }:ErrorBoundaryProps) {
     }, [error])
 
     return (
-        <View style={styles.error_root}>
-            <StatusBar style="light" />
+        <View style = {styles.error_root}>
+            <StatusBar style = "light" />
 
             <EmptyState
-                icon="triangle-exclamation"
-                title={t("Niečo sa pokazilo")}
-                message={__DEV__ ? error.message : undefined}
-                action={{ label: t("Skúsiť znova"), onPress: retry }}
+                icon = "triangle-exclamation"
+                title = {t("Niečo sa pokazilo")}
+                message = {__DEV__ ? error.message : undefined}
+                action = {{ label: t("Skúsiť znova"), onPress: retry }}
             />
         </View>
     )

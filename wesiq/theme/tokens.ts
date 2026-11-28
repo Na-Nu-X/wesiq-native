@@ -113,6 +113,7 @@ export const layout = {
 } as const
 
 // Shadows (iOS Uses Shadow Props, Android Uses Elevation, Web Uses boxShadow)
+// Function For Create The Shadow
 const createShadow = (elevation:number, opacity:number, radius:number, offset_y:number, color:string = palette.black):ViewStyle => Platform.select<ViewStyle>({
     ios: {
         shadowColor: color,
@@ -131,6 +132,7 @@ const createShadow = (elevation:number, opacity:number, radius:number, offset_y:
     },
 }) ?? {}
 
+// Defines The Shadows
 export const shadows = {
     none: {} as ViewStyle,
     sm: createShadow(2, 0.25, 4, 2),
@@ -147,4 +149,4 @@ export const durations = {
 } as const
 
 // Opacity Of Disabled Elements
-export const DISABLED_OPACITY:number = 0.45
+export const DISABLED_OPACITY:number = 0.45 // Defines The Disabled Opacity

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui"
 import { radii } from "@/theme"
 import { appleLogin, googleLogin, toServerLanguage } from "@/lib/api/endpoints/auth"
 
-const ENABLE_APPLE_AUTH:boolean = false
+const ENABLE_APPLE_AUTH:boolean = false // Defines The Enable Apple Auth
 const GOOGLE_WEB_CLIENT_ID:string = "540480595540-tntaf1q3pdefl5tjcsk445ircs19dtn6.apps.googleusercontent.com" // Defines The Google Web Client ID (The ID Token's Audience, Must Match GOOGLE_WEB_CLIENT_ID On The Server)
 const GOOGLE_IOS_CLIENT_ID:string = "540480595540-hs88vg1pp6sju9k8n71nj58p247mo4nr.apps.googleusercontent.com" // Defines The Google iOS Client ID (Its Reversed Form Is The "iosUrlScheme" In app.json)
 
@@ -63,6 +63,7 @@ export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
         setIsLoading(true) // Activates The Loading
 
         try {
+            // Gets The Credential
             const credential:AppleAuthentication.AppleAuthenticationCredential = await AppleAuthentication.signInAsync({
                 requestedScopes: [
                     AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -72,7 +73,7 @@ export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
 
             if(credential.identityToken) {
                 // Apple Only Gives The Name On The First Sign-In, So It Is Sent Along With The Identity Token
-                const login_response = await appleLogin(credential.identityToken, credential.fullName?.givenName ?? "", credential.fullName?.familyName ?? "", toServerLanguage(i18n.language))
+                const login_response = await appleLogin(credential.identityToken, credential.fullName?.givenName ?? "", credential.fullName?.familyName ?? "", toServerLanguage(i18n.language)) // Gets The Login Response
 
                 if(login_response.ok) await onLoginSuccess()
                 else Alert.alert(t("Chyba"), login_response.error.message || t("Prihlásenie cez Apple zlyhalo.")) // Shows The Alert
@@ -89,23 +90,23 @@ export function SocialAuthButtons({ onLoginSuccess }:SocialAuthButtonsProps) {
     }
 
     return (
-        <View style={{ gap: 10 }}>
+        <View style = {{ gap: 10 }}>
             <Button
-                label={t("Pokračovať cez Google")}
-                onPress={handleGoogleSignIn}
-                variant="secondary"
-                icon="google"
-                is_loading={is_loading}
+                label = {t("Pokračovať cez Google")}
+                onPress = {handleGoogleSignIn}
+                variant = "secondary"
+                icon = "google"
+                is_loading = {is_loading}
                 is_full_width
             />
 
             {Platform.OS === "ios" && ENABLE_APPLE_AUTH ? (
                 <AppleAuthentication.AppleAuthenticationButton
-                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
-                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-                    cornerRadius={radii.pill}
-                    style={{ width: "100%", height: 48 }}
-                    onPress={handleAppleSignIn}
+                    buttonType = {AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle = {AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius = {radii.pill}
+                    style = {{ width: "100%", height: 48 }}
+                    onPress = {handleAppleSignIn}
                 />
             ) : null}
         </View>

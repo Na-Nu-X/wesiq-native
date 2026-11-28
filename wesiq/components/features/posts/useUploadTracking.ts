@@ -20,8 +20,9 @@ export interface TrackedTask {
     state:TaskState
 }
 
-const POLL_INTERVAL_MS:number = 1500
+const POLL_INTERVAL_MS:number = 1500 // Defines The Poll Interval MS
 
+// Function For Check If Compress Task List
 const isCompressTaskList = (value:unknown):value is CompressTask[] => {
     return Array.isArray(value) && value.every((task) => isRecord(task) && typeof task.task_id === "string")
 }
@@ -29,6 +30,7 @@ const isCompressTaskList = (value:unknown):value is CompressTask[] => {
 // Function For Create A Tracked Task
 const toTracked = (task:CompressTask):TrackedTask => ({ task_id: task.task_id, post_id: String(task.post_id), post_media_id: Number(task.post_media_id), progress: 0, state: "PENDING" })
 
+// Function For The Upload Tracking Hook
 export function useUploadTracking(is_enabled:boolean) {
     const [tasks, setTasks] = useState<CompressTask[]>([]) // Stores The Unfinished Tasks
     const [tracked, setTracked] = useState<TrackedTask[]>([]) // Stores The Progress Of Each Task
@@ -46,8 +48,8 @@ export function useUploadTracking(is_enabled:boolean) {
         if(!is_enabled) return
 
         getStoredJson("processing_posts", isCompressTaskList, []).then((stored:CompressTask[]) => {
-            setTasks(stored)
-            setTracked(stored.map(toTracked))
+            setTasks(stored) // Sets The Tasks
+            setTracked(stored.map(toTracked)) // Sets The Tracked
         })
 
         getProcessingPosts().then((response) => {
@@ -59,15 +61,16 @@ export function useUploadTracking(is_enabled:boolean) {
     useEffect(() => {
         if(!is_enabled || tasks.length === 0) return
 
+        // Gets The Interval
         const interval:ReturnType<typeof setInterval> = setInterval(async () => {
             if(is_polling.current) return
             is_polling.current = true
 
             try {
-                const results = await Promise.all(tasks.map((task:CompressTask) => apiGet(`get-upload-progress/${encodeURIComponent(task.task_id)}/`)))
-                const finished_ids:Set<string> = new Set()
+                const results = await Promise.all(tasks.map((task:CompressTask) => apiGet(`get-upload-progress/${encodeURIComponent(task.task_id)}/`))) // Gets The Results
+                const finished_ids:Set<string> = new Set() // Gets The Finished IDs
 
-                const updates:Map<string, { state:TaskState, progress:number }> = new Map()
+                const updates:Map<string, { state:TaskState, progress:number }> = new Map() // Gets The Updates
 
                 results.forEach((result, index:number) => {
                     const task:CompressTask|undefined = tasks[index] // Gets The Task
@@ -77,17 +80,17 @@ export function useUploadTracking(is_enabled:boolean) {
                     if(!isRecord(upload_progress)) return
 
                     const state:TaskState = String(upload_progress.state).toUpperCase() as TaskState // Gets The State
-                    const progress:number = state === "SUCCESS" ? 100 : typeof upload_progress.progress === "number" ? upload_progress.progress : 0
+                    const progress:number = state === "SUCCESS" ? 100 : typeof upload_progress.progress === "number" ? upload_progress.progress : 0 // Gets The Progress
 
                     updates.set(task.task_id, { state, progress })
                     if(state === "SUCCESS" || state === "FAILURE") finished_ids.add(task.task_id)
                 })
 
-                setTracked((previous:TrackedTask[]) => previous.map((task:TrackedTask) => updates.has(task.task_id) ? { ...task, ...updates.get(task.task_id) } : task))
+                setTracked((previous:TrackedTask[]) => previous.map((task:TrackedTask) => updates.has(task.task_id) ? { ...task, ...updates.get(task.task_id) } : task)) // Sets The Tracked
 
                 if(finished_ids.size > 0) {
                     const remaining:CompressTask[] = tasks.filter((task:CompressTask) => !finished_ids.has(task.task_id)) // Gets The Unfinished Tasks
-                    setTasks(remaining)
+                    setTasks(remaining) // Sets The Tasks
 
                     if(remaining.length === 0) await removeStoredValue("processing_posts")
                     else await setStoredJson("processing_posts", remaining)
@@ -108,13 +111,13 @@ export function useUploadTracking(is_enabled:boolean) {
     // Function For Start Tracking New Tasks (After An Upload)
     const addTasks = useCallback(async (new_tasks:CompressTask[]):Promise<void> => {
         const stored:CompressTask[] = await getStoredJson("processing_posts", isCompressTaskList, []) // Gets The Stored Tasks
-        const known:Set<string> = new Set(stored.map((task:CompressTask) => task.task_id))
-        const combined:CompressTask[] = [...stored, ...new_tasks.filter((task:CompressTask) => !known.has(task.task_id))]
+        const known:Set<string> = new Set(stored.map((task:CompressTask) => task.task_id)) // Gets The Known
+        const combined:CompressTask[] = [...stored, ...new_tasks.filter((task:CompressTask) => !known.has(task.task_id))] // Gets The Combined
 
         await setStoredJson("processing_posts", combined)
-        setTasks(combined)
+        setTasks(combined) // Sets The Tasks
         setTracked((previous:TrackedTask[]) => {
-            const tracked_ids:Set<string> = new Set(previous.map((task:TrackedTask) => task.task_id))
+            const tracked_ids:Set<string> = new Set(previous.map((task:TrackedTask) => task.task_id)) // Gets The Tracked IDs
             return [...previous, ...new_tasks.filter((task:CompressTask) => !tracked_ids.has(task.task_id)).map(toTracked)]
         })
 

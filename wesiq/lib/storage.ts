@@ -2,6 +2,7 @@
 
 import AsyncStorage from "@react-native-async-storage/async-storage"
 
+// Defines The Storage Keys
 export const STORAGE_KEYS = {
     user_token: "user_token", // JWT Access Token (15 Minutes)
     refresh_token: "refresh_token", // JWT Refresh Token (30 Days, Rotated On Every Refresh)

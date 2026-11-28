@@ -14,8 +14,8 @@ export default function ActivityScroll(props:ComponentProps<typeof ScrollView>) 
     const [is_locked, setIsLocked] = useState<boolean>(false) // Stores The Information If A Task Is Being Dragged
 
     return (
-        <ScrollLockContext.Provider value={setIsLocked}>
-            <ScrollView {...props} scrollEnabled={!is_locked && props.scrollEnabled !== false} />
+        <ScrollLockContext.Provider value = {setIsLocked}>
+            <ScrollView {...props} scrollEnabled = {!is_locked && props.scrollEnabled !== false} />
         </ScrollLockContext.Provider>
     )
 }

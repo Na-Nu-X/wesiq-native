@@ -27,36 +27,54 @@ export default function EditTrainingPlansScreen() {
     if(selected_plan) {
         return (
             <TrainingPlanEditor
-                key={selected_plan.key}
-                mode="edit"
-                initial_draft={draftFromRows(selected_plan.rows, "edit")}
-                taken_days={getTakenDays(plans, selected_plan.key)}
-                onBack={() => setSelectedKey(null)}
-                onSaved={() => setSelectedKey(null)}
-                onDeleted={() => setSelectedKey(null)}
+                key = {selected_plan.key}
+                mode = "edit"
+                initial_draft = {draftFromRows(selected_plan.rows, "edit")}
+                taken_days = {getTakenDays(plans, selected_plan.key)}
+                onBack = {() => setSelectedKey(null)}
+                onSaved = {() => setSelectedKey(null)}
+                onDeleted = {() => setSelectedKey(null)}
             />
         )
     }
 
     return (
         <Screen
-            header={<Header title={t("Moje plány")} subtitle={t("Vyberte plán, ktorý chcete upraviť")} is_large />}
-            refresh={{ is_refreshing, onRefresh: refetch }}
+            header = {<Header
+                title = {t("Moje plány")}
+                subtitle = {t("Vyberte plán, ktorý chcete upraviť")}
+                is_large
+            />}
+            refresh = {{ is_refreshing, onRefresh: refetch }}
         >
-            {state.status === "loading" && [0, 1, 2].map((index:number) => <Skeleton key={index} height={132} radius={radii.lg} />)}
-            {state.status === "error" && <ErrorState error={state.error} onRetry={refetch} />}
+            {state.status === "loading" && [0, 1, 2].map((index:number) => (
+                <Skeleton
+                    key = {index}
+                    height = {132}
+                    radius = {radii.lg}
+                />
+            ))}
+            {state.status === "error" &&
+                <ErrorState error = {state.error} onRetry = {refetch} />
+            }
 
             {state.status === "success" && plans.length === 0 && (
                 <EmptyState
-                    icon="clipboard-list"
-                    title={t("Zatiaľ nemáte žiadny plán")}
-                    message={t("Vytvorte si vlastný plán alebo skopírujte niektorý z našich.")}
-                    action={{ label: t("Nový plán"), onPress: () => router.navigate("/activity/new") }}
+                    icon = "clipboard-list"
+                    title = {t("Zatiaľ nemáte žiadny plán")}
+                    message = {t("Vytvorte si vlastný plán alebo skopírujte niektorý z našich.")}
+                    action = {{ label: t("Nový plán"), onPress: () => router.navigate("/activity/new") }}
                 />
             )}
 
             {plans.map((plan) => (
-                <PlanCard key={plan.key} plan={plan} action_label={t("Upraviť")} action_icon="pen" onPress={() => setSelectedKey(plan.key)} />
+                <PlanCard
+                    key = {plan.key}
+                    plan = {plan}
+                    action_label = {t("Upraviť")}
+                    action_icon = "pen"
+                    onPress = {() => setSelectedKey(plan.key)}
+                />
             ))}
         </Screen>
     )

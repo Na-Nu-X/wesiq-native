@@ -17,28 +17,28 @@ export default function MutualFollowers({ mutual_followers, mutual_followers_cou
     if(mutual_followers.length === 0) return null
 
     return (
-        <View style={styles.mutual_followers_container}>
-            <View style={styles.avatars_stack}>
+        <View style = {styles.mutual_followers_container}>
+            <View style = {styles.avatars_stack}>
                 {mutual_followers.map((one_mutual_follower:MutualFollower, index:number) => (
                     <View
-                        key={one_mutual_follower.id}
+                        key = {one_mutual_follower.id}
 
-                        style={[
+                        style = {[
                             styles.avatar_wrapper,
                             index > 0 && styles.avatar_overlap,
                             { zIndex: mutual_followers.length - index },
                         ]}
                     >
                         <Avatar
-                            user={one_mutual_follower}
-                            size={25}
+                            user = {one_mutual_follower}
+                            size = {25}
                             is_ring_hidden
                         />
                     </View>
                 ))}
             </View>
 
-            {mutual_followers_count > 3 && (<Text style={styles.mutual_followers_count}>+{mutual_followers_count - 3} {t("ďalší")}</Text>)}
+            {mutual_followers_count > 3 && (<Text style = {styles.mutual_followers_count}>+{mutual_followers_count - 3} {t("ďalší")}</Text>)}
         </View>
     )
 }

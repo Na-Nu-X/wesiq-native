@@ -21,17 +21,19 @@ export type OutgoingChatAction =
     | { action:"send_attachment", attachment_ids:number[], message:string|null, reply_on?:number }
     | { action:"send_voice_message", voice_message_id:number, message:string|null, reply_on?:number }
 
-const MAX_RETRY_DELAY_MS:number = 15000
+const MAX_RETRY_DELAY_MS:number = 15000 // Defines The Max Retry Delay MS
 
+// Function For Check If Socket Event
 const isSocketEvent = (value:unknown):value is ChatSocketEvent => isRecord(value) && typeof value.action === "string"
 
+// Function For The Chat Socket Hook
 export function useChatSocket(target:ChatSocketTarget|null, is_enabled:boolean, onEvent:(event:ChatSocketEvent) => void) {
-    const [status, setStatus] = useState<SocketStatus>("connecting")
-    const socket = useRef<WebSocket|null>(null)
+    const [status, setStatus] = useState<SocketStatus>("connecting") // Stores The Status
+    const socket = useRef<WebSocket|null>(null) // Stores The Socket
     const on_event = useRef(onEvent) // Always Calls The Latest Handler
-    const retry_count = useRef<number>(0)
+    const retry_count = useRef<number>(0) // Stores The Retry Count
     const target_key:string|null = getChatSocketKey(target) // Reconnects Only When The Conversation Changes
-    const target_reference = useRef<ChatSocketTarget|null>(target)
+    const target_reference = useRef<ChatSocketTarget|null>(target) // Stores The Target Reference
 
     // Initializes The Update Of The Handler Reference
     useEffect(() => {
@@ -43,20 +45,21 @@ export function useChatSocket(target:ChatSocketTarget|null, is_enabled:boolean, 
     useEffect(() => {
         if(!target_key || !is_enabled || IS_MOCK_MODE) return
 
-        let is_disposed:boolean = false
-        let retry_timeout:ReturnType<typeof setTimeout>|null = null
+        let is_disposed:boolean = false // Checks If It Is Disposed
+        let retry_timeout:ReturnType<typeof setTimeout>|null = null // Gets The Retry Timeout
 
+        // Function For Connect
         const connect = async ():Promise<void> => {
             const token:string|null = await getAccessToken() // Gets The Token (Refreshed When It's About To Expire)
-            const current_target:ChatSocketTarget|null = target_reference.current
+            const current_target:ChatSocketTarget|null = target_reference.current // Gets The Current Target
             if(!token || !current_target || is_disposed) return
 
-            const ws:WebSocket = new WebSocket(getChatSocketUrl(current_target, token))
+            const ws:WebSocket = new WebSocket(getChatSocketUrl(current_target, token)) // Gets The WS
             socket.current = ws
 
             ws.onopen = () => {
                 retry_count.current = 0
-                setStatus("open")
+                setStatus("open") // Sets The Status
                 ws.send(JSON.stringify({ action: "mark_as_read" }))
             }
 
@@ -75,7 +78,7 @@ export function useChatSocket(target:ChatSocketTarget|null, is_enabled:boolean, 
                 if(socket.current === ws) socket.current = null
                 if(is_disposed) return
 
-                setStatus("closed")
+                setStatus("closed") // Sets The Status
                 const delay:number = Math.min(MAX_RETRY_DELAY_MS, 1000 * 2 ** retry_count.current) // Waits Longer After Each Failure
                 retry_count.current += 1
                 retry_timeout = setTimeout(connect, delay)
@@ -86,6 +89,7 @@ export function useChatSocket(target:ChatSocketTarget|null, is_enabled:boolean, 
 
         connect()
 
+        // Gets The Subscription
         const subscription = AppState.addEventListener("change", (state:AppStateStatus) => {
             if(state === "active" && !socket.current) {
                 if(retry_timeout) clearTimeout(retry_timeout)

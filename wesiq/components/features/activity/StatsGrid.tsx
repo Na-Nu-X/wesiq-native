@@ -19,11 +19,20 @@ export default function StatsGrid({ stats, is_loading }:StatsGridProps) {
     const { t } = useTranslation() // Initializes The Translations
 
     if(is_loading && !stats) {
-        return <View style={styles.grid}>{[0, 1, 2, 3].map((index:number) => <Skeleton key={index} height={92} radius={radii.lg} style={styles.tile} />)}</View>
+        return <View style = {styles.grid}>{[0, 1, 2, 3].map((index:number) => (
+            <Skeleton
+                key = {index}
+                height = {92}
+                radius = {radii.lg}
+                style = {styles.tile}
+            />
+        ))}</View>
     }
 
+    // Function For Describe
     const describe = (activity:Activity|null):string|undefined => activity ? `${activity.gained_xp} XP · ${getTimeAgo(activity.end_time)}` : undefined
 
+    // Gets The Tiles
     const tiles:{ icon:IconName, label:string, value:string, detail?:string }[] = [
         { icon: "clock", label: t("Priemer · 7 dní"), value: stats ? getMinimalistFormattedTime(stats.average_activity_time) : "0s" },
         { icon: "calendar-check", label: t("Aktivity · 7 dní"), value: String(stats?.activities_amount ?? 0) },
@@ -32,17 +41,51 @@ export default function StatsGrid({ stats, is_loading }:StatsGridProps) {
     ]
 
     return (
-        <View style={styles.grid}>
+        <View style = {styles.grid}>
             {tiles.map((tile) => (
-                <Card key={tile.label} padding="md" style={styles.tile}>
-                    <View accessible accessibilityLabel={[tile.label, tile.value, tile.detail].filter(Boolean).join(", ")} style={styles.tile_content}>
-                        <View style={styles.label_row}>
-                            <Icon name={tile.icon} size={12} color="primary" is_solid={false} />
-                            <Text variant="caption" color="text_secondary" numberOfLines={1} style={styles.flex}>{tile.label}</Text>
+                <Card
+                    key = {tile.label}
+                    padding = "md"
+                    style = {styles.tile}
+                >
+                    <View
+                        accessible
+                        accessibilityLabel = {[tile.label, tile.value, tile.detail].filter(Boolean).join(", ")}
+                        style = {styles.tile_content}
+                    >
+                        <View style = {styles.label_row}>
+                            <Icon
+                                name = {tile.icon}
+                                size = {12}
+                                color = "primary"
+                                is_solid = {false}
+                            />
+                            <Text
+                                variant = "caption"
+                                color = "text_secondary"
+                                numberOfLines = {1}
+                                style = {styles.flex}
+                            >
+                                {tile.label}
+                            </Text>
                         </View>
 
-                        <Text variant="heading" is_tabular numberOfLines={1}>{tile.value}</Text>
-                        {!!tile.detail && <Text variant="caption" color="text_muted" numberOfLines={1}>{tile.detail}</Text>}
+                        <Text
+                            variant = "heading"
+                            is_tabular
+                            numberOfLines = {1}
+                        >
+                            {tile.value}
+                        </Text>
+                        {!!tile.detail &&
+                            <Text
+                                variant = "caption"
+                                color = "text_muted"
+                                numberOfLines = {1}
+                            >
+                                {tile.detail}
+                            </Text>
+                        }
                     </View>
                 </Card>
             ))}

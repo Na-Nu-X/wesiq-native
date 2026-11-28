@@ -31,45 +31,47 @@ const getPostCommentsSource = (post:Post):CommentsSource => ({
     remove: deletePostComment,
 })
 
+// Function For The Post Sheets Hook
 export function usePostSheets({ updatePost, removePost, updateAuthor, onRequireLogin }:PostSheetsOptions) {
-    const [comments_post, setCommentsPost] = useState<Post|null>(null)
-    const [menu_post, setMenuPost] = useState<Post|null>(null)
-    const [share_post, setSharePost] = useState<SharedPostInfo|null>(null)
-    const [users_who_liked_post, setUsersWhoLikedPost] = useState<UsersWhoLikedPostInfo|null>(null)
+    const [comments_post, setCommentsPost] = useState<Post|null>(null) // Stores The Comments Post
+    const [menu_post, setMenuPost] = useState<Post|null>(null) // Stores The Menu Post
+    const [share_post, setSharePost] = useState<SharedPostInfo|null>(null) // Stores The Share Post
+    const [users_who_liked_post, setUsersWhoLikedPost] = useState<UsersWhoLikedPostInfo|null>(null) // Stores The Users Who Liked Post
 
     // Function For Update A Post Everywhere (List And Open Sheets)
     const handlePostChange = useCallback((post:Post):void => {
         updatePost(post)
-        setMenuPost((current) => current?.id === post.id ? post : current)
-        setCommentsPost((current) => current?.id === post.id ? post : current)
+        setMenuPost((current) => current?.id === post.id ? post : current) // Sets The Menu Post
+        setCommentsPost((current) => current?.id === post.id ? post : current) // Sets The Comments Post
     }, [updatePost])
 
     const comments_source:CommentsSource|null = useMemo(() => comments_post ? getPostCommentsSource(comments_post) : null, [comments_post]) // Stable Between Renders
 
+    // Gets The Sheets
     const sheets = (
         <>
             <CommentsSheet
-                source={comments_source}
-                onClose={() => setCommentsPost(null)}
-                onRequireLogin={onRequireLogin}
-                onCommentsCountChange={(delta:number) => {
+                source = {comments_source}
+                onClose = {() => setCommentsPost(null)}
+                onRequireLogin = {onRequireLogin}
+                onCommentsCountChange = {(delta:number) => {
                     if(comments_post) handlePostChange({ ...comments_post, comments_amount: Math.max(0, comments_post.comments_amount + delta) })
                 }}
             />
 
             <PostMenuSheet
-                post={menu_post}
-                onClose={() => setMenuPost(null)}
-                onPostChange={handlePostChange}
-                onPostDeleted={(post:Post) => removePost(post.id)}
+                post = {menu_post}
+                onClose = {() => setMenuPost(null)}
+                onPostChange = {handlePostChange}
+                onPostDeleted = {(post:Post) => removePost(post.id)}
             />
 
-            <SharePostSheet post={share_post} onClose={() => setSharePost(null)} />
+            <SharePostSheet post = {share_post} onClose = {() => setSharePost(null)} />
 
             <UsersWhoLikedPostSheet
-                post={users_who_liked_post}
-                onClose={() => setUsersWhoLikedPost(null)}
-                onFollowChange={(user:UserListItem) => updateAuthor?.(user.id, { has_follow: user.has_follow, has_pending_follow_request: user.has_pending_follow_request })}
+                post = {users_who_liked_post}
+                onClose = {() => setUsersWhoLikedPost(null)}
+                onFollowChange = {(user:UserListItem) => updateAuthor?.(user.id, { has_follow: user.has_follow, has_pending_follow_request: user.has_pending_follow_request })}
             />
         </>
     )

@@ -44,14 +44,14 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
     const [view, setView] = useState<"main"|"report">("main") // Stores The Visible Part Of The Sheet
-    const [is_busy, setIsBusy] = useState<boolean>(false)
+    const [is_busy, setIsBusy] = useState<boolean>(false) // Stores If It Is Busy
 
     // Keeps The Last Post While The Sheet Animates Closed, Follows Setting Changes And Resets The View For Another Post (Adjusted During Render)
-    const [shown_post, setShownPost] = useState<Post|null>(post)
+    const [shown_post, setShownPost] = useState<Post|null>(post) // Stores The Shown Post
 
     if(post && post !== shown_post) {
         if(post.id !== shown_post?.id) setView("main")
-        setShownPost(post)
+        setShownPost(post) // Sets The Shown Post
     }
 
     if(!shown_post) return null
@@ -60,7 +60,7 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
 
     // Function For Change A Setting (Optimistic)
     const changeSetting = async (setting:PostSetting, value:boolean):Promise<void> => {
-        const previous:Post = shown_post
+        const previous:Post = shown_post // Gets The Previous
         onPostChange({ ...shown_post, [setting]: value })
 
         const response = await editPostSetting(shown_post.id, setting, value) // Sends The Request
@@ -73,12 +73,12 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
 
     // Function For Delete The Post
     const remove = async ():Promise<void> => {
-        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť príspevok?"), message: t("Príspevok sa natrvalo odstráni aj s komentármi."), confirm_label: t("Odstrániť"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť príspevok?"), message: t("Príspevok sa natrvalo odstráni aj s komentármi."), confirm_label: t("Odstrániť"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await deletePost(shown_post.id) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -93,9 +93,9 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
 
     // Function For Report The Post
     const report = async (reason:ReportReason):Promise<void> => {
-        setIsBusy(true)
+        setIsBusy(true) // Sets The Busy State
         const response = await reportPost(shown_post.id, reason) // Sends The Request
-        setIsBusy(false)
+        setIsBusy(false) // Sets The Busy State
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -116,37 +116,54 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
 
     return (
         <Sheet
-            visible={post !== null}
-            onClose={() => {
+            visible = {post !== null}
+            onClose = {() => {
                 if(view === "report") setView("main")
                 else onClose()
             }}
-            title={view === "report" ? t("Nahlásiť príspevok") : t("Možnosti príspevku")}
-            subtitle={view === "report" ? t("Prečo tento príspevok nahlasujete?") : formatUsername(shown_post.user.username)}
-            is_dismissable={!is_busy}
+            title = {view === "report" ? t("Nahlásiť príspevok") : t("Možnosti príspevku")}
+            subtitle = {view === "report" ? t("Prečo tento príspevok nahlasujete?") : formatUsername(shown_post.user.username)}
+            is_dismissable = {!is_busy}
         >
             {view === "report" ? (
-                <Card padding="xs">
+                <Card padding = "xs">
                     {REPORT_REASONS.map((reason:ReportReason, index:number) => (
-                        <View key={reason}>
-                            {index > 0 && <Divider inset={spacing.md} />}
-                            <MenuRow icon="flag" label={getReasonLabel(reason)} onPress={() => report(reason)} is_disabled={is_busy} />
+                        <View key = {reason}>
+                            {index > 0 &&
+                                <Divider inset = {spacing.md} />
+                            }
+                            <MenuRow
+                                icon = "flag"
+                                label = {getReasonLabel(reason)}
+                                onPress = {() => report(reason)}
+                                is_disabled = {is_busy}
+                            />
                         </View>
                     ))}
                 </Card>
             ) : (
                 <>
                     {is_own && shown_post.media.some((media) => media.is_video) && (
-                        <Card padding="md" style={styles.stats}>
-                            <Text variant="overline" color="text_muted">{t("Štatistiky videa")}</Text>
+                        <Card padding = "md" style = {styles.stats}>
+                            <Text variant = "overline" color = "text_muted">{t("Štatistiky videa")}</Text>
 
                             {shown_post.media.filter((media) => media.is_video).map((media, index:number, videos) => (
-                                <View key={media.id} style={styles.stat_group}>
-                                    {videos.length > 1 && <Text variant="caption" color="text_secondary">{t("Video {{position}}", { position: index + 1 })}</Text>}
+                                <View key = {media.id} style = {styles.stat_group}>
+                                    {videos.length > 1 &&
+                                        <Text variant = "caption" color = "text_secondary">{t("Video {{position}}", { position: index + 1 })}</Text>
+                                    }
 
-                                    <View style={styles.stat_tiles}>
-                                        <StatTile icon="eye" value={String(media.video_views ?? 0)} label={t("Zobrazenia")} />
-                                        <StatTile icon="clock" value={formatDuration(media.average_watch_time ?? 0)} label={t("Priemerný čas pozerania")} />
+                                    <View style = {styles.stat_tiles}>
+                                        <StatTile
+                                            icon = "eye"
+                                            value = {String(media.video_views ?? 0)}
+                                            label = {t("Zobrazenia")}
+                                        />
+                                        <StatTile
+                                            icon = "clock"
+                                            value = {formatDuration(media.average_watch_time ?? 0)}
+                                            label = {t("Priemerný čas pozerania")}
+                                        />
                                     </View>
                                 </View>
                             ))}
@@ -154,37 +171,72 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
                     )}
 
                     {is_own && (
-                        <Card padding="xs">
-                            <ToggleRow icon="earth-europe" label={t("Viditeľné pre všetkých")} description={shown_post.public_visibility ? undefined : t("Vidia ho len vaši sledovatelia.")} value={shown_post.public_visibility} onChange={(value:boolean) => changeSetting("public_visibility", value)} />
-                            <ToggleRow icon="comment" label={t("Povoliť komentáre")} value={shown_post.allow_comments} onChange={(value:boolean) => changeSetting("allow_comments", value)} />
-                            <ToggleRow icon="heart" label={t("Skryť počet označení páči sa mi to")} value={shown_post.hide_likes} onChange={(value:boolean) => changeSetting("hide_likes", value)} />
+                        <Card padding = "xs">
+                            <ToggleRow
+                                icon = "earth-europe"
+                                label = {t("Viditeľné pre všetkých")}
+                                description = {shown_post.public_visibility ? undefined : t("Vidia ho len vaši sledovatelia.")}
+                                value = {shown_post.public_visibility}
+                                onChange = {(value:boolean) => changeSetting("public_visibility", value)}
+                            />
+                            <ToggleRow
+                                icon = "comment"
+                                label = {t("Povoliť komentáre")}
+                                value = {shown_post.allow_comments}
+                                onChange = {(value:boolean) => changeSetting("allow_comments", value)}
+                            />
+                            <ToggleRow
+                                icon = "heart"
+                                label = {t("Skryť počet označení páči sa mi to")}
+                                value = {shown_post.hide_likes}
+                                onChange = {(value:boolean) => changeSetting("hide_likes", value)}
+                            />
                         </Card>
                     )}
 
-                    <Card padding="xs">
-                        <MenuRow icon="link" label={t("Kopírovať odkaz")} onPress={copyLink} />
+                    <Card padding = "xs">
+                        <MenuRow
+                            icon = "link"
+                            label = {t("Kopírovať odkaz")}
+                            onPress = {copyLink}
+                        />
 
                         {!is_own && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="user" label={t("Zobraziť profil")} onPress={() => {
-                                    onClose()
-                                    router.push({ pathname: "/profile/[username]", params: { username: shown_post.user.username } })
-                                }} />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "user"
+                                    label = {t("Zobraziť profil")}
+                                    onPress = {() => {
+                                        onClose()
+                                        router.push({ pathname: "/profile/[username]", params: { username: shown_post.user.username } })
+                                    }}
+                                />
                             </>
                         )}
 
                         {!is_own && logged_in_user && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="flag" label={t("Nahlásiť")} onPress={() => setView("report")} is_danger />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "flag"
+                                    label = {t("Nahlásiť")}
+                                    onPress = {() => setView("report")}
+                                    is_danger
+                                />
                             </>
                         )}
 
                         {is_own && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="trash" label={is_busy ? t("Odstraňuje sa...") : t("Odstrániť príspevok")} onPress={remove} is_danger is_disabled={is_busy} />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "trash"
+                                    label = {is_busy ? t("Odstraňuje sa...") : t("Odstrániť príspevok")}
+                                    onPress = {remove}
+                                    is_danger
+                                    is_disabled = {is_busy}
+                                />
                             </>
                         )}
                     </Card>
@@ -197,10 +249,30 @@ export default function PostMenuSheet({ post, onClose, onPostChange, onPostDelet
 // Function For Render One Video Statistic
 function StatTile({ icon, value, label }:{ icon:IconName, value:string, label:string }) {
     return (
-        <View accessible accessibilityLabel={`${label}: ${value}`} style={styles.stat_tile}>
-            <Icon name={icon} size={14} color="primary" />
-            <Text variant="heading" is_tabular numberOfLines={1}>{value}</Text>
-            <Text variant="caption" color="text_secondary" numberOfLines={2}>{label}</Text>
+        <View
+            accessible
+            accessibilityLabel = {`${label}: ${value}`}
+            style = {styles.stat_tile}
+        >
+            <Icon
+                name = {icon}
+                size = {14}
+                color = "primary"
+            />
+            <Text
+                variant = "heading"
+                is_tabular
+                numberOfLines = {1}
+            >
+                {value}
+            </Text>
+            <Text
+                variant = "caption"
+                color = "text_secondary"
+                numberOfLines = {2}
+            >
+                {label}
+            </Text>
         </View>
     )
 }
@@ -208,11 +280,39 @@ function StatTile({ icon, value, label }:{ icon:IconName, value:string, label:st
 // Function For Render One Menu Row
 export function MenuRow({ icon, label, value, onPress, is_danger = false, is_disabled = false }:{ icon:IconName, label:string, value?:string, onPress:() => void, is_danger?:boolean, is_disabled?:boolean }) {
     return (
-        <Pressable onPress={onPress} disabled={is_disabled} accessibilityRole="button" accessibilityLabel={value ? `${label}, ${value}` : undefined} style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null, is_disabled ? styles.disabled : null]}>
-            <Icon name={icon} size={15} color={is_danger ? "danger" : "text_secondary"} />
-            <Text variant="body_strong" color={is_danger ? "danger" : "text"} style={styles.flex}>{label}</Text>
-            {!!value && <Text variant="callout" color="text_secondary" is_tabular>{value}</Text>}
-            <Icon name="chevron-right" size={12} color="text_muted" />
+        <Pressable
+            onPress = {onPress}
+            disabled = {is_disabled}
+            accessibilityRole = "button"
+            accessibilityLabel = {value ? `${label}, ${value}` : undefined}
+            style = {({ pressed }) => [styles.row, pressed ? styles.row_pressed : null, is_disabled ? styles.disabled : null]}
+        >
+            <Icon
+                name = {icon}
+                size = {15}
+                color = {is_danger ? "danger" : "text_secondary"}
+            />
+            <Text
+                variant = "body_strong"
+                color = {is_danger ? "danger" : "text"}
+                style = {styles.flex}
+            >
+                {label}
+            </Text>
+            {!!value &&
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    is_tabular
+                >
+                    {value}
+                </Text>
+            }
+            <Icon
+                name = "chevron-right"
+                size = {12}
+                color = "text_muted"
+            />
         </Pressable>
     )
 }

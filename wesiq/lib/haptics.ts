@@ -3,8 +3,9 @@
 import { Platform } from "react-native"
 import * as Haptics from "expo-haptics"
 
-const IS_SUPPORTED:boolean = Platform.OS === "ios" || Platform.OS === "android"
+const IS_SUPPORTED:boolean = Platform.OS === "ios" || Platform.OS === "android" // Checks If It Is Supported
 
+// Defines The Haptics
 export const haptics = {
     // Light Tap For Selections (Chips, Steppers, Toggles)
     selection: ():void => {

@@ -13,7 +13,14 @@ import type { IconName } from "@/components/ui"
 
 // Function For Create A Tab Icon
 const tabIcon = (name:IconName) => {
-    const TabIcon = ({ focused }:{ focused:boolean }) => <Icon name={name} size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />
+    const TabIcon = ({ focused }:{ focused:boolean }) => (
+        <Icon
+            name = {name}
+            size = {20}
+            color = {focused ? "primary" : "text_muted"}
+            is_solid = {focused}
+        />
+    )
     TabIcon.displayName = `TabIcon(${name})`
     return TabIcon
 }
@@ -26,9 +33,9 @@ export default function TabsLayout() {
     return (
         <>
             <Tabs
-                backBehavior="history"
+                backBehavior = "history"
 
-                screenOptions={{
+                screenOptions = {{
                     headerShown: false,
                     tabBarActiveTintColor: colors.primary,
                     tabBarInactiveTintColor: colors.text_muted,
@@ -37,19 +44,19 @@ export default function TabsLayout() {
                     tabBarHideOnKeyboard: Platform.OS === "android",
                 }}
 
-                screenListeners={{
+                screenListeners = {{
                     tabPress: () => haptics.selection(),
                 }}
             >
-                <Tabs.Screen name="index" options={{ title: t("Domov"), tabBarIcon: tabIcon("house") }} />
-                <Tabs.Screen name="chat" options={{ title: t("Správy"), tabBarIcon: tabIcon("comment") }} />
-                <Tabs.Screen name="activity" options={{ title: t("Tréningy"), tabBarIcon: tabIcon("dumbbell") }} />
-                <Tabs.Screen name="blog" options={{ title: t("Blog"), tabBarIcon: tabIcon("book-open") }} />
+                <Tabs.Screen name = "index" options = {{ title: t("Domov"), tabBarIcon: tabIcon("house") }} />
+                <Tabs.Screen name = "chat" options = {{ title: t("Správy"), tabBarIcon: tabIcon("comment") }} />
+                <Tabs.Screen name = "activity" options = {{ title: t("Tréningy"), tabBarIcon: tabIcon("dumbbell") }} />
+                <Tabs.Screen name = "blog" options = {{ title: t("Blog"), tabBarIcon: tabIcon("book-open") }} />
 
                 <Tabs.Screen
-                    name="me"
+                    name = "me"
 
-                    listeners={{
+                    listeners = {{
                         tabPress: (event) => {
                             if(!logged_in_user) {
                                 event.preventDefault() // Opens The Login Instead
@@ -58,12 +65,21 @@ export default function TabsLayout() {
                         },
                     }}
 
-                    options={{
+                    options = {{
                         title: t("Profil"),
 
                         tabBarIcon: ({ focused }:{ focused:boolean }) => logged_in_user
-                            ? <Avatar user={logged_in_user} size={focused ? 26 : 24} is_ring_hidden={!focused} />
-                            : <Icon name="user" size={20} color={focused ? "primary" : "text_muted"} is_solid={focused} />,
+                            ? <Avatar
+                                user = {logged_in_user}
+                                size = {focused ? 26 : 24}
+                                is_ring_hidden = {!focused}
+                            />
+                            : <Icon
+                                name = "user"
+                                size = {20}
+                                color = {focused ? "primary" : "text_muted"}
+                                is_solid = {focused}
+                            />,
                     }}
                 />
             </Tabs>

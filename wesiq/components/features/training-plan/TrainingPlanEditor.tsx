@@ -35,9 +35,9 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
     const [is_library_open, setIsLibraryOpen] = useState<boolean>(false) // Stores The Information If The Exercise Library Is Open
     const [is_saving, setIsSaving] = useState<boolean>(false) // Stores The Information If The Plan Is Being Saved
     const [is_deleting, setIsDeleting] = useState<boolean>(false) // Stores The Information If The Plan Is Being Deleted
-    const [has_tried_saving, setHasTriedSaving] = useState<boolean>(false) // Shows Validation Errors After The First Save Attempt
+    const [has_tried_saving, setHasTriedSaving] = useState<boolean>(false) // Stores If It Has Tried Saving (Shows Validation Errors After The First Save Attempt)
     const [dragging_id, setDraggingId] = useState<string|null>(null) // Stores The Exercise Being Dragged
-    const [drop_count, setDropCount] = useState<number>(0) // Part Of The Row Keys, So Every Drop Remounts The Rows
+    const [drop_count, setDropCount] = useState<number>(0) // Stores The Drop Count (Part Of The Row Keys, So Every Drop Remounts The Rows)
 
     // After A Drop The Library Holds Each Row's Last Drag Offset Until The Row Reports A New Layout, Which On The New
     // Architecture Can Race With The Animation And Leave The Offset In Place (Empty Gaps Between Exercises).
@@ -45,7 +45,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
 
     // Counts How Many Times Each Library Exercise Is In The Plan (Shown In The Library)
     const added_counts:Map<number, number> = useMemo(() => {
-        const counts:Map<number, number> = new Map()
+        const counts:Map<number, number> = new Map() // Gets The Counts
         draft.exercises.forEach((exercise:DraftExercise) => {
             if(exercise.library_id !== null) counts.set(exercise.library_id, (counts.get(exercise.library_id) ?? 0) + 1)
         })
@@ -53,15 +53,16 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
     }, [draft.exercises])
 
     const visible_issues:DraftIssue[] = has_tried_saving ? issues : [] // Gets The Issues To Show
-    const has_title_error:boolean = visible_issues.some((issue:DraftIssue) => issue.kind === "missing_title")
-    const unnamed_ids:Set<string> = new Set(visible_issues.flatMap((issue:DraftIssue) => issue.kind === "missing_exercise_name" ? [issue.local_id] : []))
-    const is_busy:boolean = is_saving || is_deleting
+    const has_title_error:boolean = visible_issues.some((issue:DraftIssue) => issue.kind === "missing_title") // Checks If It Has Title Error
+    const unnamed_ids:Set<string> = new Set(visible_issues.flatMap((issue:DraftIssue) => issue.kind === "missing_exercise_name" ? [issue.local_id] : [])) // Gets The Unnamed IDs
+    const is_busy:boolean = is_saving || is_deleting // Checks If It Is Busy
 
     // Function For Go Back (Asks Before Throwing Away Changes)
     const goBack = async ():Promise<void> => {
         if(is_busy) return
 
         if(is_dirty) {
+            // Checks If It Is Confirmed
             const is_confirmed:boolean = await confirmAction({
                 title: t("Zahodiť zmeny?"),
                 message: t("Neuložené zmeny sa stratia."),
@@ -79,16 +80,16 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
 
     // Function For Save The Plan
     const save = async ():Promise<void> => {
-        setHasTriedSaving(true)
+        setHasTriedSaving(true) // Sets The Tried Saving State
 
         if(issues.length > 0) {
             haptics.error()
             return
         }
 
-        setIsSaving(true)
+        setIsSaving(true) // Sets The Saving State
         const response = await saveTrainingPlan(draftToRows(draft)) // Sends The Plan
-        setIsSaving(false)
+        setIsSaving(false) // Sets The Saving State
 
         if(!response.ok) {
             haptics.error()
@@ -98,7 +99,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
 
         haptics.success()
         emitAppEvent("training_plans_changed")
-        setHasTriedSaving(false)
+        setHasTriedSaving(false) // Sets The Tried Saving State
         dispatch({ type: "reset", draft })
         onSaved(draft)
     }
@@ -107,6 +108,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
     const remove = async ():Promise<void> => {
         if(!draft.key) return
 
+        // Checks If It Is Confirmed
         const is_confirmed:boolean = await confirmAction({
             title: t("Odstrániť plán {{title}}?", { title: initial_draft.title || t("Tréningový plán") }),
             message: t("Plán sa natrvalo odstráni. História aktivít zostane zachovaná."),
@@ -116,9 +118,9 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
 
         if(!is_confirmed) return
 
-        setIsDeleting(true)
+        setIsDeleting(true) // Sets The Deleting State
         const response = await deleteTrainingPlan(draft.key) // Sends The Request
-        setIsDeleting(false)
+        setIsDeleting(false) // Sets The Deleting State
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -136,6 +138,7 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
         : visible_issues.some((issue:DraftIssue) => issue.kind === "no_exercises") ? t("Pridajte aspoň nejaký cvik pre tréningový plán.")
         : t("Pomenujte všetky vlastné cviky.")
 
+    // Gets The Titles
     const titles:Record<EditorMode, string> = {
         new: t("Nový plán"),
         edit: t("Upraviť plán"),
@@ -144,165 +147,223 @@ export default function TrainingPlanEditor({ mode, initial_draft, taken_days, on
 
     // ---------- List Parts ----------
 
+    // Gets The List Header
     const list_header = (
-        <View style={styles.list_header}>
-            <Card padding="lg" style={styles.settings_card}>
+        <View style = {styles.list_header}>
+            <Card padding = "lg" style = {styles.settings_card}>
                 <TextField
-                    label={t("Názov")}
-                    placeholder={t("Napríklad Horná časť tela")}
-                    value={draft.title}
-                    onChangeText={(title:string) => dispatch({ type: "set_title", title })}
-                    maxLength={MAX_TITLE_LENGTH}
+                    label = {t("Názov")}
+                    placeholder = {t("Napríklad Horná časť tela")}
+                    value = {draft.title}
+                    onChangeText = {(title:string) => dispatch({ type: "set_title", title })}
+                    maxLength = {MAX_TITLE_LENGTH}
                     is_counter_visible
-                    error={has_title_error ? t("Pridajte názov pre tréningový plán.") : null}
-                    autoCapitalize="sentences"
-                    returnKeyType="done"
+                    error = {has_title_error ? t("Pridajte názov pre tréningový plán.") : null}
+                    autoCapitalize = "sentences"
+                    returnKeyType = "done"
                 />
 
-                <View style={styles.field_group}>
-                    <Text variant="label" color="text_secondary" style={styles.label}>{t("Deň")}</Text>
-                    <DayPicker value={draft.day} onChange={(day:Day|null) => dispatch({ type: "set_day", day })} taken_days={taken_days} />
+                <View style = {styles.field_group}>
+                    <Text
+                        variant = "label"
+                        color = "text_secondary"
+                        style = {styles.label}
+                    >
+                        {t("Deň")}
+                    </Text>
+                    <DayPicker
+                        value = {draft.day}
+                        onChange = {(day:Day|null) => dispatch({ type: "set_day", day })}
+                        taken_days = {taken_days}
+                    />
                 </View>
             </Card>
 
-            <Card padding="xs">
+            <Card padding = "xs">
                 <ToggleRow
-                    icon="fire"
-                    label={t("Rozcvička")}
-                    description={draft.warm_up_seconds !== null ? t("Spustí sa pred prvým cvikom.") : t("Odporúčame 5 minút rozcvičky.")}
-                    value={draft.warm_up_seconds !== null}
-                    onChange={(is_enabled:boolean) => dispatch({ type: "set_warm_up", seconds: is_enabled ? DEFAULT_WARM_UP_SECONDS : null })}
+                    icon = "fire"
+                    label = {t("Rozcvička")}
+                    description = {draft.warm_up_seconds !== null ? t("Spustí sa pred prvým cvikom.") : t("Odporúčame 5 minút rozcvičky.")}
+                    value = {draft.warm_up_seconds !== null}
+                    onChange = {(is_enabled:boolean) => dispatch({ type: "set_warm_up", seconds: is_enabled ? DEFAULT_WARM_UP_SECONDS : null })}
                 />
 
                 {draft.warm_up_seconds !== null && (
-                    <View style={styles.warm_up_row}>
-                        <Text variant="callout" color="text_secondary">{t("Dĺžka")}</Text>
+                    <View style = {styles.warm_up_row}>
+                        <Text variant = "callout" color = "text_secondary">{t("Dĺžka")}</Text>
 
                         <Stepper
-                            value={draft.warm_up_seconds}
-                            onChange={(seconds:number) => dispatch({ type: "set_warm_up", seconds })}
-                            min={UNIT_RULES.seconds.min}
-                            max={1800}
-                            step={30}
-                            formatValue={formatDuration}
-                            accessibility_label={t("Dĺžka rozcvičky")}
+                            value = {draft.warm_up_seconds}
+                            onChange = {(seconds:number) => dispatch({ type: "set_warm_up", seconds })}
+                            min = {UNIT_RULES.seconds.min}
+                            max = {1800}
+                            step = {30}
+                            formatValue = {formatDuration}
+                            accessibility_label = {t("Dĺžka rozcvičky")}
                         />
                     </View>
                 )}
             </Card>
 
-            <View style={styles.section_row}>
-                <Text variant="overline" color="text_muted" accessibilityRole="header">{t("Cviky")} ({draft.exercises.length})</Text>
-                {draft.exercises.length > 1 && <Text variant="caption" color="text_muted">{t("Poradie zmeníte potiahnutím")}</Text>}
+            <View style = {styles.section_row}>
+                <Text
+                    variant = "overline"
+                    color = "text_muted"
+                    accessibilityRole = "header"
+                >
+                    {t("Cviky")} ({draft.exercises.length})
+                </Text>
+                {draft.exercises.length > 1 &&
+                    <Text variant = "caption" color = "text_muted">{t("Poradie zmeníte potiahnutím")}</Text>
+                }
             </View>
         </View>
     )
 
+    // Gets The List Footer
     const list_footer = (
-        <View style={styles.list_footer}>
+        <View style = {styles.list_footer}>
             {draft.exercises.length === 0 && (
-                <Card variant="outlined" padding="xl" style={styles.empty}>
-                    <View style={styles.empty_icon}>
-                        <Icon name="dumbbell" size={22} color="primary" />
+                <Card
+                    variant = "outlined"
+                    padding = "xl"
+                    style = {styles.empty}
+                >
+                    <View style = {styles.empty_icon}>
+                        <Icon
+                            name = "dumbbell"
+                            size = {22}
+                            color = "primary"
+                        />
                     </View>
 
-                    <Text variant="body_strong" align="center">{t("Zatiaľ žiadne cviky")}</Text>
-                    <Text variant="callout" color="text_secondary" align="center">{t("Pridajte cviky z knižnice alebo vytvorte vlastné.")}</Text>
+                    <Text variant = "body_strong" align = "center">{t("Zatiaľ žiadne cviky")}</Text>
+                    <Text
+                        variant = "callout"
+                        color = "text_secondary"
+                        align = "center"
+                    >
+                        {t("Pridajte cviky z knižnice alebo vytvorte vlastné.")}
+                    </Text>
                 </Card>
             )}
 
             {draft.exercises.length < MAX_EXERCISES && (
-                <Button label={t("Pridať cvik")} icon="plus" variant="outline" onPress={() => setIsLibraryOpen(true)} is_full_width />
+                <Button
+                    label = {t("Pridať cvik")}
+                    icon = "plus"
+                    variant = "outline"
+                    onPress = {() => setIsLibraryOpen(true)}
+                    is_full_width
+                />
             )}
 
             {mode === "edit" && draft.key && (
-                <Button label={is_deleting ? t("Odstraňuje sa...") : t("Odstrániť plán")} icon="trash" variant="danger" onPress={remove} is_disabled={is_busy} is_full_width style={styles.delete_button} />
+                <Button
+                    label = {is_deleting ? t("Odstraňuje sa...") : t("Odstrániť plán")}
+                    icon = "trash"
+                    variant = "danger"
+                    onPress = {remove}
+                    is_disabled = {is_busy}
+                    is_full_width
+                    style = {styles.delete_button}
+                />
             )}
         </View>
     )
 
     // Function For Render One Exercise
     const renderItem = ({ item, getIndex, drag, isActive }:RenderItemParams<DraftExercise>) => (
-        <View style={styles.item}>
+        <View style = {styles.item}>
             <ExerciseCard
-                exercise={item}
-                index={getIndex() ?? 0}
-                count={draft.exercises.length}
-                dispatch={dispatch}
-                onDragStart={draft.exercises.length > 1 ? drag : undefined}
-                is_dragging={isActive || dragging_id === item.local_id}
-                has_name_error={unnamed_ids.has(item.local_id)}
+                exercise = {item}
+                index = {getIndex() ?? 0}
+                count = {draft.exercises.length}
+                dispatch = {dispatch}
+                onDragStart = {draft.exercises.length > 1 ? drag : undefined}
+                is_dragging = {isActive || dragging_id === item.local_id}
+                has_name_error = {unnamed_ids.has(item.local_id)}
             />
         </View>
     )
 
     return (
         <Screen
-            is_scrollable={false}
-            is_padded={false}
+            is_scrollable = {false}
+            is_padded = {false}
             is_keyboard_aware
-            header={
+            header = {
                 <Header
-                    title={titles[mode]}
-                    subtitle={is_dirty ? t("Neuložené zmeny") : undefined}
+                    title = {titles[mode]}
+                    subtitle = {is_dirty ? t("Neuložené zmeny") : undefined}
                     has_back_button
-                    onBack={goBack}
+                    onBack = {goBack}
                 />
             }
-            footer={
-                <View style={styles.footer}>
+            footer = {
+                <View style = {styles.footer}>
                     {!!issue_message && (
-                        <View style={styles.issue_row} accessibilityLiveRegion="polite">
-                            <Icon name="circle-exclamation" size={13} color="danger" />
-                            <Text variant="caption" color="danger" style={styles.flex}>{issue_message}</Text>
+                        <View style = {styles.issue_row} accessibilityLiveRegion = "polite">
+                            <Icon
+                                name = "circle-exclamation"
+                                size = {13}
+                                color = "danger"
+                            />
+                            <Text
+                                variant = "caption"
+                                color = "danger"
+                                style = {styles.flex}
+                            >
+                                {issue_message}
+                            </Text>
                         </View>
                     )}
 
                     <Button
-                        label={mode === "edit" ? t("Uložiť zmeny") : t("Uložiť plán")}
-                        icon="check"
-                        onPress={save}
-                        is_loading={is_saving}
-                        is_disabled={is_deleting || (mode === "edit" && !is_dirty)}
+                        label = {mode === "edit" ? t("Uložiť zmeny") : t("Uložiť plán")}
+                        icon = "check"
+                        onPress = {save}
+                        is_loading = {is_saving}
+                        is_disabled = {is_deleting || (mode === "edit" && !is_dirty)}
                         is_full_width
                     />
                 </View>
             }
         >
             <DraggableFlatList
-                data={draft.exercises}
-                keyExtractor={(exercise:DraftExercise) => `${exercise.local_id}:${drop_count}`}
-                renderItem={renderItem}
-                onDragBegin={(index:number) => {
+                data = {draft.exercises}
+                keyExtractor = {(exercise:DraftExercise) => `${exercise.local_id}:${drop_count}`}
+                renderItem = {renderItem}
+                onDragBegin = {(index:number) => {
                     haptics.light()
-                    setDraggingId(draft.exercises[index]?.local_id ?? null)
+                    setDraggingId(draft.exercises[index]?.local_id ?? null) // Sets The Dragging ID
                 }}
-                onDragEnd={({ data }:{ data:DraftExercise[] }) => {
-                    setDraggingId(null)
+                onDragEnd = {({ data }:{ data:DraftExercise[] }) => {
+                    setDraggingId(null) // Sets The Dragging ID
                     setDropCount((count:number) => count + 1) // Also When Dropped In Place (The Rows It Passed Hold Offsets Too)
                     dispatch({ type: "reorder_exercises", exercises: data })
                 }}
-                ListHeaderComponent={list_header}
-                ListFooterComponent={list_footer}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                showsVerticalScrollIndicator={false}
-                containerStyle={styles.flex}
-                contentContainerStyle={styles.list_content}
-                activationDistance={8}
+                ListHeaderComponent = {list_header}
+                ListFooterComponent = {list_footer}
+                keyboardShouldPersistTaps = "handled"
+                keyboardDismissMode = "on-drag"
+                showsVerticalScrollIndicator = {false}
+                containerStyle = {styles.flex}
+                contentContainerStyle = {styles.list_content}
+                activationDistance = {8}
             />
 
             <ExerciseLibrarySheet
-                visible={is_library_open}
-                onClose={() => setIsLibraryOpen(false)}
-                onAddExercise={(exercise) => dispatch({ type: "add_library_exercise", exercise })}
-                onAddCustom={() => {
+                visible = {is_library_open}
+                onClose = {() => setIsLibraryOpen(false)}
+                onAddExercise = {(exercise) => dispatch({ type: "add_library_exercise", exercise })}
+                onAddCustom = {() => {
                     dispatch({ type: "add_custom_exercise" })
                     setIsLibraryOpen(false) // Closes So The Name Can Be Typed Right Away
                 }}
-                onAddWarmUp={draft.warm_up_seconds === null ? () => dispatch({ type: "set_warm_up", seconds: DEFAULT_WARM_UP_SECONDS }) : null}
-                added_counts={added_counts}
-                can_add={draft.exercises.length < MAX_EXERCISES}
+                onAddWarmUp = {draft.warm_up_seconds === null ? () => dispatch({ type: "set_warm_up", seconds: DEFAULT_WARM_UP_SECONDS }) : null}
+                added_counts = {added_counts}
+                can_add = {draft.exercises.length < MAX_EXERCISES}
             />
         </Screen>
     )

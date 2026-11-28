@@ -25,28 +25,50 @@ export default function UserRow({ user, subtitle, onPress, trailing, accessibili
     const secondary:string|null = subtitle ?? (display_name !== user.username ? formatUsername(user.username) : null) // Gets The Secondary Text
 
     return (
-        <View style={styles.row}>
+        <View style = {styles.row}>
             <Pressable
-                onPress={onPress}
-                disabled={!onPress}
-                accessibilityRole={onPress ? "button" : undefined}
-                accessibilityLabel={secondary ? `${display_name}, ${secondary}` : display_name}
-                accessibilityHint={accessibility_hint}
-                style={({ pressed }:PressableStateCallbackType) => [styles.main, pressed ? styles.pressed : null]}
+                onPress = {onPress}
+                disabled = {!onPress}
+                accessibilityRole = {onPress ? "button" : undefined}
+                accessibilityLabel = {secondary ? `${display_name}, ${secondary}` : display_name}
+                accessibilityHint = {accessibility_hint}
+                style = {({ pressed }:PressableStateCallbackType) => [styles.main, pressed ? styles.pressed : null]}
             >
-                <Avatar user={user} size={44} />
+                <Avatar user = {user} size = {44} />
 
-                <View style={styles.text}>
-                    <View style={styles.name_row}>
-                        <Text variant="body_strong" numberOfLines={1} style={styles.name}>{display_name}</Text>
-                        {user.subscription?.is_active && <Icon name="crown" size={11} color="premium" />}
+                <View style = {styles.text}>
+                    <View style = {styles.name_row}>
+                        <Text
+                            variant = "body_strong"
+                            numberOfLines = {1}
+                            style = {styles.name}
+                        >
+                            {display_name}
+                        </Text>
+                        {user.subscription?.is_active &&
+                            <Icon
+                                name = "crown"
+                                size = {11}
+                                color = "premium"
+                            />
+                        }
                     </View>
 
-                    {!!secondary && <Text variant="caption" color="text_muted" numberOfLines={1}>{secondary}</Text>}
+                    {!!secondary &&
+                        <Text
+                            variant = "caption"
+                            color = "text_muted"
+                            numberOfLines = {1}
+                        >
+                            {secondary}
+                        </Text>
+                    }
                 </View>
             </Pressable>
 
-            {!!trailing && <View style={styles.trailing}>{trailing}</View>}
+            {!!trailing &&
+                <View style = {styles.trailing}>{trailing}</View>
+            }
         </View>
     )
 }

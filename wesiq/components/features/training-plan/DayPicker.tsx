@@ -20,27 +20,41 @@ export default function DayPicker({ value, onChange, taken_days }:DayPickerProps
     const taken_title:string|undefined = value !== null ? taken_days.get(value) : undefined // Gets The Conflicting Plan
 
     return (
-        <View style={styles.container}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} accessibilityRole="radiogroup" accessibilityLabel={t("Deň tréningu")}>
-                <Chip label={t("Žiadny deň")} is_selected={value === null} onPress={() => onChange(null)} />
+        <View style = {styles.container}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator = {false}
+                contentContainerStyle = {styles.chips}
+                accessibilityRole = "radiogroup"
+                accessibilityLabel = {t("Deň tréningu")}
+            >
+                <Chip
+                    label = {t("Žiadny deň")}
+                    is_selected = {value === null}
+                    onPress = {() => onChange(null)}
+                />
 
                 {WEEK_DAYS.map((day:Day) => {
                     const other_plan:string|undefined = taken_days.get(day) // Gets The Plan Using The Day
 
                     return (
                         <Chip
-                            key={day}
-                            label={getShortDayName(day)}
-                            icon={other_plan && value !== day ? "lock" : undefined}
-                            is_selected={value === day}
-                            is_disabled={other_plan !== undefined && value !== day}
-                            onPress={() => onChange(day)}
+                            key = {day}
+                            label = {getShortDayName(day)}
+                            icon = {other_plan && value !== day ? "lock" : undefined}
+                            is_selected = {value === day}
+                            is_disabled = {other_plan !== undefined && value !== day}
+                            onPress = {() => onChange(day)}
                         />
                     )
                 })}
             </ScrollView>
 
-            <Text variant="caption" color={taken_title ? "warning" : "text_muted"} style={styles.hint}>
+            <Text
+                variant = "caption"
+                color = {taken_title ? "warning" : "text_muted"}
+                style = {styles.hint}
+            >
                 {taken_title
                     ? t("{{day}} už patrí plánu {{title}}.", { day: getDayName(value as Day), title: taken_title })
                     : value === null

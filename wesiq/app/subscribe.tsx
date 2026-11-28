@@ -20,22 +20,22 @@ import type { PurchasesPackage } from "react-native-purchases"
 import type { IconName } from "@/components/ui"
 import type { SubscriptionPlan } from "@/types/models"
 
-const PLANS:readonly PaidPlan[] = ["basic", "premium"]
+const PLANS:readonly PaidPlan[] = ["basic", "premium"] // Defines The Plans
 
 export default function SubscribeScreen() {
     const { t } = useTranslation() // Initializes The Translations
     const { logged_in_user, refreshLoggedInUser } = useLoggedInUser() // Gets The Logged In User
     const auth_sheet = useAuthSheet() // Opens The Login Sheet
-    const [selected_plan, setSelectedPlan] = useState<PaidPlan>("premium")
-    const [packages, setPackages] = useState<Partial<Record<PaidPlan, PurchasesPackage>>|null>(null) // Null While Loading
-    const [busy_action, setBusyAction] = useState<"purchase"|"restore"|null>(null)
+    const [selected_plan, setSelectedPlan] = useState<PaidPlan>("premium") // Stores The Selected Plan
+    const [packages, setPackages] = useState<Partial<Record<PaidPlan, PurchasesPackage>>|null>(null) // Stores The Packages (Null While Loading)
+    const [busy_action, setBusyAction] = useState<"purchase"|"restore"|null>(null) // Stores The Busy Action
 
     const current_plan:SubscriptionPlan = getActiveSubscriptionPlan(logged_in_user) // Gets The Current Plan
-    const user_id:number|null = logged_in_user?.id ?? null
+    const user_id:number|null = logged_in_user?.id ?? null // Gets The User ID
 
     // Initializes The Load Of The Store Prices (Again After Login, Because The Store Is Configured Per User)
     useEffect(() => {
-        let is_active:boolean = true
+        let is_active:boolean = true // Checks If It Is Active
         getPlanPackages().then((loaded) => { if(is_active) setPackages(loaded) })
 
         return () => {
@@ -45,12 +45,14 @@ export default function SubscribeScreen() {
 
     const getPrice = (plan:PaidPlan):string|null => packages?.[plan]?.product.priceString ?? null // Only The Store's Price (Null When The Store Didn't Return The Plan)
 
+    // Gets The Plan Names
     const plan_names:Record<SubscriptionPlan, string> = {
         free: t("Zadarmo"),
         basic: t("Základné"),
         premium: t("Prémiové"),
     }
 
+    // Gets The Plan Descriptions
     const plan_descriptions:Record<PaidPlan, string> = {
         basic: t("Vážime si Vašu podporu, ktorá nám pomáha držať aplikáciu pri živote."),
         premium: t("Pre náročných používateľov, ktorí chcú z aplikácie vyťažiť absolútne maximum."),
@@ -83,10 +85,10 @@ export default function SubscribeScreen() {
             return
         }
 
-        setBusyAction("purchase")
+        setBusyAction("purchase") // Sets The Busy Action
         const result = await purchasePackage(store_package, selected_plan, logged_in_user.id) // Opens The Store
         if(result.status === "purchased") await syncSubscription() // Updates The Plan On The Server Right Away (The Webhook Also Follows)
-        setBusyAction(null)
+        setBusyAction(null) // Sets The Busy Action
 
         if(result.status === "cancelled") return
 
@@ -104,10 +106,10 @@ export default function SubscribeScreen() {
     const restore = async ():Promise<void> => {
         if(!logged_in_user) return
 
-        setBusyAction("restore")
+        setBusyAction("restore") // Sets The Busy Action
         const has_subscription:boolean|null = await restorePurchases(logged_in_user.id) // Asks The Store
         if(has_subscription) await syncSubscription() // Updates The Plan On The Server Right Away
-        setBusyAction(null)
+        setBusyAction(null) // Sets The Busy Action
 
         if(has_subscription === null) {
             showAlert(t("Chyba"), t("Nákupy sa nepodarilo obnoviť."))
@@ -122,76 +124,134 @@ export default function SubscribeScreen() {
         showAlert(has_subscription ? t("Úspech") : t("Žiadne nákupy"), has_subscription ? t("Predplatné bolo obnovené.") : t("Nenašli sa žiadne predplatné na obnovenie."))
     }
 
-    const is_current_selected:boolean = current_plan === selected_plan
-    const is_loading_prices:boolean = are_purchases_supported && packages === null
+    const is_current_selected:boolean = current_plan === selected_plan // Checks If It Is Current Selected
+    const is_loading_prices:boolean = are_purchases_supported && packages === null // Checks If It Is Loading Prices
 
+    // Gets The Footer
     const footer = are_purchases_supported ? (
-        <View style={styles.footer}>
+        <View style = {styles.footer}>
             <Button
-                label={!logged_in_user ? t("Prihlásiť sa a predplatiť") : is_current_selected ? t("Váš aktuálny plán") : (getPrice(selected_plan) ? t("Predplatiť {{plan}} · {{price}}", { plan: plan_names[selected_plan], price: getPrice(selected_plan) }) : t("Predplatiť"))}
-                icon={is_current_selected ? "check" : "crown"}
-                onPress={purchase}
-                is_loading={busy_action === "purchase"}
-                is_disabled={is_current_selected || busy_action !== null}
+                label = {!logged_in_user ? t("Prihlásiť sa a predplatiť") : is_current_selected ? t("Váš aktuálny plán") : (getPrice(selected_plan) ? t("Predplatiť {{plan}} · {{price}}", { plan: plan_names[selected_plan], price: getPrice(selected_plan) }) : t("Predplatiť"))}
+                icon = {is_current_selected ? "check" : "crown"}
+                onPress = {purchase}
+                is_loading = {busy_action === "purchase"}
+                is_disabled = {is_current_selected || busy_action !== null}
                 is_full_width
-                size="lg"
+                size = "lg"
             />
 
-            {!!logged_in_user && <Button label={t("Obnoviť nákupy")} variant="ghost" size="sm" onPress={restore} is_loading={busy_action === "restore"} is_disabled={busy_action !== null} />}
+            {!!logged_in_user &&
+                <Button
+                    label = {t("Obnoviť nákupy")}
+                    variant = "ghost"
+                    size = "sm"
+                    onPress = {restore}
+                    is_loading = {busy_action === "restore"}
+                    is_disabled = {busy_action !== null}
+                />
+            }
         </View>
     ) : undefined
 
     return (
-        <Screen header={<Header title={t("Predplatné")} has_back_button />} footer={footer} has_glow>
-            <View style={styles.hero}>
-                <View style={styles.hero_icon}><Icon name="crown" size={28} color="premium" /></View>
-                <Text variant="title" align="center" accessibilityRole="header">{t("Získajte viac z Wesiq")}</Text>
-                <Text variant="body" color="text_secondary" align="center">{t("Väčšie a dlhšie videá, lepšia kvalita a odznak na profile.")}</Text>
+        <Screen
+            header = {<Header title = {t("Predplatné")} has_back_button />}
+            footer = {footer}
+            has_glow
+        >
+            <View style = {styles.hero}>
+                <View style = {styles.hero_icon}><Icon
+                    name = "crown"
+                    size = {28}
+                    color = "premium"
+                /></View>
+                <Text
+                    variant = "title"
+                    align = "center"
+                    accessibilityRole = "header"
+                >
+                    {t("Získajte viac z Wesiq")}
+                </Text>
+                <Text
+                    variant = "body"
+                    color = "text_secondary"
+                    align = "center"
+                >
+                    {t("Väčšie a dlhšie videá, lepšia kvalita a odznak na profile.")}
+                </Text>
             </View>
 
             {current_plan !== "free" && (
-                <Card variant="highlighted" padding="md" style={styles.current}>
-                    <Icon name="circle-check" size={18} color="success" />
-                    <Text variant="body_strong" style={styles.flex}>{t("Máte aktívne predplatné: {{plan}}", { plan: plan_names[current_plan] })}</Text>
+                <Card
+                    variant = "highlighted"
+                    padding = "md"
+                    style = {styles.current}
+                >
+                    <Icon
+                        name = "circle-check"
+                        size = {18}
+                        color = "success"
+                    />
+                    <Text variant = "body_strong" style = {styles.flex}>{t("Máte aktívne predplatné: {{plan}}", { plan: plan_names[current_plan] })}</Text>
                 </Card>
             )}
 
             {/* ---------- Plans ---------- */}
-            <View style={styles.plans} accessibilityRole="radiogroup">
+            <View style = {styles.plans} accessibilityRole = "radiogroup">
                 {PLANS.map((plan:PaidPlan) => {
-                    const is_selected:boolean = selected_plan === plan
+                    const is_selected:boolean = selected_plan === plan // Checks If It Is Selected
 
                     return (
                         <Pressable
-                            key={plan}
-                            onPress={() => {
+                            key = {plan}
+                            onPress = {() => {
                                 haptics.selection()
-                                setSelectedPlan(plan)
+                                setSelectedPlan(plan) // Sets The Selected Plan
                             }}
-                            accessibilityRole="radio"
-                            accessibilityState={{ checked: is_selected }}
-                            accessibilityLabel={`${plan_names[plan]}, ${getPrice(plan) ?? "-"} ${t("mesačne")}`}
-                            style={({ pressed }:PressableStateCallbackType) => [styles.plan, is_selected ? styles.plan_selected : null, pressed ? styles.plan_pressed : null]}
+                            accessibilityRole = "radio"
+                            accessibilityState = {{ checked: is_selected }}
+                            accessibilityLabel = {`${plan_names[plan]}, ${getPrice(plan) ?? "-"} ${t("mesačne")}`}
+                            style = {({ pressed }:PressableStateCallbackType) => [styles.plan, is_selected ? styles.plan_selected : null, pressed ? styles.plan_pressed : null]}
                         >
-                            <View style={styles.plan_top}>
-                                <View style={[styles.radio, is_selected ? styles.radio_selected : null]}>{is_selected && <View style={styles.radio_dot} />}</View>
-                                <Text variant="heading" style={styles.flex}>{plan_names[plan]}</Text>
-                                {plan === "premium" && <View style={styles.badge}><Text variant="caption" color="premium">{t("Najviac možností")}</Text></View>}
-                                {current_plan === plan && <View style={styles.badge_current}><Text variant="caption" color="success">{t("Aktuálny")}</Text></View>}
+                            <View style = {styles.plan_top}>
+                                <View style = {[styles.radio, is_selected ? styles.radio_selected : null]}>
+                                    {is_selected &&
+                                        <View style = {styles.radio_dot} />
+                                    }
+                                </View>
+                                <Text variant = "heading" style = {styles.flex}>{plan_names[plan]}</Text>
+                                {plan === "premium" &&
+                                    <View style = {styles.badge}>
+                                        <Text variant = "caption" color = "premium">{t("Najviac možností")}</Text>
+                                    </View>
+                                }
+                                {current_plan === plan &&
+                                    <View style = {styles.badge_current}>
+                                        <Text variant = "caption" color = "success">{t("Aktuálny")}</Text>
+                                    </View>
+                                }
                             </View>
 
-                            <Text variant="callout" color="text_secondary">{plan_descriptions[plan]}</Text>
+                            <Text variant = "callout" color = "text_secondary">{plan_descriptions[plan]}</Text>
 
-                            <View style={styles.price_row}>
-                                {is_loading_prices ? <Skeleton width={80} height={28} radius={radii.sm} /> : <Text variant="title" is_tabular>{getPrice(plan) ?? "-"}</Text>}
-                                <Text variant="callout" color="text_muted">/ {t("mesiac")}</Text>
+                            <View style = {styles.price_row}>
+                                {is_loading_prices ? <Skeleton
+                                    width = {80}
+                                    height = {28}
+                                    radius = {radii.sm}
+                                /> : <Text variant = "title" is_tabular>{getPrice(plan) ?? "-"}</Text>}
+                                <Text variant = "callout" color = "text_muted">/ {t("mesiac")}</Text>
                             </View>
 
-                            <View style={styles.benefits}>
+                            <View style = {styles.benefits}>
                                 {getBenefits(plan).map((benefit) => (
-                                    <View key={benefit.icon} style={styles.benefit}>
-                                        <Icon name={benefit.icon} size={13} color={is_selected ? "primary" : "text_muted"} />
-                                        <Text variant="callout" style={styles.flex}>{benefit.label}</Text>
+                                    <View key = {benefit.icon} style = {styles.benefit}>
+                                        <Icon
+                                            name = {benefit.icon}
+                                            size = {13}
+                                            color = {is_selected ? "primary" : "text_muted"}
+                                        />
+                                        <Text variant = "callout" style = {styles.flex}>{benefit.label}</Text>
                                     </View>
                                 ))}
                             </View>
@@ -201,9 +261,9 @@ export default function SubscribeScreen() {
             </View>
 
             {/* ---------- Free Plan For Comparison ---------- */}
-            <Card padding="md" style={styles.free}>
-                <Text variant="label" color="text_secondary">{t("Zadarmo")}</Text>
-                <Text variant="caption" color="text_muted">
+            <Card padding = "md" style = {styles.free}>
+                <Text variant = "label" color = "text_secondary">{t("Zadarmo")}</Text>
+                <Text variant = "caption" color = "text_muted">
                     {(() => {
                         const limits:MediaLimits = getMediaLimits("free") // Gets The Free Limits
                         return t("Obrázky do {{image}}, videá do {{video}} a {{duration}}.", { image: formatMegabytes(limits.max_image_bytes), video: formatMegabytes(limits.max_video_bytes), duration: formatDuration(limits.max_video_seconds) })
@@ -212,14 +272,34 @@ export default function SubscribeScreen() {
             </Card>
 
             {are_purchases_supported ? (
-                <View style={styles.legal}>
-                    <Text variant="caption" color="text_muted" align="center">{t("Predplatné sa obnovuje automaticky každý mesiac. Zrušiť ho môžete kedykoľvek v nastaveniach obchodu.")}</Text>
+                <View style = {styles.legal}>
+                    <Text
+                        variant = "caption"
+                        color = "text_muted"
+                        align = "center"
+                    >
+                        {t("Predplatné sa obnovuje automaticky každý mesiac. Zrušiť ho môžete kedykoľvek v nastaveniach obchodu.")}
+                    </Text>
                     <LegalLinks />
                 </View>
             ) : (
-                <Card variant="outlined" padding="md" style={styles.current}>
-                    <Icon name="mobile-screen" size={18} color="primary" />
-                    <Text variant="callout" color="text_secondary" style={styles.flex}>{t("Predplatné si môžete kúpiť v aplikácii Wesiq pre iOS alebo Android.")}</Text>
+                <Card
+                    variant = "outlined"
+                    padding = "md"
+                    style = {styles.current}
+                >
+                    <Icon
+                        name = "mobile-screen"
+                        size = {18}
+                        color = "primary"
+                    />
+                    <Text
+                        variant = "callout"
+                        color = "text_secondary"
+                        style = {styles.flex}
+                    >
+                        {t("Predplatné si môžete kúpiť v aplikácii Wesiq pre iOS alebo Android.")}
+                    </Text>
                 </Card>
             )}
         </Screen>

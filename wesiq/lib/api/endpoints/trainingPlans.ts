@@ -7,9 +7,9 @@ import type { ApiEnvelope, ApiResult } from "@/types/api"
 import type { Exercise, OfficialTrainingPlanExercise, TrainingPlanExercise } from "@/types/models"
 import type { ManageTrainingPlanRow } from "@/components/features/training-plan/model"
 
-const UNITS:readonly string[] = ["reps", "seconds", "steps"]
+const UNITS:readonly string[] = ["reps", "seconds", "steps"] // Defines The Units
 
-// Checks The Fields The Editor Relies On
+// Function For Check The Fields The Editor Relies On
 const isPlanRowLike = (value:unknown):boolean => {
     return isRecord(value)
         && isString(value.training_plan_key)
@@ -20,9 +20,11 @@ const isPlanRowLike = (value:unknown):boolean => {
         && isArrayOf(value.periods, isNumber)
 }
 
+// Function For Check If Training Plan Row
 const isTrainingPlanRow = (value:unknown):value is TrainingPlanExercise => isPlanRowLike(value)
 
 // Official Rows Can Be Locked (For Subscribers Only) - The Server Then Sends The Content Fields As Null
+// Function For Check If Official Row
 const isOfficialRow = (value:unknown):value is OfficialTrainingPlanExercise => {
     if (!isRecord(value) || !isString(value.training_plan_key) || !isBoolean(value.is_for_subscribers) || !isBoolean(value.is_locked)) return false
     if (!value.is_locked) return isPlanRowLike(value)
@@ -33,25 +35,30 @@ const isOfficialRow = (value:unknown):value is OfficialTrainingPlanExercise => {
         && (value.unit === null || (typeof value.unit === "string" && UNITS.includes(value.unit)))
         && (value.periods === null || isArrayOf(value.periods, isNumber))
 }
+// Function For Check If Exercise
 const isExercise = (value:unknown):value is Exercise => isRecord(value) && isNumber(value.id) && isString(value.exercise) && typeof value.unit === "string" && UNITS.includes(value.unit)
 
+// Function For Get The Training Plans
 export const getTrainingPlans = (signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { training_plans:TrainingPlanExercise[] }>> => {
     return apiGet("get-training-plans/", { signal, guard: envelopeWith({ training_plans: (value:unknown):value is TrainingPlanExercise[] => isArrayOf(value, isTrainingPlanRow) }) })
 }
 
+// Function For Get The Official Training Plans
 export const getOfficialTrainingPlans = (signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { official_training_plans:OfficialTrainingPlanExercise[] }>> => {
     return apiGet("get-official-training-plans/", { signal, guard: envelopeWith({ official_training_plans: (value:unknown):value is OfficialTrainingPlanExercise[] => isArrayOf(value, isOfficialRow) }) })
 }
 
+// Function For Get The Exercise Library
 export const getExerciseLibrary = (signal?:AbortSignal):Promise<ApiResult<ApiEnvelope & { exercises:Exercise[] }>> => {
     return apiGet("get-exercises/", { signal, guard: envelopeWith({ exercises: (value:unknown):value is Exercise[] => isArrayOf(value, isExercise) }) })
 }
 
-// Creates Or Replaces A Plan ("edited_training_plan" Rows Delete The Previous Rows Of The Key First)
+// Function For Create Or Replace A Plan ("edited_training_plan" Rows Delete The Previous Rows Of The Key First)
 export const saveTrainingPlan = (rows:ManageTrainingPlanRow[]):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("manage-training-plan/", rows)
 }
 
+// Function For Delete The Training Plan
 export const deleteTrainingPlan = (training_plan_key:string):Promise<ApiResult<ApiEnvelope>> => {
     return apiPost("manage-training-plan/", [{ action: "delete_training_plan", training_plan_key }])
 }

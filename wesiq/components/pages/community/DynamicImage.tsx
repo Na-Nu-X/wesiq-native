@@ -14,6 +14,7 @@ export const DynamicImage = ({ uri, style, scale_by_aspect_ratio = false }: Dyna
     const [dimensions, setDimensions] = useState<{ width:number, height:number }|null>(null) // Stores The Dimensions
     const [aspect_ratio, setAspectRatio] = useState<number>(1) // Stores The Aspect Ratio (1 / 1 By Default)
 
+    // Initializes The Load Of The Image Size (Dimensions And Aspect Ratio)
     useEffect(() => {
         if(uri) {
             Image.getSize(
@@ -35,10 +36,10 @@ export const DynamicImage = ({ uri, style, scale_by_aspect_ratio = false }: Dyna
 
     return (
         <Image
-            source={{ uri }}
-            resizeMode="stretch"
+            source = {{ uri }}
+            resizeMode = "stretch"
 
-            style={[
+            style = {[
                 scale_by_aspect_ratio ? { 
                     width: "100%", 
                     aspectRatio: aspect_ratio,

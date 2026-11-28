@@ -13,16 +13,28 @@ interface LegalLinksProps {
 export default function LegalLinks({ pages = ["terms", "privacy"] }:LegalLinksProps) {
     const { t } = useTranslation() // Initializes The Translations
 
+    // Gets The Labels
     const labels:Record<LegalPage, string> = {
         terms: t("Podmienky používania"),
         privacy: t("Ochrana osobných údajov"),
     }
 
     return (
-        <View style={styles.row}>
+        <View style = {styles.row}>
             {pages.map((page:LegalPage) => (
-                <Pressable key={page} onPress={() => openLegalPage(page)} accessibilityRole="link" hitSlop={10}>
-                    <Text variant="caption" color="primary_text" style={styles.link}>{labels[page]}</Text>
+                <Pressable
+                    key = {page}
+                    onPress = {() => openLegalPage(page)}
+                    accessibilityRole = "link"
+                    hitSlop = {10}
+                >
+                    <Text
+                        variant = "caption"
+                        color = "primary_text"
+                        style = {styles.link}
+                    >
+                        {labels[page]}
+                    </Text>
                 </Pressable>
             ))}
         </View>

@@ -20,9 +20,9 @@ import { getLinkDomain, getLinkIcon } from "@/lib/links"
 
 import type { Profile } from "@/types/models"
 
-const MAX_BIO_LENGTH:number = 100
-const MAX_BIO_LINKS:number = 5
-const EMAIL_PATTERN:RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const MAX_BIO_LENGTH:number = 100 // Defines The Max Bio Length
+const MAX_BIO_LINKS:number = 5 // Defines The Max Bio Links
+const EMAIL_PATTERN:RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ // Defines The Email Pattern
 
 // Languages Of The App (Native Names Aren't Translated)
 const LANGUAGES:{ code:string, name:string }[] = [
@@ -89,20 +89,20 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     const [form, setForm] = useState<FormState>(() => createForm(profile)) // Stores The Form
     const [new_link, setNewLink] = useState<string>("") // Stores The Link Being Added
-    const [errors, setErrors] = useState<{ email_address?:string, phone_number?:string, new_link?:string }>({})
+    const [errors, setErrors] = useState<{ email_address?:string, phone_number?:string, new_link?:string }>({}) // Stores The Errors
     const [is_saving, setIsSaving] = useState<boolean>(false) // Stores The Information If The Changes Are Being Saved
     const [is_deleting, setIsDeleting] = useState<boolean>(false) // Stores The Information If The Account Is Being Deleted
 
     // Resets The Form From The Latest Profile Every Time The Sheet Opens (Adjusted During Render)
-    const [was_visible, setWasVisible] = useState<boolean>(visible)
+    const [was_visible, setWasVisible] = useState<boolean>(visible) // Stores If It Was Visible
 
     if(visible !== was_visible) {
-        setWasVisible(visible)
+        setWasVisible(visible) // Sets The Was Visible
 
         if(visible) {
-            setForm(createForm(profile))
-            setNewLink("")
-            setErrors({})
+            setForm(createForm(profile)) // Sets The Form
+            setNewLink("") // Sets The New Link
+            setErrors({}) // Sets The Errors
         }
     }
 
@@ -112,7 +112,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     // Function For Update One Field
     const update = <K extends keyof FormState>(key:K, value:FormState[K]):void => {
-        setForm((previous:FormState) => ({ ...previous, [key]: value }))
+        setForm((previous:FormState) => ({ ...previous, [key]: value })) // Sets The Form
     }
 
     // ---------- Photo ----------
@@ -120,7 +120,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
     // Function For Pick A New Profile Picture
     const pickPicture = async ():Promise<void> => {
         try {
-            const result:ImagePicker.ImagePickerResult = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.85 })
+            const result:ImagePicker.ImagePickerResult = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], allowsEditing: true, aspect: [1, 1], quality: 0.85 }) // Gets The Result
             const asset = result.canceled ? null : result.assets[0] // Gets The Picked Image
             if(!asset) return
 
@@ -142,18 +142,18 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
         const link:string|null = normalizeLink(new_link) // Normalizes The Link
 
         if(!link) {
-            setErrors((previous) => ({ ...previous, new_link: t("Zadajte platný odkaz, napríklad instagram.com/meno.") }))
+            setErrors((previous) => ({ ...previous, new_link: t("Zadajte platný odkaz, napríklad instagram.com/meno.") })) // Sets The Errors
             return
         }
 
         if(form.bio_links.includes(link)) {
-            setNewLink("")
+            setNewLink("") // Sets The New Link
             return
         }
 
         update("bio_links", [...form.bio_links, link].slice(0, MAX_BIO_LINKS))
-        setNewLink("")
-        setErrors((previous) => ({ ...previous, new_link: undefined }))
+        setNewLink("") // Sets The New Link
+        setErrors((previous) => ({ ...previous, new_link: undefined })) // Sets The Errors
         haptics.selection()
     }
 
@@ -161,20 +161,21 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     // Function For Save The Changes
     const save = async ():Promise<void> => {
-        const next_errors:typeof errors = {}
+        const next_errors:typeof errors = {} // Gets The Next Errors
 
         if(!EMAIL_PATTERN.test(form.email_address.trim())) next_errors.email_address = t("Zadajte platný e-mail.")
         if(form.phone_number.trim() && !isValidPhoneNumber(form.phone_number)) next_errors.phone_number = t("Telefónne číslo nie je platné.")
 
-        setErrors(next_errors)
+        setErrors(next_errors) // Sets The Errors
 
         if(Object.keys(next_errors).length > 0) {
             haptics.error()
             return
         }
 
-        setIsSaving(true)
+        setIsSaving(true) // Sets The Saving State
 
+        // Gets The Response
         const response = await saveAccount({
             first_name: form.first_name.trim(),
             last_name: form.last_name.trim(),
@@ -188,7 +189,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
             delete_profile_picture: form.picture === "delete",
         })
 
-        setIsSaving(false)
+        setIsSaving(false) // Sets The Saving State
 
         if(!response.ok) {
             haptics.error()
@@ -209,6 +210,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
         if(is_busy) return
 
         if(is_dirty) {
+            // Checks If It Is Confirmed
             const is_confirmed:boolean = await confirmAction({
                 title: t("Zahodiť zmeny?"),
                 message: t("Neuložené zmeny sa stratia."),
@@ -234,7 +236,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     // Function For Log Out
     const handleLogOut = async ():Promise<void> => {
-        const is_confirmed:boolean = await confirmAction({ title: t("Odhlásiť sa?"), confirm_label: t("Odhlásiť sa") })
+        const is_confirmed:boolean = await confirmAction({ title: t("Odhlásiť sa?"), confirm_label: t("Odhlásiť sa") }) // Checks If It Is Confirmed
         if(!is_confirmed) return
 
         onClose()
@@ -244,6 +246,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     // Function For Delete The Account (Two Confirmations Because It Can't Be Undone After 30 Days)
     const handleDeleteAccount = async ():Promise<void> => {
+        // Checks If It Is Confirmed
         const is_confirmed:boolean = await confirmAction({
             title: t("Odstrániť účet?"),
             message: t("Váš účet bude deaktivovaný. Ak sa do 30 dní neprihlásite, bude natrvalo odstránený aj so všetkými príspevkami a správami."),
@@ -253,6 +256,7 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
         if(!is_confirmed) return
 
+        // Checks If It Is Double Confirmed
         const is_double_confirmed:boolean = await confirmAction({
             title: t("Naozaj odstrániť účet {{username}}?", { username: profile.username }),
             message: t("Odstránením účtu sa nezruší predplatné v Google Play ani v App Store. Ak ho máte, zrušte ho v nastaveniach obchodu, inak sa bude naďalej účtovať."), // Store Subscriptions Can Only Be Cancelled In The Store (Required By The Stores)
@@ -262,9 +266,9 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
         if(!is_double_confirmed) return
 
-        setIsDeleting(true)
+        setIsDeleting(true) // Sets The Deleting State
         const response = await requestAccountDeletion() // Sends The Request
-        setIsDeleting(false)
+        setIsDeleting(false) // Sets The Deleting State
 
         if(!response.ok) {
             showAlert(t("Chyba"), response.error.message)
@@ -283,69 +287,136 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 
     return (
         <Sheet
-            visible={visible}
-            onClose={requestClose}
-            title={t("Upraviť profil")}
-            subtitle={formatUsername(profile.username)}
-            size="large"
-            is_dismissable={!is_busy}
-            footer={<Button label={t("Uložiť zmeny")} icon="check" onPress={save} is_loading={is_saving} is_disabled={!is_dirty || is_deleting} is_full_width />}
+            visible = {visible}
+            onClose = {requestClose}
+            title = {t("Upraviť profil")}
+            subtitle = {formatUsername(profile.username)}
+            size = "large"
+            is_dismissable = {!is_busy}
+            footer = {<Button
+                label = {t("Uložiť zmeny")}
+                icon = "check"
+                onPress = {save}
+                is_loading = {is_saving}
+                is_disabled = {!is_dirty || is_deleting}
+                is_full_width
+            />}
         >
             {/* ---------- Photo ---------- */}
-            <View style={styles.photo_row}>
+            <View style = {styles.photo_row}>
                 {picture_preview_uri ? (
-                    <Image source={{ uri: picture_preview_uri }} style={styles.photo_preview} contentFit="cover" accessibilityLabel={t("Nová profilová fotka")} />
+                    <Image
+                        source = {{ uri: picture_preview_uri }}
+                        style = {styles.photo_preview}
+                        contentFit = "cover"
+                        accessibilityLabel = {t("Nová profilová fotka")}
+                    />
                 ) : (
-                    <Avatar user={{ ...profile, profile_picture_name: has_current_picture ? profile.profile_picture_name : null, subscription: profile.subscription }} size={76} />
+                    <Avatar user = {{ ...profile, profile_picture_name: has_current_picture ? profile.profile_picture_name : null, subscription: profile.subscription }} size = {76} />
                 )}
 
-                <View style={styles.photo_actions}>
-                    <Button label={has_current_picture || picture_preview_uri ? t("Zmeniť fotku") : t("Pridať fotku")} icon="camera" variant="secondary" size="sm" onPress={pickPicture} />
+                <View style = {styles.photo_actions}>
+                    <Button
+                        label = {has_current_picture || picture_preview_uri ? t("Zmeniť fotku") : t("Pridať fotku")}
+                        icon = "camera"
+                        variant = "secondary"
+                        size = "sm"
+                        onPress = {pickPicture}
+                    />
 
                     {(has_current_picture || picture_preview_uri) && (
                         <Button
-                            label={picture_preview_uri ? t("Zrušiť výber") : t("Odstrániť fotku")}
-                            variant="ghost"
-                            size="sm"
-                            onPress={() => update("picture", picture_preview_uri ? null : "delete")}
+                            label = {picture_preview_uri ? t("Zrušiť výber") : t("Odstrániť fotku")}
+                            variant = "ghost"
+                            size = "sm"
+                            onPress = {() => update("picture", picture_preview_uri ? null : "delete")}
                         />
                     )}
 
-                    {form.picture === "delete" && <Button label={t("Ponechať fotku")} variant="ghost" size="sm" onPress={() => update("picture", null)} />}
+                    {form.picture === "delete" &&
+                        <Button
+                            label = {t("Ponechať fotku")}
+                            variant = "ghost"
+                            size = "sm"
+                            onPress = {() => update("picture", null)}
+                        />
+                    }
                 </View>
             </View>
 
             {/* ---------- Profile ---------- */}
-            <SectionTitle label={t("Profil")} />
+            <SectionTitle label = {t("Profil")} />
 
-            <View style={styles.name_row}>
-                <TextField label={t("Meno")} placeholder={t("Vaše meno")} value={form.first_name} onChangeText={(value:string) => update("first_name", value)} autoComplete="given-name" textContentType="givenName" maxLength={50} container_style={styles.flex} />
-                <TextField label={t("Priezvisko")} placeholder={t("Vaše priezvisko")} value={form.last_name} onChangeText={(value:string) => update("last_name", value)} autoComplete="family-name" textContentType="familyName" maxLength={50} container_style={styles.flex} />
+            <View style = {styles.name_row}>
+                <TextField
+                    label = {t("Meno")}
+                    placeholder = {t("Vaše meno")}
+                    value = {form.first_name}
+                    onChangeText = {(value:string) => update("first_name", value)}
+                    autoComplete = "given-name"
+                    textContentType = "givenName"
+                    maxLength = {50}
+                    container_style = {styles.flex}
+                />
+                <TextField
+                    label = {t("Priezvisko")}
+                    placeholder = {t("Vaše priezvisko")}
+                    value = {form.last_name}
+                    onChangeText = {(value:string) => update("last_name", value)}
+                    autoComplete = "family-name"
+                    textContentType = "familyName"
+                    maxLength = {50}
+                    container_style = {styles.flex}
+                />
             </View>
 
             <TextField
-                label={t("O mne")}
-                placeholder={t("Niečo o Vás")}
-                value={form.bio}
-                onChangeText={(value:string) => update("bio", value)}
+                label = {t("O mne")}
+                placeholder = {t("Niečo o Vás")}
+                value = {form.bio}
+                onChangeText = {(value:string) => update("bio", value)}
                 multiline
-                maxLength={MAX_BIO_LENGTH}
+                maxLength = {MAX_BIO_LENGTH}
                 is_counter_visible
             />
 
-            <View style={styles.links}>
-                <Text variant="label" color="text_secondary" style={styles.label}>{t("Odkazy")} ({form.bio_links.length}/{MAX_BIO_LINKS})</Text>
+            <View style = {styles.links}>
+                <Text
+                    variant = "label"
+                    color = "text_secondary"
+                    style = {styles.label}
+                >
+                    {t("Odkazy")} ({form.bio_links.length}/{MAX_BIO_LINKS})
+                </Text>
 
                 {form.bio_links.length > 0 && (
-                    <Card padding="xs">
+                    <Card padding = "xs">
                         {form.bio_links.map((link:string, index:number) => (
-                            <View key={link}>
-                                {index > 0 && <Divider inset={spacing.md} />}
+                            <View key = {link}>
+                                {index > 0 &&
+                                    <Divider inset = {spacing.md} />
+                                }
 
-                                <View style={styles.link_row}>
-                                    <View style={styles.link_icon}><Icon name={getLinkIcon(link)} size={15} color="primary" /></View>
-                                    <Text variant="callout" numberOfLines={1} style={styles.flex}>{getLinkDomain(link)}</Text>
-                                    <IconButton icon="xmark" accessibility_label={`${t("Odstrániť odkaz")}: ${getLinkDomain(link)}`} onPress={() => update("bio_links", form.bio_links.filter((other:string) => other !== link))} size={30} icon_color="text_muted" />
+                                <View style = {styles.link_row}>
+                                    <View style = {styles.link_icon}><Icon
+                                        name = {getLinkIcon(link)}
+                                        size = {15}
+                                        color = "primary"
+                                    /></View>
+                                    <Text
+                                        variant = "callout"
+                                        numberOfLines = {1}
+                                        style = {styles.flex}
+                                    >
+                                        {getLinkDomain(link)}
+                                    </Text>
+                                    <IconButton
+                                        icon = "xmark"
+                                        accessibility_label = {`${t("Odstrániť odkaz")}: ${getLinkDomain(link)}`}
+                                        onPress = {() => update("bio_links", form.bio_links.filter((other:string) => other !== link))}
+                                        size = {30}
+                                        icon_color = "text_muted"
+                                    />
                                 </View>
                             </View>
                         ))}
@@ -353,118 +424,175 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
                 )}
 
                 {form.bio_links.length < MAX_BIO_LINKS && (
-                    <View style={styles.add_link_row}>
+                    <View style = {styles.add_link_row}>
                         <TextField
-                            placeholder={t("Pridať odkaz")}
-                            accessibilityLabel={t("Pridať odkaz")}
-                            icon={getLinkIcon(new_link)} // Shows The Brand While Typing
-                            value={new_link}
-                            onChangeText={(value:string) => {
-                                setNewLink(value)
+                            placeholder = {t("Pridať odkaz")}
+                            accessibilityLabel = {t("Pridať odkaz")}
+                            icon = {getLinkIcon(new_link)} // Shows The Brand While Typing
+                            value = {new_link}
+                            onChangeText = {(value:string) => {
+                                setNewLink(value) // Sets The New Link
                                 if(errors.new_link) setErrors((previous) => ({ ...previous, new_link: undefined }))
                             }}
-                            onSubmitEditing={addLink}
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                            keyboardType="url"
-                            returnKeyType="done"
-                            maxLength={255}
-                            error={errors.new_link}
-                            container_style={styles.flex}
+                            onSubmitEditing = {addLink}
+                            autoCapitalize = "none"
+                            autoCorrect = {false}
+                            keyboardType = "url"
+                            returnKeyType = "done"
+                            maxLength = {255}
+                            error = {errors.new_link}
+                            container_style = {styles.flex}
                         />
 
-                        <IconButton icon="plus" accessibility_label={t("Pridať odkaz")} onPress={addLink} is_disabled={!new_link.trim()} variant="soft" size={50} style={styles.add_link_button} />
+                        <IconButton
+                            icon = "plus"
+                            accessibility_label = {t("Pridať odkaz")}
+                            onPress = {addLink}
+                            is_disabled = {!new_link.trim()}
+                            variant = "soft"
+                            size = {50}
+                            style = {styles.add_link_button}
+                        />
                     </View>
                 )}
             </View>
 
             {/* ---------- Contact ---------- */}
-            <SectionTitle label={t("Kontakt")} description={t("Vidíte ho len vy.")} />
+            <SectionTitle label = {t("Kontakt")} description = {t("Vidíte ho len vy.")} />
 
             <TextField
-                label={t("E-mail")}
-                placeholder={t("vas@priklad.sk")}
-                icon="envelope"
-                value={form.email_address}
-                onChangeText={(value:string) => update("email_address", value)}
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                keyboardType="email-address"
-                maxLength={50}
-                error={errors.email_address}
+                label = {t("E-mail")}
+                placeholder = {t("vas@priklad.sk")}
+                icon = "envelope"
+                value = {form.email_address}
+                onChangeText = {(value:string) => update("email_address", value)}
+                autoCapitalize = "none"
+                autoCorrect = {false}
+                autoComplete = "email"
+                textContentType = "emailAddress"
+                keyboardType = "email-address"
+                maxLength = {50}
+                error = {errors.email_address}
             />
 
             <TextField
-                label={`${t("Telefónne číslo")} (${t("nepovinné")})`}
-                placeholder="+421 900 123 456"
-                icon="phone"
-                value={form.phone_number}
-                onChangeText={(value:string) => update("phone_number", new AsYouType().input(value))}
-                autoComplete="tel"
-                textContentType="telephoneNumber"
-                keyboardType="phone-pad"
-                maxLength={25}
-                error={errors.phone_number}
+                label = {`${t("Telefónne číslo")} (${t("nepovinné")})`}
+                placeholder = "+421 900 123 456"
+                icon = "phone"
+                value = {form.phone_number}
+                onChangeText = {(value:string) => update("phone_number", new AsYouType().input(value))}
+                autoComplete = "tel"
+                textContentType = "telephoneNumber"
+                keyboardType = "phone-pad"
+                maxLength = {25}
+                error = {errors.phone_number}
             />
 
-            <Text variant="caption" color="text_muted">{t("Profilové údaje môžete meniť raz za 7 dní. Súkromie a jazyk môžete meniť kedykoľvek.")}</Text>
+            <Text variant = "caption" color = "text_muted">{t("Profilové údaje môžete meniť raz za 7 dní. Súkromie a jazyk môžete meniť kedykoľvek.")}</Text>
 
             {/* ---------- Privacy ---------- */}
-            <SectionTitle label={t("Súkromie")} />
+            <SectionTitle label = {t("Súkromie")} />
 
-            <Card padding="xs">
+            <Card padding = "xs">
                 <ToggleRow
-                    icon="lock"
-                    label={t("Súkromný účet")}
-                    description={t("Príspevky uvidia len schválení sledovatelia.")}
-                    value={form.private_account}
-                    onChange={(value:boolean) => update("private_account", value)}
+                    icon = "lock"
+                    label = {t("Súkromný účet")}
+                    description = {t("Príspevky uvidia len schválení sledovatelia.")}
+                    value = {form.private_account}
+                    onChange = {(value:boolean) => update("private_account", value)}
                 />
 
                 <ToggleRow
-                    icon="leaf"
-                    label={t("Šetrič dát")}
-                    description={t("Videá sa prehrávajú v nižšej kvalite (480p) a šetria mobilné dáta.")}
-                    value={form.data_saving_mode}
-                    onChange={(value:boolean) => update("data_saving_mode", value)}
+                    icon = "leaf"
+                    label = {t("Šetrič dát")}
+                    description = {t("Videá sa prehrávajú v nižšej kvalite (480p) a šetria mobilné dáta.")}
+                    value = {form.data_saving_mode}
+                    onChange = {(value:boolean) => update("data_saving_mode", value)}
                 />
             </Card>
 
             {/* ---------- Language ---------- */}
-            <SectionTitle label={t("Jazyk")} description={t("Zmení sa ihneď.")} />
+            <SectionTitle label = {t("Jazyk")} description = {t("Zmení sa ihneď.")} />
 
-            <View style={styles.chips}>
+            <View style = {styles.chips}>
                 {LANGUAGES.map((language) => (
-                    <Chip key={language.code} label={language.name} is_selected={i18n.language === language.code} onPress={() => changeLanguage(language.code)} />
+                    <Chip
+                        key = {language.code}
+                        label = {language.name}
+                        is_selected = {i18n.language === language.code}
+                        onPress = {() => changeLanguage(language.code)}
+                    />
                 ))}
             </View>
 
             {/* ---------- Account ---------- */}
-            <SectionTitle label={t("Účet")} />
+            <SectionTitle label = {t("Účet")} />
 
-            <Card padding="xs">
-                <Pressable onPress={() => openLegalPage("privacy")} accessibilityRole="link" style={({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}>
-                    <Icon name="shield-halved" size={15} color="text_secondary" />
-                    <Text variant="body_strong" style={styles.flex}>{t("Ochrana osobných údajov")}</Text>
-                    <Icon name="arrow-up-right-from-square" size={12} color="text_muted" />
+            <Card padding = "xs">
+                <Pressable
+                    onPress = {() => openLegalPage("privacy")}
+                    accessibilityRole = "link"
+                    style = {({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}
+                >
+                    <Icon
+                        name = "shield-halved"
+                        size = {15}
+                        color = "text_secondary"
+                    />
+                    <Text variant = "body_strong" style = {styles.flex}>{t("Ochrana osobných údajov")}</Text>
+                    <Icon
+                        name = "arrow-up-right-from-square"
+                        size = {12}
+                        color = "text_muted"
+                    />
                 </Pressable>
 
-                <Divider inset={spacing.md} />
+                <Divider inset = {spacing.md} />
 
-                <Pressable onPress={handleLogOut} disabled={is_busy} accessibilityRole="button" style={({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}>
-                    <Icon name="arrow-right-from-bracket" size={15} color="text_secondary" />
-                    <Text variant="body_strong" style={styles.flex}>{t("Odhlásiť sa")}</Text>
-                    <Icon name="chevron-right" size={12} color="text_muted" />
+                <Pressable
+                    onPress = {handleLogOut}
+                    disabled = {is_busy}
+                    accessibilityRole = "button"
+                    style = {({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}
+                >
+                    <Icon
+                        name = "arrow-right-from-bracket"
+                        size = {15}
+                        color = "text_secondary"
+                    />
+                    <Text variant = "body_strong" style = {styles.flex}>{t("Odhlásiť sa")}</Text>
+                    <Icon
+                        name = "chevron-right"
+                        size = {12}
+                        color = "text_muted"
+                    />
                 </Pressable>
 
-                <Divider inset={spacing.md} />
+                <Divider inset = {spacing.md} />
 
-                <Pressable onPress={handleDeleteAccount} disabled={is_busy} accessibilityRole="button" style={({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}>
-                    <Icon name="trash" size={15} color="danger" />
-                    <Text variant="body_strong" color="danger" style={styles.flex}>{is_deleting ? t("Odstraňuje sa...") : t("Odstrániť účet")}</Text>
-                    <Icon name="chevron-right" size={12} color="text_muted" />
+                <Pressable
+                    onPress = {handleDeleteAccount}
+                    disabled = {is_busy}
+                    accessibilityRole = "button"
+                    style = {({ pressed }) => [styles.action_row, pressed ? styles.action_pressed : null]}
+                >
+                    <Icon
+                        name = "trash"
+                        size = {15}
+                        color = "danger"
+                    />
+                    <Text
+                        variant = "body_strong"
+                        color = "danger"
+                        style = {styles.flex}
+                    >
+                        {is_deleting ? t("Odstraňuje sa...") : t("Odstrániť účet")}
+                    </Text>
+                    <Icon
+                        name = "chevron-right"
+                        size = {12}
+                        color = "text_muted"
+                    />
                 </Pressable>
             </Card>
         </Sheet>
@@ -474,9 +602,17 @@ export default function EditAccountSheet({ visible, onClose, profile, onSaved }:
 // Function For Render A Section Title
 function SectionTitle({ label, description }:{ label:string, description?:string }) {
     return (
-        <View style={styles.section_title}>
-            <Text variant="overline" color="text_muted" accessibilityRole="header">{label}</Text>
-            {!!description && <Text variant="caption" color="text_muted">{description}</Text>}
+        <View style = {styles.section_title}>
+            <Text
+                variant = "overline"
+                color = "text_muted"
+                accessibilityRole = "header"
+            >
+                {label}
+            </Text>
+            {!!description &&
+                <Text variant = "caption" color = "text_muted">{description}</Text>
+            }
         </View>
     )
 }

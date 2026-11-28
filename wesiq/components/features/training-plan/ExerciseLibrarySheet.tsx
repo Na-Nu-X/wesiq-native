@@ -29,22 +29,23 @@ export default function ExerciseLibrarySheet({ visible, onClose, onAddExercise, 
     const unit_labels = useUnitLabels() // Gets The Unit Labels
     const [query, setQuery] = useState<string>("") // Stores The Search Query
     const [category, setCategory] = useState<string|null>(null) // Stores The Category Filter
-    const [added_in_session, setAddedInSession] = useState<number>(0) // Counts Exercises Added Since Opening
+    const [added_in_session, setAddedInSession] = useState<number>(0) // Stores The Added In Session (Counts Exercises Added Since Opening)
 
     // Resets The Session Counter Every Time The Sheet Opens (Adjusted During Render)
-    const [was_visible, setWasVisible] = useState<boolean>(visible)
+    const [was_visible, setWasVisible] = useState<boolean>(visible) // Stores If It Was Visible
 
     if(visible !== was_visible) {
-        setWasVisible(visible)
+        setWasVisible(visible) // Sets The Was Visible
         if(visible) setAddedInSession(0)
     }
 
-    const { state, refetch } = useApiQuery("exercise_library", (signal:AbortSignal) => getExerciseLibrary(signal), { is_enabled: visible })
-    const exercises:Exercise[] = useMemo(() => state.data?.exercises ?? [], [state.data])
+    const { state, refetch } = useApiQuery("exercise_library", (signal:AbortSignal) => getExerciseLibrary(signal), { is_enabled: visible }) // Gets The State And Refetch
+    const exercises:Exercise[] = useMemo(() => state.data?.exercises ?? [], [state.data]) // Gets The Exercises
 
     const categories:string[] = useMemo(() => [...new Set(exercises.flatMap((exercise:Exercise) => exercise.categories))].sort(), [exercises]) // Gets All Categories
     const normalized_query:string = query.trim().toLowerCase() // Gets The Query
 
+    // Gets The Filtered
     const filtered:Exercise[] = exercises.filter((exercise:Exercise) =>
         (!category || exercise.categories.includes(category)) &&
         (!normalized_query || exercise.exercise.toLowerCase().includes(normalized_query))
@@ -56,7 +57,7 @@ export default function ExerciseLibrarySheet({ visible, onClose, onAddExercise, 
 
         haptics.selection()
         callback()
-        setAddedInSession((previous:number) => previous + 1)
+        setAddedInSession((previous:number) => previous + 1) // Sets The Added In Session
     }
 
     // Function For Render One Exercise
@@ -66,29 +67,57 @@ export default function ExerciseLibrarySheet({ visible, onClose, onAddExercise, 
 
         return (
             <Pressable
-                onPress={() => add(() => onAddExercise(item))}
-                disabled={!can_add}
-                accessibilityRole="button"
-                accessibilityLabel={`${t("Pridať")}: ${item.exercise}`}
-                accessibilityHint={added > 0 ? t("V pláne: {{count}}×", { count: added }) : undefined}
-                style={({ pressed }) => [styles.row, pressed ? styles.row_pressed : null]}
+                onPress = {() => add(() => onAddExercise(item))}
+                disabled = {!can_add}
+                accessibilityRole = "button"
+                accessibilityLabel = {`${t("Pridať")}: ${item.exercise}`}
+                accessibilityHint = {added > 0 ? t("V pláne: {{count}}×", { count: added }) : undefined}
+                style = {({ pressed }) => [styles.row, pressed ? styles.row_pressed : null]}
             >
-                <View style={styles.thumbnail}>
-                    {image_url ? <Image source={{ uri: image_url }} style={StyleSheet.absoluteFill} contentFit="cover" /> : <Icon name="dumbbell" size={14} color="primary" />}
+                <View style = {styles.thumbnail}>
+                    {image_url ? <Image
+                        source = {{ uri: image_url }}
+                        style = {StyleSheet.absoluteFill}
+                        contentFit = "cover"
+                    /> : <Icon
+                        name = "dumbbell"
+                        size = {14}
+                        color = "primary"
+                    />}
                 </View>
 
-                <View style={styles.flex}>
-                    <Text variant="body_strong" numberOfLines={1}>{item.exercise}</Text>
-                    <Text variant="caption" color="text_muted" numberOfLines={1}>{[unit_labels.name(item.unit), ...item.categories].join(" · ")}</Text>
+                <View style = {styles.flex}>
+                    <Text variant = "body_strong" numberOfLines = {1}>{item.exercise}</Text>
+                    <Text
+                        variant = "caption"
+                        color = "text_muted"
+                        numberOfLines = {1}
+                    >
+                        {[unit_labels.name(item.unit), ...item.categories].join(" · ")}
+                    </Text>
                 </View>
 
                 {added > 0 ? (
-                    <View style={styles.added_badge}>
-                        <Icon name="check" size={10} color="success" />
-                        <Text variant="caption" color="success" is_tabular>{added}×</Text>
+                    <View style = {styles.added_badge}>
+                        <Icon
+                            name = "check"
+                            size = {10}
+                            color = "success"
+                        />
+                        <Text
+                            variant = "caption"
+                            color = "success"
+                            is_tabular
+                        >
+                            {added}×
+                        </Text>
                     </View>
                 ) : (
-                    <Icon name="plus" size={16} color="primary" />
+                    <Icon
+                        name = "plus"
+                        size = {16}
+                        color = "primary"
+                    />
                 )}
             </Pressable>
         )
@@ -96,67 +125,124 @@ export default function ExerciseLibrarySheet({ visible, onClose, onAddExercise, 
 
     // Function For Render The List Content When It Has No Rows
     const renderEmpty = () => {
-        if(state.status === "loading") return <View style={styles.skeletons}>{[0, 1, 2, 3].map((index:number) => <Skeleton key={index} height={44} radius={radii.md} />)}</View>
-        if(state.status === "error") return <ErrorState error={state.error} onRetry={refetch} is_compact />
-        return <EmptyState icon="magnifying-glass" title={t("Žiadny cvik sa nenašiel")} message={t("Pridajte ho ako vlastný cvik.")} action={{ label: t("Vlastný cvik"), onPress: () => add(onAddCustom) }} is_compact />
+        if(state.status === "loading") return <View style = {styles.skeletons}>{[0, 1, 2, 3].map((index:number) => (
+            <Skeleton
+                key = {index}
+                height = {44}
+                radius = {radii.md}
+            />
+        ))}</View>
+        if(state.status === "error") {
+            return (
+                <ErrorState
+                    error = {state.error}
+                    onRetry = {refetch}
+                    is_compact
+                />
+            )
+        }
+        return (
+            <EmptyState
+                icon = "magnifying-glass"
+                title = {t("Žiadny cvik sa nenašiel")}
+                message = {t("Pridajte ho ako vlastný cvik.")}
+                action = {{ label: t("Vlastný cvik"), onPress: () => add(onAddCustom) }}
+                is_compact
+            />
+        )
     }
 
     return (
         <Sheet
-            visible={visible}
-            onClose={onClose}
-            title={t("Pridať cvik")}
-            subtitle={can_add ? undefined : t("Plán má maximálny počet cvikov.")}
-            size="large"
-            is_scrollable={false}
-            footer={<Button label={added_in_session > 0 ? t("Hotovo ({{count}} pridané)", { count: added_in_session }) : t("Hotovo")} onPress={onClose} is_full_width />}
+            visible = {visible}
+            onClose = {onClose}
+            title = {t("Pridať cvik")}
+            subtitle = {can_add ? undefined : t("Plán má maximálny počet cvikov.")}
+            size = "large"
+            is_scrollable = {false}
+            footer = {<Button
+                label = {added_in_session > 0 ? t("Hotovo ({{count}} pridané)", { count: added_in_session }) : t("Hotovo")}
+                onPress = {onClose}
+                is_full_width
+            />}
         >
-            <View style={styles.top}>
-                <View style={styles.quick_row}>
-                    <Pressable onPress={() => add(onAddCustom)} disabled={!can_add} accessibilityRole="button" style={({ pressed }) => [styles.quick, pressed ? styles.row_pressed : null]}>
-                        <Icon name="pen" size={14} color="primary" />
-                        <Text variant="label">{t("Vlastný cvik")}</Text>
+            <View style = {styles.top}>
+                <View style = {styles.quick_row}>
+                    <Pressable
+                        onPress = {() => add(onAddCustom)}
+                        disabled = {!can_add}
+                        accessibilityRole = "button"
+                        style = {({ pressed }) => [styles.quick, pressed ? styles.row_pressed : null]}
+                    >
+                        <Icon
+                            name = "pen"
+                            size = {14}
+                            color = "primary"
+                        />
+                        <Text variant = "label">{t("Vlastný cvik")}</Text>
                     </Pressable>
 
                     {!!onAddWarmUp && (
-                        <Pressable onPress={() => add(onAddWarmUp)} accessibilityRole="button" style={({ pressed }) => [styles.quick, pressed ? styles.row_pressed : null]}>
-                            <Icon name="fire" size={14} color="warning" />
-                            <Text variant="label">{t("Rozcvička")}</Text>
+                        <Pressable
+                            onPress = {() => add(onAddWarmUp)}
+                            accessibilityRole = "button"
+                            style = {({ pressed }) => [styles.quick, pressed ? styles.row_pressed : null]}
+                        >
+                            <Icon
+                                name = "fire"
+                                size = {14}
+                                color = "warning"
+                            />
+                            <Text variant = "label">{t("Rozcvička")}</Text>
                         </Pressable>
                     )}
                 </View>
 
                 <TextField
-                    icon="magnifying-glass"
-                    placeholder={t("Hľadať cvik")}
-                    accessibilityLabel={t("Hľadať cvik")}
-                    value={query}
-                    onChangeText={setQuery}
-                    autoCorrect={false}
-                    returnKeyType="search"
+                    icon = "magnifying-glass"
+                    placeholder = {t("Hľadať cvik")}
+                    accessibilityLabel = {t("Hľadať cvik")}
+                    value = {query}
+                    onChangeText = {setQuery}
+                    autoCorrect = {false}
+                    returnKeyType = "search"
                 />
 
                 {categories.length > 0 && (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories} keyboardShouldPersistTaps="handled">
-                        <Chip label={t("Všetky")} is_selected={category === null} onPress={() => setCategory(null)} />
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator = {false}
+                        contentContainerStyle = {styles.categories}
+                        keyboardShouldPersistTaps = "handled"
+                    >
+                        <Chip
+                            label = {t("Všetky")}
+                            is_selected = {category === null}
+                            onPress = {() => setCategory(null)}
+                        />
                         {categories.map((one_category:string) => (
-                            <Chip key={one_category} label={t(one_category)} is_selected={category === one_category} onPress={() => setCategory(category === one_category ? null : one_category)} />
+                            <Chip
+                                key = {one_category}
+                                label = {t(one_category)}
+                                is_selected = {category === one_category}
+                                onPress = {() => setCategory(category === one_category ? null : one_category)}
+                            />
                         ))}
                     </ScrollView>
                 )}
             </View>
 
             <FlatList
-                data={filtered}
-                keyExtractor={(exercise:Exercise) => String(exercise.id)}
-                renderItem={renderExercise}
-                ItemSeparatorComponent={() => <Divider inset={56} />}
-                ListEmptyComponent={renderEmpty}
-                keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="on-drag"
-                style={styles.flex}
-                contentContainerStyle={styles.list_content}
-                initialNumToRender={16}
+                data = {filtered}
+                keyExtractor = {(exercise:Exercise) => String(exercise.id)}
+                renderItem = {renderExercise}
+                ItemSeparatorComponent = {() => <Divider inset = {56} />}
+                ListEmptyComponent = {renderEmpty}
+                keyboardShouldPersistTaps = "handled"
+                keyboardDismissMode = "on-drag"
+                style = {styles.flex}
+                contentContainerStyle = {styles.list_content}
+                initialNumToRender = {16}
             />
         </Sheet>
     )

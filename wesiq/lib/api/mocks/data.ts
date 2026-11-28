@@ -21,11 +21,14 @@ import type {
 } from "@/types/models"
 
 const now:number = Date.now() // Stores The Current Time
+// Function For Hours Ago
 const hoursAgo = (hours:number):string => new Date(now - hours * 3600 * 1000).toISOString()
+// Function For Days Ago
 const daysAgo = (days:number):string => hoursAgo(days * 24)
 
 // ---------- Users ----------
 
+// Defines The Mock Users
 export const MOCK_USERS:UserListItem[] = [
     { id: 2, first_name: "Lucia", last_name: "Novak", username: "@lucia.lifts", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: true, has_pending_follow_request: false },
     { id: 3, first_name: "Martin", last_name: "Kral", username: "@martin_runs", profile_picture_name: null, private_account: false, subscription: null, has_follow: true, has_pending_follow_request: false },
@@ -35,8 +38,9 @@ export const MOCK_USERS:UserListItem[] = [
     { id: 7, first_name: "Jakub", last_name: "Mraz", username: "@jakub.strength", profile_picture_name: null, private_account: false, subscription: { plan: "premium", is_active: true }, has_follow: false, has_pending_follow_request: false },
 ]
 
-const [lucia, martin, eva, tomas, sofia, jakub] = MOCK_USERS as [UserListItem, UserListItem, UserListItem, UserListItem, UserListItem, UserListItem]
+const [lucia, martin, eva, tomas, sofia, jakub] = MOCK_USERS as [UserListItem, UserListItem, UserListItem, UserListItem, UserListItem, UserListItem] // Defines The Lucia, Martin, Eva, Tomas, Sofia And Jakub
 
+// Defines The Mock Logged In User
 export const MOCK_LOGGED_IN_USER:LoggedInUser = {
     id: 1,
     first_name: "Alex",
@@ -58,6 +62,7 @@ export const MOCK_LOGGED_IN_USER:LoggedInUser = {
 
 // ---------- Posts ----------
 
+// Function For Author
 const author = (user:UserListItem) => ({
     ...user,
     following: [1],
@@ -67,6 +72,7 @@ const author = (user:UserListItem) => ({
     has_pending_follow_request: user.has_pending_follow_request ?? false,
 })
 
+// Function For Media
 const media = (id:number, is_video:boolean = false) => ({
     id,
     file: `mock/${id}.${is_video ? "mp4" : "jpg"}`,
@@ -80,6 +86,7 @@ const media = (id:number, is_video:boolean = false) => ({
     vtt_file: null,
 })
 
+// Defines The Mock Posts
 export const MOCK_POSTS:Post[] = [
     {
         id: "p3k9x2m1",
@@ -155,6 +162,7 @@ export const MOCK_POSTS:Post[] = [
     },
 ]
 
+// Defines The Mock Comments
 export const MOCK_COMMENTS:PostComment[] = [
     { id: 501, user: martin, comment: "Huge! Form looks super solid 🔥", likes: 4, likes_from_users: [1], creation_time: hoursAgo(1), parent_id: null, level: 1 },
     { id: 502, user: lucia, comment: "Thanks Martin! Next goal is 150.", likes: 2, likes_from_users: [], creation_time: hoursAgo(1), parent_id: 501, level: 2 },
@@ -163,6 +171,7 @@ export const MOCK_COMMENTS:PostComment[] = [
 
 // ---------- Profile ----------
 
+// Defines The Mock Profile
 export const MOCK_PROFILE:Profile = {
     id: MOCK_LOGGED_IN_USER.id,
     first_name: MOCK_LOGGED_IN_USER.first_name,
@@ -206,6 +215,7 @@ export const MOCK_PROFILE:Profile = {
 
 // ---------- Chat ----------
 
+// Defines The Mock Chat Previews
 export const MOCK_CHAT_PREVIEWS:{ unread_chats:ChatPreview[], read_chats:ChatPreview[] } = {
     unread_chats: [
         { id: 901, sender: lucia, content: "Are we still on for leg day at 6?" },
@@ -217,8 +227,9 @@ export const MOCK_CHAT_PREVIEWS:{ unread_chats:ChatPreview[], read_chats:ChatPre
     ],
 }
 
-export const MOCK_CHAT_RECEIVER:ChatReceiver = { ...lucia, private_account: false, has_follow: true, is_muted: false }
+export const MOCK_CHAT_RECEIVER:ChatReceiver = { ...lucia, private_account: false, has_follow: true, is_muted: false } // Defines The Mock Chat Receiver
 
+// Defines The Mock Group Room
 export const MOCK_GROUP_ROOM:ChatRoom = {
     id: 3001,
     is_group: true,
@@ -235,6 +246,7 @@ export const MOCK_GROUP_ROOM:ChatRoom = {
     ],
 }
 
+// Function For Mock Message
 const mockMessage = (fields:Partial<ChatMessage> & Pick<ChatMessage, "id"|"sender"|"content"|"formatted_time"|"is_sender">):ChatMessage => ({
     room_id: MOCK_GROUP_ROOM.id,
     message_type: "text",
@@ -250,6 +262,7 @@ const mockMessage = (fields:Partial<ChatMessage> & Pick<ChatMessage, "id"|"sende
     ...fields,
 })
 
+// Defines The Mock Group Messages
 export const MOCK_GROUP_MESSAGES:ChatMessage[] = [
     mockMessage({ id: 3105, sender: sofia, content: "Ja tiež 🙌", formatted_time: "07:12", is_sender: false }),
     mockMessage({ id: 3104, sender: martin, content: "Zajtra o 6:30 pri parku?", formatted_time: "07:10", is_sender: false }),
@@ -258,6 +271,7 @@ export const MOCK_GROUP_MESSAGES:ChatMessage[] = [
     mockMessage({ id: 3101, sender: { id: 1, username: "@alex.demo", profile_picture_name: null }, content: "@alex.demo vytvoril skupinu Ranné behanie", formatted_time: "07:00", is_sender: true, message_type: "system" }),
 ]
 
+// Defines The Mock Chat Rooms
 export const MOCK_CHAT_ROOMS:ChatListRoom[] = [
     { room_id: MOCK_GROUP_ROOM.id, is_group: true, name: MOCK_GROUP_ROOM.name, avatar: null, members_count: 3, unread_count: 2, updated_at: hoursAgo(0.2), user: null, last_message: { id: 3105, message_type: "text", content: "Ja tiež 🙌", has_attachments: false, is_sender: false, sender: { id: sofia.id, username: sofia.username }, created_at: hoursAgo(0.2) } },
     { room_id: 3002, is_group: false, name: null, avatar: null, members_count: 2, unread_count: 1, updated_at: hoursAgo(0.5), user: lucia, last_message: { id: 901, message_type: "text", content: "Are we still on for leg day at 6?", has_attachments: false, is_sender: false, sender: { id: lucia.id, username: lucia.username }, created_at: hoursAgo(0.5) } },
@@ -270,6 +284,7 @@ export const MOCK_CHAT_ROOMS:ChatListRoom[] = [
 //     { id: 1199, sender: lucia, content: "Check out my new PR", attachments: [], is_read: true, is_edited: false, formatted_time: "15:02", is_sender: false, message_reactions: [], is_older_than_15_minutes: true, is_older_than_1_day: false, post: { id: "p3k9x2m1", user: lucia, description: MOCK_POSTS[0]?.description ?? null, public_visibility: true, allow_comments: true, hide_likes: false, likes: 128, comments: 14, created_at: hoursAgo(2), media: { id: 101, file: "mock/101.jpg", thumbnail: "mock/101_thumbnail.jpg", is_video: false } } },
 // ]
 
+// Defines The Mock Chat Messages
 export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
     {
         id: 1201,
@@ -320,7 +335,7 @@ export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
         is_older_than_15_minutes: true,
         is_older_than_1_day: false,
     },
-    // Ukážka správy so zdieľaným článkom:
+    // Example Of A Message With A Shared Article:
     {
         id: 1198,
         sender: lucia,
@@ -348,7 +363,7 @@ export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
         is_older_than_15_minutes: true,
         is_older_than_1_day: false,
     },
-    // Ukážka hlasovej správy:
+    // Example Of A Voice Message:
     {
         id: 1197,
         sender: { id: 1, username: "@alex.demo", profile_picture_name: null, subscription: { is_active: true } },
@@ -374,6 +389,7 @@ export const MOCK_CHAT_MESSAGES:ChatMessage[] = [
 
 // ---------- Training Plans ----------
 
+// Defines The Mock Exercises
 export const MOCK_EXERCISES:Exercise[] = [
     { id: 1, exercise: "Push-ups", unit: "reps", categories: ["chest", "triceps"], requires_weight: false, image_filename: null },
     { id: 2, exercise: "Pull-ups", unit: "reps", categories: ["back", "biceps"], requires_weight: false, image_filename: null },
@@ -389,10 +405,12 @@ export const MOCK_EXERCISES:Exercise[] = [
     { id: 12, exercise: "Hanging leg raises", unit: "reps", categories: ["core"], requires_weight: false, image_filename: null },
 ]
 
+// Function For Plan Row
 const planRow = (id:number, key:string, title:string, day:TrainingPlanExercise["day"], order:number, exercise:string, periods:number[], unit:TrainingPlanExercise["unit"] = "reps", is_warm_up:boolean = false):TrainingPlanExercise => ({
     id, training_plan_key: key, day, type: title, exercise, periods, unit, order, is_warm_up, is_custom_exercise: false,
 })
 
+// Defines The Mock Training Plans
 export const MOCK_TRAINING_PLANS:TrainingPlanExercise[] = [
     planRow(1, "plan_upper", "Upper body", 1, 0, "Warm up", [300], "seconds", true),
     planRow(2, "plan_upper", "Upper body", 1, 1, "Push-ups", [15, 15, 12]),
@@ -409,11 +427,12 @@ export const MOCK_TRAINING_PLANS:TrainingPlanExercise[] = [
 // Plan Details (The Server Repeats Them On Every Row Of A Plan)
 type OfficialPlanDetails = Pick<OfficialTrainingPlanExercise, "duration" | "difficulty" | "requirements" | "description" | "goal" | "target_muscles">
 
-const BEGINNER_DETAILS:OfficialPlanDetails = { duration: 30, difficulty: 20, requirements: "No equipment", description: "A short full body routine for your first weeks of training.", goal: "endurance", target_muscles: ["legs", "chest", "core"] }
-const PUSH_DETAILS:OfficialPlanDetails = { duration: 60, difficulty: 55, requirements: "Bench, barbell, dip bars", description: "Chest, shoulders and triceps with compound presses.", goal: "hypertrophy", target_muscles: ["chest", "shoulders", "triceps"] }
-const PULL_DETAILS:OfficialPlanDetails = { duration: 45, difficulty: 60, requirements: "Pull-up bar, barbell", description: "Back and biceps built around pull-ups and rows.", goal: "strength", target_muscles: ["back", "biceps"] }
-const FRONT_LEVER_DETAILS:OfficialPlanDetails = { duration: 50, difficulty: 85, requirements: "Pull-up bar", description: "A progression from tuck to full front lever.", goal: "strength", target_muscles: ["back", "core", "shoulders"] }
+const BEGINNER_DETAILS:OfficialPlanDetails = { duration: 30, difficulty: 20, requirements: "No equipment", description: "A short full body routine for your first weeks of training.", goal: "endurance", target_muscles: ["legs", "chest", "core"] } // Defines The Beginner Details
+const PUSH_DETAILS:OfficialPlanDetails = { duration: 60, difficulty: 55, requirements: "Bench, barbell, dip bars", description: "Chest, shoulders and triceps with compound presses.", goal: "hypertrophy", target_muscles: ["chest", "shoulders", "triceps"] } // Defines The Push Details
+const PULL_DETAILS:OfficialPlanDetails = { duration: 45, difficulty: 60, requirements: "Pull-up bar, barbell", description: "Back and biceps built around pull-ups and rows.", goal: "strength", target_muscles: ["back", "biceps"] } // Defines The Pull Details
+const FRONT_LEVER_DETAILS:OfficialPlanDetails = { duration: 50, difficulty: 85, requirements: "Pull-up bar", description: "A progression from tuck to full front lever.", goal: "strength", target_muscles: ["back", "core", "shoulders"] } // Defines The Front Lever Details
 
+// Defines The Mock Official Training Plans
 export const MOCK_OFFICIAL_TRAINING_PLANS:OfficialTrainingPlanExercise[] = [
     { id: 101, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Warm up", periods: [300], unit: "seconds", order: 0, is_warm_up: true, is_for_subscribers: false, is_locked: false },
     { id: 102, training_plan_key: "official_beginner", ...BEGINNER_DETAILS, type: "Beginner full body", exercise: "Squats", periods: [12, 12, 12], unit: "reps", order: 1, is_warm_up: false, is_for_subscribers: false, is_locked: false },
@@ -431,6 +450,7 @@ export const MOCK_OFFICIAL_TRAINING_PLANS:OfficialTrainingPlanExercise[] = [
 
 // ---------- Activity & Tasks ----------
 
+// Defines The Mock Activity History
 export const MOCK_ACTIVITY_HISTORY:Activity[] = [
     { end_time: hoursAgo(20), elapsed_time: 2780, gained_xp: 340, type: "Upper body", training_plan_day: 1, training_plan_summary: [{ color: "#5b8cff", exercise: "Push-ups", gained_xp: 120, elapsed_time: 900 }, { color: "#3dd68c", exercise: "Pull-ups", gained_xp: 140, elapsed_time: 1100 }, { color: "#f0c14a", exercise: "Dips", gained_xp: 80, elapsed_time: 780 }] },
     { end_time: daysAgo(3), elapsed_time: 3310, gained_xp: 410, type: "Leg day", training_plan_day: 3, training_plan_summary: [{ color: "#5b8cff", exercise: "Squats", gained_xp: 220, elapsed_time: 1700 }, { color: "#ff5c6a", exercise: "Lunges", gained_xp: 190, elapsed_time: 1610 }] },
@@ -443,6 +463,7 @@ export const MOCK_OFFICIAL_TASKS:OfficialTask[] = [ // "title" Is Server Text, T
     { title: "Získaj 50 XP za aktivitu.", data: "50_xp_activity", xp: 80, progress_percentage: 0, is_completed: false },
 ]
 
+// Defines The Mock Custom Tasks
 export const MOCK_CUSTOM_TASKS:CustomTask[] = [
     { id: 1, title: "Drink 3 liters of water", is_completed: true, order: 0, created_at: hoursAgo(8) },
     { id: 2, title: "Stretch for 10 minutes", is_completed: false, order: 1, created_at: hoursAgo(8) },
@@ -454,6 +475,7 @@ export const MOCK_CUSTOM_TASKS:CustomTask[] = [
 
 // ---------- Blog ----------
 
+// Defines The Mock Articles
 export const MOCK_ARTICLES:Article[] = [
     { id: 1, title: "Front lever: a complete progression guide", description: "From tuck holds to the full lever, a structured plan with the exact progressions and volume to use.", image_name: null, html_filename: "front_lever.html", link: "front-lever", categories: ["calisthenics", "strength"], visitors: 4210, creation_time: daysAgo(40), average_rating: 4.7, user: { username: "@wesiq" } },
     { id: 2, title: "How to warm up properly", description: "Why five minutes of the right warm up beats twenty minutes of the wrong one.", image_name: null, html_filename: null, link: "warm-up", categories: ["mobility"], visitors: 2980, creation_time: daysAgo(18), average_rating: null, user: { username: "@wesiq" } },

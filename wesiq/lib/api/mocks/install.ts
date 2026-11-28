@@ -7,9 +7,9 @@ import { resolveMockRequest, MockResponse } from "./handlers"
 const MOCK_LATENCY_MS:number = 350 // Simulates A Realistic Network Delay
 
 // Mock Mode Is Never Enabled In Production Builds, Even If The Variable Is Set
-export const IS_MOCK_MODE:boolean = __DEV__ && process.env.EXPO_PUBLIC_USE_MOCKS === "1"
+export const IS_MOCK_MODE:boolean = __DEV__ && process.env.EXPO_PUBLIC_USE_MOCKS === "1" // Checks If It Is Mock Mode
 
-let is_installed:boolean = false
+let is_installed:boolean = false // Checks If It Is Installed
 
 // Function For Parse A JSON Request Body (FormData And Other Bodies Are Ignored)
 const parseJsonBody = (body:RequestInit["body"]|undefined):unknown => {

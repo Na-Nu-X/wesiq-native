@@ -13,11 +13,11 @@ import { are_notifications_supported, cancelLocalNotification, getNotificationPe
 import type { ChatSocketEvent } from "@/types/models"
 
 const NOTIFICATION_DELAY_SECONDS:number = 10 // Same Delay As Before
-const MAX_RECONNECT_DELAY_MS:number = 30_000
+const MAX_RECONNECT_DELAY_MS:number = 30_000 // Defines The Max Reconnect Delay MS
 
 // Function For Build The Socket URL
 const getSocketUrl = (user_token:string):string => {
-    const protocol:"wss"|"ws" = DOMAIN.startsWith("https") ? "wss" : "ws"
+    const protocol:"wss"|"ws" = DOMAIN.startsWith("https") ? "wss" : "ws" // Gets The Protocol
     return `${protocol}://${DOMAIN.replace(/^https?:\/\//, "")}/ws/notifications/?token=${encodeURIComponent(user_token)}`
 }
 
@@ -28,6 +28,7 @@ const getMessagePreview = (event:ChatSocketEvent):string => {
     return i18n.t("Príloha")
 }
 
+// Function For The Notification Socket Hook
 export default function useNotificationSocket(user_id:number|null):void {
     const pathname:string = usePathname() // Gets The Pathname
     const active_chat_username = useRef<string|null>(null) // Stores The Username Of The Open DM
@@ -35,7 +36,7 @@ export default function useNotificationSocket(user_id:number|null):void {
 
     // Initializes The Active Chat (No Notification For The Chat The User Is Reading)
     useEffect(() => {
-        const group_match:RegExpMatchArray|null = pathname.match(/^\/chat\/group\/(\d+)/)
+        const group_match:RegExpMatchArray|null = pathname.match(/^\/chat\/group\/(\d+)/) // Gets The Group Match
 
         active_room_id.current = group_match ? Number(group_match[1]) : null
         active_chat_username.current = !group_match && pathname.startsWith("/chat/") ? decodeURIComponent(pathname.replace("/chat/", "")) : null
@@ -45,23 +46,23 @@ export default function useNotificationSocket(user_id:number|null):void {
     useEffect(() => {
         if(user_id === null || IS_MOCK_MODE) return
 
-        let socket:WebSocket|null = null
+        let socket:WebSocket|null = null // Gets The Socket
         let is_closed_by_app:boolean = false // Logout / Unmount, Don't Reconnect
-        let reconnect_timeout:ReturnType<typeof setTimeout>|null = null
-        let reconnect_attempts:number = 0
-        let notification_id:string|null = null
+        let reconnect_timeout:ReturnType<typeof setTimeout>|null = null // Gets The Reconnect Timeout
+        let reconnect_attempts:number = 0 // Gets The Reconnect Attempts
+        let notification_id:string|null = null // Gets The Notification ID
 
         // Function For Show The Message Notification (Only When The User Already Allowed Notifications)
         const notifyAboutMessage = async (event:ChatSocketEvent):Promise<void> => {
             if(!are_notifications_supported || !event.sender_username) return
 
-            const is_open:boolean = event.is_group ? event.room_id === active_room_id.current : event.sender_username === active_chat_username.current
+            const is_open:boolean = event.is_group ? event.room_id === active_room_id.current : event.sender_username === active_chat_username.current // Checks If It Is Open
             if(is_open) return
             if(await getNotificationPermission() !== "granted") return
 
             // Group Chats: The Group Name As The Title, "username: message" As The Text
-            const title:string = event.is_group ? event.room_name || i18n.t("Skupina") : event.sender_username
-            const body:string = event.is_group ? `${event.sender_username}: ${getMessagePreview(event)}` : getMessagePreview(event)
+            const title:string = event.is_group ? event.room_name || i18n.t("Skupina") : event.sender_username // Gets The Title
+            const body:string = event.is_group ? `${event.sender_username}: ${getMessagePreview(event)}` : getMessagePreview(event) // Gets The Body
 
             cancelLocalNotification(notification_id) // Keeps Only The Latest Message
             notification_id = await scheduleLocalNotification("messages", { title, body }, NOTIFICATION_DELAY_SECONDS)

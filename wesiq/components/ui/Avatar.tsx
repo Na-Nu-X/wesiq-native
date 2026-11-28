@@ -34,15 +34,15 @@ export default function Avatar({
     const inner_size:number = is_premium ? size - ring_width * 2 - 2 : size // Gets The Size Inside The Ring
 
     // Exact Half Sizes Instead Of radii.pill: On Android A Radius Larger Than The View (With A Border Or On expo-image) Can Render As A Square
-    const outer_radius:number = size / 2
-    const inner_radius:number = inner_size / 2
+    const outer_radius:number = size / 2 // Gets The Outer Radius
+    const inner_radius:number = inner_size / 2 // Gets The Inner Radius
 
     return (
         <View
-            accessibilityRole="image"
-            accessibilityLabel={user.username}
+            accessibilityRole = "image"
+            accessibilityLabel = {user.username}
 
-            style={[
+            style = {[
                 styles.container,
                 { width: size, height: size, borderRadius: outer_radius },
                 is_premium ? { borderWidth: ring_width, borderColor: colors.premium, padding: 1 } : null,
@@ -50,16 +50,20 @@ export default function Avatar({
         >
             {has_picture && picture_url ? (
                 <Image
-                    source={{ uri: picture_url }}
-                    style={{ width: inner_size, height: inner_size, borderRadius: inner_radius }}
-                    contentFit="cover"
-                    transition={150}
-                    recyclingKey={picture_url}
-                    onError={() => setFailedUrl(picture_url)}
+                    source = {{ uri: picture_url }}
+                    style = {{ width: inner_size, height: inner_size, borderRadius: inner_radius }}
+                    contentFit = "cover"
+                    transition = {150}
+                    recyclingKey = {picture_url}
+                    onError = {() => setFailedUrl(picture_url)}
                 />
             ) : (
-                <View style={[styles.fallback, { width: inner_size, height: inner_size, borderRadius: inner_radius }]}>
-                    <Text variant="label" color="text_accent" style={{ fontSize: Math.max(10, Math.round(inner_size * 0.38)), lineHeight: Math.round(inner_size * 0.5) }}>
+                <View style = {[styles.fallback, { width: inner_size, height: inner_size, borderRadius: inner_radius }]}>
+                    <Text
+                        variant = "label"
+                        color = "text_accent"
+                        style = {{ fontSize: Math.max(10, Math.round(inner_size * 0.38)), lineHeight: Math.round(inner_size * 0.5) }}
+                    >
                         {getInitials(user)}
                     </Text>
                 </View>

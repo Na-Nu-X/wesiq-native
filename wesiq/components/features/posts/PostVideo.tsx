@@ -18,7 +18,7 @@ const PlayingVideoContext = createContext<PlayingVideoValue>({ playing_media_id:
 
 export function PlayingVideoProvider({ children }:{ children:ReactNode }) {
     const [playing_media_id, setPlayingMediaId] = useState<number|null>(null) // Stores The Playing Video
-    return <PlayingVideoContext.Provider value={{ playing_media_id, setPlayingMediaId }}>{children}</PlayingVideoContext.Provider>
+    return <PlayingVideoContext.Provider value = {{ playing_media_id, setPlayingMediaId }}>{children}</PlayingVideoContext.Provider>
 }
 
 // Function For Get The Playing Video And Its Setter
@@ -37,44 +37,44 @@ export default function PostVideo({ post, media, onDurationLoad, is_active = tru
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const { playing_media_id, setPlayingMediaId } = useContext(PlayingVideoContext) // Gets The Playing Video
 
-    const [is_initialized, setIsInitialized] = useState<boolean>(false)
-    const [show_controls, setShowControls] = useState<boolean>(true)
-    const [is_scrubber_dragged, setIsScrubberDragged] = useState<boolean>(false)
-    const [scrubber_preview, setScrubberPreview] = useState<vtt|null>(null)
-    const [scrubber_preview_image, setScrubberPreviewImage] = useState<string>("")
-    const [scrubber_position, setScrubberPosition] = useState<number>(0)
-    const [scrubber_width, setScrubberWidth] = useState<number>(0)
-    const controls_timeout = useRef<ReturnType<typeof setTimeout>|null>(null)
+    const [is_initialized, setIsInitialized] = useState<boolean>(false) // Stores If It Is Initialized
+    const [show_controls, setShowControls] = useState<boolean>(true) // Stores The Show Controls
+    const [is_scrubber_dragged, setIsScrubberDragged] = useState<boolean>(false) // Stores If It Is Scrubber Dragged
+    const [scrubber_preview, setScrubberPreview] = useState<vtt|null>(null) // Stores The Scrubber Preview
+    const [scrubber_preview_image, setScrubberPreviewImage] = useState<string>("") // Stores The Scrubber Preview Image
+    const [scrubber_position, setScrubberPosition] = useState<number>(0) // Stores The Scrubber Position
+    const [scrubber_width, setScrubberWidth] = useState<number>(0) // Stores The Scrubber Width
+    const controls_timeout = useRef<ReturnType<typeof setTimeout>|null>(null) // Stores The Controls Timeout
 
     return (
         <DynamicVideo
-            logged_in_user={logged_in_user}
-            one_post={post}
-            one_post_media={media}
-            onSetPlayingVideo={setPlayingMediaId}
-            playing_video={playing_media_id}
-            data_saving_mode={logged_in_user?.data_saving_mode ?? false}
-            onVideoDurationLoad={(seconds:number) => onDurationLoad?.(seconds)}
-            onSetIsVideoInitialized={setIsInitialized}
-            is_video_initialized={is_initialized}
-            onShowControls={setShowControls}
-            show_controls={show_controls && is_active} // Controls Belong Only To The Visible Slide
-            onIsScrubberDragged={setIsScrubberDragged}
-            is_scrubber_dragged={is_scrubber_dragged}
-            onVttVideoScrubberPreviewUpdate={setScrubberPreview}
-            video_scrubber_preview={scrubber_preview}
-            onVttVideoScrubberPreviewImageUpdate={setScrubberPreviewImage}
-            video_scrubber_preview_image={scrubber_preview_image}
-            onScrubberPositionUpdate={setScrubberPosition}
-            scrubber_position={scrubber_position}
-            onSetScrubberWidth={setScrubberWidth}
-            scrubber_width={scrubber_width}
+            logged_in_user = {logged_in_user}
+            one_post = {post}
+            one_post_media = {media}
+            onSetPlayingVideo = {setPlayingMediaId}
+            playing_video = {playing_media_id}
+            data_saving_mode = {logged_in_user?.data_saving_mode ?? false}
+            onVideoDurationLoad = {(seconds:number) => onDurationLoad?.(seconds)}
+            onSetIsVideoInitialized = {setIsInitialized}
+            is_video_initialized = {is_initialized}
+            onShowControls = {setShowControls}
+            show_controls = {show_controls && is_active} // Controls Belong Only To The Visible Slide
+            onIsScrubberDragged = {setIsScrubberDragged}
+            is_scrubber_dragged = {is_scrubber_dragged}
+            onVttVideoScrubberPreviewUpdate = {setScrubberPreview}
+            video_scrubber_preview = {scrubber_preview}
+            onVttVideoScrubberPreviewImageUpdate = {setScrubberPreviewImage}
+            video_scrubber_preview_image = {scrubber_preview_image}
+            onScrubberPositionUpdate = {setScrubberPosition}
+            scrubber_position = {scrubber_position}
+            onSetScrubberWidth = {setScrubberWidth}
+            scrubber_width = {scrubber_width}
 
-            onStopControlsTimer={() => {
+            onStopControlsTimer = {() => {
                 if(controls_timeout.current) clearTimeout(controls_timeout.current)
             }}
 
-            onStartControlsTimer={() => {
+            onStartControlsTimer = {() => {
                 if(controls_timeout.current) clearTimeout(controls_timeout.current)
                 controls_timeout.current = setTimeout(() => setShowControls(false), 5000) // Hides The Controls After 5 Seconds
             }}

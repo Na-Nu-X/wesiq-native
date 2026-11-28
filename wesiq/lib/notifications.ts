@@ -5,13 +5,13 @@ import * as Notifications from "expo-notifications"
 import { AndroidImportance } from "expo-notifications"
 import i18n from "@/lib/i18n"
 
-export const are_notifications_supported:boolean = Platform.OS === "ios" || Platform.OS === "android"
+export const are_notifications_supported:boolean = Platform.OS === "ios" || Platform.OS === "android" // Checks If The Notifications Are Supported
 
 export type NotificationChannel = "messages"|"break-alarm"
 
 export type NotificationPermission = "granted"|"undetermined"|"denied" // Undetermined = Can Still Be Asked
 
-const ready_channels:Set<NotificationChannel> = new Set()
+const ready_channels:Set<NotificationChannel> = new Set() // Defines The Ready Channels
 
 // Function For Create The Android Channel (Must Exist Before Asking For The Permission On Android 13+)
 const ensureChannel = async (channel:NotificationChannel):Promise<void> => {
@@ -45,7 +45,7 @@ export const requestNotificationPermission = async (channel:NotificationChannel)
     try {
         await ensureChannel(channel)
 
-        const permission:NotificationPermission = await getNotificationPermission()
+        const permission:NotificationPermission = await getNotificationPermission() // Gets The Permission
         if(permission !== "undetermined") return permission === "granted"
 
         return (await Notifications.requestPermissionsAsync()).granted
@@ -74,6 +74,7 @@ export const scheduleLocalNotification = async (channel:NotificationChannel, con
     }
 }
 
+// Function For Cancel The Local Notification
 export const cancelLocalNotification = (id:string|null):void => {
     if(id && are_notifications_supported) Notifications.cancelScheduledNotificationAsync(id).catch(() => {})
 }

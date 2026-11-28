@@ -16,8 +16,9 @@ interface CancellableTask {
 
 // Function For Run A Task On The Next Tick (Gestures And Animations That Trigger These Calls Have Already Finished)
 const runAfterInteractions = (task?:InteractionTask):CancellableTask => {
-    let is_cancelled:boolean = false
+    let is_cancelled:boolean = false // Checks If It Is Cancelled
 
+    // Gets The Promise
     const promise:Promise<void> = new Promise<void>((resolve) => {
         setTimeout(() => {
             if(is_cancelled) return
@@ -39,6 +40,7 @@ const runAfterInteractions = (task?:InteractionTask):CancellableTask => {
     }
 }
 
+// Defines The Interaction Manager
 const interaction_manager = {
     runAfterInteractions,
     createInteractionHandle: ():number => 0,
@@ -52,7 +54,7 @@ export const installInteractionManagerShim = ():void => {
 
     // The Exports Object Itself (An "import * as" Namespace Would Be A Copy The Libraries Never Read)
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const react_native = require("react-native") as Record<string, unknown>
+    const react_native = require("react-native") as Record<string, unknown> // Gets The React Native
 
     // Replaces The Development Getter That Throws (It Is Configurable) Or Adds The Missing Export In Production
     Object.defineProperty(react_native, "InteractionManager", {

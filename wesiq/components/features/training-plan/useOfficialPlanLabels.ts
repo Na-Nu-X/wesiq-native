@@ -8,10 +8,11 @@ const prettifyTag = (tag:string):string => {
     return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-// Hook For Get The Translated Label Of A Tag (Keys Are Normalized Tags, E.g. "full_body")
+// Function For Get The Translated Label Of A Tag (Keys Are Normalized Tags, E.g. "full_body")
 export function useOfficialPlanLabels() {
     const { t } = useTranslation() // Initializes The Translations
 
+    // Gets The Tag Labels
     const tag_labels:Record<string, string> = {
         all: t("Všetky kategórie"),
         gym: t("Posilňovňa"),
@@ -34,7 +35,7 @@ export function useOfficialPlanLabels() {
         hypertrophy: t("Hypertrofia"),
         strength: t("Sila"),
         endurance: t("Vytrvalosť"),
-        fat_loss: t("Chudnutie"),
+        fat_loss: t("Chudnutie")
     }
 
     // Function For Get The Label Of A Tag

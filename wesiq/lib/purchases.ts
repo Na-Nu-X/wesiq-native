@@ -6,9 +6,9 @@ import Purchases, { CustomerInfo, PurchasesError, PurchasesPackage } from "react
 export type PaidPlan = "basic"|"premium"
 
 // RevenueCat Entitlements Per Plan (The Server Webhook Uses The Same IDs)
-export const ENTITLEMENT_IDS:Record<PaidPlan, string> = { basic: "basic_access", premium: "premium_access" }
+export const ENTITLEMENT_IDS:Record<PaidPlan, string> = { basic: "basic_access", premium: "premium_access" } // Defines The Entitlement IDs
 
-export const are_purchases_supported:boolean = Platform.OS === "ios" || Platform.OS === "android"
+export const are_purchases_supported:boolean = Platform.OS === "ios" || Platform.OS === "android" // Checks If The Purchases Are Supported
 
 export type PurchaseResult =
     | { status:"purchased" }
@@ -23,12 +23,12 @@ export const getPlanPackages = async ():Promise<Partial<Record<PaidPlan, Purchas
         if(!(await Purchases.isConfigured())) return {} // Configured Only For Logged In Users
 
         const offerings = await Purchases.getOfferings() // Gets The Offerings
-        const packages:PurchasesPackage[] = offerings.current?.availablePackages ?? []
+        const packages:PurchasesPackage[] = offerings.current?.availablePackages ?? [] // Gets The Packages
 
         // Strictly By Identifier (A Positional Fallback Could Sell The Wrong Plan); A Missing Package Can't Be Bought
-        const result:Partial<Record<PaidPlan, PurchasesPackage>> = {}
-        const basic:PurchasesPackage|undefined = packages.find((one_package:PurchasesPackage) => one_package.identifier === "basic")
-        const premium:PurchasesPackage|undefined = packages.find((one_package:PurchasesPackage) => one_package.identifier === "premium")
+        const result:Partial<Record<PaidPlan, PurchasesPackage>> = {} // Gets The Result
+        const basic:PurchasesPackage|undefined = packages.find((one_package:PurchasesPackage) => one_package.identifier === "basic") // Gets The Basic
+        const premium:PurchasesPackage|undefined = packages.find((one_package:PurchasesPackage) => one_package.identifier === "premium") // Gets The Premium
         if(basic) result.basic = basic
         if(premium) result.premium = premium
 
@@ -40,22 +40,24 @@ export const getPlanPackages = async ():Promise<Partial<Record<PaidPlan, Purchas
     }
 }
 
+// Function For Check If Entitlement
 const hasEntitlement = (customer_info:CustomerInfo):boolean => Object.values(ENTITLEMENT_IDS).some((entitlement_id:string) => customer_info.entitlements.active[entitlement_id] !== undefined)
 
 type ProductChangeInfo = Parameters<typeof Purchases.purchasePackage>[2] // StoreProductChangeInfo (Android Only)
 
 // Function For Get The Product Change Of A Switch Between Basic And Premium On Google Play (Null For A New Subscription)
 // Without It Google Play Starts A Second Subscription Next To The Old One And Bills Both
+// Function For Get The Product Change Info
 const getProductChangeInfo = async (store_package:PurchasesPackage, plan:PaidPlan):Promise<ProductChangeInfo> => {
     if(Platform.OS !== "android") return null // The App Store Switches Plans Inside The Subscription Group By Itself
 
     const customer_info:CustomerInfo = await Purchases.getCustomerInfo() // Gets The Current Purchases
 
     // Gets The Running Google Play Plan (Premium First, A Premium Product May Also Unlock Basic)
-    const current_plan:PaidPlan|undefined = (["premium", "basic"] as const).find((one_plan:PaidPlan) => customer_info.entitlements.active[ENTITLEMENT_IDS[one_plan]]?.store === "PLAY_STORE")
+    const current_plan:PaidPlan|undefined = (["premium", "basic"] as const).find((one_plan:PaidPlan) => customer_info.entitlements.active[ENTITLEMENT_IDS[one_plan]]?.store === "PLAY_STORE") // Gets The Current Plan
     if(!current_plan) return null
 
-    const old_product_id:string = customer_info.entitlements.active[ENTITLEMENT_IDS[current_plan]]?.productIdentifier ?? ""
+    const old_product_id:string = customer_info.entitlements.active[ENTITLEMENT_IDS[current_plan]]?.productIdentifier ?? "" // Gets The Old Product ID
     const getSubscriptionId = (product_id:string):string => product_id.split(":")[0] ?? product_id // "subscription:base-plan" → "subscription"
 
     if(!old_product_id || getSubscriptionId(old_product_id) === getSubscriptionId(store_package.product.identifier)) return null
@@ -102,6 +104,7 @@ export const getAppUserId = (user_id:number):string => String(user_id)
 
 // Function For Link The Store Customer To The Logged In User (Null = Logged Out)
 // RevenueCat's Own Current User Is Checked Every Time, So Logging Out And Back In As The Same User Logs In Again
+// Function For Sync The Purchases User
 export const syncPurchasesUser = async (api_key:string, user_id:number|null):Promise<void> => {
     if(!are_purchases_supported) return
 
@@ -113,7 +116,7 @@ export const syncPurchasesUser = async (api_key:string, user_id:number|null):Pro
             return
         }
 
-        const app_user_id:string = getAppUserId(user_id)
+        const app_user_id:string = getAppUserId(user_id) // Gets The App User ID
 
         if(!(await Purchases.isConfigured())) {
             if(!is_real_key) return

@@ -11,7 +11,7 @@ import { MenuRow } from "@/components/features/posts/PostMenuSheet"
 import type { ChatMessage } from "@/types/models"
 
 // Same Reactions As Before (The Server Keeps Up To 3 Per Message)
-export const REACTION_EMOJIS:readonly string[] = ["👍", "👎", "👏", "💪", "😀", "😂", "😍", "🙌", "🙏", "🤝", "🤣", "🤯"]
+export const REACTION_EMOJIS:readonly string[] = ["👍", "👎", "👏", "💪", "😀", "😂", "😍", "🙌", "🙏", "🤝", "🤣", "🤯"] // Defines The Reaction Emojis
 
 // Function For Check If A Message Can Be Edited (Own Text Message, Max. 15 Minutes Old; The Server Enforces The Same Rule)
 export const canEditMessage = (message:ChatMessage):boolean => message.is_sender && !message.is_older_than_15_minutes && !!message.content
@@ -37,76 +37,105 @@ export default function MessageActionsSheet({
 }:MessageActionsSheetProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const can_edit:boolean = message !== null && canEditMessage(message)
-    const can_delete:boolean = message !== null && message.is_sender && !message.is_older_than_1_day
+    const can_edit:boolean = message !== null && canEditMessage(message) // Checks If It Can Edit
+    const can_delete:boolean = message !== null && message.is_sender && !message.is_older_than_1_day // Checks If It Can Delete
 
     return (
-        <Sheet visible={message !== null} onClose={onClose} title={t("Možnosti správy")}>
+        <Sheet
+            visible = {message !== null}
+            onClose = {onClose}
+            title = {t("Možnosti správy")}
+        >
             {!!message && (
                 <>
-                    <View style={styles.reactions} accessibilityRole="toolbar" accessibilityLabel={t("Reakcie")}>
+                    <View
+                        style = {styles.reactions}
+                        accessibilityRole = "toolbar"
+                        accessibilityLabel = {t("Reakcie")}
+                    >
                         {REACTION_EMOJIS.map((emoji:string) => {
-                            const is_mine:boolean = message.message_reactions.some((reaction) => reaction.emoji === emoji && reaction.user.username === current_username)
+                            const is_mine:boolean = message.message_reactions.some((reaction) => reaction.emoji === emoji && reaction.user.username === current_username) // Checks If It Is Mine
 
                             return (
                                 <Pressable
-                                    key={emoji}
-                                    onPress={() => {
+                                    key = {emoji}
+                                    onPress = {() => {
                                         haptics.selection()
                                         onReact(message, emoji)
                                         onClose()
                                     }}
-                                    accessibilityRole="button"
-                                    accessibilityState={{ selected: is_mine }}
-                                    accessibilityLabel={emoji}
-                                    style={({ pressed }) => [styles.reaction, is_mine ? styles.reaction_selected : null, pressed ? styles.reaction_pressed : null]}
+                                    accessibilityRole = "button"
+                                    accessibilityState = {{ selected: is_mine }}
+                                    accessibilityLabel = {emoji}
+                                    style = {({ pressed }) => [styles.reaction, is_mine ? styles.reaction_selected : null, pressed ? styles.reaction_pressed : null]}
                                 >
-                                    <Text style={styles.emoji}>{emoji}</Text>
+                                    <Text style = {styles.emoji}>{emoji}</Text>
                                 </Pressable>
                             )
                         })}
                     </View>
 
-                    <Card padding="xs">
+                    <Card padding = "xs">
                         {!!message.content && (
-                            <MenuRow icon="copy" label={t("Kopírovať text")} onPress={async () => {
-                                await Clipboard.setStringAsync(message.content ?? "")
-                                haptics.success()
-                                onClose()
-                            }} />
+                            <MenuRow
+                                icon = "copy"
+                                label = {t("Kopírovať text")}
+                                onPress = {async () => {
+                                    await Clipboard.setStringAsync(message.content ?? "")
+                                    haptics.success()
+                                    onClose()
+                                }}
+                            />
                         )}
 
                         {can_edit && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="pen" label={t("Upraviť")} onPress={() => {
-                                    onEdit(message)
-                                    onClose()
-                                }} />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "pen"
+                                    label = {t("Upraviť")}
+                                    onPress = {() => {
+                                        onEdit(message)
+                                        onClose()
+                                    }}
+                                />
                             </>
                         )}
 
                         <>
-                            <Divider inset={spacing.md} />
-                            <MenuRow icon="reply" label={t("Odpovedať")} onPress={() => {
-                                onReply(message)
-                                onClose()
-                            }} />
+                            <Divider inset = {spacing.md} />
+                            <MenuRow
+                                icon = "reply"
+                                label = {t("Odpovedať")}
+                                onPress = {() => {
+                                    onReply(message)
+                                    onClose()
+                                }}
+                            />
                         </>
 
                         {can_delete && (
                             <>
-                                <Divider inset={spacing.md} />
-                                <MenuRow icon="trash" label={t("Odstrániť správu")} onPress={() => {
-                                    onDelete(message)
-                                    onClose()
-                                }} is_danger />
+                                <Divider inset = {spacing.md} />
+                                <MenuRow
+                                    icon = "trash"
+                                    label = {t("Odstrániť správu")}
+                                    onPress = {() => {
+                                        onDelete(message)
+                                        onClose()
+                                    }}
+                                    is_danger
+                                />
                             </>
                         )}
                     </Card>
 
                     {message.is_sender && (message.is_older_than_15_minutes || message.is_older_than_1_day) && (
-                        <Text variant="caption" color="text_muted" align="center">
+                        <Text
+                            variant = "caption"
+                            color = "text_muted"
+                            align = "center"
+                        >
                             {message.is_older_than_1_day ? t("Správy staršie ako deň už nie je možné upraviť ani odstrániť.") : t("Správu je možné upraviť len do 15 minút.")}
                         </Text>
                     )}

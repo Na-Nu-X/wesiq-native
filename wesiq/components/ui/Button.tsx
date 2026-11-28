@@ -30,6 +30,7 @@ interface VariantStyle {
     content:ColorToken
 }
 
+// Defines The Variants
 const VARIANTS:Record<ButtonVariant, VariantStyle> = {
     primary: { background: colors.primary_solid, background_pressed: colors.primary_solid_pressed, border: colors.transparent, content: "on_primary" },
     secondary: { background: colors.surface_raised, background_pressed: colors.surface_pressed, border: colors.border, content: "text" },
@@ -38,6 +39,7 @@ const VARIANTS:Record<ButtonVariant, VariantStyle> = {
     danger: { background: colors.danger_soft, background_pressed: "rgba(255, 92, 106, 0.24)", border: "rgba(255, 92, 106, 0.32)", content: "danger" },
 }
 
+// Defines The Sizes
 const SIZES:Record<ButtonSize, { height:number, padding_horizontal:number, icon_size:number, text_variant:"label"|"body_strong" }> = {
     sm: { height: 36, padding_horizontal: spacing.md, icon_size: 13, text_variant: "label" },
     md: { height: layout.min_touch_target + 4, padding_horizontal: spacing.xl, icon_size: 15, text_variant: "body_strong" },
@@ -69,19 +71,24 @@ export default function Button({
         onPress()
     }
 
-    const icon_element = icon ? <Icon name={icon} size={size_style.icon_size} color={variant_style.content} /> : null
+    // Gets The Icon Element
+    const icon_element = icon ? <Icon
+        name = {icon}
+        size = {size_style.icon_size}
+        color = {variant_style.content}
+    /> : null
 
     return (
         <Pressable
-            onPress={handlePress}
-            disabled={is_inactive}
-            accessibilityRole="button"
-            accessibilityLabel={label}
-            accessibilityHint={accessibility_hint}
-            accessibilityState={{ disabled: is_inactive, busy: is_loading }}
-            hitSlop={size === "sm" ? 6 : 0}
+            onPress = {handlePress}
+            disabled = {is_inactive}
+            accessibilityRole = "button"
+            accessibilityLabel = {label}
+            accessibilityHint = {accessibility_hint}
+            accessibilityState = {{ disabled: is_inactive, busy: is_loading }}
+            hitSlop = {size === "sm" ? 6 : 0}
 
-            style={({ pressed }:PressableStateCallbackType) => [
+            style = {({ pressed }:PressableStateCallbackType) => [
                 styles.button,
 
                 {
@@ -99,12 +106,16 @@ export default function Button({
             ]}
         >
             {is_loading ? (
-                <ActivityIndicator size="small" color={colors[variant_style.content]} />
+                <ActivityIndicator size = "small" color = {colors[variant_style.content]} />
             ) : (
-                <View style={styles.content}>
+                <View style = {styles.content}>
                     {icon_position === "left" && icon_element}
 
-                    <Text variant={size_style.text_variant} color={variant_style.content} numberOfLines={1}>
+                    <Text
+                        variant = {size_style.text_variant}
+                        color = {variant_style.content}
+                        numberOfLines = {1}
+                    >
                         {label}
                     </Text>
 

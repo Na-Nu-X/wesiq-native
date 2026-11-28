@@ -55,8 +55,8 @@ interface CustomVideoControlsProps {
 
 // Function For Parse The VTT Time
 const parseVttTime = (time:string):number => {
-    const parts:string[] = time.split(":")
-    const seconds_parts:string[] = (parts[2] as string).split(".")
+    const parts:string[] = time.split(":") // Gets The Parts
+    const seconds_parts:string[] = (parts[2] as string).split(".") // Gets The Seconds Parts
 
     return parseInt(parts[0] as string) * 3600 + parseInt(parts[1] as string) * 60 + parseInt(seconds_parts[0] as string) + parseFloat("0." + seconds_parts[1])
 }
@@ -66,7 +66,7 @@ const loadVttPreviews = async (vtt_url:string):Promise<vtt[]> => {
     try {
         const response:Response = await fetch(`${DOMAIN}/media/${vtt_url}`) // Sends The GET Request To The Server
         const text:string = await response.text() // Gets The Text Content Of The VTT File
-        const regex:RegExp = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\s+(.+)#xywh=(\d+),(\d+),(\d+),(\d+)/g
+        const regex:RegExp = /(\d{2}:\d{2}:\d{2}\.\d{3}) --> (\d{2}:\d{2}:\d{2}\.\d{3})\s+(.+)#xywh=(\d+),(\d+),(\d+),(\d+)/g // Gets The Regex
 
         return [...text.matchAll(regex)].map((match:RegExpMatchArray):vtt => ({
             start: parseVttTime(match[1] as string),
@@ -131,8 +131,8 @@ export const CustomVideoControls = ({
 
     // Follows The Player Volume When It Changes Outside Of The Slider
     if(synced_volume !== volume) {
-        setSyncedVolume(volume)
-        setLocalVolume(volume)
+        setSyncedVolume(volume) // Sets The Synced Volume
+        setLocalVolume(volume) // Sets The Local Volume
     }
 
     // Function For Get The Volume Icon
@@ -154,7 +154,7 @@ export const CustomVideoControls = ({
     // Initializes The Load Of The VTT File Data
     useEffect(() => {
         if(!one_post_media.vtt_file) return
-        let is_active:boolean = true
+        let is_active:boolean = true // Checks If It Is Active
 
         loadVttPreviews(one_post_media.vtt_file).then((previews:vtt[]) => {
             if(is_active) setVttVideoPreviews(previews) // Replaces The Previews (They Were Appended Again On Every Media Change)
@@ -175,7 +175,7 @@ export const CustomVideoControls = ({
         initializeVideoPreview() // Loads The VTT File Data
     }, [scrubber_time, vtt_video_previews, one_post_media, scrubber_position])
 
-    // Function For Calculate End Set The Scrubber Progress (funguje pre Web aj Native)
+    // Function For Calculate And Set The Scrubber Progress (Works On Web And Native)
     const calculateAndSetScrubberProgress = (event:GestureResponderEvent):number|undefined => {
         const scrubber_width:number = scrubber_width_reference.current // Gets The Scrubber Width
 
@@ -186,7 +186,7 @@ export const CustomVideoControls = ({
     
         if(scrubber_position === undefined) return
     
-        const clamped_position:number = Math.min(Math.max(0, scrubber_position), scrubber_width)
+        const clamped_position:number = Math.min(Math.max(0, scrubber_position), scrubber_width) // Gets The Clamped Position
         const scrubber_progress:number = clamped_position / scrubber_width // Calculates The Current Scrubber Progress
 
         setScrubberProgress(scrubber_progress) // Sets The Scrubber Progress
@@ -241,65 +241,69 @@ export const CustomVideoControls = ({
     const is_compact:boolean = controls_width > 0 && controls_width < COMPACT_CONTROLS_WIDTH // Narrow Post: Drops The Volume Slider And Step Buttons So Settings And Fullscreen Stay Visible
 
     return (
-        <View className="controls" style={styles.controls} onLayout={(event:LayoutChangeEvent) => setControlsWidth(event.nativeEvent.layout.width)}>
-            <View className="buttons" style={styles.buttons}>
+        <View
+            className = "controls"
+            style = {styles.controls}
+            onLayout = {(event:LayoutChangeEvent) => setControlsWidth(event.nativeEvent.layout.width)}
+        >
+            <View className = "buttons" style = {styles.buttons}>
                 <View 
-                    className="play_pause" 
+                    className = "play_pause" 
                    
-                    style={styles.play_pause}
+                    style = {styles.play_pause}
                 >
                     <Icon
-                        icon_name={playing_video === one_post_media.id ? "pause" : "play"}
-                        accessibility_label={playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
-                        onPress={() => onPlayPauseVideo(one_post_media.id)}
-                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                        color={SECONDARY_COLOR}
-                        pressed_color={SECONDARY_COLOR}
+                        icon_name = {playing_video === one_post_media.id ? "pause" : "play"}
+                        accessibility_label = {playing_video === one_post_media.id ? t("Pozastaviť") : t("Prehrať")}
+                        onPress = {() => onPlayPauseVideo(one_post_media.id)}
+                        pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                        color = {SECONDARY_COLOR}
+                        pressed_color = {SECONDARY_COLOR}
                     />
                 </View>
 
                 {Platform.OS === "web" && !is_compact && (
                     <>
                         <View 
-                            className="step_back" 
+                            className = "step_back" 
                         >
                             <Icon
-                                icon_name="arrow-rotate-left"
-                                accessibility_label={t("Späť o 5 sekúnd")}
-                                onPress={() => onStepBack(5)}
-                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                color={SECONDARY_COLOR}
-                                pressed_color={SECONDARY_COLOR}
+                                icon_name = "arrow-rotate-left"
+                                accessibility_label = {t("Späť o 5 sekúnd")}
+                                onPress = {() => onStepBack(5)}
+                                pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                                color = {SECONDARY_COLOR}
+                                pressed_color = {SECONDARY_COLOR}
                             />
                         </View>
 
                         <View 
-                            className="step_further" 
+                            className = "step_further" 
                         >
                             <Icon
-                                icon_name="arrow-rotate-right"
-                                accessibility_label={t("Dopredu o 5 sekúnd")}
-                                onPress={() => onStepFurther(5)}
-                                pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                color={SECONDARY_COLOR}
-                                pressed_color={SECONDARY_COLOR}
+                                icon_name = "arrow-rotate-right"
+                                accessibility_label = {t("Dopredu o 5 sekúnd")}
+                                onPress = {() => onStepFurther(5)}
+                                pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                                color = {SECONDARY_COLOR}
+                                pressed_color = {SECONDARY_COLOR}
                             />
                         </View>
                     </>
                 )}
 
                 <View 
-                    className="timer" 
+                    className = "timer" 
 
-                    style={[
+                    style = {[
                         styles.timer,
                         Platform.OS === "web" ? { paddingLeft: 10 } : { paddingLeft: 0 },
                     ]}
                 >
                     <Text 
-                        className="elapsed"
+                        className = "elapsed"
 
-                        style={[
+                        style = {[
                             {
                                 // width: "4ch"
                                 textAlign: "center",
@@ -323,7 +327,7 @@ export const CustomVideoControls = ({
                     </Text>
 
                     <Text
-                        style={[
+                        style = {[
                             {
                                 // width: 40,
                                 width: 10,
@@ -339,9 +343,9 @@ export const CustomVideoControls = ({
                     </Text>
 
                     <Text 
-                        className="total"
+                        className = "total"
                         
-                        style={[
+                        style = {[
                             {
                                 // width: "4ch"
                                 textAlign: "center",
@@ -361,80 +365,82 @@ export const CustomVideoControls = ({
                     </Text>
                 </View>
 
-                <View className="volume_container" style={styles.volume_container}>
+                <View className = "volume_container" style = {styles.volume_container}>
                     {!one_post_media.is_muted && (
                         <>
-                            {!is_compact && <View style={{ flexDirection: "row", alignItems: "center" }}>
-                                <Slider
-                                    minimumValue={0}
-                                    maximumValue={1}
-                                    step={0.01}
-                                    value={is_muted ? 0 : local_volume}
-                                    onValueChange={(value:number[]) => setLocalVolume(value[0])} 
-                                    onSlidingComplete={(value:number[]) => onChangeVideoVolume(value[0])} // Changes The Video Volume
+                            {!is_compact &&
+                                <View style = {{ flexDirection: "row", alignItems: "center" }}>
+                                    <Slider
+                                        minimumValue = {0}
+                                        maximumValue = {1}
+                                        step = {0.01}
+                                        value = {is_muted ? 0 : local_volume}
+                                        onValueChange = {(value:number[]) => setLocalVolume(value[0])} 
+                                        onSlidingComplete = {(value:number[]) => onChangeVideoVolume(value[0])} // Changes The Video Volume
                               
-                                    minimumTrackTintColor={DARK_BLUE_COLOR}
-                                    maximumTrackTintColor={BLUE_COLOR}
-                                    thumbTintColor={DARK_BLUE_COLOR}
-                                    thumbTouchSize={{ width: 50, height: 50 }}
+                                        minimumTrackTintColor = {DARK_BLUE_COLOR}
+                                        maximumTrackTintColor = {BLUE_COLOR}
+                                        thumbTintColor = {DARK_BLUE_COLOR}
+                                        thumbTouchSize = {{ width: 50, height: 50 }}
 
-                                    thumbStyle={{ 
-                                        width: 15,
-                                        height: 15,
-                                        borderRadius: 15 / 2,
-                                    }}
+                                        thumbStyle = {{ 
+                                            width: 15,
+                                            height: 15,
+                                            borderRadius: 15 / 2,
+                                        }}
                                     
-                                    trackStyle={{
-                                        height: 5,
-                                        borderRadius: 5 / 2,
-                                    }}
+                                        trackStyle = {{
+                                            height: 5,
+                                            borderRadius: 5 / 2,
+                                        }}
                                     
-                                    containerStyle={{ 
-                                        justifyContent: "center",
-                                        width: 80,
-                                        height: 40,
-                                    }}
-                                />
+                                        containerStyle = {{ 
+                                            justifyContent: "center",
+                                            width: 80,
+                                            height: 40,
+                                        }}
+                                    />
 
-                                <Text 
-                                    className="volume_label" 
+                                    <Text 
+                                        className = "volume_label" 
 
-                                    style={[
-                                        styles.volume_label,
-                                        Platform.OS === "web" ? { fontSize: 15 } : { fontSize: 12 },
-                                    ]}
-                                >
-                                    {is_muted ? "0%" : `${Math.round(volume * 100)}%`}
-                                </Text>
-                            </View>}
+                                        style = {[
+                                            styles.volume_label,
+                                            Platform.OS === "web" ? { fontSize: 15 } : { fontSize: 12 },
+                                        ]}
+                                    >
+                                        {is_muted ? "0%" : `${Math.round(volume * 100)}%`}
+                                    </Text>
+                                </View>
+                            }
 
                             <View 
-                                className="mute_unmute" 
-                                accessibilityLabel={t("Hlasitosť...")} 
-                                style={styles.mute_unmute}
+                                className = "mute_unmute" 
+                                accessibilityLabel = {t("Hlasitosť...")} 
+                                style = {styles.mute_unmute}
                             >
                                 <Icon
-                                    icon_name={getVolumeIcon()}
-                                    accessibility_label={is_muted || volume === 0 ? t("Zapnúť zvuk") : t("Stlmiť")}
-                                    onPress={onMuteUnmuteVideo}
-                                    pressed_style={{ transform: [{ scale: 1.1 }] }}
-                                    color={SECONDARY_COLOR}
-                                    pressed_color={SECONDARY_COLOR}
+                                    icon_name = {getVolumeIcon()}
+                                    accessibility_label = {is_muted || volume === 0 ? t("Zapnúť zvuk") : t("Stlmiť")}
+                                    onPress = {onMuteUnmuteVideo}
+                                    pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                                    color = {SECONDARY_COLOR}
+                                    pressed_color = {SECONDARY_COLOR}
                                 />
                             </View>
                         </>
                     )}
 
                     {one_post_media.is_muted && (
-                        <View className="volume_container">
+                        <View className = "volume_container">
                             <View 
-                                className="muted" 
-                                accessibilityLabel={t("Video nemá zvuk")} 
-                                style={styles.muted}
+                                className = "muted" 
+                                accessibilityLabel = {t("Video nemá zvuk")} 
+                                style = {styles.muted}
                             >
                                 <FontAwesome6
-                                    name="volume-xmark"
-                                    color={"#999999"}
+                                    name = "volume-xmark"
+                                    color = {"#999999"}
                                 />
                             </View>
                         </View>
@@ -442,52 +448,52 @@ export const CustomVideoControls = ({
                 </View>
 
                 <View 
-                    className="show_video_settings_button" 
-                    style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
+                    className = "show_video_settings_button" 
+                    style = {Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
-                        icon_name="gear"
-                        accessibility_label={t("Nastavenia videa")}
-                        onPress={onShowVideoSettings}
-                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                        color={SECONDARY_COLOR}
-                        pressed_color={SECONDARY_COLOR}
+                        icon_name = "gear"
+                        accessibility_label = {t("Nastavenia videa")}
+                        onPress = {onShowVideoSettings}
+                        pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                        color = {SECONDARY_COLOR}
+                        pressed_color = {SECONDARY_COLOR}
                     />
                 </View>
 
                 <View 
-                    className="fullscreen" 
-                    style={Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
+                    className = "fullscreen" 
+                    style = {Platform.OS === "web" ? { marginLeft: 10 } : { marginLeft: 0 }}
                 >
                     <Icon
-                        icon_name={is_fullscreen ? "compress" : "expand"}
-                        accessibility_label={is_fullscreen ? t("Ukončiť celú obrazovku") : t("Na celú obrazovku")}
-                        onPress={onToggleVideoFullscreen}
-                        pressed_style={{ transform: [{ scale: 1.1 }] }}
-                        color={SECONDARY_COLOR}
-                        pressed_color={SECONDARY_COLOR}
+                        icon_name = {is_fullscreen ? "compress" : "expand"}
+                        accessibility_label = {is_fullscreen ? t("Ukončiť celú obrazovku") : t("Na celú obrazovku")}
+                        onPress = {onToggleVideoFullscreen}
+                        pressed_style = {{ transform: [{ scale: 1.1 }] }}
+                        color = {SECONDARY_COLOR}
+                        pressed_color = {SECONDARY_COLOR}
                     />
                 </View>
             </View>
 
             <View 
-                className="scrubber_hitbox" 
-                onLayout={(event:LayoutChangeEvent) => handleSetScrubberWidth(event)} 
-                style={styles.scrubber_hitbox}
+                className = "scrubber_hitbox" 
+                onLayout = {(event:LayoutChangeEvent) => handleSetScrubberWidth(event)} 
+                style = {styles.scrubber_hitbox}
                 {...scrubber_responder}
                 accessible
-                accessibilityRole="adjustable"
-                accessibilityLabel={t("Priebeh videa")}
-                accessibilityValue={{ text: t("{{elapsed}} z {{duration}}", { elapsed: formatDuration(elapsed_time / 1000), duration: formatDuration(duration / 1000) }) }}
-                accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
-                onAccessibilityAction={(event) => event.nativeEvent.actionName === "increment" ? onStepFurther(5) : onStepBack(5)} 
+                accessibilityRole = "adjustable"
+                accessibilityLabel = {t("Priebeh videa")}
+                accessibilityValue = {{ text: t("{{elapsed}} z {{duration}}", { elapsed: formatDuration(elapsed_time / 1000), duration: formatDuration(duration / 1000) }) }}
+                accessibilityActions = {[{ name: "increment" }, { name: "decrement" }]}
+                onAccessibilityAction = {(event) => event.nativeEvent.actionName === "increment" ? onStepFurther(5) : onStepBack(5)} 
             />
 
-            <View className="scrubber" style={styles.scrubber}>
+            <View className = "scrubber" style = {styles.scrubber}>
                 <View 
-                    className="scrubber_track" 
+                    className = "scrubber_track" 
 
-                    style={[
+                    style = {[
                         styles.scrubber_track,
 
                         { 
@@ -499,9 +505,9 @@ export const CustomVideoControls = ({
                 />
 
                 <View 
-                    className="scrubber_thumb" 
+                    className = "scrubber_thumb" 
 
-                    style={[
+                    style = {[
                         styles.scrubber_thumb,
 
                         { 
@@ -513,9 +519,9 @@ export const CustomVideoControls = ({
                 />
 
                 <View 
-                    className="buffering_bar" 
+                    className = "buffering_bar" 
 
-                    style={[
+                    style = {[
                         styles.buffering_bar,
                         { width: duration > 0 ? `${(buffered_time / duration) * 100}%` : "0%" }
                     ]}

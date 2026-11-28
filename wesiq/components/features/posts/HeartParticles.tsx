@@ -29,7 +29,7 @@ export const createHeartParticles = ():HeartParticle[] => {
 
 // One Flying Heart
 function Particle({ particle, onComplete }:{ particle:HeartParticle, onComplete:(id:number) => void }) {
-    const progress = useSharedValue<number>(0)
+    const progress = useSharedValue<number>(0) // Stores The Progress
 
     // Initializes The Flight
     useEffect(() => {
@@ -38,6 +38,7 @@ function Particle({ particle, onComplete }:{ particle:HeartParticle, onComplete:
         }))
     }, [progress, particle, onComplete])
 
+    // Gets The Animated Style
     const animated_style = useAnimatedStyle(() => ({
         opacity: interpolate(progress.get(), [0, 0.7, 1], [1, 1, 0]),
 
@@ -49,14 +50,25 @@ function Particle({ particle, onComplete }:{ particle:HeartParticle, onComplete:
     }))
 
     return (
-        <Animated.View pointerEvents="none" style={[styles.particle, animated_style]}>
-            <Icon name="heart" size={20} color="danger" is_solid={!particle.is_regular} />
+        <Animated.View pointerEvents = "none" style = {[styles.particle, animated_style]}>
+            <Icon
+                name = "heart"
+                size = {20}
+                color = "danger"
+                is_solid = {!particle.is_regular}
+            />
         </Animated.View>
     )
 }
 
 export default function HeartParticles({ particles, onComplete }:{ particles:HeartParticle[], onComplete:(id:number) => void }) {
-    return particles.map((particle:HeartParticle) => <Particle key={particle.id} particle={particle} onComplete={onComplete} />)
+    return particles.map((particle:HeartParticle) => (
+        <Particle
+            key = {particle.id}
+            particle = {particle}
+            onComplete = {onComplete}
+        />
+    ))
 }
 
 const styles = StyleSheet.create({

@@ -7,11 +7,11 @@ type EventMap = {
 
 type Listener<T> = (payload:T) => void
 
-const listeners:{ [K in keyof EventMap]?:Set<Listener<EventMap[K]>> } = {}
+const listeners:{ [K in keyof EventMap]?:Set<Listener<EventMap[K]>> } = {} // Defines The Listeners
 
 // Function For Subscribe To An Event (Returns The Unsubscribe Function)
 export const onAppEvent = <K extends keyof EventMap>(event:K, listener:Listener<EventMap[K]>):(() => void) => {
-    const set = (listeners[event] ??= new Set()) as Set<Listener<EventMap[K]>>
+    const set = (listeners[event] ??= new Set()) as Set<Listener<EventMap[K]>> // Gets The Set
     set.add(listener)
 
     return () => {
@@ -21,6 +21,6 @@ export const onAppEvent = <K extends keyof EventMap>(event:K, listener:Listener<
 
 // Function For Emit An Event
 export const emitAppEvent = <K extends keyof EventMap>(event:K, ...payload:EventMap[K] extends void ? [] : [EventMap[K]]):void => {
-    const set = listeners[event] as Set<Listener<EventMap[K]>>|undefined
+    const set = listeners[event] as Set<Listener<EventMap[K]>>|undefined // Gets The Set
     set?.forEach((listener) => listener(payload[0] as EventMap[K]))
 }

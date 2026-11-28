@@ -26,6 +26,7 @@ interface UserPickerProps {
     header?:ReactNode // Content Above The Search (E.g. The Group Name)
 }
 
+// Checks If It Is Friends Response
 const isFriendsResponse = envelopeWith<{ following:UserSummary[] }>({
     following: (value:unknown):value is UserSummary[] => isArrayOf(value, isUserSummaryLike),
 })
@@ -39,13 +40,13 @@ export default function UserPicker({ is_active, selected_users, onSelectedUsersC
     const [search, setSearch] = useState<string>("") // Stores The Search
 
     const query:string = useDebouncedValue(search.trim(), 350) // Gets The Debounced Query
-    const is_searching:boolean = query.length > 0
+    const is_searching:boolean = query.length > 0 // Checks If It Is Searching
 
     // Loads The People The User Follows (Shown Before Typing)
     const friends = useApiQuery(
         "user_picker_friends",
         async (signal:AbortSignal) => {
-            const response = await apiGet("get-friends/", { signal, guard: isFriendsResponse })
+            const response = await apiGet("get-friends/", { signal, guard: isFriendsResponse }) // Gets The Response
             return response.ok ? { ...response, data: response.data.following as PickedUser[] } : response
         },
         { is_enabled: is_active && logged_in_user !== null }
@@ -55,16 +56,16 @@ export default function UserPicker({ is_active, selected_users, onSelectedUsersC
     const results = useApiQuery(
         `user_picker_search:${query}`,
         async (signal:AbortSignal) => {
-            const response = await searchUsers(query, signal)
+            const response = await searchUsers(query, signal) // Gets The Response
             return response.ok ? { ...response, data: response.data.users as PickedUser[] } : response
         },
         { is_enabled: is_active && is_searching }
     )
 
-    const active = is_searching ? results : friends
-    const excluded:Set<number> = new Set([...excluded_user_ids, ...(logged_in_user ? [logged_in_user.id] : [])])
-    const users:PickedUser[] = (active.state.data ?? []).filter((user:PickedUser) => !excluded.has(user.id))
-    const selected_ids:Set<number> = new Set(selected_users.map((user:PickedUser) => user.id))
+    const active = is_searching ? results : friends // Gets The Active
+    const excluded:Set<number> = new Set([...excluded_user_ids, ...(logged_in_user ? [logged_in_user.id] : [])]) // Gets The Excluded
+    const users:PickedUser[] = (active.state.data ?? []).filter((user:PickedUser) => !excluded.has(user.id)) // Gets The Users
+    const selected_ids:Set<number> = new Set(selected_users.map((user:PickedUser) => user.id)) // Gets The Selected IDs
     const is_waiting:boolean = search.trim() !== query // Typing, Debounce Not Finished Yet
 
     // Function For Select Or Unselect A User
@@ -81,24 +82,30 @@ export default function UserPicker({ is_active, selected_users, onSelectedUsersC
 
     // Function For Render One User
     const renderUser = ({ item }:ListRenderItemInfo<PickedUser>) => {
-        const is_selected:boolean = selected_ids.has(item.id)
-        const is_pickable:boolean = isPickable(item)
+        const is_selected:boolean = selected_ids.has(item.id) // Checks If It Is Selected
+        const is_pickable:boolean = isPickable(item) // Checks If It Is Pickable
 
         return (
             <Pressable
-                onPress={() => toggleUser(item)}
-                disabled={!is_pickable && !is_selected}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: is_selected, disabled: !is_pickable && !is_selected }}
-                accessibilityLabel={formatUsername(item.username)}
-                style={({ pressed }) => [styles.user, pressed ? styles.user_pressed : null, !is_pickable && !is_selected ? styles.user_disabled : null]}
+                onPress = {() => toggleUser(item)}
+                disabled = {!is_pickable && !is_selected}
+                accessibilityRole = "checkbox"
+                accessibilityState = {{ checked: is_selected, disabled: !is_pickable && !is_selected }}
+                accessibilityLabel = {formatUsername(item.username)}
+                style = {({ pressed }) => [styles.user, pressed ? styles.user_pressed : null, !is_pickable && !is_selected ? styles.user_disabled : null]}
             >
-                <View style={styles.flex} pointerEvents="none">
-                    <UserRow user={item} subtitle={!is_pickable ? t("Súkromný účet") : undefined} />
+                <View style = {styles.flex} pointerEvents = "none">
+                    <UserRow user = {item} subtitle = {!is_pickable ? t("Súkromný účet") : undefined} />
                 </View>
 
-                <View style={[styles.check, is_selected ? styles.check_selected : null]}>
-                    {is_selected && <Icon name="check" size={12} color="on_primary" />}
+                <View style = {[styles.check, is_selected ? styles.check_selected : null]}>
+                    {is_selected &&
+                        <Icon
+                            name = "check"
+                            size = {12}
+                            color = "on_primary"
+                        />
+                    }
                 </View>
             </Pressable>
         )
@@ -106,42 +113,76 @@ export default function UserPicker({ is_active, selected_users, onSelectedUsersC
 
     // Function For Render The Empty State
     const renderEmpty = () => {
-        if(active.state.status === "loading" || is_waiting) return <View>{[0, 1, 2, 3].map((index:number) => <UserRowSkeleton key={index} />)}</View>
-        if(active.state.status === "error") return <ErrorState error={active.state.error} onRetry={active.refetch} is_compact />
-        if(is_searching) return <EmptyState icon="magnifying-glass" title={t("Nikto sa nenašiel")} is_compact />
-        return <EmptyState icon="user-group" title={t("Zatiaľ nikoho nesledujete")} message={t("Vyhľadajte ľudí podľa mena alebo používateľského mena.")} is_compact />
+        if(active.state.status === "loading" || is_waiting) return <View>{[0, 1, 2, 3].map((index:number) => <UserRowSkeleton key = {index} />)}</View>
+        if(active.state.status === "error") {
+            return (
+                <ErrorState
+                    error = {active.state.error}
+                    onRetry = {active.refetch}
+                    is_compact
+                />
+            )
+        }
+        if(is_searching) {
+            return (
+                <EmptyState
+                    icon = "magnifying-glass"
+                    title = {t("Nikto sa nenašiel")}
+                    is_compact
+                />
+            )
+        }
+        return (
+            <EmptyState
+                icon = "user-group"
+                title = {t("Zatiaľ nikoho nesledujete")}
+                message = {t("Vyhľadajte ľudí podľa mena alebo používateľského mena.")}
+                is_compact
+            />
+        )
     }
 
     return (
         <FlatList
-            data={users}
-            keyExtractor={(user:PickedUser) => String(user.id)}
-            renderItem={renderUser}
-            style={styles.flex}
-            contentContainerStyle={styles.list_content}
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            ItemSeparatorComponent={() => <Divider inset={56} />}
-            ListEmptyComponent={renderEmpty}
+            data = {users}
+            keyExtractor = {(user:PickedUser) => String(user.id)}
+            renderItem = {renderUser}
+            style = {styles.flex}
+            contentContainerStyle = {styles.list_content}
+            keyboardShouldPersistTaps = "handled"
+            keyboardDismissMode = "on-drag"
+            ItemSeparatorComponent = {() => <Divider inset = {56} />}
+            ListEmptyComponent = {renderEmpty}
 
-            ListHeaderComponent={
-                <View style={styles.header}>
+            ListHeaderComponent = {
+                <View style = {styles.header}>
                     {header}
 
                     <TextField
-                        icon="magnifying-glass"
-                        placeholder={t("Hľadať ľudí")}
-                        accessibilityLabel={t("Hľadať ľudí")}
-                        value={search}
-                        onChangeText={setSearch}
-                        autoCapitalize="none"
-                        autoCorrect={false}
+                        icon = "magnifying-glass"
+                        placeholder = {t("Hľadať ľudí")}
+                        accessibilityLabel = {t("Hľadať ľudí")}
+                        value = {search}
+                        onChangeText = {setSearch}
+                        autoCapitalize = "none"
+                        autoCorrect = {false}
                     />
 
                     {selected_users.length > 0 && (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.chips}>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator = {false}
+                            keyboardShouldPersistTaps = "handled"
+                            contentContainerStyle = {styles.chips}
+                        >
                             {selected_users.map((user:PickedUser) => (
-                                <Chip key={user.id} label={formatUsername(user.username)} icon="xmark" is_selected onPress={() => toggleUser(user)} />
+                                <Chip
+                                    key = {user.id}
+                                    label = {formatUsername(user.username)}
+                                    icon = "xmark"
+                                    is_selected
+                                    onPress = {() => toggleUser(user)}
+                                />
                             ))}
                         </ScrollView>
                     )}

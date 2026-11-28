@@ -42,41 +42,62 @@ interface ReplyQuoteProps {
 export default function ReplyQuote({ reply, current_user_id, variant, onPress }:ReplyQuoteProps) {
     const { t } = useTranslation() // Initializes The Translations
 
-    const is_own_bubble:boolean = variant === "own"
+    const is_own_bubble:boolean = variant === "own" // Checks If It Is Own Bubble
     const is_mine:boolean = reply.sender !== null && reply.sender.id === current_user_id // The Quoted Message Was Written By The Logged In User
-    const sender_name:string = is_mine ? t("Vy") : reply.sender ? formatUsername(reply.sender.username) : ""
-    const summary = getReplySummary(reply)
+    const sender_name:string = is_mine ? t("Vy") : reply.sender ? formatUsername(reply.sender.username) : "" // Gets The Sender Name
+    const summary = getReplySummary(reply) // Gets The Summary
 
+    // Gets The Title
     const title:string = variant === "composer"
         ? (is_mine ? t("Odpovedáte sebe") : t("Odpovedáte {{username}}", { username: sender_name }))
         : sender_name
 
+    // Gets The Content
     const content = (
         <>
-            <View style={[styles.accent, is_own_bubble ? styles.accent_own : null]} />
+            <View style = {[styles.accent, is_own_bubble ? styles.accent_own : null]} />
 
-            <View style={styles.body}>
-                <Text variant="label" color={is_own_bubble ? "on_primary" : "primary_text"} numberOfLines={1}>{title}</Text>
+            <View style = {styles.body}>
+                <Text
+                    variant = "label"
+                    color = {is_own_bubble ? "on_primary" : "primary_text"}
+                    numberOfLines = {1}
+                >
+                    {title}
+                </Text>
 
-                <View style={styles.summary}>
-                    {!!summary.icon && <Icon name={summary.icon} size={11} color={is_own_bubble ? "on_primary" : "text_muted"} />}
-                    <Text variant="caption" color={is_own_bubble ? "on_primary" : "text_secondary"} numberOfLines={variant === "composer" ? 1 : 2} style={[styles.summary_text, is_own_bubble ? styles.summary_text_own : null]}>{summary.text}</Text>
+                <View style = {styles.summary}>
+                    {!!summary.icon &&
+                        <Icon
+                            name = {summary.icon}
+                            size = {11}
+                            color = {is_own_bubble ? "on_primary" : "text_muted"}
+                        />
+                    }
+                    <Text
+                        variant = "caption"
+                        color = {is_own_bubble ? "on_primary" : "text_secondary"}
+                        numberOfLines = {variant === "composer" ? 1 : 2}
+                        style = {[styles.summary_text, is_own_bubble ? styles.summary_text_own : null]}
+                    >
+                        {summary.text}
+                    </Text>
                 </View>
             </View>
         </>
     )
 
-    const container_style = [styles.container, variant === "own" ? styles.container_own : variant === "other" ? styles.container_other : styles.container_composer]
+    const container_style = [styles.container, variant === "own" ? styles.container_own : variant === "other" ? styles.container_other : styles.container_composer] // Gets The Container Style
 
-    if(!onPress) return <View style={container_style}>{content}</View>
+    if(!onPress) return <View style = {container_style}>{content}</View>
 
     return (
         <Pressable
-            onPress={onPress}
-            accessibilityRole="button"
-            accessibilityLabel={`${title}: ${summary.text}`}
-            accessibilityHint={t("Zobraziť pôvodnú správu")}
-            style={({ pressed }) => [...container_style, pressed ? styles.pressed : null]}
+            onPress = {onPress}
+            accessibilityRole = "button"
+            accessibilityLabel = {`${title}: ${summary.text}`}
+            accessibilityHint = {t("Zobraziť pôvodnú správu")}
+            style = {({ pressed }) => [...container_style, pressed ? styles.pressed : null]}
         >
             {content}
         </Pressable>

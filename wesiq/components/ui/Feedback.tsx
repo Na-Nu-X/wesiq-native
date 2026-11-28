@@ -14,7 +14,7 @@ import type { ApiError } from "@/types/api"
 // ---------- Divider ----------
 
 export function Divider({ inset = 0, style }:{ inset?:number, style?:StyleProp<ViewStyle> }) {
-    return <View style={[styles.divider, { marginLeft: inset }, style]} />
+    return <View style = {[styles.divider, { marginLeft: inset }, style]} />
 }
 
 // ---------- Empty State ----------
@@ -29,14 +29,34 @@ export interface EmptyStateProps {
 
 export function EmptyState({ icon, title, message, action, is_compact = false }:EmptyStateProps) {
     return (
-        <View style={[styles.empty, is_compact ? styles.empty_compact : null]}>
-            <View style={styles.empty_icon}>
-                <Icon name={icon} size={is_compact ? 18 : 24} color="primary" />
+        <View style = {[styles.empty, is_compact ? styles.empty_compact : null]}>
+            <View style = {styles.empty_icon}>
+                <Icon
+                    name = {icon}
+                    size = {is_compact ? 18 : 24}
+                    color = "primary"
+                />
             </View>
 
-            <Text variant={is_compact ? "body_strong" : "heading"} align="center">{title}</Text>
-            {!!message && <Text variant="callout" color="text_secondary" align="center">{message}</Text>}
-            {!!action && <Button label={action.label} onPress={action.onPress} variant="secondary" size="sm" style={styles.empty_action} />}
+            <Text variant = {is_compact ? "body_strong" : "heading"} align = "center">{title}</Text>
+            {!!message &&
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    align = "center"
+                >
+                    {message}
+                </Text>
+            }
+            {!!action &&
+                <Button
+                    label = {action.label}
+                    onPress = {action.onPress}
+                    variant = "secondary"
+                    size = "sm"
+                    style = {styles.empty_action}
+                />
+            }
         </View>
     )
 }
@@ -48,11 +68,11 @@ export function ErrorState({ error, onRetry, is_compact = false }:{ error:ApiErr
 
     return (
         <EmptyState
-            icon={error.kind === "network" || error.kind === "timeout" ? "wifi" : "triangle-exclamation"}
-            title={t("Niečo sa pokazilo")}
-            message={error.message}
-            action={onRetry ? { label: t("Skúsiť znova"), onPress: onRetry } : undefined}
-            is_compact={is_compact}
+            icon = {error.kind === "network" || error.kind === "timeout" ? "wifi" : "triangle-exclamation"}
+            title = {t("Niečo sa pokazilo")}
+            message = {error.message}
+            action = {onRetry ? { label: t("Skúsiť znova"), onPress: onRetry } : undefined}
+            is_compact = {is_compact}
         />
     )
 }
@@ -68,13 +88,13 @@ export function Skeleton({ width = "100%", height = 14, radius = radii.sm, style
         return () => cancelAnimation(opacity)
     }, [opacity])
 
-    const animated_style = useAnimatedStyle(() => ({ opacity: opacity.get() }))
+    const animated_style = useAnimatedStyle(() => ({ opacity: opacity.get() })) // Gets The Animated Style
 
     return (
         <Animated.View
             accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-            style={[{ width, height, borderRadius: radius, backgroundColor: colors.surface_strong }, animated_style, style]}
+            importantForAccessibility = "no-hide-descendants"
+            style = {[{ width, height, borderRadius: radius, backgroundColor: colors.surface_strong }, animated_style, style]}
         />
     )
 }
@@ -82,12 +102,16 @@ export function Skeleton({ width = "100%", height = 14, radius = radii.sm, style
 // Skeleton Of A List Row With Avatar (Loading Lists Of Users)
 export function UserRowSkeleton() {
     return (
-        <View style={styles.row_skeleton}>
-            <Skeleton width={44} height={44} radius={radii.pill} />
+        <View style = {styles.row_skeleton}>
+            <Skeleton
+                width = {44}
+                height = {44}
+                radius = {radii.pill}
+            />
 
-            <View style={styles.row_skeleton_text}>
-                <Skeleton width="55%" height={13} />
-                <Skeleton width="35%" height={11} />
+            <View style = {styles.row_skeleton_text}>
+                <Skeleton width = "55%" height = {13} />
+                <Skeleton width = "35%" height = {11} />
             </View>
         </View>
     )

@@ -5,7 +5,7 @@ import Text from "./Text"
 import Icon, { IconName } from "./Icon"
 
 // React Native Web Uses Its Own Prop For The Thumb Color Of An Enabled Switch
-const WEB_SWITCH_PROPS:object = Platform.OS === "web" ? { activeThumbColor: colors.white } : {}
+const WEB_SWITCH_PROPS:object = Platform.OS === "web" ? { activeThumbColor: colors.white } : {} // Defines The Web Switch Props
 
 export interface ToggleRowProps {
     label:string,
@@ -27,34 +27,40 @@ export default function ToggleRow({ label, description, icon, value, onChange, i
 
     return (
         <Pressable
-            onPress={toggle}
-            disabled={is_disabled}
-            accessibilityRole="switch"
-            accessibilityLabel={label}
-            accessibilityHint={description}
-            accessibilityState={{ checked: value, disabled: is_disabled }}
-            style={({ pressed }) => [styles.row, pressed ? styles.pressed : null, is_disabled ? styles.disabled : null]}
+            onPress = {toggle}
+            disabled = {is_disabled}
+            accessibilityRole = "switch"
+            accessibilityLabel = {label}
+            accessibilityHint = {description}
+            accessibilityState = {{ checked: value, disabled: is_disabled }}
+            style = {({ pressed }) => [styles.row, pressed ? styles.pressed : null, is_disabled ? styles.disabled : null]}
         >
             {!!icon && (
-                <View style={styles.icon}>
-                    <Icon name={icon} size={15} color={value ? "primary" : "text_muted"} />
+                <View style = {styles.icon}>
+                    <Icon
+                        name = {icon}
+                        size = {15}
+                        color = {value ? "primary" : "text_muted"}
+                    />
                 </View>
             )}
 
-            <View style={styles.text}>
-                <Text variant="body_strong">{label}</Text>
-                {!!description && <Text variant="caption" color="text_secondary">{description}</Text>}
+            <View style = {styles.text}>
+                <Text variant = "body_strong">{label}</Text>
+                {!!description &&
+                    <Text variant = "caption" color = "text_secondary">{description}</Text>
+                }
             </View>
 
             <Switch
-                value={value}
-                onValueChange={toggle}
-                disabled={is_disabled}
-                trackColor={{ false: colors.surface_strong, true: colors.primary_solid }}
-                thumbColor={Platform.OS === "ios" ? undefined : (value ? colors.white : colors.text_secondary)} // iOS Keeps Its Native White Thumb
-                ios_backgroundColor={colors.surface_strong}
+                value = {value}
+                onValueChange = {toggle}
+                disabled = {is_disabled}
+                trackColor = {{ false: colors.surface_strong, true: colors.primary_solid }}
+                thumbColor = {Platform.OS === "ios" ? undefined : (value ? colors.white : colors.text_secondary)} // iOS Keeps Its Native White Thumb
+                ios_backgroundColor = {colors.surface_strong}
                 {...WEB_SWITCH_PROPS}
-                importantForAccessibility="no-hide-descendants" // The Row Is The Accessible Element
+                importantForAccessibility = "no-hide-descendants" // The Row Is The Accessible Element
                 accessibilityElementsHidden
             />
         </Pressable>

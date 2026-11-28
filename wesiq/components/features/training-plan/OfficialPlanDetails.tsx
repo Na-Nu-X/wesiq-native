@@ -50,51 +50,89 @@ export default function OfficialPlanDetails({ plan }:OfficialPlanDetailsProps) {
     const has_stats:boolean = first.duration !== null || difficulty !== null || !!first.goal // Stores The Information If The Stats Row Has Anything To Show
 
     return (
-        <View style={styles.details} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-            {!!first.description && <Text variant="callout" color="text_secondary" numberOfLines={3}>{first.description}</Text>}
+        <View
+            style = {styles.details}
+            importantForAccessibility = "no-hide-descendants"
+            accessibilityElementsHidden
+        >
+            {!!first.description &&
+                <Text
+                    variant = "callout"
+                    color = "text_secondary"
+                    numberOfLines = {3}
+                >
+                    {first.description}
+                </Text>
+            }
 
             {has_stats && (
-                <View style={styles.stats}>
+                <View style = {styles.stats}>
                     {first.duration !== null && (
-                        <View style={styles.stat}>
-                            <Icon name="clock" size={12} color="text_muted" is_solid={false} />
-                            <Text variant="caption" color="text_secondary" is_tabular>{t("{{count}} min", { count: first.duration })}</Text>
+                        <View style = {styles.stat}>
+                            <Icon
+                                name = "clock"
+                                size = {12}
+                                color = "text_muted"
+                                is_solid = {false}
+                            />
+                            <Text
+                                variant = "caption"
+                                color = "text_secondary"
+                                is_tabular
+                            >
+                                {t("{{count}} min", { count: first.duration })}
+                            </Text>
                         </View>
                     )}
 
                     {difficulty !== null && (
-                        <View style={styles.stat}>
-                            <View style={styles.meter}>
+                        <View style = {styles.stat}>
+                            <View style = {styles.meter}>
                                 {Array.from({ length: METER_SEGMENTS }, (_, index:number) => (
-                                    <View key={index} style={[styles.segment, { backgroundColor: index < filled_segments ? colors[difficulty.color] : colors.surface_strong }]} />
+                                    <View key = {index} style = {[styles.segment, { backgroundColor: index < filled_segments ? colors[difficulty.color] : colors.surface_strong }]} />
                                 ))}
                             </View>
 
-                            <Text variant="caption" color="text_secondary">{difficulty.label}</Text>
+                            <Text variant = "caption" color = "text_secondary">{difficulty.label}</Text>
                         </View>
                     )}
 
                     {!!first.goal && (
-                        <View style={styles.stat}>
-                            <Icon name="bullseye" size={12} color="text_muted" />
-                            <Text variant="caption" color="text_secondary">{getTagLabel(first.goal)}</Text>
+                        <View style = {styles.stat}>
+                            <Icon
+                                name = "bullseye"
+                                size = {12}
+                                color = "text_muted"
+                            />
+                            <Text variant = "caption" color = "text_secondary">{getTagLabel(first.goal)}</Text>
                         </View>
                     )}
                 </View>
             )}
 
             {!!first.requirements && (
-                <View style={styles.stat}>
-                    <Icon name="dumbbell" size={12} color="text_muted" />
-                    <Text variant="caption" color="text_secondary" numberOfLines={1} style={styles.flex}>{first.requirements}</Text>
+                <View style = {styles.stat}>
+                    <Icon
+                        name = "dumbbell"
+                        size = {12}
+                        color = "text_muted"
+                    />
+                    <Text
+                        variant = "caption"
+                        color = "text_secondary"
+                        numberOfLines = {1}
+                        style = {styles.flex}
+                    >
+                        {first.requirements}
+                    </Text>
                 </View>
             )}
 
             {first.target_muscles.length > 0 && (
-                <View style={styles.tags}>
+                <View style = {styles.tags}>
                     {first.target_muscles.map((muscle:string) => (
-                        <View key={muscle} style={styles.tag}>
-                            <Text variant="caption" color="text_accent">{getTagLabel(muscle)}</Text>
+                        <View key = {muscle} style = {styles.tag}>
+                            <Text variant = "caption" color = "text_accent">{getTagLabel(muscle)}</Text>
                         </View>
                     ))}
                 </View>

@@ -6,6 +6,7 @@ import { colors } from "@/theme"
 
 export type LegalPage = "privacy"|"terms"
 
+// Defines The Legal Urls
 export const LEGAL_URLS:Record<LegalPage, string> = {
     privacy: "https://wesiq.com/privacy-policy/",
 

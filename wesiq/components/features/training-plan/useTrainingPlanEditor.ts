@@ -85,8 +85,8 @@ export function draftReducer(draft:PlanDraft, action:EditorAction):PlanDraft {
             const target:number = index + action.direction // Gets The Target Index
             if(index === -1 || target < 0 || target >= draft.exercises.length) return draft
 
-            const exercises:DraftExercise[] = [...draft.exercises]
-            const [moved] = exercises.splice(index, 1)
+            const exercises:DraftExercise[] = [...draft.exercises] // Gets The Exercises
+            const [moved] = exercises.splice(index, 1) // Gets The Moved
             if(moved) exercises.splice(target, 0, moved)
             return { ...draft, exercises }
         }
@@ -119,6 +119,7 @@ export function draftReducer(draft:PlanDraft, action:EditorAction):PlanDraft {
     }
 }
 
+// Function For Editor Reducer
 function editorReducer(state:EditorState, action:EditorAction):EditorState {
     if(action.type === "reset") return { draft: action.draft, saved_snapshot: snapshot(action.draft) }
     return { ...state, draft: draftReducer(state.draft, action) }
@@ -131,9 +132,9 @@ export interface TrainingPlanEditor {
     is_dirty:boolean
 }
 
-// Hook For The Editor State
+// Function For The Editor State
 export function useTrainingPlanEditor(initial_draft:PlanDraft):TrainingPlanEditor {
-    const [state, dispatch] = useReducer(editorReducer, initial_draft, (draft:PlanDraft):EditorState => ({ draft, saved_snapshot: snapshot(draft) }))
+    const [state, dispatch] = useReducer(editorReducer, initial_draft, (draft:PlanDraft):EditorState => ({ draft, saved_snapshot: snapshot(draft) })) // Stores The State
     const issues:DraftIssue[] = useMemo(() => validateDraft(state.draft), [state.draft]) // Validates The Draft
 
     return {

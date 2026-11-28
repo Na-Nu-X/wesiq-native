@@ -27,19 +27,23 @@ export const Tooltip = ({ text, orientation = "top", width = "100%", top = -10 }
 
     return (
         <View
-            pointerEvents="none"
-            style={[styles.tooltip_wrapper, is_top_oriented ? styles.tooltip_wrapper_top : styles.tooltip_wrapper_right, is_top_oriented ? { top } : null]}
+            pointerEvents = "none"
+            style = {[styles.tooltip_wrapper, is_top_oriented ? styles.tooltip_wrapper_top : styles.tooltip_wrapper_right, is_top_oriented ? { top } : null]}
         >
             <Animated.View
-                style={[
+                style = {[
                     is_top_oriented ? styles.tooltip_container_top : styles.tooltip_container_right,
                     is_top_oriented ? { width } : null,
                     { transform: [{ scale: animated_scale }] },
                 ]}
             >
-                {!is_top_oriented && <View style={styles.tooltip_triangle_right} />}
-                <Text style={[styles.tooltip_body, is_top_oriented ? styles.tooltip_body_top : null]}>{text}</Text>
-                {is_top_oriented && <View style={styles.tooltip_triangle_top} />}
+                {!is_top_oriented &&
+                    <View style = {styles.tooltip_triangle_right} />
+                }
+                <Text style = {[styles.tooltip_body, is_top_oriented ? styles.tooltip_body_top : null]}>{text}</Text>
+                {is_top_oriented &&
+                    <View style = {styles.tooltip_triangle_top} />
+                }
             </Animated.View>
         </View>
     )

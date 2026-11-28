@@ -17,46 +17,77 @@ interface ChallengesCardProps {
 
 export default function ChallengesCard({ tasks, remaining_hours, live_input, is_loading }:ChallengesCardProps) {
     const { t } = useTranslation() // Initializes The Translations
-    const completed:number = tasks.filter((task:OfficialTask) => task.is_completed).length
+    const completed:number = tasks.filter((task:OfficialTask) => task.is_completed).length // Gets The Completed
 
     return (
-        <Card padding="lg" style={styles.card}>
-            <View style={styles.header}>
-                <View style={styles.flex}>
-                    <Text variant="heading" accessibilityRole="header">{t("Dnešné výzvy")}</Text>
-                    <Text variant="caption" color="text_muted">{t("Splnené: {{completed}} z {{total}}", { completed, total: tasks.length })}</Text>
+        <Card padding = "lg" style = {styles.card}>
+            <View style = {styles.header}>
+                <View style = {styles.flex}>
+                    <Text variant = "heading" accessibilityRole = "header">{t("Dnešné výzvy")}</Text>
+                    <Text variant = "caption" color = "text_muted">{t("Splnené: {{completed}} z {{total}}", { completed, total: tasks.length })}</Text>
                 </View>
 
                 {remaining_hours !== null && (
-                    <View style={styles.remaining} accessible accessibilityLabel={t("Nové výzvy o {{count}} h", { count: remaining_hours })}>
-                        <Icon name="clock" size={11} color="text_secondary" is_solid={false} />
-                        <Text variant="caption" color="text_secondary">{t("{{count}} h", { count: remaining_hours })}</Text>
+                    <View
+                        style = {styles.remaining}
+                        accessible
+                        accessibilityLabel = {t("Nové výzvy o {{count}} h", { count: remaining_hours })}
+                    >
+                        <Icon
+                            name = "clock"
+                            size = {11}
+                            color = "text_secondary"
+                            is_solid = {false}
+                        />
+                        <Text variant = "caption" color = "text_secondary">{t("{{count}} h", { count: remaining_hours })}</Text>
                     </View>
                 )}
             </View>
 
             {is_loading && tasks.length === 0 ? (
-                <View style={styles.list}>{[0, 1, 2].map((index:number) => <Skeleton key={index} height={44} radius={radii.md} />)}</View>
+                <View style = {styles.list}>{[0, 1, 2].map((index:number) => (
+                    <Skeleton
+                        key = {index}
+                        height = {44}
+                        radius = {radii.md}
+                    />
+                ))}</View>
             ) : (
-                <View style={styles.list}>
+                <View style = {styles.list}>
                     {tasks.map((task:OfficialTask) => {
                         const rule = getChallengeRule(task.data) // Gets The Label And Icon
-                        const progress:number = getChallengeProgress(task, live_input)
+                        const progress:number = getChallengeProgress(task, live_input) // Gets The Progress
 
                         return (
-                            <View key={task.data} style={styles.task} accessible accessibilityLabel={`${rule.label} ${task.is_completed ? t("Splnené") : `${Math.floor(progress)} %`}, ${task.xp} XP`}>
-                                <View style={[styles.icon, task.is_completed ? styles.icon_done : null]}>
-                                    <Icon name={task.is_completed ? "check" : rule.icon} size={13} color={task.is_completed ? "success" : "primary"} />
+                            <View
+                                key = {task.data}
+                                style = {styles.task}
+                                accessible
+                                accessibilityLabel = {`${rule.label} ${task.is_completed ? t("Splnené") : `${Math.floor(progress)} %`}, ${task.xp} XP`}
+                            >
+                                <View style = {[styles.icon, task.is_completed ? styles.icon_done : null]}>
+                                    <Icon
+                                        name = {task.is_completed ? "check" : rule.icon}
+                                        size = {13}
+                                        color = {task.is_completed ? "success" : "primary"}
+                                    />
                                 </View>
 
-                                <View style={styles.task_body}>
-                                    <View style={styles.task_top}>
-                                        <Text variant="callout" color={task.is_completed ? "text_secondary" : "text"} numberOfLines={2} style={styles.flex}>{rule.label}</Text>
-                                        <Text variant="label" color={task.is_completed ? "success" : "premium"}>+{task.xp} XP</Text>
+                                <View style = {styles.task_body}>
+                                    <View style = {styles.task_top}>
+                                        <Text
+                                            variant = "callout"
+                                            color = {task.is_completed ? "text_secondary" : "text"}
+                                            numberOfLines = {2}
+                                            style = {styles.flex}
+                                        >
+                                            {rule.label}
+                                        </Text>
+                                        <Text variant = "label" color = {task.is_completed ? "success" : "premium"}>+{task.xp} XP</Text>
                                     </View>
 
                                     {!task.is_completed && (
-                                        <View style={styles.track}><View style={[styles.fill, { width: `${progress}%` }]} /></View>
+                                        <View style = {styles.track}><View style = {[styles.fill, { width: `${progress}%` }]} /></View>
                                     )}
                                 </View>
                             </View>

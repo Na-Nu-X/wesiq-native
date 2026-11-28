@@ -73,7 +73,7 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
             console.warn(i18n.t("Odhlásenie z Google účtu zlyhalo."), error)
         }
 
-        setLoggedInUser(null)
+        setLoggedInUser(null) // Sets The Logged In User
     }, [])
 
     // Initializes The Get Logged In User And Logout On Expired Token
@@ -84,12 +84,13 @@ export const LoggedInUserProvider = ({ children }:{ children:React.ReactNode }) 
     }, [getLoggedInUser])
 
     return (
-        <LoggedInUserContext.Provider value={{ logged_in_user, setLoggedInUser, refreshLoggedInUser: getLoggedInUser, logOut, is_loading }}>
+        <LoggedInUserContext.Provider value = {{ logged_in_user, setLoggedInUser, refreshLoggedInUser: getLoggedInUser, logOut, is_loading }}>
             {children}
         </LoggedInUserContext.Provider>
     )
 }
 
+// Function For The Logged In User Hook
 export const useLoggedInUser = ():LoggedInUserContextValue => {
     return useContext(LoggedInUserContext)
 }

@@ -13,10 +13,10 @@ export default function GroupConversationScreen() {
     if(!Number.isInteger(parsed_room_id) || parsed_room_id <= 0) {
         return (
             <Screen>
-                <EmptyState icon="comments" title={t("Konverzácia sa nenašla.")} />
+                <EmptyState icon = "comments" title = {t("Konverzácia sa nenašla.")} />
             </Screen>
         )
     }
 
-    return <Conversation room_id={parsed_room_id} />
+    return <Conversation room_id = {parsed_room_id} />
 }

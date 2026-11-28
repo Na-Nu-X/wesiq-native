@@ -30,16 +30,17 @@ type SessionAction =
     | { type:"end_break", now:number }
     | { type:"reset" }
 
-const INITIAL_STATE:SessionState = { step: "start", exercise_index: 0, set_index: 0, exercise_started_at: null, durations: [] }
+const INITIAL_STATE:SessionState = { step: "start", exercise_index: 0, set_index: 0, exercise_started_at: null, durations: [] } // Defines The Initial State
 
 // Function For Leave The Current Exercise (Saves Its Duration, Then Break, Next Exercise Or Finish)
 const finishExercise = (state:SessionState, now:number, exercises:readonly TrainingPlanExercise[]):SessionState => {
+    // Gets The Durations
     const durations:ExerciseDuration[] = state.exercise_started_at !== null
         ? [...state.durations, { exercise_index: state.exercise_index, start_time: state.exercise_started_at, elapsed_ms: now - state.exercise_started_at }]
         : state.durations
 
-    const current:TrainingPlanExercise|undefined = exercises[state.exercise_index]
-    const has_next:boolean = state.exercise_index < exercises.length - 1
+    const current:TrainingPlanExercise|undefined = exercises[state.exercise_index] // Gets The Current
+    const has_next:boolean = state.exercise_index < exercises.length - 1 // Checks If It Has Next
 
     if(!has_next) return { ...state, step: "finish", exercise_started_at: null, durations }
     if(current && !current.is_warm_up) return { ...state, step: "break", exercise_started_at: null, durations } // No Rest After The Warm Up
@@ -47,13 +48,14 @@ const finishExercise = (state:SessionState, now:number, exercises:readonly Train
     return { step: "exercise", exercise_index: state.exercise_index + 1, set_index: 0, exercise_started_at: now, durations }
 }
 
+// Function For Reducer
 function reducer(state:SessionState, action:SessionAction):SessionState {
     switch(action.type) {
         case "start":
             return { ...INITIAL_STATE, step: "exercise", exercise_started_at: action.now }
 
         case "next_set": {
-            const sets:number = Math.max(1, action.exercises[state.exercise_index]?.periods.length ?? 1)
+            const sets:number = Math.max(1, action.exercises[state.exercise_index]?.periods.length ?? 1) // Gets The Sets
             if(state.set_index < sets - 1) return { ...state, set_index: state.set_index + 1 }
             return finishExercise(state, action.now, action.exercises)
         }
@@ -69,8 +71,9 @@ function reducer(state:SessionState, action:SessionAction):SessionState {
     }
 }
 
+// Function For The Workout Session Hook
 export function useWorkoutSession(exercises:readonly TrainingPlanExercise[]) {
-    const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+    const [state, dispatch] = useReducer(reducer, INITIAL_STATE) // Stores The State
 
     return {
         state,
@@ -82,7 +85,7 @@ export function useWorkoutSession(exercises:readonly TrainingPlanExercise[]) {
     }
 }
 
-const SUMMARY_COLORS:readonly string[] = ["#5b8cff", "#3dd68c", "#f0c14a", "#ff7a59", "#b07cff", "#2ec5d3", "#ff5c8a"]
+const SUMMARY_COLORS:readonly string[] = ["#5b8cff", "#3dd68c", "#f0c14a", "#ff7a59", "#b07cff", "#2ec5d3", "#ff5c8a"] // Defines The Summary Colors
 
 // Function For Build The Per-Exercise Summary Saved With The Activity (Seconds, Like The Server Expects)
 export const buildSessionSummary = (durations:readonly ExerciseDuration[], exercises:readonly TrainingPlanExercise[], xp_boost_expiration_time:string|null):ActivitySummaryExercise[] => {

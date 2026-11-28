@@ -19,10 +19,10 @@ export function redirectSystemPath({ path }:{ path:string, initial:boolean }):st
     try {
         const url:URL = new URL(path, "https://wesiq.com") // Accepts Both Full URLs And Bare Paths
         const segments:string[] = url.pathname.split("/").filter(Boolean) // E.g. ["en", "password-reset"]
-        const slug:string|undefined = segments[segments.length - 1]
+        const slug:string|undefined = segments[segments.length - 1] // Gets The Slug
 
         if(slug !== undefined && segments.length <= 2 && PASSWORD_RESET_SLUGS.has(slug)) {
-            const code:string|null = url.searchParams.get("password-reset-code") ?? url.searchParams.get("code")
+            const code:string|null = url.searchParams.get("password-reset-code") ?? url.searchParams.get("code") // Gets The Code
             return code ? `/password-reset?code=${encodeURIComponent(code)}` : "/password-reset"
         }
     } 

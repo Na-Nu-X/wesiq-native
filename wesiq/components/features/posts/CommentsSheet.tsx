@@ -52,8 +52,8 @@ interface CommentsState {
 
 // Function For Collect A Comment And All Its Replies (For Deleting And Counting)
 const collectThread = (comments:PostComment[], root_id:number):Set<number> => {
-    const ids:Set<number> = new Set([root_id])
-    let has_added:boolean = true
+    const ids:Set<number> = new Set([root_id]) // Gets The IDs
+    let has_added:boolean = true // Checks If It Has Added
 
     while(has_added) {
         has_added = false
@@ -74,22 +74,22 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
     const { logged_in_user } = useLoggedInUser() // Gets The Logged In User
     const getReasonLabel = useReportReasonLabels() // Gets The Reason Labels
 
-    const [shown_source, setShownSource] = useState<CommentsSource|null>(source) // Keeps The Source While The Sheet Animates Closed
-    const [state, setState] = useState<CommentsState|null>(null)
+    const [shown_source, setShownSource] = useState<CommentsSource|null>(source) // Stores The Shown Source (Keeps The Source While The Sheet Animates Closed)
+    const [state, setState] = useState<CommentsState|null>(null) // Stores The State
     const [draft, setDraft] = useState<string>("") // Stores The Comment Being Written
     const [reply_to, setReplyTo] = useState<PostComment|null>(null) // Stores The Comment Being Replied To
     const [expanded_roots, setExpandedRoots] = useState<ReadonlySet<number>>(new Set()) // Stores The Root Comments With Visible Replies
-    const [is_sending, setIsSending] = useState<boolean>(false)
+    const [is_sending, setIsSending] = useState<boolean>(false) // Stores If It Is Sending
     const [menu_comment, setMenuComment] = useState<PostComment|null>(null) // Stores The Comment With An Open Menu
-    const [menu_view, setMenuView] = useState<"main"|"report">("main")
+    const [menu_view, setMenuView] = useState<"main"|"report">("main") // Stores The Menu View
 
     // Resets Everything For Another Post (Adjusted During Render)
     if(source && source.key !== shown_source?.key) {
-        setShownSource(source)
-        setState(null)
-        setDraft("")
-        setReplyTo(null)
-        setExpandedRoots(new Set())
+        setShownSource(source) // Sets The Shown Source
+        setState(null) // Sets The State
+        setDraft("") // Sets The Draft
+        setReplyTo(null) // Sets The Reply To
+        setExpandedRoots(new Set()) // Sets The Expanded Roots
     }
 
     else if(source && source !== shown_source) setShownSource(source)
@@ -101,8 +101,8 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
     useEffect(() => {
         if(!source_key || !load_first_page) return
 
-        const controller:AbortController = new AbortController()
-        const post_id:string = source_key
+        const controller:AbortController = new AbortController() // Gets The Controller
+        const post_id:string = source_key // Gets The Post ID
 
         load_first_page(1, controller.signal).then((response) => {
             if(controller.signal.aborted) return
@@ -119,14 +119,14 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
     const loadMore = async ():Promise<void> => {
         if(!state || !state.has_next || state.is_loading_more || !shown_source) return
 
-        setState({ ...state, is_loading_more: true })
+        setState({ ...state, is_loading_more: true }) // Sets The State
         const response = await shown_source.load(state.page + 1) // Sends The Request
 
         setState((previous:CommentsState|null) => {
             if(!previous || previous.post_id !== shown_source.key) return previous
             if(!response.ok) return { ...previous, is_loading_more: false }
 
-            const known:Set<number> = new Set(previous.comments.map((comment:PostComment) => comment.id))
+            const known:Set<number> = new Set(previous.comments.map((comment:PostComment) => comment.id)) // Gets The Known
             return { ...previous, comments: [...previous.comments, ...response.data.visible_comments.filter((comment:PostComment) => !known.has(comment.id))], page: previous.page + 1, has_next: response.data.has_next, is_loading_more: false }
         })
     }
@@ -135,13 +135,14 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
     const rows:PostComment[] = useMemo(() => {
         if(!state) return []
 
-        const children:Map<number, PostComment[]> = new Map()
+        const children:Map<number, PostComment[]> = new Map() // Gets The Children
         state.comments.forEach((comment:PostComment) => {
             if(comment.parent_id === null) return
             children.set(comment.parent_id, [...(children.get(comment.parent_id) ?? []), comment])
         })
 
-        const result:PostComment[] = []
+        const result:PostComment[] = [] // Gets The Result
+        // Function For Add The With Replies
         const addWithReplies = (comment:PostComment):void => {
             result.push(comment)
             ;(children.get(comment.id) ?? []).forEach(addWithReplies)
@@ -157,17 +158,17 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
 
     // Counts Replies Per Root
     const reply_counts:Map<number, number> = useMemo(() => {
-        const counts:Map<number, number> = new Map()
+        const counts:Map<number, number> = new Map() // Gets The Counts
         state?.comments.filter((comment:PostComment) => comment.parent_id === null).forEach((root:PostComment) => counts.set(root.id, collectThread(state.comments, root.id).size - 1))
         return counts
     }, [state])
 
     // Function For Find The Root Of A Comment
     const findRootId = (comment:PostComment):number => {
-        let current:PostComment|undefined = comment
+        let current:PostComment|undefined = comment // Gets The Current
 
         while(current && current.parent_id !== null) {
-            const parent_id:number = current.parent_id
+            const parent_id:number = current.parent_id // Gets The Parent ID
             current = state?.comments.find((other:PostComment) => other.id === parent_id)
         }
 
@@ -183,7 +184,8 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
             return
         }
 
-        const is_liked:boolean = comment.likes_from_users.includes(logged_in_user.id)
+        const is_liked:boolean = comment.likes_from_users.includes(logged_in_user.id) // Checks If It Is Liked
+        // Function For Update The Comment
         const updateComment = (changes:Partial<PostComment>):void => setState((previous) => previous ? { ...previous, comments: previous.comments.map((other:PostComment) => other.id === comment.id ? { ...other, ...changes } : other) } : previous)
 
         haptics.light()
@@ -204,9 +206,9 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
         const text:string = draft.trim() // Gets The Text
         if(!text || !shown_source || is_sending) return
 
-        setIsSending(true)
+        setIsSending(true) // Sets The Sending State
         const response = await shown_source.add(text, reply_to?.id ?? null) // Sends The Request
-        setIsSending(false)
+        setIsSending(false) // Sets The Sending State
 
         if(!response.ok) {
             haptics.error()
@@ -214,6 +216,7 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
             return
         }
 
+        // Gets The Added
         const added:PostComment = {
             id: response.data.comment.id,
             user: { id: logged_in_user.id, username: logged_in_user.username, first_name: logged_in_user.first_name, last_name: logged_in_user.last_name, profile_picture_name: logged_in_user.profile_picture_name, subscription: logged_in_user.subscription },
@@ -226,18 +229,18 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
         }
 
         haptics.success()
-        setState((previous) => previous ? { ...previous, comments: added.parent_id === null ? [added, ...previous.comments] : [...previous.comments, added] } : previous)
+        setState((previous) => previous ? { ...previous, comments: added.parent_id === null ? [added, ...previous.comments] : [...previous.comments, added] } : previous) // Sets The State
         if(reply_to) setExpandedRoots((previous) => new Set(previous).add(findRootId(reply_to)))
-        setDraft("")
-        setReplyTo(null)
+        setDraft("") // Sets The Draft
+        setReplyTo(null) // Sets The Reply To
         onCommentsCountChange(1)
     }
 
     // Function For Delete A Comment (Removes Its Replies Too)
     const remove = async (comment:PostComment):Promise<void> => {
-        setMenuComment(null)
+        setMenuComment(null) // Sets The Menu Comment
 
-        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť komentár?"), message: t("Odstránia sa aj odpovede na tento komentár."), confirm_label: t("Odstrániť"), is_destructive: true })
+        const is_confirmed:boolean = await confirmAction({ title: t("Odstrániť komentár?"), message: t("Odstránia sa aj odpovede na tento komentár."), confirm_label: t("Odstrániť"), is_destructive: true }) // Checks If It Is Confirmed
         if(!is_confirmed || !state || !shown_source) return
 
         const response = await shown_source.remove(comment.id) // Sends The Request
@@ -248,13 +251,13 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
         }
 
         const removed:Set<number> = collectThread(state.comments, comment.id) // Gets The Removed Comments
-        setState((previous) => previous ? { ...previous, comments: previous.comments.filter((other:PostComment) => !removed.has(other.id)) } : previous)
+        setState((previous) => previous ? { ...previous, comments: previous.comments.filter((other:PostComment) => !removed.has(other.id)) } : previous) // Sets The State
         onCommentsCountChange(-removed.size)
     }
 
     // Function For Report A Comment
     const report = async (comment:PostComment, reason:ReportReason):Promise<void> => {
-        setMenuComment(null)
+        setMenuComment(null) // Sets The Menu Comment
         if(!shown_source) return
         const response = await shown_source.report(comment.id, reason) // Sends The Request
 
@@ -266,45 +269,53 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
 
     // Function For Render One Comment
     const renderComment = ({ item }:ListRenderItemInfo<PostComment>) => {
-        const is_liked:boolean = logged_in_user ? item.likes_from_users.includes(logged_in_user.id) : false
+        const is_liked:boolean = logged_in_user ? item.likes_from_users.includes(logged_in_user.id) : false // Checks If It Is Liked
         const indent:number = Math.min(Math.max(item.level - 1, 0), MAX_INDENT_LEVEL) // Gets The Indentation
-        const replies:number = item.parent_id === null ? (reply_counts.get(item.id) ?? 0) : 0
+        const replies:number = item.parent_id === null ? (reply_counts.get(item.id) ?? 0) : 0 // Gets The Replies
 
         return (
-            <View style={[styles.comment, { paddingLeft: indent * spacing.xxl }]}>
-                <Pressable onPress={() => {
+            <View style = {[styles.comment, { paddingLeft: indent * spacing.xxl }]}>
+                <Pressable onPress = {() => {
                     onClose()
                     router.push({ pathname: "/profile/[username]", params: { username: item.user.username } })
-                }} accessibilityLabel={item.user.username}>
-                    <Avatar user={item.user} size={indent > 0 ? 28 : 34} is_ring_hidden />
+                }} accessibilityLabel = {item.user.username}>
+                    <Avatar
+                        user = {item.user}
+                        size = {indent > 0 ? 28 : 34}
+                        is_ring_hidden
+                    />
                 </Pressable>
 
-                <View style={styles.comment_body}>
-                    <Text variant="callout">
-                        <Text variant="body_strong">{item.user.username} </Text>
+                <View style = {styles.comment_body}>
+                    <Text variant = "callout">
+                        <Text variant = "body_strong">{item.user.username} </Text>
                         {item.comment}
                     </Text>
 
-                    <View style={styles.comment_meta}>
-                        <Text variant="caption" color="text_muted">{getTimeAgo(item.creation_time)}</Text>
+                    <View style = {styles.comment_meta}>
+                        <Text variant = "caption" color = "text_muted">{getTimeAgo(item.creation_time)}</Text>
                         {item.level < MAX_REPLY_LEVEL && (
-                            <Pressable onPress={() => setReplyTo(item)} hitSlop={8} accessibilityRole="button">
-                                <Text variant="label" color="text_secondary">{t("Odpovedať")}</Text>
+                            <Pressable
+                                onPress = {() => setReplyTo(item)}
+                                hitSlop = {8}
+                                accessibilityRole = "button"
+                            >
+                                <Text variant = "label" color = "text_secondary">{t("Odpovedať")}</Text>
                             </Pressable>
                         )}
 
                         {replies > 0 && (
                             <Pressable
-                                hitSlop={8}
-                                accessibilityRole="button"
-                                onPress={() => setExpandedRoots((previous) => {
-                                    const next:Set<number> = new Set(previous)
+                                hitSlop = {8}
+                                accessibilityRole = "button"
+                                onPress = {() => setExpandedRoots((previous) => {
+                                    const next:Set<number> = new Set(previous) // Gets The Next
                                     if(next.has(item.id)) next.delete(item.id)
                                     else next.add(item.id)
                                     return next
                                 })}
                             >
-                                <Text variant="label" color="primary_text">
+                                <Text variant = "label" color = "primary_text">
                                     {expanded_roots.has(item.id) ? t("Skryť odpovede") : t("Zobraziť odpovede ({{count}})", { count: replies })}
                                 </Text>
                             </Pressable>
@@ -312,17 +323,43 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
                     </View>
                 </View>
 
-                <View style={styles.comment_side}>
-                    <Pressable onPress={() => toggleLike(item)} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: is_liked }} accessibilityLabel={`${t("Páči sa mi to")}: ${item.likes}`} style={styles.like}>
-                        <Icon name="heart" size={13} color={is_liked ? "danger" : "text_muted"} is_solid={is_liked} />
-                        {item.likes > 0 && <Text variant="caption" color="text_muted" is_tabular>{item.likes}</Text>}
+                <View style = {styles.comment_side}>
+                    <Pressable
+                        onPress = {() => toggleLike(item)}
+                        hitSlop = {8}
+                        accessibilityRole = "button"
+                        accessibilityState = {{ selected: is_liked }}
+                        accessibilityLabel = {`${t("Páči sa mi to")}: ${item.likes}`}
+                        style = {styles.like}
+                    >
+                        <Icon
+                            name = "heart"
+                            size = {13}
+                            color = {is_liked ? "danger" : "text_muted"}
+                            is_solid = {is_liked}
+                        />
+                        {item.likes > 0 &&
+                            <Text
+                                variant = "caption"
+                                color = "text_muted"
+                                is_tabular
+                            >
+                                {item.likes}
+                            </Text>
+                        }
                     </Pressable>
 
                     {!!logged_in_user && (
-                        <IconButton icon="ellipsis" accessibility_label={t("Možnosti komentára")} onPress={() => {
-                            setMenuView("main")
-                            setMenuComment(item)
-                        }} size={26} icon_color="text_muted" />
+                        <IconButton
+                            icon = "ellipsis"
+                            accessibility_label = {t("Možnosti komentára")}
+                            onPress = {() => {
+                                setMenuView("main") // Sets The Menu View
+                                setMenuComment(item) // Sets The Menu Comment
+                            }}
+                            size = {26}
+                            icon_color = "text_muted"
+                        />
                     )}
                 </View>
             </View>
@@ -331,98 +368,151 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
 
     if(!shown_source) return null
 
-    const is_own_menu_comment:boolean = menu_comment !== null && logged_in_user?.id === menu_comment.user.id
+    const is_own_menu_comment:boolean = menu_comment !== null && logged_in_user?.id === menu_comment.user.id // Checks If It Is Own Menu Comment
     const can_delete_menu_comment:boolean = is_own_menu_comment || logged_in_user?.role === "admin" || logged_in_user?.role === "developer" // Same Rule As The Server
 
     return (
         <Sheet
-            visible={source !== null}
-            onClose={onClose}
-            title={t("Komentáre")}
-            subtitle={shown_source.comments_count > 0 ? `${shown_source.comments_count}` : undefined}
-            size="large"
-            is_scrollable={false}
+            visible = {source !== null}
+            onClose = {onClose}
+            title = {t("Komentáre")}
+            subtitle = {shown_source.comments_count > 0 ? `${shown_source.comments_count}` : undefined}
+            size = "large"
+            is_scrollable = {false}
 
-            footer={shown_source.allow_comments ? (
-                <View style={styles.composer}>
+            footer = {shown_source.allow_comments ? (
+                <View style = {styles.composer}>
                     {!!reply_to && (
-                        <View style={styles.reply_to}>
-                            <Icon name="reply" size={11} color="text_muted" />
-                            <Text variant="caption" color="text_secondary" style={styles.flex} numberOfLines={1}>{t("Odpoveď používateľovi {{username}}", { username: reply_to.user.username })}</Text>
-                            <IconButton icon="xmark" accessibility_label={t("Zrušiť odpoveď")} onPress={() => setReplyTo(null)} size={24} icon_color="text_muted" />
+                        <View style = {styles.reply_to}>
+                            <Icon
+                                name = "reply"
+                                size = {11}
+                                color = "text_muted"
+                            />
+                            <Text
+                                variant = "caption"
+                                color = "text_secondary"
+                                style = {styles.flex}
+                                numberOfLines = {1}
+                            >
+                                {t("Odpoveď používateľovi {{username}}", { username: reply_to.user.username })}
+                            </Text>
+                            <IconButton
+                                icon = "xmark"
+                                accessibility_label = {t("Zrušiť odpoveď")}
+                                onPress = {() => setReplyTo(null)}
+                                size = {24}
+                                icon_color = "text_muted"
+                            />
                         </View>
                     )}
 
-                    <View style={styles.composer_row}>
+                    <View style = {styles.composer_row}>
                         <TextField
-                            placeholder={logged_in_user ? t("Pridať komentár...") : t("Prihláste sa a pridajte komentár")}
-                            accessibilityLabel={t("Pridať komentár...")}
-                            value={draft}
-                            onChangeText={setDraft}
-                            maxLength={MAX_COMMENT_LENGTH}
-                            onFocus={() => { if(!logged_in_user) onRequireLogin() }}
-                            onSubmitEditing={send}
-                            returnKeyType="send"
-                            container_style={styles.flex}
+                            placeholder = {logged_in_user ? t("Pridať komentár...") : t("Prihláste sa a pridajte komentár")}
+                            accessibilityLabel = {t("Pridať komentár...")}
+                            value = {draft}
+                            onChangeText = {setDraft}
+                            maxLength = {MAX_COMMENT_LENGTH}
+                            onFocus = {() => { if(!logged_in_user) onRequireLogin() }}
+                            onSubmitEditing = {send}
+                            returnKeyType = "send"
+                            container_style = {styles.flex}
                         />
 
-                        <IconButton icon="paper-plane" accessibility_label={t("Odoslať")} onPress={send} is_disabled={!draft.trim() || is_sending} variant="solid" size={46} />
+                        <IconButton
+                            icon = "paper-plane"
+                            accessibility_label = {t("Odoslať")}
+                            onPress = {send}
+                            is_disabled = {!draft.trim() || is_sending}
+                            variant = "solid"
+                            size = {46}
+                        />
                     </View>
                 </View>
             ) : undefined}
         >
             <FlatList
-                data={rows}
-                keyExtractor={(comment:PostComment) => String(comment.id)}
-                renderItem={renderComment}
-                style={styles.flex}
-                contentContainerStyle={styles.list_content}
-                keyboardShouldPersistTaps="handled"
-                onEndReached={loadMore}
-                onEndReachedThreshold={0.4}
+                data = {rows}
+                keyExtractor = {(comment:PostComment) => String(comment.id)}
+                renderItem = {renderComment}
+                style = {styles.flex}
+                contentContainerStyle = {styles.list_content}
+                keyboardShouldPersistTaps = "handled"
+                onEndReached = {loadMore}
+                onEndReachedThreshold = {0.4}
 
-                ListEmptyComponent={
-                    !state ? <View>{[0, 1, 2].map((index:number) => <UserRowSkeleton key={index} />)}</View>
-                    : state.error ? <ErrorState error={state.error} is_compact />
-                    : shown_source.allow_comments ? <EmptyState icon="comments" title={t("Zatiaľ žiadne komentáre")} message={t("Buďte prvý, kto pridá komentár.")} is_compact />
-                    : <EmptyState icon="comment-slash" title={t("Komentáre sú vypnuté")} is_compact />
+                ListEmptyComponent = {
+                    !state ? <View>{[0, 1, 2].map((index:number) => <UserRowSkeleton key = {index} />)}</View>
+                    : state.error ? <ErrorState error = {state.error} is_compact />
+                    : shown_source.allow_comments ? <EmptyState
+                        icon = "comments"
+                        title = {t("Zatiaľ žiadne komentáre")}
+                        message = {t("Buďte prvý, kto pridá komentár.")}
+                        is_compact
+                    />
+                    : <EmptyState
+                        icon = "comment-slash"
+                        title = {t("Komentáre sú vypnuté")}
+                        is_compact
+                    />
                 }
 
-                ListFooterComponent={state?.is_loading_more ? <ActivityIndicator color={colors.spinner} style={styles.loader} /> : undefined}
+                ListFooterComponent = {state?.is_loading_more ? <ActivityIndicator color = {colors.spinner} style = {styles.loader} /> : undefined}
             />
 
             <Sheet
-                visible={menu_comment !== null}
-                onClose={() => menu_view === "report" ? setMenuView("main") : setMenuComment(null)}
-                title={menu_view === "report" ? t("Nahlásiť komentár") : t("Možnosti komentára")}
+                visible = {menu_comment !== null}
+                onClose = {() => menu_view === "report" ? setMenuView("main") : setMenuComment(null)}
+                title = {menu_view === "report" ? t("Nahlásiť komentár") : t("Možnosti komentára")}
             >
                 {!!menu_comment && (
-                    <Card padding="xs">
+                    <Card padding = "xs">
                         {menu_view === "report" ? REPORT_REASONS.map((reason:ReportReason, index:number) => (
-                            <View key={reason}>
-                                {index > 0 && <Divider inset={spacing.md} />}
-                                <MenuRow icon="flag" label={getReasonLabel(reason)} onPress={() => report(menu_comment, reason)} />
+                            <View key = {reason}>
+                                {index > 0 &&
+                                    <Divider inset = {spacing.md} />
+                                }
+                                <MenuRow
+                                    icon = "flag"
+                                    label = {getReasonLabel(reason)}
+                                    onPress = {() => report(menu_comment, reason)}
+                                />
                             </View>
                         )) : (
                             <>
                                 {menu_comment.level < MAX_REPLY_LEVEL && (
-                                    <MenuRow icon="reply" label={t("Odpovedať")} onPress={() => {
-                                        setReplyTo(menu_comment)
-                                        setMenuComment(null)
-                                    }} />
+                                    <MenuRow
+                                        icon = "reply"
+                                        label = {t("Odpovedať")}
+                                        onPress = {() => {
+                                            setReplyTo(menu_comment) // Sets The Reply To
+                                            setMenuComment(null) // Sets The Menu Comment
+                                        }}
+                                    />
                                 )}
 
                                 {!is_own_menu_comment && (
                                     <>
-                                        <Divider inset={spacing.md} />
-                                        <MenuRow icon="flag" label={t("Nahlásiť")} onPress={() => setMenuView("report")} is_danger />
+                                        <Divider inset = {spacing.md} />
+                                        <MenuRow
+                                            icon = "flag"
+                                            label = {t("Nahlásiť")}
+                                            onPress = {() => setMenuView("report")}
+                                            is_danger
+                                        />
                                     </>
                                 )}
 
                                 {can_delete_menu_comment && (
                                     <>
-                                        <Divider inset={spacing.md} />
-                                        <MenuRow icon="trash" label={t("Odstrániť komentár")} onPress={() => remove(menu_comment)} is_danger />
+                                        <Divider inset = {spacing.md} />
+                                        <MenuRow
+                                            icon = "trash"
+                                            label = {t("Odstrániť komentár")}
+                                            onPress = {() => remove(menu_comment)}
+                                            is_danger
+                                        />
                                     </>
                                 )}
                             </>
@@ -432,8 +522,13 @@ export default function CommentsSheet({ source, onClose, onCommentsCountChange, 
             </Sheet>
 
             {state?.has_next && !state.is_loading_more && rows.length > 0 && (
-                <View style={styles.more}>
-                    <Button label={t("Načítať ďalšie komentáre")} variant="ghost" size="sm" onPress={loadMore} />
+                <View style = {styles.more}>
+                    <Button
+                        label = {t("Načítať ďalšie komentáre")}
+                        variant = "ghost"
+                        size = "sm"
+                        onPress = {loadMore}
+                    />
                 </View>
             )}
         </Sheet>

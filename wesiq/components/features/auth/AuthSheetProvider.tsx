@@ -12,14 +12,15 @@ const AuthSheetContext = createContext<AuthSheetContextValue>({ open: () => {} }
 export function AuthSheetProvider({ children }:{ children:ReactNode }) {
     const [active_form, setActiveForm] = useState<AuthForm|null>(null) // Stores The Open Form
 
-    const value:AuthSheetContextValue = useMemo(() => ({ open: (form:AuthForm = "login_form") => setActiveForm(form) }), [])
+    const value:AuthSheetContextValue = useMemo(() => ({ open: (form:AuthForm = "login_form") => setActiveForm(form) }), []) // Gets The Value
 
     return (
-        <AuthSheetContext.Provider value={value}>
+        <AuthSheetContext.Provider value = {value}>
             {children}
-            <AuthSheet active_form={active_form} onActiveFormChange={setActiveForm} />
+            <AuthSheet active_form = {active_form} onActiveFormChange = {setActiveForm} />
         </AuthSheetContext.Provider>
     )
 }
 
+// Function For The Auth Sheet Hook
 export const useAuthSheet = ():AuthSheetContextValue => useContext(AuthSheetContext)

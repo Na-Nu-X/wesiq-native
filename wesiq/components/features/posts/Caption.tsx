@@ -5,8 +5,8 @@ import { router } from "expo-router"
 import { useTranslation } from "react-i18next"
 import { Text } from "@/components/ui"
 
-const TOKEN_PATTERN:RegExp = /([#@][\p{L}\p{N}_.]+)/gu
-const COLLAPSED_LINES:number = 3
+const TOKEN_PATTERN:RegExp = /([#@][\p{L}\p{N}_.]+)/gu // Defines The Token Pattern
+const COLLAPSED_LINES:number = 3 // Defines The Collapsed Lines
 
 interface CaptionProps {
     username:string,
@@ -24,28 +24,54 @@ export default function Caption({ username, text, is_expanded_initially = false 
     return (
         <>
             <Text
-                variant="callout"
-                numberOfLines={is_expanded ? undefined : COLLAPSED_LINES}
-                onTextLayout={(event) => {
+                variant = "callout"
+                numberOfLines = {is_expanded ? undefined : COLLAPSED_LINES}
+                onTextLayout = {(event) => {
                     if(!is_expanded && event.nativeEvent.lines.length >= COLLAPSED_LINES) setIsTruncated(true)
                 }}
             >
-                <Text variant="body_strong" onPress={() => router.push({ pathname: "/profile/[username]", params: { username } })}>{username}</Text>
+                <Text variant = "body_strong" onPress = {() => router.push({ pathname: "/profile/[username]", params: { username } })}>{username}</Text>
                 {"  "}
 
                 {parts.map((part:string, index:number) => {
                     if(part.startsWith("@")) {
                         const mentioned:string = part.slice(1).replace(/\.$/, "") // Gets The Username (Without A Trailing Dot)
-                        return <Text key={index} variant="callout" color="primary_text" onPress={() => router.push({ pathname: "/profile/[username]", params: { username: mentioned } })}>{part}</Text>
+                        return (
+                            <Text
+                                key = {index}
+                                variant = "callout"
+                                color = "primary_text"
+                                onPress = {() => router.push({ pathname: "/profile/[username]", params: { username: mentioned } })}
+                            >
+                                {part}
+                            </Text>
+                        )
                     }
 
-                    if(part.startsWith("#")) return <Text key={index} variant="callout" color="primary_text">{part}</Text>
+                    if(part.startsWith("#")) {
+                        return (
+                            <Text
+                                key = {index}
+                                variant = "callout"
+                                color = "primary_text"
+                            >
+                                {part}
+                            </Text>
+                        )
+                    }
                     return part
                 })}
             </Text>
 
             {is_truncated && !is_expanded && (
-                <Text variant="label" color="text_muted" onPress={() => setIsExpanded(true)} accessibilityRole="button">{t("viac")}</Text>
+                <Text
+                    variant = "label"
+                    color = "text_muted"
+                    onPress = {() => setIsExpanded(true)}
+                    accessibilityRole = "button"
+                >
+                    {t("viac")}
+                </Text>
             )}
         </>
     )

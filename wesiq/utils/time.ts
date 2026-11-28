@@ -26,8 +26,9 @@ export const getTimeAgo = (date_string:string):string => {
 
 // Function For Get The Formatted Date
 export function getFormattedDate(text:string, show_year:boolean = true):string {
-    const date:Date = new Date(text)
+    const date:Date = new Date(text) // Gets The Date
 
+    // Gets The Formatted Date
     let formatted_date:string =
         `${String(date.getDate()).padStart(2, "0")}.` + 
         `${String(date.getMonth() + 1).padStart(2, '0')}.`
@@ -78,8 +79,8 @@ export function getMinimalistFormattedTime(elapsed_time:number):string {
 
 // Function For Get Day Name From Weekday Index In User's Country's Language (Sunday - 0, Monday - 1, Tuesday - 2, Wednesday - 3, Thursday - 4, Friday - 5, Saturday - 6)
 export function getDayName(day_index:number, format:"long"|"short"|"narrow"="short"):string {
-    const locale:string = navigator.languages?.[0] || navigator.language || "en-US"
-    const date:Date = new Date(2024, 0, 7 + day_index)
+    const locale:string = navigator.languages?.[0] || navigator.language || "en-US" // Gets The Locale
+    const date:Date = new Date(2024, 0, 7 + day_index) // Gets The Date
 
     return new Intl.DateTimeFormat(locale, { weekday: format }).format(date)
 }

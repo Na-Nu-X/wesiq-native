@@ -30,22 +30,22 @@ export default function TaskList({ tasks, renderTask, onReorder, style }:TaskLis
 
     return (
         <DraggableFlatList
-            key={order_key}
-            data={tasks}
-            containerStyle={style}
-            keyExtractor={(task:CustomTask) => String(task.id)}
-            renderItem={({ item, drag, isActive, getIndex }:RenderItemParams<CustomTask>) => renderTask({ item, index: getIndex() ?? 0, drag, is_dragging: isActive })}
-            scrollEnabled={false} // Shows Every Task; The Page Scrolls Instead
-            activationDistance={8}
-            initialNumToRender={tasks.length} // Renders Every Task On (Re)Mount, So The Height Doesn't Jump
+            key = {order_key}
+            data = {tasks}
+            containerStyle = {style}
+            keyExtractor = {(task:CustomTask) => String(task.id)}
+            renderItem = {({ item, drag, isActive, getIndex }:RenderItemParams<CustomTask>) => renderTask({ item, index: getIndex() ?? 0, drag, is_dragging: isActive })}
+            scrollEnabled = {false} // Shows Every Task; The Page Scrolls Instead
+            activationDistance = {8}
+            initialNumToRender = {tasks.length} // Renders Every Task On (Re)Mount, So The Height Doesn't Jump
 
-            onDragBegin={() => {
-                setScrollLocked(true)
+            onDragBegin = {() => {
+                setScrollLocked(true) // Sets The Scroll Locked
                 haptics.selection()
             }}
 
-            onDragEnd={({ data, from, to }) => {
-                setScrollLocked(false)
+            onDragEnd = {({ data, from, to }) => {
+                setScrollLocked(false) // Sets The Scroll Locked
                 if(from !== to) onReorder(data)
             }}
         />

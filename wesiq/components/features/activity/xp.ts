@@ -4,17 +4,17 @@ import i18n from "@/lib/i18n"
 
 import type { OfficialTask } from "@/types/models"
 
-export const BASE_XP_PER_HOUR:number = 100
-export const XP_BOOST_MULTIPLIER:number = 2
-export const XP_BOOST_DURATION_MS:number = 30 * 60 * 1000
+export const BASE_XP_PER_HOUR:number = 100 // Defines The Base XP Per Hour
+export const XP_BOOST_MULTIPLIER:number = 2 // Defines The XP Boost Multiplier
+export const XP_BOOST_DURATION_MS:number = 30 * 60 * 1000 // Defines The XP Boost Duration MS
 
 // Function For Calculate The Gained XP (Time Inside The Boost Window Counts Multiple Times)
 export const calculateGainedXp = (elapsed_ms:number, xp_boost_expiration_time:string|null, start_time_ms?:number, end_time_ms?:number):number => {
-    const activity_end:number = end_time_ms ?? Date.now()
-    const activity_start:number = start_time_ms ?? activity_end - elapsed_ms
-    const xp_per_ms:number = BASE_XP_PER_HOUR / (60 * 60 * 1000)
+    const activity_end:number = end_time_ms ?? Date.now() // Gets The Activity End
+    const activity_start:number = start_time_ms ?? activity_end - elapsed_ms // Gets The Activity Start
+    const xp_per_ms:number = BASE_XP_PER_HOUR / (60 * 60 * 1000) // Gets The XP Per MS
 
-    let boosted_ms:number = 0
+    let boosted_ms:number = 0 // Gets The Boosted MS
 
     if(xp_boost_expiration_time) {
         const boost_end:number = new Date(xp_boost_expiration_time).getTime() // Gets The Boost End
@@ -41,6 +41,7 @@ interface ChallengeRule {
 
 // Function For Get The Rules By The Server "data" Key
 export const getChallengeRule = (data:string):ChallengeRule => {
+    // Gets The Rules
     const rules:Record<string, ChallengeRule> = {
         "30_minutes_activity": { label: i18n.t("Zaznamenaj 30 minút aktivity."), icon: "stopwatch", live_progress: ({ elapsed_seconds }) => elapsed_seconds / 1800 * 100 },
         "1_hour_activity": { label: i18n.t("Zaznamenaj 1h aktivity."), icon: "stopwatch", live_progress: ({ elapsed_seconds }) => elapsed_seconds / 3600 * 100 },
@@ -63,6 +64,6 @@ export const getChallengeRule = (data:string):ChallengeRule => {
 export const getChallengeProgress = (task:OfficialTask, input:LiveProgressInput|null):number => {
     if(task.is_completed) return 100
 
-    const live:number = input ? getChallengeRule(task.data).live_progress?.(input) ?? 0 : 0
+    const live:number = input ? getChallengeRule(task.data).live_progress?.(input) ?? 0 : 0 // Gets The Live
     return Math.min(100, Math.max(task.progress_percentage, live))
 }
